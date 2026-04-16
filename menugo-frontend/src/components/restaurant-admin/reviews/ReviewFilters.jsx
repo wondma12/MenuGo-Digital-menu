@@ -1,0 +1,78 @@
+import React from 'react'
+import { MagnifyingGlassIcon } from '@heroicons/react/24/outline'
+import Select from '../../../common/Select'
+import DatePicker from '../../../common/DatePicker'
+
+const ReviewFilters = ({ filters, onFiltersChange }) => {
+  const handleChange = (key, value) => {
+    onFiltersChange({ ...filters, [key]: value })
+  }
+
+  const clearFilters = () => {
+    onFiltersChange({
+      rating: 'all',
+      status: 'all',
+      search: '',
+      dateRange: null,
+    })
+  }
+
+  const hasActiveFilters = filters.search || filters.rating !== 'all' || filters.status !== 'all' || filters.dateRange
+
+  return (
+    <div className="bg-white rounded-xl p-4 border border-gray-200 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="relative">
+          <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Search reviews..."
+            value={filters.search}
+            onChange={(e) => handleChange('search', e.target.value)}
+            className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm"
+          />
+        </div>
+        <Select
+          label="Rating"
+          value={filters.rating}
+          onChange={(e) => handleChange('rating', e.target.value)}
+          options={[
+            { value: 'all', label: 'All Ratings' },
+            { value: '5', label: '5 Stars' },
+            { value: '4', label: '4 Stars' },
+            { value: '3', label: '3 Stars' },
+            { value: '2', label: '2 Stars' },
+            { value: '1', label: '1 Star' },
+          ]}
+        />
+        <Select
+          label="Status"
+          value={filters.status}
+          onChange={(e) => handleChange('status', e.target.value)}
+          options={[
+            { value: 'all', label: 'All Status' },
+            { value: 'pending', label: 'Pending' },
+            { value: 'approved', label: 'Approved' },
+            { value: 'rejected', label: 'Rejected' },
+          ]}
+        />
+        <DatePicker
+          label="Date Range"
+          selected={filters.dateRange}
+          onChange={(date) => handleChange('dateRange', date)}
+          placeholderText="Select date"
+        />
+      </div>
+
+      {hasActiveFilters && (
+        <div className="flex justify-end mt-4 pt-3 border-t border-gray-100">
+          <button onClick={clearFilters} className="text-sm text-primary-600 hover:text-primary-700">
+            Clear Filters
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
+export default ReviewFilters

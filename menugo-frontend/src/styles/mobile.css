@@ -1,0 +1,204 @@
+/* Mobile Container */
+.mobile-container {
+  @apply max-w-md mx-auto px-4;
+}
+
+/* Mobile Header */
+.mobile-header {
+  @apply fixed top-0 left-0 right-0 bg-white dark:bg-gray-800 shadow-sm z-40;
+}
+
+.mobile-header-content {
+  @apply flex items-center justify-between h-14 px-4;
+}
+
+.mobile-header-title {
+  @apply text-lg font-semibold text-gray-900 dark:text-white;
+}
+
+/* Mobile Bottom Navigation */
+.mobile-bottom-nav {
+  @apply fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 z-40;
+}
+
+.mobile-bottom-nav-items {
+  @apply flex justify-around items-center h-16;
+}
+
+.mobile-bottom-nav-item {
+  @apply flex flex-col items-center justify-center flex-1 h-full;
+}
+
+.mobile-bottom-nav-icon {
+  @apply w-5 h-5 text-gray-500 dark:text-gray-400;
+}
+
+.mobile-bottom-nav-icon-active {
+  @apply text-primary-600 dark:text-primary-400;
+}
+
+.mobile-bottom-nav-label {
+  @apply text-xs mt-1 text-gray-500 dark:text-gray-400;
+}
+
+.mobile-bottom-nav-label-active {
+  @apply text-primary-600 dark:text-primary-400;
+}
+
+/* Mobile Cards */
+.mobile-card {
+  @apply bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4;
+}
+
+.mobile-card-title {
+  @apply text-base font-semibold text-gray-900 dark:text-white;
+}
+
+/* Mobile List Items */
+.mobile-list-item {
+  @apply flex items-center gap-3 p-4 border-b border-gray-100 dark:border-gray-700;
+}
+
+.mobile-list-item-icon {
+  @apply w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center;
+}
+
+.mobile-list-item-content {
+  @apply flex-1;
+}
+
+.mobile-list-item-title {
+  @apply text-sm font-medium text-gray-900 dark:text-white;
+}
+
+.mobile-list-item-subtitle {
+  @apply text-xs text-gray-500 dark:text-gray-400 mt-0.5;
+}
+
+/* Mobile Menu Drawer */
+.mobile-drawer {
+  @apply fixed inset-0 z-50;
+}
+
+.mobile-drawer-overlay {
+  @apply absolute inset-0 bg-black bg-opacity-50;
+}
+
+.mobile-drawer-content {
+  @apply absolute left-0 top-0 bottom-0 w-72 bg-white dark:bg-gray-800 shadow-xl;
+}
+
+.mobile-drawer-header {
+  @apply flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700;
+}
+
+.mobile-drawer-title {
+  @apply text-lg font-semibold text-gray-900 dark:text-white;
+}
+
+.mobile-drawer-close {
+  @apply p-2 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg;
+}
+
+.mobile-drawer-items {
+  @apply p-4 space-y-2;
+}
+
+.mobile-drawer-item {
+  @apply flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors;
+}
+
+.mobile-drawer-item-active {
+  @apply bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400;
+}
+
+/* Mobile Bottom Sheet */
+.mobile-bottom-sheet {
+  @apply fixed inset-x-0 bottom-0 z-50 bg-white dark:bg-gray-800 rounded-t-2xl shadow-xl transform transition-transform duration-300;
+}
+
+.mobile-bottom-sheet-header {
+  @apply flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700;
+}
+
+.mobile-bottom-sheet-handle {
+  @apply w-12 h-1 bg-gray-300 dark:bg-gray-600 rounded-full mx-auto mb-2;
+}
+
+/* Mobile Touch Optimizations */
+.touch-target {
+  @apply min-h-[44px] min-w-[44px];
+}
+
+/* Mobile Font Sizes */
+@media (max-width: 640px) {
+  h1 {
+    @apply text-2xl;
+  }
+  
+  h2 {
+    @apply text-xl;
+  }
+  
+  h3 {
+    @apply text-lg;
+  }
+  
+  .btn-primary, .btn-secondary, .btn-outline, .btn-danger {
+    @apply px-4 py-2 text-sm;
+  }
+  
+  .input-field {
+    @apply px-3 py-2 text-sm;
+  }
+  
+  .badge {
+    @apply px-2 py-0.5 text-xs;
+  }
+}
+
+/* Mobile Safe Area Insets */
+@supports (padding: max(0px)) {
+  .mobile-safe-top {
+    padding-top: max(0px, env(safe-area-inset-top));
+  }
+  
+  .mobile-safe-bottom {
+    padding-bottom: max(0px, env(safe-area-inset-bottom));
+  }
+  
+  .mobile-safe-left {
+    padding-left: max(0px, env(safe-area-inset-left));
+  }
+  
+  .mobile-safe-right {
+    padding-right: max(0px, env(safe-area-inset-right));
+  }
+}
+
+/* Mobile Touch Feedback */
+.touch-feedback {
+  @apply active:scale-95 transition-transform duration-150;
+}
+
+/* Mobile Swipeable Cards */
+.swipeable-card {
+  @apply relative overflow-hidden;
+}
+
+.swipeable-card-actions {
+  @apply absolute right-0 top-0 bottom-0 flex items-center gap-2 px-4 bg-red-500 text-white;
+}
+
+/* Mobile Pull to Refresh */
+.pull-to-refresh {
+  @apply relative overflow-y-auto;
+}
+
+.pull-to-refresh-indicator {
+  @apply absolute top-0 left-0 right-0 flex justify-center py-2 transition-transform duration-200;
+}
+
+.pull-to-refresh-spinner {
+  @apply w-5 h-5 border-2 border-gray-300 border-t-primary-600 rounded-full animate-spin;
+}

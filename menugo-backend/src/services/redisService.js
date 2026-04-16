@@ -1,0 +1,145 @@
+const redis = require('redis');
+const { logger } = require('../utils/logger');
+
+let redisClient = null;
+
+// Initialize Redis client
+const initRedis = async () => {
+  try {
+    redisClient = redis.createClient({
+      url: process.env.REDIS_URL || `redis://${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`,
+      password: process.env.REDIS_PASSWORD,
+      database: parseInt(process.env.REDIS_DB) || 0,
+    });
+
+    redisClient.on('error', (err) => {
+      logger.error('Redis Client Error:', err);
+    });
+
+    redisClient.on('connect', () => {
+      logger.info('Redis connected successfully');
+    });
+
+    await redisClient.connect();
+    return redisClient;
+  } catch (error) {
+    logger.error('Failed to connect to Redis:', error);
+    return null;
+  }
+};
+
+// Get Redis client
+const getRedisClient = () => redisClient;
+
+// Set cache data
+const setCache = async (key, data, ttl = 3600) => {
+  if (!redisClient) return false;
+  try {
+    await redisClient.setEx(key, ttl, JSON.stringify(data));
+    return true;
+  } catch (error) {
+    logger.error('Redis set cache error:', error);
+    return false;
+  }
+};
+
+// Get cached data
+const getCache = async (key) => {
+  if (!redisClient) return null;
+  try {
+    const data = await redisClient.get(key);
+    return data ? JSON.parse(data) : null;
+  } catch (error) {
+    logger.error('Redis get cache error:', error);
+    return null;
+  }
+};
+
+// Delete cache
+const deleteCache = async (key) => {
+  if (!redisClient) return false;
+  try {
+    await redisClient.del(key);
+    return true;
+  } catch (error) {
+    logger.error('Redis delete cache error:', error);
+    return false;
+  }
+};
+
+// Clear cache by pattern
+const clearCachePattern = async (pattern) => {
+  if (!redisClient) return false;
+  try {
+    const keys = await redisClient.keys(pattern);
+    if (keys.length > 0) {
+      await redisClient.del(keys);
+    }
+    return true;
+  } catch (error) {
+    logger.error('Redis clear cache pattern error:', error);
+    return false;
+  }
+};
+
+// Set user session
+const setUserSession = async (userId, sessionData, ttl = 7 * 24 * 60 * 60) => {
+  return setCache(`session:${userId}`, sessionData, ttl);
+};
+
+// Get user session
+const getUserSession = async (userId) => {
+  return getCache(`session:${userId}`);
+};
+
+// Delete user session
+const deleteUserSession = async (userId) => {
+  return deleteCache(`session:${userId}`);
+};
+
+// Set rate limit
+const incrementRateLimit = async (key, windowMs = 60 * 1000) => {
+  if (!redisClient) return { count: 0, ttl: 0 };
+  try {
+    const count = await redisClient.incr(key);
+    if (count === 1) {
+      await redisClient.expire(key, Math.ceil(windowMs / 1000));
+    }
+    const ttl = await redisClient.ttl(key);
+    return { count, ttl };
+  } catch (error) {
+    logger.error('Redis rate limit error:', error);
+    return { count: 0, ttl: 0 };
+  }
+};
+
+// Set verification code
+const setVerificationCode = async (key, code, ttl = 600) => {
+  return setCache(`verify:${key}`, { code, attempts: 0 }, ttl);
+};
+
+// Get verification code
+const getVerificationCode = async (key) => {
+  return getCache(`verify:${key}`);
+};
+
+// Delete verification code
+const deleteVerificationCode = async (key) => {
+  return deleteCache(`verify:${key}`);
+};
+
+module.exports = {
+  initRedis,
+  getRedisClient,
+  setCache,
+  getCache,
+  deleteCache,
+  clearCachePattern,
+  setUserSession,
+  getUserSession,
+  deleteUserSession,
+  incrementRateLimit,
+  setVerificationCode,
+  getVerificationCode,
+  deleteVerificationCode,
+};

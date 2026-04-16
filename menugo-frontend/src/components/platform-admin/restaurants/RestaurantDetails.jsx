@@ -1,0 +1,312 @@
+// src/components/platform-admin/restaurants/RestaurantDetails.jsx
+import React from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { useQuery } from 'react-query';
+import { getRestaurantDetails } from '../../../services/restaurantService';
+import Loading from '../../common/Loading';
+import Skeleton from '../../common/Skeleton';
+import Alert from '../../common/Alert';
+import { 
+  BuildingOfficeIcon, 
+  MapPinIcon, 
+  PhoneIcon, 
+  EnvelopeIcon, 
+  GlobeAltIcon,
+  StarIcon,
+  CurrencyDollarIcon,
+  UsersIcon,
+  ClockIcon,
+  CheckCircleIcon,
+  XCircleIcon
+} from '@heroicons/react/24/outline';
+
+const RestaurantDetails = () => {
+  const { id } = useParams();
+  const navigate = useNavigate();
+
+  const { data, isLoading, error, refetch } = useQuery(
+    ['restaurant', id],
+    () => getRestaurantDetails(id),
+    {
+      retry: 1,
+      retryDelay: 1000,
+      enabled: !!id,
+    }
+  );
+
+  // Extract restaurant data from response (handle multiple possible formats)
+  const restaurant = data?.data?.data || data?.data || data;
+
+  if (isLoading) {
+    return (
+      <div className="p-6">
+        <div className="animate-pulse">
+          <div className="h-64 bg-gray-200 rounded-xl mb-6"></div>
+          <div className="flex gap-6 mb-8">
+            <div className="w-32 h-32 bg-gray-200 rounded-xl"></div>
+            <div className="flex-1">
+              <div className="h-8 bg-gray-200 rounded w-1/3 mb-2"></div>
+              <div className="h-4 bg-gray-200 rounded w-2/3 mb-4"></div>
+              <div className="flex gap-4">
+                <div className="h-4 bg-gray-200 rounded w-20"></div>
+                <div className="h-4 bg-gray-200 rounded w-24"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-6">
+        <Alert
+          type="error"
+          title="Error Loading Restaurant"
+          message={error?.response?.data?.message || error?.message || 'Failed to load restaurant details'}
+          onRetry={() => refetch()}
+          onBack={() => navigate('/platform/restaurants')}
+        />
+      </div>
+    );
+  }
+
+  if (!restaurant) {
+    return (
+      <div className="p-6">
+        <Alert
+          type="warning"
+          title="Restaurant Not Found"
+          message="The restaurant you're looking for doesn't exist or has been removed."
+          onBack={() => navigate('/platform/restaurants')}
+        />
+      </div>
+    );
+  }
+
+  // Safe navigation with fallbacks
+  const coverImage = restaurant?.cover_image_url || restaurant?.coverImageUrl || '/placeholder-food.jpg';
+  const logo = restaurant?.logo_url || restaurant?.logoUrl || '/logo.svg';
+  const name = restaurant?.name || 'Restaurant Name';
+  const description = restaurant?.description || 'No description available';
+  const address = restaurant?.address || '';
+  const city = restaurant?.city || '';
+  const state = restaurant?.state || '';
+  const country = restaurant?.country || '';
+  const phone = restaurant?.phone || '';
+  const email = restaurant?.email || '';
+  const website = restaurant?.website || null;
+  const cuisineType = restaurant?.cuisine_type || 'Various';
+  const averageRating = restaurant?.average_rating || 0;
+  const totalReviews = restaurant?.total_reviews || 0;
+  const totalMenuItems = restaurant?.total_menu_items || restaurant?.menu_items?.length || 0;
+  const totalStaff = restaurant?.staff?.length || 0;
+  const isActive = restaurant?.is_active ?? true;
+  const isVerified = restaurant?.is_verified ?? false;
+
+  // Format full address
+  const fullAddress = [address, city, state, country].filter(Boolean).join(', ');
+
+  // Get owner info
+  const owner = restaurant?.owner || {};
+
+  return (
+    <div className="p-6 max-w-7xl mx-auto">
+      {/* Hero Section with Cover Image */}
+      <div className="relative h-64 md:h-80 rounded-xl overflow-hidden mb-6 bg-gray-200">
+        <img
+          src={coverImage}
+          alt={name}
+          className="w-full h-full object-cover"
+          onError={(e) => {
+            e.target.src = '/placeholder-food.jpg';
+          }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+        
+        {/* Status Badges */}
+        <div className="absolute top-4 right-4 flex gap-2">
+          {isVerified && (
+            <span className="bg-green-500 text-white px-3 py-1 rounded-full text-sm font-semibold flex items-center gap-1">
+              <CheckCircleIcon className="w-4 h-4" />
+              Verified
+            </span>
+          )}
+          {!isActive && (
+            <span className="bg-red-500 text-white px-3 py-1 rounded-full text-sm font-semibold flex items-center gap-1">
+              <XCircleIcon className="w-4 h-4" />
+              Inactive
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Restaurant Info Section */}
+      <div className="flex flex-col md:flex-row gap-6 mb-8">
+        {/* Logo */}
+        <div className="flex-shrink-0">
+          <img
+            src={logo}
+            alt={name}
+            className="w-32 h-32 rounded-xl object-cover border-4 border-white shadow-lg bg-white"
+            onError={(e) => {
+              e.target.src = '/logo.svg';
+            }}
+          />
+        </div>
+
+        {/* Main Info */}
+        <div className="flex-1">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">{name}</h1>
+          <p className="text-gray-600 mb-4">{description}</p>
+          
+          <div className="flex flex-wrap gap-4 mb-4">
+            {/* Rating */}
+            {averageRating > 0 && (
+              <div className="flex items-center gap-1">
+                <StarIcon className="w-5 h-5 text-yellow-400" />
+                <span className="font-semibold">{averageRating.toFixed(1)}</span>
+                <span className="text-gray-500">({totalReviews} reviews)</span>
+              </div>
+            )}
+            
+            {/* Cuisine */}
+            <div className="flex items-center gap-1">
+              <BuildingOfficeIcon className="w-5 h-5 text-gray-400" />
+              <span>{cuisineType}</span>
+            </div>
+            
+            {/* Stats */}
+            {totalMenuItems > 0 && (
+              <div className="flex items-center gap-1">
+                <CurrencyDollarIcon className="w-5 h-5 text-gray-400" />
+                <span>{totalMenuItems} menu items</span>
+              </div>
+            )}
+            
+            {totalStaff > 0 && (
+              <div className="flex items-center gap-1">
+                <UsersIcon className="w-5 h-5 text-gray-400" />
+                <span>{totalStaff} staff members</span>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Details Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        {/* Contact Information */}
+        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+            <BuildingOfficeIcon className="w-5 h-5 text-primary-600" />
+            Contact Information
+          </h2>
+          <div className="space-y-3">
+            {fullAddress && (
+              <div className="flex items-start gap-3">
+                <MapPinIcon className="w-5 h-5 text-gray-400 mt-0.5" />
+                <span className="text-gray-600">{fullAddress}</span>
+              </div>
+            )}
+            {phone && (
+              <div className="flex items-center gap-3">
+                <PhoneIcon className="w-5 h-5 text-gray-400" />
+                <a href={`tel:${phone}`} className="text-gray-600 hover:text-primary-600">
+                  {phone}
+                </a>
+              </div>
+            )}
+            {email && (
+              <div className="flex items-center gap-3">
+                <EnvelopeIcon className="w-5 h-5 text-gray-400" />
+                <a href={`mailto:${email}`} className="text-gray-600 hover:text-primary-600">
+                  {email}
+                </a>
+              </div>
+            )}
+            {website && (
+              <div className="flex items-center gap-3">
+                <GlobeAltIcon className="w-5 h-5 text-gray-400" />
+                <a href={website} target="_blank" rel="noopener noreferrer" className="text-gray-600 hover:text-primary-600">
+                  {website}
+                </a>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Business Hours */}
+        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+            <ClockIcon className="w-5 h-5 text-primary-600" />
+            Business Hours
+          </h2>
+          {restaurant?.operating_hours && Object.keys(restaurant.operating_hours).length > 0 ? (
+            <div className="space-y-2">
+              {Object.entries(restaurant.operating_hours).map(([day, hours]) => (
+                <div key={day} className="flex justify-between py-1 border-b border-gray-100 last:border-0">
+                  <span className="capitalize font-medium text-gray-700">{day}</span>
+                  <span className="text-gray-500">
+                    {hours?.is_closed ? 'Closed' : `${hours?.open || '--'} - ${hours?.close || '--'}`}
+                  </span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-gray-500">Hours not specified</p>
+          )}
+        </div>
+      </div>
+
+      {/* Owner Information */}
+      {owner && Object.keys(owner).length > 0 && (
+        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 mb-8">
+          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+            <UsersIcon className="w-5 h-5 text-primary-600" />
+            Owner Information
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <p className="text-sm text-gray-500">Name</p>
+              <p className="font-medium">{owner.full_name || 'N/A'}</p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-500">Email</p>
+              <p className="font-medium">{owner.email || 'N/A'}</p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-500">Phone</p>
+              <p className="font-medium">{owner.phone || 'N/A'}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Action Buttons */}
+      <div className="flex gap-4 flex-wrap">
+        <button
+          onClick={() => navigate(`/platform/restaurants/${id}/edit`)}
+          className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+        >
+          Edit Restaurant
+        </button>
+        <button
+          onClick={() => navigate(`/platform/restaurants/${id}/menu`)}
+          className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+        >
+          Manage Menu
+        </button>
+        <button
+          onClick={() => navigate(-1)}
+          className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+        >
+          Go Back
+        </button>
+      </div>
+    </div>
+  );
+};
+
+export default RestaurantDetails;

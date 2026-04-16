@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Invoice - MenuGo</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      margin: 0;
+      padding: 0;
+      background-color: #f4f4f4;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: #ffffff;
+    }
+    .header {
+      background-color: #1e40af;
+      padding: 30px;
+      text-align: center;
+      border-radius: 8px 8px 0 0;
+    }
+    .header h1 {
+      color: #ffffff;
+      margin: 0;
+      font-size: 28px;
+    }
+    .content {
+      padding: 30px;
+      background-color: #ffffff;
+    }
+    .footer {
+      background-color: #f4f4f4;
+      padding: 20px;
+      text-align: center;
+      font-size: 12px;
+      color: #666;
+      border-radius: 0 0 8px 8px;
+    }
+    .invoice-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 30px;
+    }
+    .invoice-details {
+      background-color: #f9fafb;
+      padding: 20px;
+      border-radius: 8px;
+      margin: 20px 0;
+    }
+    .invoice-items {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+    }
+    .invoice-items th {
+      text-align: left;
+      padding: 12px;
+      background-color: #f3f4f6;
+      border-bottom: 2px solid #e5e7eb;
+    }
+    .invoice-items td {
+      padding: 12px;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    .total-section {
+      text-align: right;
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 2px solid #e5e7eb;
+    }
+    .payment-info {
+      background-color: #f0f9ff;
+      padding: 15px;
+      border-radius: 8px;
+      margin: 20px 0;
+    }
+    .button {
+      display: inline-block;
+      padding: 12px 24px;
+      background-color: #1e40af;
+      color: #ffffff;
+      text-decoration: none;
+      border-radius: 6px;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #e5e7eb;
+      margin: 20px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>INVOICE</h1>
+    </div>
+    
+    <div class="content">
+      <div class="invoice-header">
+        <div>
+          <h2 style="margin-bottom: 5px;">{{restaurantName}}</h2>
+          <p style="margin: 0;">{{restaurantAddress}}</p>
+          <p style="margin: 0;">{{restaurantPhone}}</p>
+          <p style="margin: 0;">{{restaurantEmail}}</p>
+        </div>
+        <div style="text-align: right;">
+          <p><strong>Invoice Number:</strong> {{invoiceNumber}}</p>
+          <p><strong>Date:</strong> {{invoiceDate}}</p>
+          <p><strong>Due Date:</strong> {{dueDate}}</p>
+        </div>
+      </div>
+      
+      <div class="invoice-details">
+        <h3 style="margin-top: 0;">Bill To:</h3>
+        <p><strong>{{customerName}}</strong></p>
+        {{#if customerEmail}}
+        <p>Email: {{customerEmail}}</p>
+        {{/if}}
+        {{#if customerPhone}}
+        <p>Phone: {{customerPhone}}</p>
+        {{/if}}
+      </div>
+      
+      <h3>Invoice Items</h3>
+      <table class="invoice-items">
+        <thead>
+          <tr>
+            <th>Description</th>
+            <th>Quantity</th>
+            <th>Unit Price</th>
+            <th>Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{#each items}}
+          <tr>
+            <td>{{this.description}}</td>
+            <td>{{this.quantity}}</td>
+            <td>${{this.unitPrice}}</td>
+            <td>${{this.total}}</td>
+          </tr>
+          {{/each}}
+        </tbody>
+      </table>
+      
+      <div class="total-section">
+        <p><strong>Subtotal:</strong> ${{subtotal}}</p>
+        <p><strong>Tax ({{taxRate}}%):</strong> ${{tax}}</p>
+        {{#if discount}}
+        <p><strong>Discount:</strong> -${{discount}}</p>
+        {{/if}}
+        <p style="font-size: 18px;"><strong>Total Amount:</strong> ${{total}}</p>
+      </div>
+      
+      <div class="payment-info">
+        <h3 style="margin-top: 0;">💳 Payment Information</h3>
+        <p><strong>Payment Status:</strong> {{paymentStatus}}</p>
+        <p><strong>Payment Method:</strong> {{paymentMethod}}</p>
+        {{#if paymentDue}}
+        <p><strong>Amount Due:</strong> ${{amountDue}}</p>
+        {{/if}}
+      </div>
+      
+      <hr>
+      
+      <div style="text-align: center;">
+        <a href="{{invoiceUrl}}" class="button">Download PDF Invoice</a>
+      </div>
+      
+      <hr>
+      
+      <h3>❓ Have Questions?</h3>
+      <p>If you have any questions about this invoice, please contact us at <a href="mailto:billing@menugo.com">billing@menugo.com</a></p>
+      
+      <p>Thank you for your business!</p>
+      
+      <p>Best regards,<br>
+      <strong>The MenuGo Team</strong></p>
+    </div>
+    
+    <div class="footer">
+      <p>&copy; 2024 MenuGo. All rights reserved.</p>
+      <p>
+        <a href="{{termsUrl}}">Terms of Service</a> | 
+        <a href="{{privacyUrl}}">Privacy Policy</a>
+      </p>
+    </div>
+  </div>
+</body>
+</html>

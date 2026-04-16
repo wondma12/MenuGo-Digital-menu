@@ -1,0 +1,84 @@
+const { logger } = require('../utils/logger');
+const { ApiError } = require('../utils/apiError');
+const { ValidationError } = require('sequelize');
+
+// Global error handler middleware
+const errorMiddleware = (err, req, res, next) => {
+  let error = { ...err };
+  error.message = err.message;
+
+  // Log error
+  logger.error({
+    message: err.message,
+    stack: err.stack,
+    statusCode: err.statusCode || 500,
+    url: req.originalUrl,
+    method: req.method,
+    ip: req.ip,
+    userId: req.userId,
+  });
+
+  // Sequelize validation error
+  if (err.name === 'SequelizeValidationError') {
+    const message = Object.values(err.errors).map(val => val.message).join(', ');
+    error = new ApiError(400, message);
+  }
+
+  // Sequelize unique constraint error
+  if (err.name === 'SequelizeUniqueConstraintError') {
+    const field = err.errors[0].path;
+    const message = `${field} already exists`;
+    error = new ApiError(400, message);
+  }
+
+  // Sequelize foreign key error
+  if (err.name === 'SequelizeForeignKeyConstraintError') {
+    error = new ApiError(400, 'Related record not found');
+  }
+
+  // JWT errors
+  if (err.name === 'JsonWebTokenError') {
+    error = new ApiError(401, 'Invalid token');
+  }
+
+  if (err.name === 'TokenExpiredError') {
+    error = new ApiError(401, 'Token expired');
+  }
+
+  // Multer errors
+  if (err.name === 'MulterError') {
+    if (err.code === 'FILE_TOO_LARGE') {
+      error = new ApiError(400, 'File too large');
+    } else {
+      error = new ApiError(400, err.message);
+    }
+  }
+
+  // ValidationError from express-validator
+  if (err.name === 'ValidationError') {
+    error = new ApiError(400, err.message);
+  }
+
+  const statusCode = error.statusCode || 500;
+  const message = error.message || 'Internal Server Error';
+
+  res.status(statusCode).json({
+    success: false,
+    message,
+    errors: error.errors || null,
+    stack: process.env.NODE_ENV === 'development' ? err.stack : undefined,
+  });
+};
+
+// Not found middleware
+const notFoundMiddleware = (req, res) => {
+  res.status(404).json({
+    success: false,
+    message: `Route ${req.originalUrl} not found`,
+  });
+};
+
+module.exports = {
+  errorMiddleware,
+  notFoundMiddleware,
+};

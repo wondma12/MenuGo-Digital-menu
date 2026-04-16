@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Daily Sales Report - MenuGo</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      margin: 0;
+      padding: 0;
+      background-color: #f4f4f4;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: #ffffff;
+    }
+    .header {
+      background: linear-gradient(135deg, #3b82f6, #1e40af);
+      padding: 30px;
+      text-align: center;
+      border-radius: 8px 8px 0 0;
+    }
+    .header h1 {
+      color: #ffffff;
+      margin: 0;
+      font-size: 28px;
+    }
+    .content {
+      padding: 30px;
+      background-color: #ffffff;
+    }
+    .footer {
+      background-color: #f4f4f4;
+      padding: 20px;
+      text-align: center;
+      font-size: 12px;
+      color: #666;
+      border-radius: 0 0 8px 8px;
+    }
+    .summary-cards {
+      display: flex;
+      justify-content: space-between;
+      margin: 20px 0;
+    }
+    .card {
+      flex: 1;
+      background-color: #f9fafb;
+      padding: 20px;
+      border-radius: 8px;
+      margin: 0 5px;
+      text-align: center;
+    }
+    .card h3 {
+      margin: 0 0 10px 0;
+      color: #6b7280;
+      font-size: 14px;
+    }
+    .card .value {
+      font-size: 28px;
+      font-weight: bold;
+      color: #1e40af;
+    }
+    .report-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+    }
+    .report-table th {
+      text-align: left;
+      padding: 12px;
+      background-color: #f3f4f6;
+      border-bottom: 2px solid #e5e7eb;
+    }
+    .report-table td {
+      padding: 12px;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    .trend-up {
+      color: #10b981;
+    }
+    .trend-down {
+      color: #ef4444;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #e5e7eb;
+      margin: 20px 0;
+    }
+    .button {
+      display: inline-block;
+      padding: 12px 24px;
+      background-color: #3b82f6;
+      color: #ffffff;
+      text-decoration: none;
+      border-radius: 6px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>📊 Daily Sales Report</h1>
+    </div>
+    
+    <div class="content">
+      <h2>Hello {{restaurantName}} Team,</h2>
+      
+      <p>Here's your daily performance summary for <strong>{{date}}</strong>.</p>
+      
+      <div class="summary-cards">
+        <div class="card">
+          <h3>Total Orders</h3>
+          <div class="value">{{totalOrders}}</div>
+          {{#if orderGrowth}}
+          <div class="{{#if (gt orderGrowth 0)}}trend-up{{else}}trend-down{{/if}}">
+            {{#if (gt orderGrowth 0)}}↑{{else}}↓{{/if}} {{abs orderGrowth}}% vs yesterday
+          </div>
+          {{/if}}
+        </div>
+        <div class="card">
+          <h3>Total Revenue</h3>
+          <div class="value">${{totalRevenue}}</div>
+          {{#if revenueGrowth}}
+          <div class="{{#if (gt revenueGrowth 0)}}trend-up{{else}}trend-down{{/if}}">
+            {{#if (gt revenueGrowth 0)}}↑{{else}}↓{{/if}} {{abs revenueGrowth}}% vs yesterday
+          </div>
+          {{/if}}
+        </div>
+        <div class="card">
+          <h3>Average Order Value</h3>
+          <div class="value">${{avgOrderValue}}</div>
+        </div>
+      </div>
+      
+      <h3>📈 Order Breakdown by Type</h3>
+      <table class="report-table">
+        <thead>
+          <tr>
+            <th>Order Type</th>
+            <th>Count</th>
+            <th>Revenue</th>
+            <th>Percentage</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>🍽️ Dine In</td>
+            <td>{{dineInOrders}}</td>
+            <td>${{dineInRevenue}}</td>
+            <td>{{dineInPercentage}}%</td>
+          </tr>
+          <tr>
+            <td>📦 Takeaway</td>
+            <td>{{takeawayOrders}}</td>
+            <td>${{takeawayRevenue}}</td>
+            <td>{{takeawayPercentage}}%</td>
+          </tr>
+          <tr>
+            <td>🚚 Delivery</td>
+            <td>{{deliveryOrders}}</td>
+            <td>${{deliveryRevenue}}</td>
+            <td>{{deliveryPercentage}}%</td>
+          </tr>
+        </tbody>
+      </table>
+      
+      <h3>⭐ Top Performing Items</h3>
+      <table class="report-table">
+        <thead>
+          <tr>
+            <th>Item Name</th>
+            <th>Quantity Sold</th>
+            <th>Revenue</th>
+           </tr>
+        </thead>
+        <tbody>
+          {{#each topItems}}
+          <tr>
+            <td>{{this.name}}</td>
+            <td>{{this.quantity}}</td>
+            <td>${{this.revenue}}</td>
+          </tr>
+          {{/each}}
+        </tbody>
+      </table>
+      
+      <h3>⏰ Peak Hours</h3>
+      <table class="report-table">
+        <thead>
+          <tr>
+            <th>Hour</th>
+            <th>Orders</th>
+            <th>Revenue</th>
+           </tr>
+        </thead>
+        <tbody>
+          {{#each peakHours}}
+          <tr>
+            <td>{{this.hour}}:00 - {{this.hour}}:59</td>
+            <td>{{this.orders}}</td>
+            <td>${{this.revenue}}</td>
+          </tr>
+          {{/each}}
+        </tbody>
+      </table>
+      
+      <hr>
+      
+      <h3>💡 Insights & Recommendations</h3>
+      <ul>
+        {{#each insights}}
+        <li>{{this}}</li>
+        {{/each}}
+      </ul>
+      
+      <div style="text-align: center; margin-top: 30px;">
+        <a href="{{fullReportUrl}}" class="button">View Full Report</a>
+      </div>
+      
+      <hr>
+      
+      <p>Need to dive deeper into your data? Log in to your MenuGo dashboard for detailed analytics and export options.</p>
+      
+      <p>Best regards,<br>
+      <strong>The MenuGo Analytics Team</strong></p>
+    </div>
+    
+    <div class="footer">
+      <p>&copy; 2024 MenuGo. All rights reserved.</p>
+      <p>
+        <a href="{{unsubscribeUrl}}">Unsubscribe from daily reports</a> | 
+        <a href="{{dashboardUrl}}">Go to Dashboard</a>
+      </p>
+    </div>
+  </div>
+</body>
+</html>

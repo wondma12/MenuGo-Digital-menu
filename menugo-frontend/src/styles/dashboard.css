@@ -1,0 +1,182 @@
+/* Dashboard Layout */
+.dashboard-container {
+  @apply min-h-screen bg-gray-50 dark:bg-gray-900;
+}
+
+.dashboard-sidebar {
+  @apply fixed left-0 top-0 h-screen w-64 bg-white dark:bg-gray-800 shadow-lg z-30 transition-transform duration-300;
+}
+
+.dashboard-sidebar-collapsed {
+  @apply -translate-x-full;
+}
+
+.dashboard-main {
+  @apply transition-all duration-300;
+}
+
+.dashboard-main-expanded {
+  @apply ml-0;
+}
+
+.dashboard-main-collapsed {
+  @apply ml-64;
+}
+
+/* Dashboard Header */
+.dashboard-header {
+  @apply bg-white dark:bg-gray-800 shadow-sm sticky top-0 z-20;
+}
+
+.dashboard-header-content {
+  @apply px-4 py-3 flex items-center justify-between;
+}
+
+/* Dashboard Cards */
+.stat-card {
+  @apply bg-white dark:bg-gray-800 rounded-xl p-5 shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all;
+}
+
+.stat-card-title {
+  @apply text-sm text-gray-500 dark:text-gray-400;
+}
+
+.stat-card-value {
+  @apply text-2xl font-bold text-gray-900 dark:text-white mt-1;
+}
+
+.stat-card-change-positive {
+  @apply text-green-600 dark:text-green-400;
+}
+
+.stat-card-change-negative {
+  @apply text-red-600 dark:text-red-400;
+}
+
+/* Chart Containers */
+.chart-container {
+  @apply bg-white dark:bg-gray-800 rounded-xl p-5 shadow-sm border border-gray-200 dark:border-gray-700;
+}
+
+.chart-title {
+  @apply text-lg font-semibold text-gray-900 dark:text-white mb-4;
+}
+
+/* Table Styles for Dashboard */
+.dashboard-table {
+  @apply min-w-full divide-y divide-gray-200 dark:divide-gray-700;
+}
+
+.dashboard-table-header {
+  @apply bg-gray-50 dark:bg-gray-800;
+}
+
+.dashboard-table-header-cell {
+  @apply px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider;
+}
+
+.dashboard-table-body {
+  @apply bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700;
+}
+
+.dashboard-table-row {
+  @apply hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors;
+}
+
+.dashboard-table-cell {
+  @apply px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100;
+}
+
+/* KPI Widgets */
+.kpi-widget {
+  @apply bg-gradient-to-r from-primary-500 to-primary-700 rounded-xl p-5 text-white;
+}
+
+.kpi-widget-title {
+  @apply text-sm opacity-90;
+}
+
+.kpi-widget-value {
+  @apply text-3xl font-bold mt-2;
+}
+
+.kpi-widget-trend {
+  @apply text-xs mt-2 opacity-80;
+}
+
+/* Activity Feed */
+.activity-feed {
+  @apply space-y-4;
+}
+
+.activity-item {
+  @apply flex items-start gap-3;
+}
+
+.activity-icon {
+  @apply w-8 h-8 rounded-full flex items-center justify-center;
+}
+
+.activity-icon-blue {
+  @apply bg-blue-100 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400;
+}
+
+.activity-icon-green {
+  @apply bg-green-100 text-green-600 dark:bg-green-900/20 dark:text-green-400;
+}
+
+.activity-icon-yellow {
+  @apply bg-yellow-100 text-yellow-600 dark:bg-yellow-900/20 dark:text-yellow-400;
+}
+
+.activity-icon-red {
+  @apply bg-red-100 text-red-600 dark:bg-red-900/20 dark:text-red-400;
+}
+
+.activity-content {
+  @apply flex-1;
+}
+
+.activity-title {
+  @apply text-sm font-medium text-gray-900 dark:text-white;
+}
+
+.activity-time {
+  @apply text-xs text-gray-500 dark:text-gray-400 mt-0.5;
+}
+
+/* Quick Actions */
+.quick-actions {
+  @apply grid grid-cols-2 sm:grid-cols-4 gap-3;
+}
+
+.quick-action-btn {
+  @apply flex flex-col items-center justify-center p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all;
+}
+
+.quick-action-icon {
+  @apply w-6 h-6 text-primary-600 dark:text-primary-400 mb-1;
+}
+
+.quick-action-label {
+  @apply text-xs text-gray-600 dark:text-gray-400;
+}
+
+/* Responsive Dashboard */
+@media (max-width: 768px) {
+  .dashboard-sidebar {
+    @apply w-72;
+  }
+  
+  .stat-card-value {
+    @apply text-xl;
+  }
+  
+  .dashboard-table-cell {
+    @apply px-4 py-3;
+  }
+  
+  .dashboard-table-header-cell {
+    @apply px-4 py-2;
+  }
+}

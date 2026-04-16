@@ -1,0 +1,60 @@
+module.exports = {
+  env: {
+    node: true,
+    commonjs: true,
+    es2021: true,
+    jest: true,
+  },
+  extends: ['eslint:recommended', 'prettier'],
+  parserOptions: {
+    ecmaVersion: 'latest',
+  },
+  rules: {
+    // Possible errors
+    'no-console': process.env.NODE_ENV === 'production' ? 'error' : 'warn',
+    'no-debugger': process.env.NODE_ENV === 'production' ? 'error' : 'warn',
+    'no-duplicate-imports': 'error',
+    'no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
+    'no-var': 'error',
+    'prefer-const': 'error',
+    'prefer-arrow-callback': 'error',
+    'prefer-template': 'error',
+    'eqeqeq': ['error', 'always'],
+    'curly': ['error', 'all'],
+    'brace-style': ['error', '1tbs'],
+    'indent': ['error', 2, { SwitchCase: 1 }],
+    'quotes': ['error', 'single', { avoidEscape: true }],
+    'semi': ['error', 'always'],
+    'comma-dangle': ['error', 'always-multiline'],
+    'object-curly-spacing': ['error', 'always'],
+    'array-bracket-spacing': ['error', 'never'],
+    'space-before-function-paren': ['error', {
+      anonymous: 'always',
+      named: 'never',
+      asyncArrow: 'always',
+    }],
+    'keyword-spacing': ['error', { before: true, after: true }],
+    'space-infix-ops': 'error',
+    'no-multiple-empty-lines': ['error', { max: 1, maxEOF: 0 }],
+    'eol-last': ['error', 'always'],
+  },
+  overrides: [
+    {
+      files: ['scripts/**/*.js', 'tests/**/*.js'],
+      rules: {
+        'no-console': 'off',
+      },
+    },
+  ],
+  globals: {
+    process: 'readonly',
+    __dirname: 'readonly',
+    module: 'readonly',
+    require: 'readonly',
+    console: 'readonly',
+    setTimeout: 'readonly',
+    clearTimeout: 'readonly',
+    setInterval: 'readonly',
+    clearInterval: 'readonly',
+  },
+};

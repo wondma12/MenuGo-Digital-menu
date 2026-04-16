@@ -1,0 +1,129 @@
+import React, { useState, useEffect } from 'react'
+import { useLocation, useNavigate, Link } from 'react-router-dom'
+import Button from '../common/Button'
+import Alert from '../common/Alert'
+import { resendVerificationEmail, verifyEmail } from '../../services/authService'
+
+const VerifyEmail = () => {
+  const location = useLocation()
+  const navigate = useNavigate()
+  const email = location.state?.email || ''
+  const [isLoading, setIsLoading] = useState(false)
+  const [success, setSuccess] = useState(false)
+  const [error, setError] = useState(null)
+  const [resendSuccess, setResendSuccess] = useState(false)
+
+  // Check if token exists in URL for verification
+  useEffect(() => {
+    const token = new URLSearchParams(location.search).get('token')
+    if (token) {
+      handleEmailVerification(token)
+    }
+  }, [location])
+
+  const handleEmailVerification = async (token) => {
+    setIsLoading(true)
+    try {
+      await verifyEmail(token)
+      setSuccess(true)
+      setTimeout(() => {
+        navigate('/login')
+      }, 3000)
+    } catch (err) {
+      setError(err.response?.data?.message || 'Verification failed')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleResendEmail = async () => {
+    if (!email) {
+      setError('No email address provided')
+      return
+    }
+    setIsLoading(true)
+    try {
+      await resendVerificationEmail(email)
+      setResendSuccess(true)
+      setTimeout(() => setResendSuccess(false), 5000)
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to resend verification email')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  if (success) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+        <div className="sm:mx-auto sm:w-full sm:max-w-md">
+          <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+            <div className="text-center">
+              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100">
+                <svg className="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <h3 className="mt-3 text-lg font-medium text-gray-900">Email verified!</h3>
+              <p className="mt-2 text-sm text-gray-500">
+                Your email has been verified. Redirecting to login...
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+      <div className="sm:mx-auto sm:w-full sm:max-w-md">
+        <div className="text-center">
+          <img src="/logo.svg" alt="MenuGo" className="mx-auto h-12 w-auto" />
+          <h2 className="mt-6 text-3xl font-extrabold text-gray-900">Verify your email</h2>
+          <p className="mt-2 text-sm text-gray-600">
+            We've sent a verification link to your email address.
+          </p>
+        </div>
+
+        <div className="mt-8 bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+          {error && <Alert type="error" message={error} className="mb-4" />}
+          {resendSuccess && (
+            <Alert type="success" message="Verification email sent!" className="mb-4" />
+          )}
+
+          <div className="text-center space-y-4">
+            <p className="text-sm text-gray-500">
+              Please check your inbox and click the verification link.
+            </p>
+            {email && (
+              <p className="text-sm text-gray-500">
+                We sent it to: <strong>{email}</strong>
+              </p>
+            )}
+            
+            <Button
+              onClick={handleResendEmail}
+              isLoading={isLoading}
+              variant="outline"
+              fullWidth
+            >
+              Resend verification email
+            </Button>
+
+            <div>
+              <Link
+                to="/login"
+                className="text-sm text-primary-600 hover:text-primary-500"
+              >
+                Back to sign in
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export default VerifyEmail

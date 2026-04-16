@@ -1,0 +1,65 @@
+// src/routes/platformRoutes.js
+const express = require('express');
+const router = express.Router();
+const { protect } = require('../middleware/authMiddleware');
+const { restrictTo } = require('../middleware/roleMiddleware');
+const {
+  getPlatformAnalytics,
+  getPlatformUserAnalytics,
+  getPlatformDashboard,
+  getSupportTickets,
+  createSupportTicket,
+  updateSupportTicket,
+  addTicketMessage,
+  getSystemLogs,
+  getSystemHealth,
+} = require('../controllers/platformController');
+
+const {
+  getSubscriptionPlans,
+  getAllSubscriptions,
+  getSubscriptionById,
+  getRestaurantSubscription,
+  createSubscriptionPlan,
+  updateSubscriptionPlan,
+  deleteSubscriptionPlan,
+  createSubscription,
+  updateSubscription,
+  cancelSubscription,
+  getSubscriptionRevenue,
+} = require('../controllers/subscriptionController');
+
+// All platform routes require authentication and platform admin role
+router.use(protect);
+router.use(restrictTo('platform_admin'));
+
+// Dashboard routes
+router.get('/dashboard', getPlatformDashboard);
+router.get('/analytics', getPlatformAnalytics);
+router.get('/analytics/users', getPlatformUserAnalytics);
+
+// Support tickets routes
+router.get('/tickets', getSupportTickets);
+router.post('/tickets', createSupportTicket);
+router.put('/tickets/:id', updateSupportTicket);
+router.post('/tickets/:id/messages', addTicketMessage);
+
+// System routes
+router.get('/logs', getSystemLogs);
+router.get('/health', getSystemHealth);
+
+// IMPORTANT: Subscription routes - MAKE SURE THESE EXIST
+router.get('/subscriptions/plans', getSubscriptionPlans);
+router.get('/subscriptions', getAllSubscriptions);
+router.get('/subscriptions/:id', getSubscriptionById);
+router.get('/subscriptions/restaurant/:restaurantId', getRestaurantSubscription);
+router.post('/subscriptions/plans', createSubscriptionPlan);
+router.post('/subscriptions/plans/create', createSubscriptionPlan);
+router.put('/subscriptions/plans/:id', updateSubscriptionPlan);
+router.delete('/subscriptions/plans/:id', deleteSubscriptionPlan);
+router.post('/subscriptions', createSubscription);
+router.put('/subscriptions/:id', updateSubscription);
+router.delete('/subscriptions/:id/cancel', cancelSubscription);
+router.get('/subscriptions/revenue/report', getSubscriptionRevenue);
+
+module.exports = router;
