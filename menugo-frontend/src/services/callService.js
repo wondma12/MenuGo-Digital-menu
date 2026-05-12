@@ -14,3 +14,9 @@ export const resolveCall = async (callId) => {
   const response = await api.post(`/waiters/calls/${callId}/resolve`)
   return response.data
 }
+
+// Customer-side: create a call request (public)
+export const createCustomerCall = async (restaurantId, payload) => {
+  const response = await api.post(`/restaurants/${restaurantId}/calls`, payload)
+  return response?.data?.data || response?.data || {}
+}

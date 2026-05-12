@@ -23,6 +23,10 @@ const DashboardMetrics = ({ title, value, change, icon: Icon, color }) => {
 
   const borderClass = borderColors[color] || 'border-l-blue-500'
 
+  // Resolve color classes with fallbacks to avoid runtime errors when `color` is undefined
+  const bgClass = colors[color] || 'bg-blue-500'
+  const textColorClass = bgClass.replace('bg-', 'text-') || 'text-blue-500'
+
   return (
     <div className={`bg-white rounded-xl shadow-sm p-5 border border-gray-100 hover:shadow-md transition-all border-l-4 ${borderClass}`}> 
       <div className="flex items-center justify-between">
@@ -42,8 +46,8 @@ const DashboardMetrics = ({ title, value, change, icon: Icon, color }) => {
             </div>
           )}
         </div>
-        <div className={`p-3 rounded-full ${colors[color]} bg-opacity-10`}>
-          <Icon className={`w-6 h-6 ${colors[color].replace('bg-', 'text-')}`} />
+        <div className={`p-3 rounded-full ${bgClass} bg-opacity-10`}>
+          <Icon className={`w-6 h-6 ${textColorClass}`} />
         </div>
       </div>
     </div>

@@ -11,6 +11,7 @@ import UserMenu from './UserMenu'
 import WaiterSidebar from './WaiterSidebar'
 import Header from './Header'
 import Footer from './Footer'
+import { BarChart2, ShoppingCart, Table, Calendar, Phone, Bell, User } from 'lucide-react'
 const WaiterLayout = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const { user, logout } = useAuthStore()
@@ -30,13 +31,13 @@ const WaiterLayout = () => {
   }
 
   const menuItems = [
-    { path: '/waiter/dashboard', label: 'Dashboard', icon: '📊' },
-    { path: '/waiter/orders', label: 'Orders', icon: '🛒' },
-    { path: '/waiter/tables', label: 'Tables', icon: '🪑' },
-    { path: '/waiter/reservations', label: 'Reservations', icon: '📅' },
-    { path: '/waiter/calls', label: 'Calls', icon: '📞' },
-    { path: '/waiter/notifications', label: 'Notifications', icon: '🔔' },
-    { path: '/waiter/profile', label: 'Profile', icon: '👤' },
+    { path: '/waiter/dashboard', label: 'Dashboard', icon: <BarChart2 className="w-5 h-5" /> },
+    { path: '/waiter/orders', label: 'Orders', icon: <ShoppingCart className="w-5 h-5" /> },
+    { path: '/waiter/tables', label: 'Tables', icon: <Table className="w-5 h-5" /> },
+    // { path: '/waiter/reservations', label: 'Reservations', icon: <Calendar className="w-5 h-5" /> },
+    { path: '/waiter/calls', label: 'Calls', icon: <Phone className="w-5 h-5" /> },
+    // { path: '/waiter/notifications', label: 'Notifications', icon: <Bell className="w-5 h-5" /> },
+    { path: '/waiter/profile', label: 'Profile', icon: <User className="w-5 h-5" /> },
   ]
 
   return (
@@ -54,28 +55,30 @@ const WaiterLayout = () => {
       />
 
       {/* Main Content */}
-        <main className="pt-16 pb-20 lg:ml-64">
-        <div className="container mx-auto px-6">
-          <div className="lg:flex lg:items-start lg:space-x-6">
+      <main className="pt-16 pb-24">
+        <div className="transition-all duration-300 lg:ml-64">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="lg:flex lg:items-start lg:gap-6">
               <aside className="hidden lg:block w-64 fixed inset-y-0 left-0 bg-white border-r border-gray-200">
                 <WaiterSidebar menuItems={menuItems} onLogout={handleLogout} user={user} />
               </aside>
 
-            <div className="flex-1 mt-6 lg:mt-0">
-              <motion.div
-                className="p-6 sm:p-8 bg-white rounded-lg shadow-sm space-y-6"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3 }}
-              >
-                <Outlet />
-              </motion.div>
+              <div className="flex-1 mt-0 lg:mt-0">
+                <motion.div
+                  className="mt-4 p-4 sm:p-6 bg-white rounded-lg shadow-sm space-y-6"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <Outlet />
+                </motion.div>
+              </div>
             </div>
           </div>
         </div>
       </main>
 
-      <Footer />
+      <Footer centered />
 
       {/* Bottom Navigation (Mobile) */}
       <BottomNav

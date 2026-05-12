@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { useQuery, useMutation } from 'react-query'
 import { motion } from 'framer-motion'
 import { CalendarIcon, ClockIcon, UserIcon } from '@heroicons/react/24/outline'
+import { Sun, Moon, Star } from 'lucide-react'
 import Button from '../../../common/Button'
 import Loading from '../../../common/Loading'
 import { getStaffSchedule, updateStaffSchedule } from '../../../services/staffService'
@@ -35,10 +36,10 @@ const StaffSchedule = ({ staff }) => {
   }
 
   const shifts = [
-    { name: 'Morning', time: '9:00 AM - 1:00 PM', icon: '🌅' },
-    { name: 'Afternoon', time: '1:00 PM - 5:00 PM', icon: '☀️' },
-    { name: 'Evening', time: '5:00 PM - 9:00 PM', icon: '🌙' },
-    { name: 'Night', time: '9:00 PM - 1:00 AM', icon: '⭐' },
+    { name: 'Morning', time: '9:00 AM - 1:00 PM', icon: <Sun className="w-4 h-4" /> },
+    { name: 'Afternoon', time: '1:00 PM - 5:00 PM', icon: <Sun className="w-4 h-4" /> },
+    { name: 'Evening', time: '5:00 PM - 9:00 PM', icon: <Moon className="w-4 h-4" /> },
+    { name: 'Night', time: '9:00 PM - 1:00 AM', icon: <Star className="w-4 h-4" /> },
   ]
 
   const resolveStaffPk = (member) => {

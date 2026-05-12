@@ -8,11 +8,11 @@ import toast from 'react-hot-toast'
 
 const TaxSettings = ({ settings }) => {
   const [formData, setFormData] = useState({
-    taxRate: settings?.taxRate || 10,
-    serviceCharge: settings?.serviceCharge || 0,
-    serviceChargeType: settings?.serviceChargeType || 'percentage',
-    applyTaxToDelivery: settings?.applyTaxToDelivery || true,
-    taxInclusive: settings?.taxInclusive || false,
+    taxRate: settings?.taxRate ?? 10,
+    serviceCharge: settings?.serviceCharge ?? 0,
+    serviceChargeType: settings?.serviceChargeType ?? 'percentage',
+    applyTaxToDelivery: settings?.applyTaxToDelivery ?? true,
+    taxInclusive: settings?.taxInclusive ?? false,
   })
 
   const queryClient = useQueryClient()
@@ -36,8 +36,11 @@ const TaxSettings = ({ settings }) => {
             label="Tax Rate (%)"
             type="number"
             step="0.1"
-            value={formData.taxRate}
-            onChange={(e) => setFormData({ ...formData, taxRate: parseFloat(e.target.value) })}
+            value={Number.isNaN(formData.taxRate) ? '' : formData.taxRate}
+            onChange={(e) => {
+              const v = e.target.value
+              setFormData({ ...formData, taxRate: v === '' ? '' : parseFloat(v) })
+            }}
           />
           <div className="flex items-end">
             <Switch
@@ -53,8 +56,11 @@ const TaxSettings = ({ settings }) => {
             label="Service Charge"
             type="number"
             step="0.1"
-            value={formData.serviceCharge}
-            onChange={(e) => setFormData({ ...formData, serviceCharge: parseFloat(e.target.value) })}
+            value={Number.isNaN(formData.serviceCharge) ? '' : formData.serviceCharge}
+            onChange={(e) => {
+              const v = e.target.value
+              setFormData({ ...formData, serviceCharge: v === '' ? '' : parseFloat(v) })
+            }}
           />
           <select
             value={formData.serviceChargeType}

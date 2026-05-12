@@ -1,14 +1,26 @@
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import Button from '../common/Button'
-import { socialLogin } from '../../services/authService'
 import { useAuthStore } from '../../store/authStore'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
 
 const SocialLogin = () => {
   const navigate = useNavigate()
-  const { login: setAuth } = useAuthStore()
+  // We'll update the store directly for social callback handling
+  const setAuthDirect = (user, token) => {
+    try {
+      useAuthStore.setState({
+        user,
+        token,
+        isAuthenticated: true,
+      })
+      localStorage.setItem('token', token)
+      localStorage.setItem('user', JSON.stringify(user))
+    } catch (e) {
+      console.error('Failed to set auth state directly:', e)
+    }
+  }
 
   const handleSocialLogin = async (provider) => {
     try {
@@ -27,21 +39,28 @@ const SocialLogin = () => {
       const user = urlParams.get('user')
       
       if (token && user) {
-        setAuth(JSON.parse(decodeURIComponent(user)), token)
-        const role = JSON.parse(decodeURIComponent(user)).role
+        const parsed = JSON.parse(decodeURIComponent(user))
+        setAuthDirect(parsed, token)
+        const role = parsed.role
         if (role === 'platform_admin') {
           navigate('/platform/dashboard')
         } else if (role === 'restaurant_admin') {
           navigate('/admin/dashboard')
         } else if (role === 'waiter') {
           navigate('/waiter/dashboard')
-        } else {
+
+        }
+        else if (role === 'chef') {
+          navigate('/chef/kitchen')
+        }
+        
+        else {
           navigate('/')
         }
       }
     }
     handleCallback()
-  }, [navigate, setAuth])
+  }, [navigate])
 
   return (
     <div className="space-y-3">
@@ -72,29 +91,9 @@ const SocialLogin = () => {
         Continue with Google
       </Button>
 
-      <Button
-        onClick={() => handleSocialLogin('facebook')}
-        variant="outline"
-        fullWidth
-        className="flex items-center justify-center gap-2"
-      >
-        <svg className="w-5 h-5" fill="#1877F2" viewBox="0 0 24 24">
-          <path d="M24 12.07C24 5.41 18.63 0 12 0S0 5.41 0 12.07C0 18.1 4.39 23.1 10.13 24v-8.44H7.08v-3.49h3.05V9.41c0-3.02 1.8-4.7 4.54-4.7 1.31 0 2.68.24 2.68.24v2.96h-1.51c-1.49 0-1.96.93-1.96 1.89v2.27h3.32l-.53 3.49h-2.79V24C19.61 23.1 24 18.1 24 12.07z"/>
-        </svg>
-        Continue with Facebook
-      </Button>
+      {/* Facebook login removed */}
 
-      <Button
-        onClick={() => handleSocialLogin('apple')}
-        variant="outline"
-        fullWidth
-        className="flex items-center justify-center gap-2"
-      >
-        <svg className="w-5 h-5" fill="#000" viewBox="0 0 24 24">
-          <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8.95-.26 2.02-.84 3.32-.78 1.37.06 2.78.66 3.65 1.78-1.44.9-2.14 2.32-1.89 3.96.26 1.55 1.23 2.93 2.84 3.54-1.07 2.02-2.42 3.09-4 3.67zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/>
-        </svg>
-        Continue with Apple
-      </Button>
+      {/* Apple login removed */}
     </div>
   )
 }

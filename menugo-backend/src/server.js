@@ -1,3 +1,5 @@
+// Load environment early
+require('dotenv').config();
 const http = require('http');
 const { Server } = require('socket.io');
 const app = require('./app');
@@ -7,8 +9,13 @@ const { initSocket } = require('./sockets');
 const { logger } = require('./utils/logger');
 
 let currentPort = parseInt(process.env.PORT, 10) || 5000;
-const shouldAlterSchema =
-  process.env.DB_SYNC_ALTER === 'true' || process.env.SEQUELIZE_SYNC_ALTER === 'true';
+// Allow automatic schema alteration during local development for convenience.
+// Keep destructive changes opt-in for non-development environments.
+// Only enable automatic schema alteration when explicitly requested via env vars.
+// This avoids unexpected ALTER operations (which can fail) during normal development boots.
+let shouldAlterSchema =
+  process.env.DB_SYNC_ALTER === 'true' ||
+  process.env.SEQUELIZE_SYNC_ALTER === 'true';
 const server = http.createServer(app);
 let isShuttingDown = false;
 

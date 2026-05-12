@@ -68,12 +68,12 @@ const TicketDetails = () => {
             <select
               value={ticket.status}
               onChange={(e) => updateStatusMutation.mutate({ ticketId: id, status: e.target.value })}
-              className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm"
+              className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm text-black"
             >
-              <option value="open">Open</option>
-              <option value="in_progress">In Progress</option>
-              <option value="resolved">Resolved</option>
-              <option value="closed">Closed</option>
+              <option value="open" className="text-black">Open</option>
+              <option value="in_progress" className="text-black">In Progress</option>
+              <option value="resolved" className="text-black">Resolved</option>
+              <option value="closed" className="text-black">Closed</option>
             </select>
           </div>
         </div>

@@ -209,6 +209,35 @@ const getCouponAnalytics = catchAsync(async (req, res) => {
   }, 'Coupon analytics retrieved'));
 });
 
+// Public: Get active coupons for restaurant (for menu/promotions display)
+const getPublicCoupons = catchAsync(async (req, res) => {
+  const { restaurantId } = req.params;
+
+  const coupons = await Coupon.findAll({
+    where: {
+      restaurant_id: restaurantId,
+      is_active: true,
+      start_date: { [Op.lte]: new Date() },
+      end_date: { [Op.gte]: new Date() },
+    },
+    order: [['created_at', 'DESC']],
+  });
+
+  // Return minimal public-facing fields
+  const publicCoupons = coupons.map(c => ({
+    id: c.id,
+    code: c.code,
+    description: c.description,
+    discount_type: c.discount_type,
+    discount_value: c.discount_value,
+    minimum_order_amount: c.minimum_order_amount,
+    start_date: c.start_date,
+    end_date: c.end_date,
+  }));
+
+  res.json(ApiResponse.success({ coupons: publicCoupons }, 'Active public coupons retrieved'));
+});
+
 module.exports = {
   getCoupons,
   getCouponById,
@@ -218,4 +247,5 @@ module.exports = {
   validateCoupon,
   applyCoupon,
   getCouponAnalytics,
+  getPublicCoupons,
 };

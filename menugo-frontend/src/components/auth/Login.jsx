@@ -22,12 +22,7 @@ const schema = yup.object({
 })
 
 // Test credentials for easy testing
-const testCredentials = [
-  { role: 'Customer', email: 'customer@example.com', password: 'Customer@123' },
-  { role: 'Restaurant Owner', email: 'restaurant.owner@menugo.com', password: 'Owner@123' },
-  { role: 'Waiter', email: 'waiter1@menugo.com', password: 'Waiter@123' },
-  { role: 'Admin', email: 'admin@menugo.com', password: 'Admin@123' },
-]
+// Test credentials removed for production
 
 const Login = () => {
   const navigate = useNavigate()
@@ -39,7 +34,6 @@ const Login = () => {
   const {
     register,
     handleSubmit,
-    setValue,
     formState: { errors },
   } = useForm({
     resolver: yupResolver(schema),
@@ -56,11 +50,6 @@ const Login = () => {
       clearError()
     }
   }, [clearError])
-
-  const fillTestCredentials = (email, password) => {
-    setValue('email', email)
-    setValue('password', password)
-  }
 
   const onSubmit = async (data) => {
     // Prevent multiple submissions
@@ -83,19 +72,24 @@ const Login = () => {
       if (result?.success) {
         setShowSuccess(true)
         
-        // Redirect based on role after a short delay
+        // Redirect based on role after a short delay. Prefer staff role (e.g. chef)
         setTimeout(() => {
-          const userRole = result.user?.role || useAuthStore.getState().user?.role
-          console.log('User role:', userRole)
-          
-          // Role-based routing
+          const persistedUser = useAuthStore.getState().user
+          const srcUser = result.user || persistedUser
+          // Prefer `staff.role` when available (some accounts have top-level role set to 'waiter' but staff.role='chef')
+          const userRole = srcUser?.staff?.role || srcUser?.role || null
+          console.log('User role (resolved):', userRole, 'source user:', srcUser)
+
+          // Role-based routing (include chef)
           const roleRoutes = {
             platform_admin: '/platform/dashboard',
             restaurant_admin: '/admin/dashboard',
+            chef: '/chef/kitchen',
             waiter: '/waiter/dashboard',
-            customer: '/customer/menu',
+            // Send customers to the scanner so they can open a restaurant menu
+            customer: '/scan',
           }
-          
+
           const redirectPath = roleRoutes[userRole] || '/'
           navigate(redirectPath)
         }, 1000)
@@ -196,31 +190,7 @@ const Login = () => {
             </Button>
           </form>
 
-          {/* Test Credentials Section - Helpful for development */}
-          <div className="mt-6">
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300" />
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500">Quick Test Login</span>
-              </div>
-            </div>
-
-            <div className="mt-4 grid grid-cols-2 gap-2">
-              {testCredentials.map((cred) => (
-                <button
-                  key={cred.role}
-                  type="button"
-                  onClick={() => fillTestCredentials(cred.email, cred.password)}
-                  className="text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 px-3 rounded transition-colors"
-                  disabled={isLoading}
-                >
-                  {cred.role}
-                </button>
-              ))}
-            </div>
-          </div>
+          {/* Quick Test Login removed */}
 
           {/* Social Login - Optional */}
           <div className="mt-6">

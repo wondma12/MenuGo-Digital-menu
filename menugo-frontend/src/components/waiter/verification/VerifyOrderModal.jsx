@@ -6,15 +6,29 @@ import Input from '../../common/Input'
 import QRVerification from './QRVerification'
 import ManualVerification from './ManualVerification'
 import { verifyOrder } from '../../../services/orderService'
+import { useWebSocket } from '../../../hooks/useWebSocket'
 import toast from 'react-hot-toast'
 
 const VerifyOrderModal = ({ isOpen, onClose, orderId, onSuccess }) => {
   const [method, setMethod] = useState('manual')
   const [verificationCode, setVerificationCode] = useState('')
 
+  const { sendMessage } = useWebSocket()
+
   const verifyMutation = useMutation(({ id, method, code }) => verifyOrder(id, method, code), {
     onSuccess: () => {
       toast.success('Order verified successfully')
+      // Notify kitchen immediately via socket helper (server will emit to restaurant/kitchen rooms)
+      try {
+        const user = JSON.parse(localStorage.getItem('user') || '{}') || {}
+        const restaurantId = user.restaurantId || user.restaurant_id || (user.restaurant && user.restaurant.id) || null
+        if (sendMessage && restaurantId) {
+          sendMessage('emit-new-order', { restaurantId, orderData: { order_id: orderId } })
+        }
+      } catch (e) {
+        // ignore socket errors
+      }
+
       onSuccess()
     },
     onError: () => toast.error('Verification failed')

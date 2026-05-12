@@ -1,16 +1,30 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { CalendarIcon } from '@heroicons/react/24/outline'
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, isToday } from 'date-fns'
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, isToday, isValid } from 'date-fns'
 
 const DatePicker = ({ selected, onChange, label, error, className = '', placeholder = 'Select date' }) => {
   const [isOpen, setIsOpen] = useState(false)
-  const [currentMonth, setCurrentMonth] = useState(selected || new Date())
+  const parseDate = (d) => d ? new Date(d) : null
+  const initMonth = (() => {
+    const cand = parseDate(selected) || new Date()
+    return isValid(cand) ? cand : new Date()
+  })()
+
+  const [currentMonth, setCurrentMonth] = useState(initMonth)
   const pickerRef = useRef(null)
 
   const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-  const monthStart = startOfMonth(currentMonth)
-  const monthEnd = endOfMonth(currentMonth)
-  const daysInMonth = eachDayOfInterval({ start: monthStart, end: monthEnd })
+  const safeCurrent = isValid(currentMonth) ? currentMonth : new Date()
+  const monthStart = startOfMonth(safeCurrent)
+  const monthEnd = endOfMonth(safeCurrent)
+  let daysInMonth = []
+  if (isValid(monthStart) && isValid(monthEnd) && monthStart <= monthEnd) {
+    try {
+      daysInMonth = eachDayOfInterval({ start: monthStart, end: monthEnd })
+    } catch (e) {
+      daysInMonth = []
+    }
+  }
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -39,7 +53,7 @@ const DatePicker = ({ selected, onChange, label, error, className = '', placehol
       >
         <input
           type="text"
-          value={selected ? format(selected, 'MMM dd, yyyy') : ''}
+          value={selected && isValid(parseDate(selected)) ? format(parseDate(selected), 'MMM dd, yyyy') : ''}
           placeholder={placeholder}
           readOnly
           className="w-full px-4 py-2.5 border border-gray-300 rounded-lg cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary-500"

@@ -43,8 +43,8 @@ const TicketList = () => {
 
       {/* Search and Filters */}
       <div className="flex flex-col sm:flex-row gap-4 mb-6">
-        <div className="flex-1 relative">
-          <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+          <div className="flex-1 relative">
+          <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-black" />
           <input
             type="text"
             placeholder="Search tickets..."
@@ -57,7 +57,7 @@ const TicketList = () => {
           onClick={() => setShowFilters(!showFilters)}
           className="px-4 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-2"
         >
-          <FunnelIcon className="w-5 h-5" />
+          <FunnelIcon className="w-5 h-5 text-black" />
           Filters
         </button>
       </div>
@@ -95,11 +95,35 @@ const TicketList = () => {
   )
 }
 
-const StatCard = ({ title, value, color }) => (
-  <div className="bg-white rounded-lg p-4 border border-gray-200 text-center">
-    <p className="text-sm text-gray-500">{title}</p>
-    <p className={`text-2xl font-bold text-${color}-600`}>{value}</p>
-  </div>
-)
+const StatCard = ({ title, value, color }) => {
+  let borderClass = 'border-l-blue-500'
+  let valueClass = 'text-blue-600'
+  if (color === 'yellow') {
+    borderClass = 'border-l-yellow-500'
+    valueClass = 'text-yellow-600'
+  } else if (color === 'blue') {
+    borderClass = 'border-l-blue-500'
+    valueClass = 'text-blue-600'
+  } else if (color === 'green') {
+    borderClass = 'border-l-green-500'
+    valueClass = 'text-green-600'
+  } else if (color === 'purple') {
+    borderClass = 'border-l-purple-500'
+    valueClass = 'text-purple-600'
+  } else if (color === 'red') {
+    borderClass = 'border-l-red-500'
+    valueClass = 'text-red-600'
+  } else if (color === 'orange') {
+    borderClass = 'border-l-orange-500'
+    valueClass = 'text-orange-600'
+  }
+
+  return (
+    <div className={`bg-white rounded-lg p-4 border border-gray-200 text-center h-full border-l-4 ${borderClass}`}>
+      <p className="text-sm text-gray-500">{title}</p>
+      <p className={`text-2xl font-bold ${valueClass}`}>{value}</p>
+    </div>
+  )
+}
 
 export default TicketList

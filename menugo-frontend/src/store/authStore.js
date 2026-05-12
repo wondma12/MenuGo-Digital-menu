@@ -80,6 +80,14 @@ const useAuthStore = create(
               userData.restaurant_id = userData.restaurant_id || restaurantPayload.id || restaurantPayload._id
               userData.restaurant = restaurantPayload
             }
+
+            // Attach staff payload (chef/waiter) if provided by the API
+            const staffPayload = response?.data?.staff || response?.staff || response?.data?.data?.staff
+            if (staffPayload && userData) {
+              userData.staff = staffPayload
+              // prefer restaurant id from staff if not already set
+              userData.restaurant_id = userData.restaurant_id || staffPayload.restaurant_id || (userData.restaurant && userData.restaurant.id)
+            }
             
             // Store in localStorage
             localStorage.setItem('token', tokenData)
@@ -176,6 +184,12 @@ const useAuthStore = create(
           if (restaurantPayload && userData) {
             userData.restaurant_id = userData.restaurant_id || restaurantPayload.id || restaurantPayload._id
             userData.restaurant = restaurantPayload
+          }
+          // Attach staff payload (chef/waiter) if provided by the API
+          const staffPayload = response?.data?.staff || response?.staff || response?.data?.data?.staff
+          if (staffPayload && userData) {
+            userData.staff = staffPayload
+            userData.restaurant_id = userData.restaurant_id || staffPayload.restaurant_id || (userData.restaurant && userData.restaurant.id)
           }
           
           if (userData && userData.id) {
@@ -326,6 +340,13 @@ const useAuthStore = create(
           }
           
           if (userData && tokenData) {
+            // Attach staff payload if provided
+            const staffPayload = response?.data?.staff || response?.staff || response?.data?.data?.staff
+            if (staffPayload && userData) {
+              userData.staff = staffPayload
+              userData.restaurant_id = userData.restaurant_id || staffPayload.restaurant_id || (userData.restaurant && userData.restaurant.id)
+            }
+
             localStorage.setItem('token', tokenData)
             localStorage.setItem('user', JSON.stringify(userData))
             

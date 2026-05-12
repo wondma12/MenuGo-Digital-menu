@@ -204,6 +204,7 @@ const createRestaurant = catchAsync(async (req, res) => {
     website, 
     cuisine_type, 
     operating_hours,
+    whatsapp,
     owner_email, // Email of the restaurant owner
     owner_name,  // Name of the restaurant owner
     owner_phone, // Phone of the restaurant owner
@@ -279,6 +280,7 @@ const createRestaurant = catchAsync(async (req, res) => {
     country: country || 'USA',
     postal_code: postal_code || null,
     phone: phone || null,
+    whatsapp_number: whatsapp || null,
     email: email || null,
     website: website || null,
     cuisine_type: cuisine_type || null,
@@ -405,38 +407,178 @@ const deleteRestaurant = catchAsync(async (req, res) => {
   const t = await sequelize.transaction();
   try {
     if (req.user.role === 'platform_admin') {
-      // Hard-delete common dependent records first to avoid FK constraint issues
-      // Many models use paranoid mode; use force: true to permanently remove them
+      // Load models not destructured at file top
+      const models = require('../models');
+      const {
+        Order,
+        OrderItem,
+        OrderItemOption,
+        OrderItemModifier,
+        OrderStatusHistory,
+        OrderVerificationAttempt,
+        OrderRejectionReason,
+        Notification,
+        WaiterNotification,
+        WaiterFeedback,
+        WaiterCallRequest,
+        WaiterTip,
+        WaiterCommission,
+        TableAssignment,
+        TableReservation,
+        TableStatusHistory,
+        QRCodeScan,
+        Subscription,
+        Invoice,
+        SupportTicket,
+        TicketMessage,
+        Waiter,
+        WaiterShift,
+        WaiterPerformance,
+        WaiterRealtimeStatus,
+        WaiterActivityLog,
+        StaffActivityLog,
+        PushNotificationToken,
+      } = models;
 
       // First collect coupon ids for this restaurant so we can delete usages by coupon_id
       let couponIds = [];
-      if (Coupon) {
-        const coupons = await Coupon.findAll({ where: { restaurant_id: id }, attributes: ['id'], transaction: t });
-        couponIds = coupons.map(c => c.id);
+      try {
+        if (Coupon) {
+          const coupons = await Coupon.findAll({ where: { restaurant_id: id }, attributes: ['id'], transaction: t });
+          couponIds = coupons.map(c => c.id);
+        }
+      } catch (e) {
+        console.warn('Ignoring coupon lookup error during restaurant hard-delete cleanup:', e.message || e);
+        couponIds = [];
       }
 
+      // Collect orders and order-items for the restaurant so we can remove order children safely
+      let orderIds = [];
+      try {
+        const orders = Order ? await Order.findAll({ where: { restaurant_id: id }, attributes: ['id'], transaction: t }) : [];
+        orderIds = orders.map(o => o.id);
+      } catch (e) {
+        console.warn('Ignoring order lookup error during restaurant hard-delete cleanup:', e.message || e);
+        orderIds = [];
+      }
+
+      let orderItemIds = [];
+      try {
+        const orderItems = (OrderItem && orderIds.length) ? await OrderItem.findAll({ where: { order_id: { [Op.in]: orderIds } }, attributes: ['id'], transaction: t }) : [];
+        orderItemIds = orderItems.map(oi => oi.id);
+      } catch (e) {
+        console.warn('Ignoring orderItem lookup error during restaurant hard-delete cleanup:', e.message || e);
+        orderItemIds = [];
+      }
+
+      // Collect support tickets so we can delete messages
+      let ticketIds = [];
+      try {
+        const tickets = SupportTicket ? await SupportTicket.findAll({ where: { restaurant_id: id }, attributes: ['id'], transaction: t }) : [];
+        ticketIds = tickets.map(tt => tt.id);
+      } catch (e) {
+        console.warn('Ignoring support ticket lookup error during restaurant hard-delete cleanup:', e.message || e);
+        ticketIds = [];
+      }
+
+      // Build destroy operations covering more dependent tables (order children, tickets, waiter-related, subscriptions, notifications, etc.)
       const destroyOps = [
-        // Child records that reference primary entities should be removed first
-        MenuItem ? MenuItem.destroy({ where: { restaurant_id: id }, force: true, transaction: t }) : Promise.resolve(),
-        MenuCategory ? MenuCategory.destroy({ where: { restaurant_id: id }, force: true, transaction: t }) : Promise.resolve(),
-        Table ? Table.destroy({ where: { restaurant_id: id }, force: true, transaction: t }) : Promise.resolve(),
-        RestaurantStaff ? RestaurantStaff.destroy({ where: { restaurant_id: id }, force: true, transaction: t }) : Promise.resolve(),
-        QRCode ? QRCode.destroy({ where: { restaurant_id: id }, force: true, transaction: t }) : Promise.resolve(),
-        // Delete coupon usages by coupon_id (CouponUsage table does not have restaurant_id column)
+        // Order-related children (options/modifiers) - use collected orderItemIds/orderIds
+        (OrderItemOption && orderItemIds.length) ? OrderItemOption.destroy({ where: { order_item_id: { [Op.in]: orderItemIds } }, force: true, transaction: t }) : Promise.resolve(),
+        (OrderItemModifier && orderItemIds.length) ? OrderItemModifier.destroy({ where: { order_item_id: { [Op.in]: orderItemIds } }, force: true, transaction: t }) : Promise.resolve(),
+        (OrderItem && orderIds.length) ? OrderItem.destroy({ where: { order_id: { [Op.in]: orderIds } }, force: true, transaction: t }) : Promise.resolve(),
+        (OrderStatusHistory && orderIds.length) ? OrderStatusHistory.destroy({ where: { order_id: { [Op.in]: orderIds } }, force: true, transaction: t }) : Promise.resolve(),
+        (OrderVerificationAttempt && orderIds.length) ? OrderVerificationAttempt.destroy({ where: { order_id: { [Op.in]: orderIds } }, force: true, transaction: t }) : Promise.resolve(),
+        (OrderRejectionReason && orderIds.length && OrderRejectionReason.rawAttributes && OrderRejectionReason.rawAttributes.order_id) ? OrderRejectionReason.destroy({ where: { order_id: { [Op.in]: orderIds } }, force: true, transaction: t }) : Promise.resolve(),
+        // Coupon usages connected to orders
+        (CouponUsage && orderIds.length) ? CouponUsage.destroy({ where: { order_id: { [Op.in]: orderIds } }, force: true, transaction: t }) : Promise.resolve(),
+        // Notifications and waiter notifications tied to orders
+        (Notification && orderIds.length) ? Notification.destroy({ where: { order_id: { [Op.in]: orderIds } }, force: true, transaction: t }) : Promise.resolve(),
+        (WaiterNotification && orderIds.length) ? WaiterNotification.destroy({ where: { order_id: { [Op.in]: orderIds } }, force: true, transaction: t }) : Promise.resolve(),
+        // Waiter related order feedback/tips/commissions
+        (WaiterFeedback && orderIds.length) ? WaiterFeedback.destroy({ where: { order_id: { [Op.in]: orderIds } }, force: true, transaction: t }) : Promise.resolve(),
+        (WaiterTip && orderIds.length) ? WaiterTip.destroy({ where: { order_id: { [Op.in]: orderIds } }, force: true, transaction: t }) : Promise.resolve(),
+        (WaiterCommission && orderIds.length) ? WaiterCommission.destroy({ where: { order_id: { [Op.in]: orderIds } }, force: true, transaction: t }) : Promise.resolve(),
+
+        // Order records themselves
+        (Order && orderIds.length) ? Order.destroy({ where: { id: { [Op.in]: orderIds } }, force: true, transaction: t }) : Promise.resolve(),
+
+        // Table-related history/assignments/reservations
+        (TableAssignment) ? TableAssignment.destroy({ where: { restaurant_id: id }, force: true, transaction: t }) : Promise.resolve(),
+        (TableReservation) ? TableReservation.destroy({ where: { restaurant_id: id }, force: true, transaction: t }) : Promise.resolve(),
+        (TableStatusHistory) ? TableStatusHistory.destroy({ where: { restaurant_id: id }, force: true, transaction: t }) : Promise.resolve(),
+
+        // QR code scans and QR codes
+        (QRCodeScan) ? QRCodeScan.destroy({ where: { restaurant_id: id }, force: true, transaction: t }) : Promise.resolve(),
+        (QRCode) ? QRCode.destroy({ where: { restaurant_id: id }, force: true, transaction: t }) : Promise.resolve(),
+
+        // Coupon and coupon usages by coupon id
         (CouponUsage && couponIds.length > 0) ? CouponUsage.destroy({ where: { coupon_id: { [Op.in]: couponIds } }, force: true, transaction: t }) : Promise.resolve(),
-        // Now remove coupons themselves
-        Coupon ? Coupon.destroy({ where: { restaurant_id: id }, force: true, transaction: t }) : Promise.resolve(),
-        InventoryTransaction ? InventoryTransaction.destroy({ where: { restaurant_id: id }, force: true, transaction: t }) : Promise.resolve(),
-        InventoryItem ? InventoryItem.destroy({ where: { restaurant_id: id }, force: true, transaction: t }) : Promise.resolve(),
-        DailySalesSummary ? DailySalesSummary.destroy({ where: { restaurant_id: id }, force: true, transaction: t }) : Promise.resolve(),
-        MenuItemAnalytics ? MenuItemAnalytics.destroy({ where: { restaurant_id: id }, force: true, transaction: t }) : Promise.resolve(),
-        HourlyAnalytics ? HourlyAnalytics.destroy({ where: { restaurant_id: id }, force: true, transaction: t }) : Promise.resolve(),
-        Review ? Review.destroy({ where: { restaurant_id: id }, force: true, transaction: t }) : Promise.resolve(),
-        RestaurantSetting ? RestaurantSetting.destroy({ where: { restaurant_id: id }, force: true, transaction: t }) : Promise.resolve(),
+        (Coupon) ? Coupon.destroy({ where: { restaurant_id: id }, force: true, transaction: t }) : Promise.resolve(),
+
+        // Inventory
+        (InventoryTransaction) ? InventoryTransaction.destroy({ where: { restaurant_id: id }, force: true, transaction: t }) : Promise.resolve(),
+        (InventoryItem) ? InventoryItem.destroy({ where: { restaurant_id: id }, force: true, transaction: t }) : Promise.resolve(),
+
+        // Analytics and reviews
+        (DailySalesSummary) ? DailySalesSummary.destroy({ where: { restaurant_id: id }, force: true, transaction: t }) : Promise.resolve(),
+        (MenuItemAnalytics) ? MenuItemAnalytics.destroy({ where: { restaurant_id: id }, force: true, transaction: t }) : Promise.resolve(),
+        (HourlyAnalytics) ? HourlyAnalytics.destroy({ where: { restaurant_id: id }, force: true, transaction: t }) : Promise.resolve(),
+        (Review) ? Review.destroy({ where: { restaurant_id: id }, force: true, transaction: t }) : Promise.resolve(),
+
+        // Menu structures and options/modifiers
+        (MenuItemOption) ? MenuItemOption.destroy({ where: { }, force: true, transaction: t }) : Promise.resolve(),
+        (MenuItemOptionGroup) ? MenuItemOptionGroup.destroy({ where: { restaurant_id: id }, force: true, transaction: t }) : Promise.resolve(),
+        (MenuItemModifierAssignment) ? MenuItemModifierAssignment.destroy({ where: { }, force: true, transaction: t }) : Promise.resolve(),
+        (MenuItemModifier) ? MenuItemModifier.destroy({ where: { }, force: true, transaction: t }) : Promise.resolve(),
+        (MenuItem) ? MenuItem.destroy({ where: { restaurant_id: id }, force: true, transaction: t }) : Promise.resolve(),
+        (MenuCategory) ? MenuCategory.destroy({ where: { restaurant_id: id }, force: true, transaction: t }) : Promise.resolve(),
+
+        // Restaurant staff and waiter related records
+        (RestaurantStaff) ? RestaurantStaff.destroy({ where: { restaurant_id: id }, force: true, transaction: t }) : Promise.resolve(),
+        (WaiterActivityLog) ? WaiterActivityLog.destroy({ where: { restaurant_id: id }, force: true, transaction: t }) : Promise.resolve(),
+        (StaffActivityLog) ? StaffActivityLog.destroy({ where: { restaurant_id: id }, force: true, transaction: t }) : Promise.resolve(),
+        (WaiterShift) ? WaiterShift.destroy({ where: { restaurant_id: id }, force: true, transaction: t }) : Promise.resolve(),
+        (WaiterPerformance) ? WaiterPerformance.destroy({ where: { restaurant_id: id }, force: true, transaction: t }) : Promise.resolve(),
+        (WaiterRealtimeStatus) ? WaiterRealtimeStatus.destroy({ where: { restaurant_id: id }, force: true, transaction: t }) : Promise.resolve(),
+        (Waiter) ? Waiter.destroy({ where: { restaurant_id: id }, force: true, transaction: t }) : Promise.resolve(),
+
+        // Support tickets and messages
+        (TicketMessage && ticketIds.length) ? TicketMessage.destroy({ where: { ticket_id: { [Op.in]: ticketIds } }, force: true, transaction: t }) : Promise.resolve(),
+        (SupportTicket) ? SupportTicket.destroy({ where: { restaurant_id: id }, force: true, transaction: t }) : Promise.resolve(),
+
+        // Subscriptions / invoices
+        (Invoice) ? Invoice.destroy({ where: { restaurant_id: id }, force: true, transaction: t }) : Promise.resolve(),
+        (Subscription) ? Subscription.destroy({ where: { restaurant_id: id }, force: true, transaction: t }) : Promise.resolve(),
+
+        // Push tokens (if scoped to restaurant)
+        (PushNotificationToken) ? PushNotificationToken.destroy({ where: { restaurant_id: id }, force: true, transaction: t }) : Promise.resolve(),
+
+        // Table records themselves
+        (Table) ? Table.destroy({ where: { restaurant_id: id }, force: true, transaction: t }) : Promise.resolve(),
+
+        // Restaurant settings
+        (RestaurantSetting) ? RestaurantSetting.destroy({ where: { restaurant_id: id }, force: true, transaction: t }) : Promise.resolve(),
       ];
 
-      // Run destroy operations in parallel
-      await Promise.all(destroyOps);
+      // Run destroy operations; execute sequentially so we can skip missing-table errors
+      for (const op of destroyOps) {
+        try {
+          // Some entries in destroyOps may be Promise.resolve() placeholders
+          if (op && typeof op.then === 'function') {
+            await op;
+          }
+        } catch (e) {
+          // Ignore errors caused by missing tables/columns in the database (dev/test environments)
+          const msg = (e && (e.original && e.original.message)) || e.message || '';
+          if (/doesn't exist|does not exist|Unknown table|ER_NO_SUCH_TABLE|Unknown column|ER_BAD_FIELD_ERROR/i.test(msg)) {
+            console.warn('Skipping destroy op due to missing table/column:', msg);
+            continue;
+          }
+          // Re-throw other errors
+          throw e;
+        }
+      }
 
       // Finally hard-delete the restaurant record
       await restaurant.destroy({ force: true, transaction: t });
@@ -525,9 +667,25 @@ const getDashboardStats = catchAsync(async (req, res) => {
     total_categories: await MenuCategory.count({ where: { restaurant_id: id, is_active: true } }),
     total_tables: await Table.count({ where: { restaurant_id: id } }),
     total_staff: await RestaurantStaff.count({ where: { restaurant_id: id, is_active: true } }),
+    // Completed orders: today and overall
+    completed_today: await Order.count({ where: { restaurant_id: id, status: 'completed', created_at: { [Op.gte]: today } } }),
+    completed_total: await Order.count({ where: { restaurant_id: id, status: 'completed' } }),
   };
 
   res.json(ApiResponse.success(stats, 'Dashboard stats retrieved'));
+});
+
+// Get pending verifications for platform admin
+const getPendingVerifications = catchAsync(async (req, res) => {
+  const pending = await Restaurant.findAll({
+    where: { is_verified: false, is_active: true, deleted_at: null },
+    include: [
+      { model: User, as: 'restaurant_owner', attributes: ['id', 'full_name', 'email', 'phone'] },
+    ],
+    order: [['created_at', 'DESC']],
+  });
+
+  res.json(ApiResponse.success(pending, 'Pending verifications retrieved'));
 });
 
 // Verify restaurant (platform admin)
@@ -546,6 +704,20 @@ const verifyRestaurant = catchAsync(async (req, res) => {
     verified_by: req.user.id,
     rejection_reason: rejection_reason || null,
   });
+
+  // If approved, activate the restaurant owner user account so they can log in
+  if (is_verified) {
+    try {
+      if (restaurant.owner_id) {
+        const owner = await User.findByPk(restaurant.owner_id);
+        if (owner) {
+          await owner.update({ is_active: true, is_verified: true });
+        }
+      }
+    } catch (ownerErr) {
+      console.error('Failed to activate restaurant owner user after verification', ownerErr);
+    }
+  }
 
   res.json(ApiResponse.success(restaurant, `Restaurant ${is_verified ? 'verified' : 'rejected'}`));
 });
@@ -566,6 +738,67 @@ const updateSettings = catchAsync(async (req, res) => {
   res.json(ApiResponse.success(restaurant.settings, 'Settings updated'));
 });
 
+// Update a named settings section for the authenticated user's restaurant or provided restaurant id
+const updateSettingsSection = catchAsync(async (req, res) => {
+  const { section } = req.params;
+  const payload = req.body || {};
+
+  // Determine restaurant id from payload or auth (owner or staff)
+  let restaurantId = payload.restaurantId || payload.restaurant_id || req.user?.restaurant_id || (req.user && req.user.restaurant && req.user.restaurant.id);
+
+  if (!restaurantId) {
+    // Try to find a restaurant owned by this user
+    const owned = await Restaurant.findOne({ where: { owner_id: req.user.id } });
+    if (owned) restaurantId = owned.id;
+  }
+
+  if (!restaurantId) {
+    // Try to find a staff assignment
+    const staffRec = await RestaurantStaff.findOne({ where: { user_id: req.user.id, is_active: true } });
+    if (staffRec) restaurantId = staffRec.restaurant_id;
+  }
+
+  if (!restaurantId) {
+    throw new ApiError(400, 'Restaurant ID is required');
+  }
+
+  const restaurant = await Restaurant.findByPk(restaurantId);
+  if (!restaurant) {
+    throw new ApiError(404, 'Restaurant not found');
+  }
+
+  // Authorization: allow platform_admin or restaurant owner/staff
+  if (req.user.role !== 'platform_admin') {
+    if (restaurant.owner_id !== req.user.id) {
+      // check staff membership
+      const staff = await RestaurantStaff.findOne({ where: { restaurant_id: restaurantId, user_id: req.user.id, is_active: true } });
+      if (!staff) {
+        throw new ApiError(403, 'You do not have permission to update this restaurant settings');
+      }
+    }
+  }
+
+  // Merge payload into the named section of restaurant.settings
+  const existing = restaurant.settings || {};
+  const sectionValue = existing[section] && typeof existing[section] === 'object' ? { ...existing[section] } : {};
+
+  // If payload contains a wrapper `settings` object (some clients send { settings: {...} }), prefer that
+  const incoming = payload.settings && typeof payload.settings === 'object' ? { ...payload.settings } : { ...payload };
+
+  // Remove control fields that should not be stored in settings
+  delete incoming.restaurantId;
+  delete incoming.restaurant_id;
+  delete incoming.userId;
+  delete incoming.user_id;
+
+  const merged = { ...sectionValue, ...incoming };
+  existing[section] = merged;
+
+  await restaurant.update({ settings: existing });
+
+  res.json(ApiResponse.success(existing[section], 'Settings updated'));
+});
+
 // Get restaurant tables
 const getTables = catchAsync(async (req, res) => {
   const { id } = req.params;
@@ -574,6 +807,12 @@ const getTables = catchAsync(async (req, res) => {
     where: { restaurant_id: id },
     order: [['table_number', 'ASC']],
   });
+
+  // If request flagged as public, return a minimal sanitized shape and only available tables
+  if (req.isPublicTables) {
+    const publicTables = (tables || []).map(t => ({ id: t.id, table_number: t.table_number, tableNumber: t.table_number, status: t.status }));
+    return res.json(ApiResponse.success(publicTables, 'Public tables retrieved'));
+  }
 
   res.json(ApiResponse.success(tables, 'Tables retrieved'));
 });
@@ -675,7 +914,9 @@ module.exports = {
   updateRestaurantStatus,
   getDashboardStats,
   verifyRestaurant,
+  getPendingVerifications,
   updateSettings,
+  updateSettingsSection,
   getTables,
   createTable,
   

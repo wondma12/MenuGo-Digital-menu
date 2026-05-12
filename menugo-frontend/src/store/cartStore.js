@@ -7,8 +7,13 @@ const useCartStore = create(
       items: [],
       totalItems: 0,
       totalPrice: 0,
+      tableNumber: '',
 
       addItem: (item) => {
+        // Guard: prevent adding items marked unavailable by any common flag
+        if (item && (item.is_available === false || item.available === false || item.isAvailable === false)) {
+          return
+        }
         set((state) => {
           const existingItem = state.items.find(i => i.id === item.id)
           let newItems
@@ -31,6 +36,10 @@ const useCartStore = create(
 
           return { items: newItems, totalItems, totalPrice }
         })
+      },
+
+      setTableNumber: (table) => {
+        set(() => ({ tableNumber: table }))
       },
 
       removeItem: (id) => {

@@ -33,7 +33,7 @@ const ReviewFilters = ({ filters, onFiltersChange }) => {
           />
         </div>
         <Select
-          label="Rating"
+          // label="Rating"
           value={filters.rating}
           onChange={(e) => handleChange('rating', e.target.value)}
           options={[
@@ -46,7 +46,7 @@ const ReviewFilters = ({ filters, onFiltersChange }) => {
           ]}
         />
         <Select
-          label="Status"
+          // label="Status"
           value={filters.status}
           onChange={(e) => handleChange('status', e.target.value)}
           options={[
@@ -57,7 +57,7 @@ const ReviewFilters = ({ filters, onFiltersChange }) => {
           ]}
         />
         <DatePicker
-          label="Date Range"
+          // label="Date Range"
           selected={filters.dateRange}
           onChange={(date) => handleChange('dateRange', date)}
           placeholderText="Select date"

@@ -154,21 +154,107 @@ const updateStaff = catchAsync(async (req, res) => {
   const { id } = req.params;
   const updates = req.body;
 
-  const staff = await RestaurantStaff.findByPk(id);
+  // Allow callers to supply either the restaurant_staff PK or the linked users.id UUID.
+  let staff = await RestaurantStaff.findByPk(id);
+  if (!staff) {
+    // Try resolving by linked user_id (user UUID)
+    staff = await RestaurantStaff.findOne({ where: { user_id: id } });
+  }
+
+  // If still not found, and the id refers to an existing User, allow restaurant_admins/platform_admins
+  // to create a restaurant_staff mapping on-the-fly. This helps avoid 404s when an admin toggles
+  // a user who hasn't been added as staff yet from the UI.
+  if (!staff) {
+    const possibleUser = await User.findByPk(id).catch(() => null);
+    if (possibleUser && (req.user.role === 'restaurant_admin' || req.user.role === 'platform_admin')) {
+      // Determine restaurant context: prefer explicit body/query, then authenticated user's assignment
+      let restaurantId = req.body?.restaurant_id || req.query?.restaurantId || req.user?.restaurant_id || (req.user?.restaurant_id?.id) || null;
+      if (!restaurantId) {
+        const assign = await RestaurantStaff.findOne({ where: { user_id: req.user.id } }).catch(() => null);
+        if (assign) restaurantId = assign.restaurant_id;
+      }
+      if (!restaurantId) {
+        throw new ApiError(403, 'Restaurant context required to add staff');
+      }
+
+      // Create the staff mapping with defaults (allow role override from payload)
+      const createRole = (req.body?.role) || 'waiter';
+      staff = await RestaurantStaff.create({
+        restaurant_id: restaurantId,
+        user_id: possibleUser.id,
+        role: createRole,
+        permissions: req.body?.permissions || {},
+        is_active: true,
+      });
+
+      // Optionally create a Waiter profile when role is waiter
+      if ((createRole || '').toLowerCase() === 'waiter') {
+        await Waiter.create({ staff_id: staff.id, user_id: possibleUser.id, restaurant_id: restaurantId }).catch(() => {});
+      }
+    }
+  }
+
   if (!staff) throw new ApiError(404, 'Staff member not found');
 
   await staff.update(updates);
 
-  const updated = await RestaurantStaff.findByPk(id, { include: [{ model: User, as: 'assigned_user', attributes: ['id', 'full_name', 'email', 'avatar_url'] }] });
+  // Re-fetch using the resolved restaurant_staff PK (staff.id).
+  const updated = await RestaurantStaff.findByPk(staff.id, { include: [{ model: User, as: 'assigned_user', attributes: ['id', 'full_name', 'email', 'avatar_url'] }] });
   res.json(ApiResponse.success(updated, 'Staff updated'));
 });
 
 const deleteStaff = catchAsync(async (req, res) => {
   const { id } = req.params;
-  const staff = await RestaurantStaff.findByPk(id);
+  // Accept either restaurant_staff PK or linked users.id UUID
+  let staff = await RestaurantStaff.findByPk(id);
+  if (!staff) {
+    staff = await RestaurantStaff.findOne({ where: { user_id: id } });
+  }
+  // If not found, try the on-the-fly creation path for admins (same behavior as updateStaff)
+  if (!staff) {
+    const possibleUser = await User.findByPk(id).catch(() => null);
+    if (possibleUser && (req.user.role === 'restaurant_admin' || req.user.role === 'platform_admin')) {
+      let restaurantId = req.body?.restaurant_id || req.query?.restaurantId || req.user?.restaurant_id || (req.user?.restaurant_id?.id) || null;
+      if (!restaurantId) {
+        const assign = await RestaurantStaff.findOne({ where: { user_id: req.user.id } }).catch(() => null);
+        if (assign) restaurantId = assign.restaurant_id;
+      }
+      if (!restaurantId) {
+        throw new ApiError(403, 'Restaurant context required to add staff');
+      }
+
+      staff = await RestaurantStaff.create({ restaurant_id: restaurantId, user_id: possibleUser.id, role: 'waiter', permissions: {}, is_active: true });
+      await Waiter.create({ staff_id: staff.id, user_id: possibleUser.id, restaurant_id: restaurantId }).catch(() => {});
+    }
+  }
   if (!staff) throw new ApiError(404, 'Staff member not found');
 
+  // Remove any waiter profile linked to this staff
+  try {
+    await Waiter.destroy({ where: { staff_id: staff.id } }).catch(() => {});
+  } catch (e) {
+    // ignore
+  }
+
+  // Remember linked user id before deleting staff record
+  const linkedUserId = staff.user_id;
+
   await staff.destroy();
+
+  // If the linked user is not staff of any other restaurant, disable their account and downgrade role
+  if (linkedUserId) {
+    const remaining = await RestaurantStaff.findOne({ where: { user_id: linkedUserId } });
+    if (!remaining) {
+      try {
+        const user = await User.findByPk(linkedUserId).catch(() => null);
+        if (user) {
+          await user.update({ is_active: false, role: 'customer' }).catch(() => {});
+        }
+      } catch (e) {
+        // ignore non-fatal user update errors
+      }
+    }
+  }
 
   res.json(ApiResponse.success(null, 'Staff member deleted'));
 });
@@ -176,7 +262,11 @@ const deleteStaff = catchAsync(async (req, res) => {
 const updateStaffStatus = catchAsync(async (req, res) => {
   const { id } = req.params;
   const { isActive } = req.body;
-  const staff = await RestaurantStaff.findByPk(id);
+  // Accept either restaurant_staff PK or linked users.id UUID
+  let staff = await RestaurantStaff.findByPk(id);
+  if (!staff) {
+    staff = await RestaurantStaff.findOne({ where: { user_id: id } });
+  }
   if (!staff) throw new ApiError(404, 'Staff member not found');
 
   await staff.update({ is_active: !!isActive });
@@ -282,10 +372,16 @@ const updateRolePermissions = catchAsync(async (req, res) => {
 const updateStaffPermissions = catchAsync(async (req, res) => {
   const { staffId } = req.params;
   const { permissions } = req.body;
-  const staff = await RestaurantStaff.findByPk(staffId);
+  // Accept either the restaurant_staff PK or the linked users.id UUID
+  let staff = await RestaurantStaff.findByPk(staffId);
+  if (!staff) {
+    staff = await RestaurantStaff.findOne({ where: { user_id: staffId } });
+  }
   if (!staff) throw new ApiError(404, 'Staff member not found');
   await staff.update({ permissions });
-  res.json(ApiResponse.success(staff, 'Staff permissions updated'));
+
+  const updated = await RestaurantStaff.findByPk(staff.id, { include: [{ model: User, as: 'assigned_user', attributes: ['id', 'full_name', 'email', 'avatar_url'] }] });
+  res.json(ApiResponse.success(updated, 'Staff permissions updated'));
 });
 
 module.exports = {

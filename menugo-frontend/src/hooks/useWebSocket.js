@@ -24,8 +24,18 @@ export const useWebSocket = () => {
     socket.on('connect', () => {
       console.log('WebSocket connected')
       setIsConnected(true)
-      // Join user-specific room
+      // Join user-specific room (server will handle join by user metadata)
       socket.emit('join', { userId: user.id, role: user.role })
+
+      // Join notifications room so user receives personal notifications
+      try { socket.emit('join-notifications') } catch (e) { /* ignore */ }
+
+      // If user is restaurant staff/owner and restaurantId available, ask server to join kitchen & restaurant rooms
+      const staffRoles = ['restaurant_owner', 'restaurant_staff', 'waiter']
+      const restaurantId = user.restaurantId || user.restaurant_id || null
+      if (restaurantId && staffRoles.includes(user.role)) {
+        try { socket.emit('join-kitchen', restaurantId) } catch (e) { /* ignore */ }
+      }
     })
 
     socket.on('disconnect', () => {
@@ -33,45 +43,19 @@ export const useWebSocket = () => {
       setIsConnected(false)
     })
 
-    socket.on('new_order', (data) => {
-      setLastMessage({ type: 'new_order', ...data })
-      setMessages(prev => [{ type: 'new_order', ...data, timestamp: new Date() }, ...prev].slice(0, 50))
-      // Trigger custom event handlers
-      const handlers = eventHandlers.current.get('new_order') || []
-      handlers.forEach(handler => handler(data))
-    })
+    // Generic handler: listen to any server event and normalize event names
+    socket.onAny((event, data) => {
+      try {
+        const normalized = String(event).replace(/[-\s]/g, '_').toLowerCase()
+        setLastMessage({ type: normalized, event, ...data })
+        setMessages(prev => [{ type: normalized, event, ...data, timestamp: new Date() }, ...prev].slice(0, 50))
 
-    socket.on('order_updated', (data) => {
-      setLastMessage({ type: 'order_updated', ...data })
-      setMessages(prev => [{ type: 'order_updated', ...data, timestamp: new Date() }, ...prev].slice(0, 50))
-      const handlers = eventHandlers.current.get('order_updated') || []
-      handlers.forEach(handler => handler(data))
-    })
-
-    socket.on('order_ready', (data) => {
-      setLastMessage({ type: 'order_ready', ...data })
-      setMessages(prev => [{ type: 'order_ready', ...data, timestamp: new Date() }, ...prev].slice(0, 50))
-      const handlers = eventHandlers.current.get('order_ready') || []
-      handlers.forEach(handler => handler(data))
-    })
-
-    socket.on('table_status', (data) => {
-      setLastMessage({ type: 'table_status', ...data })
-      const handlers = eventHandlers.current.get('table_status') || []
-      handlers.forEach(handler => handler(data))
-    })
-
-    socket.on('call_request', (data) => {
-      setLastMessage({ type: 'call_request', ...data })
-      const handlers = eventHandlers.current.get('call_request') || []
-      handlers.forEach(handler => handler(data))
-    })
-
-    socket.on('notification', (data) => {
-      setLastMessage({ type: 'notification', ...data })
-      setMessages(prev => [{ type: 'notification', ...data, timestamp: new Date() }, ...prev].slice(0, 50))
-      const handlers = eventHandlers.current.get('notification') || []
-      handlers.forEach(handler => handler(data))
+        // Trigger handlers registered for normalized event or raw event
+        const handlers = eventHandlers.current.get(normalized) || eventHandlers.current.get(event) || []
+        handlers.forEach(handler => handler(data))
+      } catch (e) {
+        console.error('Error handling socket event', event, e)
+      }
     })
 
     return () => {
@@ -123,6 +107,7 @@ export const useWebSocket = () => {
     onEvent,
     joinRoom,
     leaveRoom,
+    socket, // expose raw socket for edge usage
   }
 }
 

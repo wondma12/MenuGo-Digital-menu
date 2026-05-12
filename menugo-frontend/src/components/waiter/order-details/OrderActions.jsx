@@ -4,11 +4,14 @@ import Button from '../../common/Button'
 import VerifyOrderModal from '../verification/VerifyOrderModal'
 import RejectOrderModal from '../verification/RejectOrderModal'
 import { updateOrderStatus } from '../../../services/orderService'
+import { verifyOrder } from '../../../services/orderService'
+import { useWebSocket } from '../../../hooks/useWebSocket'
 import toast from 'react-hot-toast'
 
 const OrderActions = ({ orderId, currentStatus, onRefresh, onClose }) => {
   const [showVerify, setShowVerify] = useState(false)
   const [showReject, setShowReject] = useState(false)
+  const [isVerifying, setIsVerifying] = useState(false)
 
   const updateMutation = useMutation(updateOrderStatus, {
     onSuccess: () => {
@@ -18,6 +21,45 @@ const OrderActions = ({ orderId, currentStatus, onRefresh, onClose }) => {
     },
     onError: () => toast.error('Failed to update status')
   })
+
+  const { sendMessage } = useWebSocket()
+
+  const verifyAndSend = async () => {
+    try {
+      setIsVerifying(true)
+      // Call verify API (manual)
+      const verified = await verifyOrder(orderId, 'manual')
+      // Prepare payload: use full verified order if available, otherwise fallback to minimal id
+      let orderPayload = { order_id: orderId }
+      if (verified && typeof verified === 'object') {
+        if (verified.id || verified.order_id || verified.orderId) {
+          orderPayload = verified
+        } else if (verified.data && (verified.data.id || verified.data.order_id)) {
+          orderPayload = verified.data
+        }
+      }
+
+      // Emit new order to kitchen via socket
+      try {
+        const user = JSON.parse(localStorage.getItem('user') || '{}') || {}
+        const restaurantId = user.restaurantId || user.restaurant_id || (user.restaurant && user.restaurant.id) || null
+        if (sendMessage && restaurantId) {
+          sendMessage('emit-new-order', { restaurantId, orderData: orderPayload })
+        }
+      } catch (e) {
+        // swallow socket errors
+      }
+
+      toast.success('Order verified and sent to kitchen')
+      onRefresh()
+      onClose()
+    } catch (err) {
+      toast.error('Failed to verify and send to kitchen')
+      throw err
+    } finally {
+      setIsVerifying(false)
+    }
+  }
 
   const handleStatusUpdate = (newStatus) => {
     updateMutation.mutate({ id: orderId, status: newStatus })
@@ -29,6 +71,7 @@ const OrderActions = ({ orderId, currentStatus, onRefresh, onClose }) => {
         return (
           <div className="flex gap-3">
             <Button variant="danger" onClick={() => setShowReject(true)}>Reject Order</Button>
+            <Button variant="secondary" onClick={verifyAndSend} isLoading={isVerifying} disabled={isVerifying}>Verify & Send to Kitchen</Button>
             <Button variant="primary" onClick={() => setShowVerify(true)}>Verify Order</Button>
           </div>
         )
@@ -46,8 +89,8 @@ const OrderActions = ({ orderId, currentStatus, onRefresh, onClose }) => {
         )
       case 'ready':
         return (
-          <Button variant="primary" onClick={() => handleStatusUpdate('served')}>
-            Mark as Served
+          <Button variant="primary" onClick={() => handleStatusUpdate('completed')}>
+            Mark as Completed
           </Button>
         )
       default:

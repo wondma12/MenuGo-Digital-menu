@@ -38,7 +38,7 @@ const OrderTable = ({ orders, onRefresh }) => {
                   className="hover:bg-gray-50"
                 >
                   <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                    #{order.orderNumber}
+                    #{index + 1}
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-600">
                     {order.customerName || 'Guest'}
@@ -60,7 +60,7 @@ const OrderTable = ({ orders, onRefresh }) => {
                   </td>
                   <td className="px-6 py-4">
                     <button
-                      onClick={() => setSelectedOrder(order)}
+                      onClick={() => setSelectedOrder({ ...order, displayNumber: index + 1 })}
                       className="text-primary-600 hover:text-primary-700"
                     >
                       <EyeIcon className="w-5 h-5" />

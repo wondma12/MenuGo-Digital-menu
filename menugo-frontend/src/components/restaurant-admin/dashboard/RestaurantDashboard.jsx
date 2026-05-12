@@ -20,6 +20,7 @@ import LowStockAlert from './LowStockAlert'
 import CustomerInsights from './CustomerInsights'
 import Loading from '../../common/Loading'
 import Alert from '../../common/Alert'
+import PageHero from '../../common/PageHero'
 import { getRestaurantDashboardData } from '../../../services/restaurantService'
 
 const RestaurantDashboard = () => {
@@ -69,18 +70,18 @@ const RestaurantDashboard = () => {
       color: 'blue',
     },
     {
+      title: 'Completed Today',
+      value: data?.completedToday || data?.completed_today || 0,
+      change: 0,
+      icon: ClockIcon,
+      color: 'teal',
+    },
+    {
       title: 'Today\'s Revenue',
       value: `$${data?.todayRevenue?.toLocaleString() || 0}`,
       change: data?.revenueChange || 0,
       icon: CurrencyDollarIcon,
       color: 'green',
-    },
-    {
-      title: 'Active Customers',
-      value: data?.activeCustomers || 0,
-      change: data?.customersChange || 0,
-      icon: UsersIcon,
-      color: 'purple',
     },
     {
       title: 'Avg Rating',
@@ -93,14 +94,16 @@ const RestaurantDashboard = () => {
 
   return (
     <div className="p-6 space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Restaurant Dashboard</h1>
-          <p className="text-gray-500 mt-1">Welcome back, {user?.full_name?.split(' ')[0]}! Here's your business overview</p>
-        </div>
-        <QuickActions restaurantId={restaurantId} />
-      </div>
+      <PageHero
+        title="Restaurant Dashboard"
+        subtitle={`Welcome back, ${user?.full_name?.split(' ')?.[0] || ''}! Here's your business overview`}
+        // stats={[
+        //   { label: "Today's Orders", value: data?.todayOrders || 0 },
+        //   { label: "Completed Today", value: data?.completedToday || data?.completed_today || 0 },
+        //   { label: "Active Customers", value: data?.activeCustomers || 0 },
+        // ]}
+        primaryAction={<QuickActions restaurantId={restaurantId} />}
+      />
 
       {/* Metrics Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

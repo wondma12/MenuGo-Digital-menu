@@ -16,11 +16,11 @@ const {
 // Public routes
 router.get('/restaurant/:restaurantId', getRestaurantReviews);
 
-// Protected routes
-router.use(protect);
+// Customer review routes (allow optional auth so guests can leave restaurant-level reviews)
+router.post('/restaurant/:restaurantId', optionalAuth, validate(reviewValidations.create), createReview);
 
-// Customer review routes
-router.post('/restaurant/:restaurantId', validate(reviewValidations.create), createReview);
+// Protected routes (routes below require authentication)
+router.use(protect);
 
 // Restaurant admin routes
 router.patch('/:id/status', isRestaurantStaff, validate(reviewValidations.updateStatus), updateReviewStatus);

@@ -193,8 +193,18 @@ const isWaiter = async (req, res, next) => {
   }
   
   // Check if waiter is on duty
+  // Check if waiter is on duty. Allow certain endpoints when not on duty (e.g., starting a shift, verifying an order)
   if (!waiter.is_on_duty && req.method !== 'GET') {
-    throw new ApiError(403, 'You are not on duty. Please start your shift first.');
+    const pathNoQuery = req.originalUrl ? req.originalUrl.split('?')[0] : '';
+    const isVerifyEndpoint = pathNoQuery.endsWith('/verify');
+    const isShiftStartEndpoint = pathNoQuery.endsWith('/shift/start');
+
+    // Allow POST to verify endpoint and shift start endpoint even if not on duty
+    if (req.method === 'POST' && (isVerifyEndpoint || isShiftStartEndpoint)) {
+      // continue
+    } else {
+      throw new ApiError(403, 'You are not on duty. Please start your shift first.');
+    }
   }
 
   req.waiter = waiter;

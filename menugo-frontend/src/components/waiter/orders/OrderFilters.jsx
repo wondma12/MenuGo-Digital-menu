@@ -12,7 +12,7 @@ const OrderFilters = ({ filters, onFiltersChange }) => {
     { value: 'verified', label: 'Verified' },
     { value: 'preparing', label: 'Preparing' },
     { value: 'ready', label: 'Ready' },
-    { value: 'served', label: 'Served' }
+    { value: 'completed', label: 'Completed' }
   ]
 
   const priorityOptions = [
@@ -20,6 +20,14 @@ const OrderFilters = ({ filters, onFiltersChange }) => {
     { value: 'high', label: 'High Priority' },
     { value: 'normal', label: 'Normal' },
     { value: 'low', label: 'Low' }
+  ]
+
+  const rangeOptions = [
+    { value: 'all', label: 'All Time' },
+    { value: 'today', label: 'Today' },
+    { value: 'week', label: 'Last 7 days' },
+    { value: 'month', label: 'Last 30 days' },
+    { value: 'year', label: 'Last 365 days' },
   ]
 
   return (
@@ -35,6 +43,12 @@ const OrderFilters = ({ filters, onFiltersChange }) => {
         onChange={(e) => handleChange('priority', e.target.value)}
         options={priorityOptions}
         className="w-36"
+      />
+      <Select
+        value={filters.range || 'all'}
+        onChange={(e) => handleChange('range', e.target.value)}
+        options={rangeOptions}
+        className="w-40"
       />
     </div>
   )

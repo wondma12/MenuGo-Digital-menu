@@ -1,6 +1,6 @@
 import React from 'react'
 import { motion } from 'framer-motion'
-import { User, Clock, Users, MapPin } from 'lucide-react'
+import { User, Clock, Users, MapPin, Phone } from 'lucide-react'
 import Button from '../../common/Button'
 import Badge from '../../common/Badge'
 
@@ -44,7 +44,7 @@ const ReservationCard = ({ reservation, onSeat, onRefresh }) => {
         </div>
         {reservation.customerPhone && (
           <div className="flex items-center gap-2 text-sm">
-            <span className="text-gray-400">📞</span>
+            <Phone className="w-4 h-4 text-gray-400" />
             <span className="text-gray-600">{reservation.customerPhone}</span>
           </div>
         )}

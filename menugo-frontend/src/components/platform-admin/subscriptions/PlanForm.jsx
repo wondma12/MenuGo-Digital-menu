@@ -75,10 +75,10 @@ const PlanForm = ({ initialData, onSubmit, onCancel, isLoading }) => {
     <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
       <Input label="Plan Name" {...register('name')} error={errors.name?.message} required />
       
-      <select {...register('tier')} className="w-full px-4 py-2.5 border border-gray-300 rounded-lg">
-        <option value="basic">Basic</option>
-        <option value="premium">Premium</option>
-        <option value="enterprise">Enterprise</option>
+      <select {...register('tier')} className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-black">
+        <option value="basic" className="text-black">Basic</option>
+        <option value="premium" className="text-black">Premium</option>
+        <option value="enterprise" className="text-black">Enterprise</option>
       </select>
       
       <Textarea label="Description" {...register('description')} error={errors.description?.message} rows={3} />

@@ -23,16 +23,10 @@ const OrderItemModifier = sequelize.define('OrderItemModifier', {
     type: DataTypes.DECIMAL(10, 2),
     defaultValue: 0,
   },
-  created_at: {
-    type: DataTypes.DATE,
-    defaultValue: DataTypes.NOW,
-  },
 }, {
   tableName: 'order_item_modifiers',
   underscored: true,
-  timestamps: true,
-  createdAt: 'created_at',
-  updatedAt: false,
+  timestamps: false,
 });
 
 module.exports = OrderItemModifier;

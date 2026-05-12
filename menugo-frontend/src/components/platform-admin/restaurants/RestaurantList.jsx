@@ -34,38 +34,38 @@ const RestaurantList = () => {
   if (isLoading) return <Loading />
 
   return (
-    <div className="p-6">
-     <div className="flex justify-between items-center mb-6">
+    <div className="p-4 sm:p-6">
+     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Restaurant Management</h1>
           <p className="text-gray-500 mt-1">Manage all restaurants on the platform</p>
         </div>
-        <button
+        {/* <button
           onClick={() => navigate('/platform/restaurants/create')}
           className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
         >
           <PlusIcon className="w-5 h-5" />
           Create Restaurant
-        </button>
+        </button> */}
       </div>
       {/* Search and Filter Bar */}
       <div className="flex flex-col sm:flex-row gap-4 mb-6">
         <div className="flex-1 relative">
-          <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+          <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-black" />
           <input
             type="text"
             placeholder="Search restaurants by name, email, or phone..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+            className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-primary-500"
           />
         </div>
         <button
           onClick={() => setShowFilters(!showFilters)}
-          className="px-4 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-2"
+          className="px-4 py-2.5 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 flex items-center gap-2"
         >
-          <FunnelIcon className="w-5 h-5" />
-          Filters
+          <FunnelIcon className="w-5 h-5 text-black" />
+          <span className="text-black">Filters</span>
           {(filters.status !== 'all' || filters.tier !== 'all' || filters.country !== 'all') && (
             <span className="w-2 h-2 bg-primary-600 rounded-full" />
           )}
@@ -87,20 +87,20 @@ const RestaurantList = () => {
       </AnimatePresence>
 
       {/* Stats Summary */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <div className="bg-white rounded-lg p-4 border border-gray-200">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div className="bg-white rounded-lg p-4 border border-gray-200 border-l-4 border-l-blue-500">
           <p className="text-sm text-gray-500">Total Restaurants</p>
           <p className="text-2xl font-bold text-gray-900">{data?.total || 0}</p>
         </div>
-        <div className="bg-white rounded-lg p-4 border border-gray-200">
+        <div className="bg-white rounded-lg p-4 border border-gray-200 border-l-4 border-l-green-500">
           <p className="text-sm text-gray-500">Active</p>
           <p className="text-2xl font-bold text-green-600">{data?.active || 0}</p>
         </div>
-        <div className="bg-white rounded-lg p-4 border border-gray-200">
+        <div className="bg-white rounded-lg p-4 border border-gray-200 border-l-4 border-l-yellow-500">
           <p className="text-sm text-gray-500">Pending Verification</p>
           <p className="text-2xl font-bold text-yellow-600">{data?.pending || 0}</p>
         </div>
-        <div className="bg-white rounded-lg p-4 border border-gray-200">
+        <div className="bg-white rounded-lg p-4 border border-gray-200 border-l-4 border-l-purple-500">
           <p className="text-sm text-gray-500">Premium</p>
           <p className="text-2xl font-bold text-purple-600">{data?.premium || 0}</p>
         </div>
@@ -115,7 +115,7 @@ const RestaurantList = () => {
         />
       ) : (
         <>
-          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {data?.restaurants?.map((restaurant, index) => (
               <motion.div
                 key={restaurant.id}

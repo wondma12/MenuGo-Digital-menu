@@ -1,11 +1,11 @@
 const { validationResult, body, param, query } = require('express-validator');
 const { ApiError } = require('../utils/apiError');
+const { logger } = require('../utils/logger');
 
 // Validate request
 const validate = (validations) => {
   return async (req, res, next) => {
     await Promise.all(validations.map(validation => validation.run(req)));
-
     const errors = validationResult(req);
     if (errors.isEmpty()) {
       return next();
@@ -15,6 +15,18 @@ const validate = (validations) => {
       field: err.param,
       message: err.msg,
     }));
+
+    // Log validation failure with request context for easier debugging
+    try {
+      logger.warn('Validation failed', {
+        url: req.originalUrl,
+        method: req.method,
+        body: req.body,
+        errors: extractedErrors,
+      });
+    } catch (e) {
+      // ignore logging failure
+    }
 
     throw new ApiError(400, 'Validation Error', extractedErrors);
   };
@@ -122,14 +134,15 @@ const menuValidations = {
 // Order validations
 const orderValidations = {
   create: [
-    body('restaurant_id').isUUID().withMessage('Invalid restaurant ID'),
+    body('restaurant_id').notEmpty().withMessage('Restaurant ID is required'),
     body('items').isArray({ min: 1 }).withMessage('At least one item is required'),
-    body('items.*.menu_item_id').isUUID().withMessage('Invalid menu item ID'),
+    body('items.*.menu_item_id').notEmpty().withMessage('Invalid menu item ID'),
     body('items.*.quantity').isInt({ min: 1 }).withMessage('Quantity must be at least 1'),
     body('table_number').optional(),
+    body('coupon_code').optional().isString(),
     body('customer_name').optional().trim(),
-    body('customer_phone').optional(),
-    body('customer_email').optional().isEmail(),
+    body('customer_phone').optional({ checkFalsy: true }),
+    body('customer_email').optional({ checkFalsy: true }).isEmail(),
     body('special_instructions').optional(),
     body('order_type').optional().isIn(['dine_in', 'takeaway', 'delivery']),
   ],
@@ -138,7 +151,12 @@ const orderValidations = {
     body('notes').optional(),
   ],
   verify: [
-    body('verification_code').notEmpty().withMessage('Verification code is required'),
+    body('verification_code').custom((value, { req }) => {
+      // allow manual verification by waiter (method='manual') without a code
+      if (req.body && req.body.method === 'manual') return true;
+      if (value && String(value).trim() !== '') return true;
+      throw new Error('Verification code is required');
+    }),
   ],
 };
 
@@ -208,6 +226,8 @@ const reviewValidations = {
     body('rating').isInt({ min: 1, max: 5 }).withMessage('Rating must be between 1 and 5'),
     body('comment').optional().trim(),
     body('title').optional().trim(),
+      body('customer_name').optional().trim(),
+      body('customer_email').optional().isEmail().withMessage('Invalid email'),
     body('is_anonymous').optional().isBoolean(),
   ],
   updateStatus: [

@@ -108,3 +108,10 @@ export const getCouponAnalytics = async (restaurantId) => {
   const response = await api.get(`/coupons/restaurant/${id}/analytics`)
   return response.data.data || response.data
 }
+
+export const getPublicCoupons = async (restaurantId) => {
+  const id = resolveRestaurantId(restaurantId)
+  if (!id) return []
+  const response = await api.get(`/coupons/public/restaurant/${id}`)
+  return response.data.data?.coupons || response.data.data || response.data
+}

@@ -1,16 +1,17 @@
 import React from 'react'
 import { motion } from 'framer-motion'
+import { Bell, CreditCard, HelpCircle, Coffee, MessageSquare } from 'lucide-react'
 
 const CallCard = ({ call, onClick, onRefresh }) => {
   const getCallTypeIcon = (type) => {
     const icons = {
-      service: '🛎️',
-      bill: '💰',
-      help: '❓',
-      food_issue: '🍽️',
-      other: '💬'
+      service: <Bell className="w-6 h-6" />, 
+      bill: <CreditCard className="w-6 h-6" />,
+      help: <HelpCircle className="w-6 h-6" />,
+      food_issue: <Coffee className="w-6 h-6" />,
+      other: <MessageSquare className="w-6 h-6" />
     }
-    return icons[type] || '🔔'
+    return icons[type] || <Bell className="w-6 h-6" />
   }
 
   const getCallTypeLabel = (type) => {

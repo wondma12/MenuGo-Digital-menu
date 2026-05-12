@@ -35,18 +35,18 @@ const WaiterStats = ({ stats }) => {
   ]
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {statCards.map((stat, index) => (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+      {statCards.map((stat, index) => (
         <motion.div
           key={index}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: index * 0.1 }}
-          className="bg-white rounded p-5 border border-gray-200 shadow-sm hover:shadow-md transition-shadow"
+          transition={{ delay: index * 0.06 }}
+          className="bg-white rounded p-3 border border-gray-200/25 shadow transition-shadow"
         >
-          <div className="flex items-center justify-between mb-3">
-            <div className={`p-2 rounded-lg bg-${stat.color}-100`}>
-              <stat.icon className={`w-5 h-5 text-${stat.color}-600`} />
+          <div className="flex items-center justify-between mb-2">
+            <div className={`p-1 rounded bg-${stat.color}-100`}>
+              <stat.icon className={`w-4 h-4 text-${stat.color}-600`} />
             </div>
             {stat.change !== undefined && (
               <span className={`text-xs font-medium ${stat.change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
@@ -54,8 +54,8 @@ const WaiterStats = ({ stats }) => {
               </span>
             )}
           </div>
-          <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
-          <p className="text-sm text-gray-500 mt-1">{stat.title}</p>
+          <p className="text-xl font-bold text-gray-900">{stat.value}</p>
+          <p className="text-xs text-gray-500 mt-1">{stat.title}</p>
         </motion.div>
       ))}
     </div>

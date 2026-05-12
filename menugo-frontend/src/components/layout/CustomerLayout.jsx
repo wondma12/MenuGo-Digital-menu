@@ -5,6 +5,8 @@ import { useCartStore } from '../../store/cartStore'
 import { useRestaurantStore } from '../../store/restaurantStore'
 import CartDrawer from '../customer/cart/CartDrawer'
 import Header from './Header'
+import { HeartIcon } from '@heroicons/react/24/outline'
+import Footer from './Footer'
 
 const CustomerLayout = () => {
   const { restaurantId } = useParams()
@@ -67,17 +69,28 @@ const CustomerLayout = () => {
               <p className="text-xs sm:text-sm text-gray-500">{restaurant?.cuisineType}</p>
             </div>
 
-            <button
-              onClick={() => setIsCartOpen(true)}
-              className="relative p-2 text-gray-600 hover:bg-gray-100 rounded-lg"
-            >
-              🛒
-              {totalItems > 0 && (
-                <span className="absolute -top-1 -right-1 w-5 h-5 bg-primary-600 text-white text-xs rounded-full flex items-center justify-center">
-                  {totalItems}
-                </span>
-              )}
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => navigate(`/menu/${restaurantId}/favorites`)}
+                className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+                aria-label="Favorites"
+              >
+                <HeartIcon className="w-5 h-5" />
+              </button>
+
+              <button
+                onClick={() => setIsCartOpen(true)}
+                className="relative p-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+                aria-label="Open cart"
+              >
+                🛒
+                {totalItems > 0 && (
+                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-primary-600 text-white text-xs rounded-full flex items-center justify-center">
+                    {totalItems}
+                  </span>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       </header>
@@ -99,6 +112,7 @@ const CustomerLayout = () => {
         onClose={() => setIsCartOpen(false)}
         restaurantId={restaurantId}
       />
+      <Footer onOpenCart={() => setIsCartOpen(true)} restaurantId={restaurantId} />
     </div>
   )
 }

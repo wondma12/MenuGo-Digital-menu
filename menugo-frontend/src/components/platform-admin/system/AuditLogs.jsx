@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { useQuery } from 'react-query'
+import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { MagnifyingGlassIcon } from '@heroicons/react/24/outline'
 import Loading from '../../../common/Loading'
@@ -12,12 +13,38 @@ const AuditLogs = () => {
   const [dateRange, setDateRange] = useState({ start: null, end: null })
   const [currentPage, setCurrentPage] = useState(1)
 
-  const { data, isLoading } = useQuery(
+  const navigate = useNavigate()
+  const { data, isLoading, isError, error, refetch } = useQuery(
     ['auditLogs', currentPage, searchTerm, dateRange],
     () => getAuditLogs({ page: currentPage, search: searchTerm, ...dateRange })
   )
 
   if (isLoading) return <Loading />
+
+  if (isError) {
+    const status = error?.response?.status
+    if (status === 401) {
+      navigate('/login')
+      return null
+    }
+    if (status === 403) {
+      return (
+        <div className="p-6">
+          <h1 className="text-2xl font-bold text-gray-900">Audit Logs</h1>
+          <p className="text-red-500 mt-4">You do not have permission to view audit logs.</p>
+        </div>
+      )
+    }
+    return (
+      <div className="p-6">
+        <h1 className="text-2xl font-bold text-gray-900">Audit Logs</h1>
+        <p className="text-gray-600 mt-2">Failed to load audit logs: {error?.message || 'Unknown error'}</p>
+        <div className="mt-4">
+          <button onClick={() => refetch()} className="px-4 py-2 bg-orange-600 text-white rounded">Retry</button>
+        </div>
+      </div>
+    )
+  }
 
   const getActionColor = (action) => {
     if (action.includes('create')) return 'text-green-600'

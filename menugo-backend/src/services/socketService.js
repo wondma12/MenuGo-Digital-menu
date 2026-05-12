@@ -107,9 +107,9 @@ const emitNewOrder = (restaurantId, orderData) => {
   emitToRestaurant(restaurantId, 'new_order', orderData);
 };
 
-// Emit order status update
+// Emit order status update (frontend expects 'order_updated')
 const emitOrderStatusUpdate = (restaurantId, orderId, status) => {
-  emitToRestaurant(restaurantId, 'order_status_updated', { orderId, status });
+  emitToRestaurant(restaurantId, 'order_updated', { orderId, status });
 };
 
 // Emit table status update

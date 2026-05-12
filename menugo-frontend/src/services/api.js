@@ -1,9 +1,66 @@
 import axios from 'axios'
 import { useAuthStore } from '../store/authStore'
 
-// Default to the backend dev server port. If you run the backend on a different port,
-// set `VITE_API_URL` in your frontend environment instead of editing this file.
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5005/api'
+// Default to the backend dev server port (backend typically runs on 5000 locally).
+// If you run the backend on a different port, set `VITE_API_URL` in your frontend
+// environment instead of editing this file.
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
+
+// Fallback ports to try when the configured API is unreachable during local development.
+// Put the expected local backend port first to avoid unnecessary failed attempts.
+const FALLBACK_PORTS = [5000, 5008, 5007, 5006, 5005]
+
+const buildApiCandidates = () => {
+  const seen = new Set()
+  const add = (u) => {
+    if (!u) return
+    let normalized = u.replace(/\/$/, '')
+    // Ensure we have the /api suffix
+    if (!/\/api(\/)?$/.test(normalized)) normalized = `${normalized}/api`
+    if (!seen.has(normalized)) {
+      seen.add(normalized)
+    }
+  }
+
+  if (import.meta.env.VITE_API_URL) add(import.meta.env.VITE_API_URL)
+
+  try {
+    const host = window?.location?.hostname || 'localhost'
+    const proto = window?.location?.protocol || 'http:'
+    FALLBACK_PORTS.forEach((p) => add(`${proto}//${host}:${p}`))
+    FALLBACK_PORTS.forEach((p) => add(`http://localhost:${p}`))
+  } catch (e) {
+    // ignore - window may not exist in some build-time contexts
+  }
+
+  // Always ensure API_URL is present as a last resort
+  add(API_URL)
+
+  return Array.from(seen)
+}
+
+const attemptFallback = async (originalRequest) => {
+  const candidates = buildApiCandidates()
+  const currentBase = (api.defaults && api.defaults.baseURL) ? api.defaults.baseURL.replace(/\/$/, '') : API_URL.replace(/\/$/, '')
+
+  for (const candidate of candidates) {
+    const base = candidate.replace(/\/$/, '')
+    if (base === currentBase) continue
+    try {
+      api.defaults.baseURL = base
+      if (import.meta.env.DEV) console.warn('Trying API fallback baseURL:', base)
+      // Retry original request using updated baseURL
+      return await api(originalRequest)
+    } catch (err) {
+      if (import.meta.env.DEV) console.warn('Fallback candidate failed:', base, (err && err.message) || err)
+      // try next candidate
+    }
+  }
+
+  // restore default
+  api.defaults.baseURL = API_URL
+  return Promise.reject(originalRequest._originalError || new Error('All API fallback attempts failed'))
+}
 
 const api = axios.create({
   baseURL: API_URL,
@@ -52,9 +109,15 @@ api.interceptors.request.use(
     }
     
     // Log request in development
-    if (import.meta.env.DEV) {
-      console.log(`🚀 API Request: ${config.method?.toUpperCase()} ${config.url}`, config.data)
-    }
+      if (import.meta.env.DEV) {
+        let dataToLog = config.data
+        try {
+          dataToLog = config.data ? JSON.parse(JSON.stringify(config.data)) : config.data
+        } catch (err) {
+          dataToLog = '[unserializable]'
+        }
+        console.log(`🚀 API Request: ${config.method?.toUpperCase()} ${config.url}`, dataToLog)
+      }
     
     return config
   },
@@ -67,11 +130,17 @@ api.interceptors.request.use(
 // Response interceptor for error handling
 api.interceptors.response.use(
   (response) => {
-    // Log response in development
+    // Log response in development (safe stringify)
     if (import.meta.env.DEV) {
+      let dataToLog = response.data
+      try {
+        dataToLog = response.data ? JSON.parse(JSON.stringify(response.data)) : response.data
+      } catch (err) {
+        dataToLog = '[unserializable]'
+      }
       console.log(`✅ API Response: ${response.config.method?.toUpperCase()} ${response.config.url}`, {
         status: response.status,
-        data: response.data
+        data: dataToLog
       })
     }
     return response
@@ -104,12 +173,14 @@ api.interceptors.response.use(
       try {
         // Attempt to refresh token
         const refreshToken = useAuthStore.getState().refreshToken || localStorage.getItem('refreshToken')
-        
+
         if (!refreshToken) {
           throw new Error('No refresh token available')
         }
-        
-        const response = await axios.post(`${API_URL}/auth/refresh-token`, {
+
+        // Use the current api.defaults.baseURL if we've switched; otherwise fall back to configured API_URL.
+        const refreshBase = (api.defaults && api.defaults.baseURL) ? api.defaults.baseURL.replace(/\/$/, '') : API_URL.replace(/\/$/, '')
+        const response = await axios.post(`${refreshBase}/auth/refresh-token`, {
           refreshToken
         })
         
@@ -181,12 +252,24 @@ api.interceptors.response.use(
     if (error.code === 'ECONNABORTED') {
       console.error('Request timeout')
     }
-    
-    if (!error.response) {
-      console.error('Network error:', error.message)
-    }
-    
-    return Promise.reject(error)
+
+      if (!error.response) {
+        console.error('Network error:', error.message)
+
+        // Attempt to auto-detect the running backend by trying fallback ports/hosts.
+        // Ensure we only try fallback once per request to avoid recursion.
+        if (originalRequest && !originalRequest._retryFallback) {
+          originalRequest._retryFallback = true
+          try {
+            return await attemptFallback(originalRequest)
+          } catch (fallbackErr) {
+            if (import.meta.env.DEV) console.warn('API fallback exhausted:', fallbackErr)
+            // fall through to reject original error
+          }
+        }
+      }
+
+      return Promise.reject(error)
   }
 )
 

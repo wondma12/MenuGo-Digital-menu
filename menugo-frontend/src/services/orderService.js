@@ -2,7 +2,9 @@ import api from './api'
 
 export const getOrders = async (restaurantId, params) => {
   const response = await api.get(`/orders/restaurant/${restaurantId}`, { params })
-  return response?.data?.data || response?.data || {}
+  const payload = response?.data?.data || response?.data
+  // Return the raw payload (may be an object with `orders` and metadata or an array)
+  return payload || {}
 }
 
 export const getOrder = async (id) => {
@@ -18,7 +20,15 @@ export const createOrder = async (data) => {
 }
 
 export const updateOrderStatus = async (id, status) => {
-  const response = await api.patch(`/orders/${id}/status`, { status })
+  // Support both signatures: (id, status) and ({ id, status })
+  let orderId = id
+  let orderStatus = status
+  if (typeof id === 'object' && id !== null) {
+    orderId = id.id
+    orderStatus = id.status
+  }
+
+  const response = await api.put(`/orders/${orderId}/status`, { status: orderStatus })
   return response?.data?.data || response?.data || {}
 }
 
@@ -34,7 +44,18 @@ export const verifyOrder = async (id, method, code) => {
 }
 
 export const rejectOrder = async (id, reason, notes) => {
-  const response = await api.post(`/orders/${id}/reject`, { reason, notes })
+  // Support both signatures: (id, reason, notes) and ({ id, reason, notes })
+  let orderId = id
+  let r = reason
+  let n = notes
+  if (typeof id === 'object' && id !== null) {
+    orderId = id.id
+    r = id.reason
+    n = id.notes
+  }
+
+  const payload = { status: 'rejected', notes: n || r }
+  const response = await api.put(`/orders/${orderId}/status`, payload)
   return response?.data?.data || response?.data || {}
 }
 

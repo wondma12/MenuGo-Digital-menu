@@ -9,6 +9,7 @@ import Textarea from '../../../common/Textarea'
 import Select from '../../../common/Select'
 import Switch from '../../../common/Switch'
 import Button from '../../../common/Button'
+import ImageWithPlaceholder from '../../common/ImageWithPlaceholder.jsx'
 import FileUpload from '../../../common/FileUpload'
 import { createMenuItem, updateMenuItem } from '../../../services/menuService'
 import { getCategories } from '../../../services/categoryService'
@@ -186,9 +187,11 @@ const MenuItemForm = ({ item, onSuccess, onCancel }) => {
           <p className="text-xs text-gray-400 mt-2">Paste an image URL to use instead of uploading a file.</p>
         </div>
       </div>
-      {imagePreview && (
-        <img src={imagePreview} alt="Preview" className="w-32 h-32 object-cover rounded-lg" />
-      )}
+          {imagePreview && (
+            <div className="w-36 h-36">
+              <ImageWithPlaceholder src={imagePreview} alt="Preview" className="rounded-lg" />
+            </div>
+          )}
 
       <div className="grid grid-cols-2 gap-4">
         <Switch label="Available" checked={watch('isAvailable')} onChange={(checked) => setValue('isAvailable', checked)} />

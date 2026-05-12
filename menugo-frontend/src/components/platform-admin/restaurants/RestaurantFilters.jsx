@@ -42,11 +42,11 @@ const RestaurantFilters = ({ filters, onFiltersChange }) => {
   return (
     <div className="bg-white rounded-lg border border-gray-200 p-4">
       <div className="flex justify-between items-center mb-4">
-        <h3 className="font-medium text-gray-900">Filters</h3>
+        <h3 className="font-medium text-black">Filters</h3>
         {hasActiveFilters && (
           <button
             onClick={clearFilters}
-            className="text-sm text-primary-600 hover:text-primary-700"
+            className="text-sm text-black hover:text-gray-700"
           >
             Clear all
           </button>
@@ -56,42 +56,42 @@ const RestaurantFilters = ({ filters, onFiltersChange }) => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Status Filter */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+          <label className="block text-sm font-medium text-black mb-1">Status</label>
           <select
             value={filters.status}
             onChange={(e) => handleFilterChange('status', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-primary-500 focus:border-transparent text-black"
           >
             {statusOptions.map(option => (
-              <option key={option.value} value={option.value}>{option.label}</option>
+              <option key={option.value} value={option.value} className="text-black">{option.label}</option>
             ))}
           </select>
         </div>
 
         {/* Subscription Tier Filter */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Subscription</label>
+          <label className="block text-sm font-medium text-black mb-1">Subscription</label>
           <select
             value={filters.tier}
             onChange={(e) => handleFilterChange('tier', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-primary-500 focus:border-transparent text-black"
           >
             {tierOptions.map(option => (
-              <option key={option.value} value={option.value}>{option.label}</option>
+              <option key={option.value} value={option.value} className="text-black">{option.label}</option>
             ))}
           </select>
         </div>
 
         {/* Country Filter */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Country</label>
+          <label className="block text-sm font-medium text-black mb-1">Country</label>
           <select
             value={filters.country}
             onChange={(e) => handleFilterChange('country', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-primary-500 focus:border-transparent text-black"
           >
             {countryOptions.map(option => (
-              <option key={option.value} value={option.value}>{option.label}</option>
+              <option key={option.value} value={option.value} className="text-black">{option.label}</option>
             ))}
           </select>
         </div>

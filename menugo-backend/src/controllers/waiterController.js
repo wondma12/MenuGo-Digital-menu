@@ -7,6 +7,8 @@ const {
   WaiterPerformance,
   WaiterRealtimeStatus,
   Order,
+  WaiterTip,
+  OrderStatusHistory,
   Table,
   User,
   TableReservation,
@@ -21,7 +23,6 @@ const getCurrentWaiter = async (req) => {
   const waiter = await Waiter.findOne({
     where: { user_id: req.user.id },
   });
-
   if (!waiter) {
     throw new ApiError(404, 'Waiter not found');
   }
@@ -32,11 +33,30 @@ const getCurrentWaiter = async (req) => {
 const getDashboard = catchAsync(async (req, res) => {
   const waiter = await getCurrentWaiter(req);
 
-  const [activeOrders, pendingCalls, unreadNotifications, currentTables, latestPerformance] = await Promise.all([
+  // Resolve waiter with user info for display name
+  const waiterWithUser = await Waiter.findOne({
+    where: { id: waiter.id },
+    include: [{ model: User, as: 'user', attributes: ['id', 'full_name', 'email', 'avatar_url'] }],
+  });
+
+  const now = new Date();
+  const startOfDay = new Date(now);
+  startOfDay.setHours(0, 0, 0, 0);
+  const endOfDay = new Date(now);
+  endOfDay.setHours(23, 59, 59, 999);
+
+  // Find tables currently assigned to this waiter (ids)
+  const assignedTableRows = await Table.findAll({ where: { current_waiter_id: waiter.id }, attributes: ['id'] });
+  const assignedTableIds = assignedTableRows.map(t => t.id).filter(Boolean);
+
+  // Aggregate metrics
+  const [activeOrders, pendingCalls, unreadNotifications, currentTables, latestPerformance, completedTodayCount, revenueToday, tipsToday, completedOrdersToday] = await Promise.all([
+    // Count active orders assigned to this waiter or on tables assigned to them
     Order.count({
       where: {
-        waiter_id: waiter.id,
+        restaurant_id: waiter.restaurant_id,
         status: { [Op.in]: ['pending', 'verified', 'preparing', 'ready'] },
+        [Op.or]: [{ waiter_id: waiter.id }, ...(assignedTableIds.length ? [{ table_id: { [Op.in]: assignedTableIds } }] : [])],
       },
     }),
     WaiterCallRequest.count({
@@ -45,30 +65,106 @@ const getDashboard = catchAsync(async (req, res) => {
         status: { [Op.in]: ['pending', 'acknowledged'] },
       },
     }),
-    WaiterNotification.count({
-      where: { waiter_id: waiter.id, is_read: false },
-    }),
-    Table.count({
-      where: { current_waiter_id: waiter.id },
-    }),
-    WaiterPerformance.findOne({
-      where: { waiter_id: waiter.id },
-      order: [['date', 'DESC']],
-    }),
+    WaiterNotification.count({ where: { waiter_id: waiter.id, is_read: false } }),
+    Table.count({ where: { current_waiter_id: waiter.id } }),
+    WaiterPerformance.findOne({ where: { waiter_id: waiter.id }, order: [['date', 'DESC']] }),
+    // Completed orders today (any completed/served status)
+    Order.count({ where: { waiter_id: waiter.id, status: { [Op.in]: ['served', 'completed'] }, created_at: { [Op.between]: [startOfDay, endOfDay] } } }),
+    // Revenue today for served/completed orders
+    Order.sum('total_amount', { where: { waiter_id: waiter.id, status: { [Op.in]: ['served', 'completed'] }, created_at: { [Op.between]: [startOfDay, endOfDay] } } }),
+    // Tips today
+    WaiterTip.sum('amount', { where: { waiter_id: waiter.id, created_at: { [Op.between]: [startOfDay, endOfDay] } } }),
+    // Completed orders (count) for today (alias)
+    Order.count({ where: { waiter_id: waiter.id, status: { [Op.in]: ['served', 'completed'] }, created_at: { [Op.between]: [startOfDay, endOfDay] } } }),
   ]);
 
-  res.json(
-    ApiResponse.success(
-      {
-        active_orders: activeOrders,
-        pending_calls: pendingCalls,
-        unread_notifications: unreadNotifications,
-        assigned_tables: currentTables,
-        performance: latestPerformance,
-      },
-      'Waiter dashboard retrieved'
-    )
-  );
+  // Normalize numeric values
+  const todayRevenue = Number(revenueToday || 0);
+  const todayTips = Number(tipsToday || 0);
+
+  // Today's metrics
+  const completedCount = Number(completedTodayCount || 0);
+  // Pending verification: pending orders for the restaurant that are on this waiter's assigned tables or explicitly assigned
+  const pendingVerification = await Order.count({
+    where: {
+      restaurant_id: waiter.restaurant_id,
+      status: 'pending',
+      [Op.or]: [{ waiter_id: waiter.id }, ...(assignedTableIds.length ? [{ table_id: { [Op.in]: assignedTableIds } }] : [])],
+    },
+  });
+  const rejectedCount = await Order.count({
+    where: {
+      waiter_id: waiter.id,
+      status: 'rejected',
+      created_at: { [Op.between]: [startOfDay, endOfDay] },
+    },
+  });
+
+  // Performance series (last 14 days)
+  const perfRows = await WaiterPerformance.findAll({
+    where: { waiter_id: waiter.id },
+    order: [['date', 'ASC']],
+    limit: 30,
+  });
+  const performanceData = perfRows.map(p => ({
+    date: p.date,
+    ordersServed: p.orders_served || 0,
+    revenue: Number(p.total_revenue || 0),
+    tips: Number(p.total_tips || 0),
+  }));
+
+  // Recent activities (last 5 status history records for this waiter's orders)
+  const recentHistories = await OrderStatusHistory.findAll({
+    include: [{ model: Order, as: 'status_order', where: { waiter_id: waiter.id }, attributes: ['order_number', 'table_number'] }],
+    order: [['created_at', 'DESC']],
+    limit: 5,
+  });
+
+  const recentActivities = recentHistories.map(h => ({
+    type: h.status,
+    title: `${h.status.charAt(0).toUpperCase() + h.status.slice(1)} Order #${h.status_order?.order_number || ''}`,
+    description: h.notes || '',
+    time: h.created_at,
+  }));
+
+  // Assemble response matching frontend expectations
+  const payload = {
+    waiterName: waiterWithUser?.user?.full_name || req.user?.full_name || '',
+    stats: {
+      activeOrders: Number(activeOrders || 0),
+      todayRevenue,
+      todayTips,
+      rating: latestPerformance?.customer_satisfaction || 0,
+      ordersChange: null,
+      revenueChange: null,
+      tipsChange: null,
+      ratingChange: null,
+    },
+    todayMetrics: {
+      completedOrders: completedCount,
+      pendingVerification: Number(pendingVerification || 0),
+      rejectedOrders: Number(rejectedCount || 0),
+    },
+    performanceData,
+    recentActivities,
+    // Debug / diagnostic info to help confirm mapping
+    _meta: {
+      waiterId: waiter.id,
+      restaurantId: waiter.restaurant_id,
+      assignedTableIds,
+      rawCounts: {
+        activeOrders: Number(activeOrders || 0),
+        pendingCalls: Number(pendingCalls || 0),
+        unreadNotifications: Number(unreadNotifications || 0),
+        currentTables: Number(currentTables || 0),
+        completedTodayCount: Number(completedTodayCount || 0),
+        revenueToday: Number(revenueToday || 0),
+        tipsToday: Number(tipsToday || 0),
+      }
+    }
+  };
+
+  res.json(ApiResponse.success(payload, 'Waiter dashboard retrieved'));
 });
 
 const startShift = catchAsync(async (req, res) => {

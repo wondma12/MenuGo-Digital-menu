@@ -27,8 +27,15 @@ const generateRestaurantQR = catchAsync(async (req, res) => {
   const tableNumber = req.query && (req.query.table || req.query.tableNumber) ? String(req.query.table || req.query.tableNumber) : null
   const orderIdParam = req.query && req.query.orderId ? String(req.query.orderId) : null
 
+  const getBaseUrl = () => {
+    // Prefer the request origin (frontend host) so generated QR links point to the UI that made the request.
+    // Fallback to configured CLIENT_URL, then to a sensible localhost default.
+    const origin = (req.get && req.get('origin')) || (req.headers && req.headers.origin) || process.env.CLIENT_URL || 'http://localhost:5173'
+    return String(origin).replace(/\/$/, '')
+  }
+
   const makeQrUrl = (identifier) => {
-    const base = process.env.CLIENT_URL || 'http://localhost:5176'
+    const base = getBaseUrl()
     if (!route || route === 'menu') return `${base}/menu/${identifier}`
     if (route === 'customer' || route === 'root') return `${base}/menu/${identifier}`
     if (route === 'cart') return `${base}/menu/${identifier}/cart`
@@ -120,7 +127,7 @@ const generateTableQR = catchAsync(async (req, res) => {
   if (!qrIdentifier) {
     // Create a new restaurant qr identifier and QR
     qrIdentifier = `${restaurant.name.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}`
-    const qrUrl = `${process.env.CLIENT_URL}/menu/${qrIdentifier}`
+    const qrUrl = `${getBaseUrl()}/menu/${qrIdentifier}`
     const qrImagePath = await generateQRCode(qrUrl, qrIdentifier)
     qrBase64 = await generateQRCodeBase64(qrUrl)
     if (qrImagePath && fs.existsSync(qrImagePath)) {
@@ -145,7 +152,7 @@ const generateTableQR = catchAsync(async (req, res) => {
       qrCodeRecord = existing
       qrCloudinaryUrl = existing.qr_image_url
     } else {
-      const qrUrl = `${process.env.CLIENT_URL}/menu/${qrIdentifier}`
+      const qrUrl = `${getBaseUrl()}/menu/${qrIdentifier}`
       const qrImagePath = await generateQRCode(qrUrl, qrIdentifier)
       qrBase64 = await generateQRCodeBase64(qrUrl)
       if (qrImagePath && fs.existsSync(qrImagePath)) {
@@ -275,7 +282,7 @@ const getRestaurantQRCodes = catchAsync(async (req, res) => {
 
   const qrCodes = await QRCode.findAll({
     where: { restaurant_id: restaurantId },
-    include: [{ model: Table, as: 'table' }],
+    include: [{ model: Table, as: 'qrcode_table' }],
     order: [['created_at', 'DESC']],
   });
 

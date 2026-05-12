@@ -1,16 +1,21 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery } from 'react-query'
-import { ArrowLeftIcon, EnvelopeIcon, PhoneIcon, CalendarIcon, ShieldCheckIcon } from '@heroicons/react/24/outline'
+import { ArrowLeftIcon, EnvelopeIcon, PhoneIcon, CalendarIcon, ShieldCheckIcon, PencilIcon, XCircleIcon, CheckCircleIcon, TrashIcon } from '@heroicons/react/24/outline'
 import Loading from '../../../common/Loading'
 import Badge from '../../../common/Badge'
 import Avatar from '../../../common/Avatar'
 import Tabs from '../../../common/Tabs'
-import { getUserDetails } from '../../../services/userService'
+import ConfirmationDialog from '../../../common/ConfirmationDialog'
+import toast from 'react-hot-toast'
+import { getUserDetails, deleteUser, updateUserStatus } from '../../../services/userService'
 
 const UserDetails = () => {
   const { id } = useParams()
   const navigate = useNavigate()
+
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [showStatusDialog, setShowStatusDialog] = useState(false)
 
   const { data: user, isLoading } = useQuery(['user', id], () => getUserDetails(id))
 
@@ -39,7 +44,7 @@ const UserDetails = () => {
                   <h1 className="text-2xl font-bold text-gray-900">{user.fullName}</h1>
                   <p className="text-gray-500">@{user.email}</p>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-2 items-center">
                   <Badge variant={user.isActive ? 'success' : 'danger'} size="md">
                     {user.isActive ? 'Active' : 'Inactive'}
                   </Badge>
@@ -60,7 +65,74 @@ const UserDetails = () => {
         </div>
       </div>
 
+      <div className="flex items-center gap-3 mb-6">
+        <button
+          onClick={() => navigate(`/platform/users/${user.id}/edit`)}
+          className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors flex items-center gap-2"
+        >
+          <PencilIcon className="w-4 h-4" />
+          Edit User
+        </button>
+
+        <button
+          onClick={() => setShowStatusDialog(true)}
+          className={`px-4 py-2 rounded-lg transition-colors flex items-center gap-2 ${user.isActive ? 'bg-red-50 text-red-700 hover:bg-red-100' : 'bg-green-50 text-green-700 hover:bg-green-100'}`}
+        >
+          {user.isActive ? <XCircleIcon className="w-4 h-4" /> : <CheckCircleIcon className="w-4 h-4" />}
+          {user.isActive ? 'Deactivate' : 'Activate'}
+        </button>
+
+        <button
+          onClick={() => setShowDeleteDialog(true)}
+          className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2"
+        >
+          <TrashIcon className="w-4 h-4" />
+          Delete User
+        </button>
+
+        <button onClick={() => navigate('/platform/users')} className="px-4 py-2 text-gray-600 hover:text-gray-900">
+          Back
+        </button>
+      </div>
+
       <Tabs tabs={tabs} />
+
+      <ConfirmationDialog
+        isOpen={showDeleteDialog}
+        onClose={() => setShowDeleteDialog(false)}
+        title="Delete User"
+        message={`Are you sure you want to delete "${user.fullName}"? This action cannot be undone.`}
+        confirmText="Delete"
+        variant="danger"
+        onConfirm={async () => {
+          try {
+            await deleteUser(user.id)
+            toast.success('User deleted')
+            navigate('/platform/users')
+          } catch (err) {
+            toast.error(err?.response?.data?.message || 'Failed to delete user')
+          }
+        }}
+      />
+
+      <ConfirmationDialog
+        isOpen={showStatusDialog}
+        onClose={() => setShowStatusDialog(false)}
+        title={`${user.isActive ? 'Deactivate' : 'Activate'} User`}
+        message={`Are you sure you want to ${user.isActive ? 'deactivate' : 'activate'} "${user.fullName}"?`}
+        confirmText={user.isActive ? 'Deactivate' : 'Activate'}
+        variant={user.isActive ? 'danger' : 'primary'}
+        onConfirm={async () => {
+          try {
+            await updateUserStatus(user.id, { isActive: !user.isActive })
+            toast.success(`User ${user.isActive ? 'deactivated' : 'activated'}`)
+            setShowStatusDialog(false)
+            navigate('/platform/users')
+          } catch (err) {
+            toast.error('Failed to update status')
+          }
+        }}
+      />
     </div>
   )
 }

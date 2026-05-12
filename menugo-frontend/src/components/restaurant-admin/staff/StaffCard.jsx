@@ -12,7 +12,12 @@ const StaffCard = ({ staff, onEdit, onRefresh }) => {
 
   const handleStatusToggle = async () => {
     try {
-      await updateStaffStatus(staff.id, !staff.isActive)
+      const resolveStaffPk = (member) => {
+        if (!member) return null
+        return member.staffPk ?? member.raw?.id ?? member.staffId ?? member.id ?? member.employeeId ?? null
+      }
+      const staffPk = resolveStaffPk(staff)
+      await updateStaffStatus(staffPk, !staff.isActive)
       toast.success(`${staff.name} ${!staff.isActive ? 'activated' : 'deactivated'}`)
       onRefresh()
     } catch (error) {
@@ -22,7 +27,12 @@ const StaffCard = ({ staff, onEdit, onRefresh }) => {
 
   const handleDelete = async () => {
     try {
-      await deleteStaff(staff.id)
+      const resolveStaffPk = (member) => {
+        if (!member) return null
+        return member.staffPk ?? member.raw?.id ?? member.staffId ?? member.id ?? member.employeeId ?? null
+      }
+      const staffPk = resolveStaffPk(staff)
+      await deleteStaff(staffPk)
       toast.success('Staff member deleted successfully')
       onRefresh()
       setShowDeleteDialog(false)
@@ -44,12 +54,12 @@ const StaffCard = ({ staff, onEdit, onRefresh }) => {
     <>
       <motion.div
         whileHover={{ y: -4 }}
-        className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-all"
+        className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-all h-full flex flex-col"
       >
-        <div className="p-5">
+        <div className="p-6 flex-1 flex flex-col">
           <div className="flex items-start justify-between mb-4">
             <div className="flex items-center gap-3">
-              <Avatar src={staff.avatar} name={staff.name} size="lg" />
+              <Avatar src={staff.avatar} name={staff.name} size="xl" />
               <div>
                 <h3 className="font-semibold text-gray-900">{staff.name}</h3>
                 <p className="text-xs text-gray-500">ID: {staff.employeeId}</p>
@@ -94,12 +104,13 @@ const StaffCard = ({ staff, onEdit, onRefresh }) => {
             </div>
           </div>
 
-          <div className="pt-3 border-t border-gray-100">
-            <p className="text-xs text-gray-500">Hired: {new Date(staff.hireDate).toLocaleDateString()}</p>
-            {staff.hourlyRate && (
-              <p className="text-xs text-gray-500 mt-1">Hourly Rate: ${staff.hourlyRate}/hr</p>
-            )}
-          </div>
+        </div>
+
+        <div className="pt-3 border-t border-gray-100 p-4 bg-gray-50">
+          <p className="text-xs text-gray-500">Hired: {staff.hireDate ? new Date(staff.hireDate).toLocaleDateString() : '—'}</p>
+          {staff.hourlyRate && (
+            <p className="text-xs text-gray-500 mt-1">Hourly Rate: ${staff.hourlyRate}/hr</p>
+          )}
         </div>
       </motion.div>
 

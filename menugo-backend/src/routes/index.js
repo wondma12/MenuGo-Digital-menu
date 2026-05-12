@@ -24,6 +24,7 @@ const platformRoutes = require('./platformRoutes');
 const supportRoutes = require('./supportRoutes');
 const systemRoutes = require('./systemRoutes');
 const uploadRoutes = require('./uploadRoutes');
+const kitchenRoutes = require('./kitchenRoutes');  // Make sure this line exists
 // Mount routes
 router.use('/auth', authRoutes);
 router.use('/users', userRoutes);
@@ -34,6 +35,7 @@ router.use('/tables', tableRoutes);
 router.use('/waiters', waiterRoutes);
 router.use('/staff', staffRoutes);
 router.use('/qr', qrRoutes);
+router.use('/kitchen', kitchenRoutes);
 router.use('/analytics', analyticsRoutes);
 router.use('/reviews', reviewRoutes);
 router.use('/coupons', couponRoutes);

@@ -4,10 +4,7 @@ import { useQuery } from 'react-query'
 import {
   BuildingOfficeIcon,
   UserGroupIcon,
-  CurrencyDollarIcon,
-  ShoppingBagIcon,
   TicketIcon,
-  ChartBarIcon,
   ServerIcon,
   ExclamationTriangleIcon,
 } from '@heroicons/react/24/outline'
@@ -51,22 +48,6 @@ const PlatformDashboard = () => {
       color: 'green'
     },
     {
-      title: 'Total Revenue',
-      value: `$${data?.totalRevenue?.toLocaleString() || 0}`,
-      icon: CurrencyDollarIcon,
-      trend: data?.revenueGrowth || 0,
-      trendValue: '+15%',
-      color: 'purple'
-    },
-    {
-      title: 'Total Orders',
-      value: data?.totalOrders?.toLocaleString() || 0,
-      icon: ShoppingBagIcon,
-      trend: data?.ordersGrowth || 0,
-      trendValue: '+10%',
-      color: 'orange'
-    },
-    {
       title: 'Open Tickets',
       value: data?.openTickets || 0,
       icon: TicketIcon,
@@ -95,11 +76,12 @@ const PlatformDashboard = () => {
         <QuickActions />
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+      {/* Stats Grid: use same columns as restaurant dashboard for consistent card sizes */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {stats.map((stat, index) => (
           <motion.div
             key={index}
+            className="h-full"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.05 }}

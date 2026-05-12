@@ -43,7 +43,13 @@ const StaffModal = ({ isOpen, onClose, staff, onSuccess }) => {
 
   const handleSubmit = (data) => {
     if (isEditing) {
-      updateMutation.mutate({ id: staff.id, data })
+      // Prefer the restaurant_staff primary key (`staffPk`) when available to avoid sending the user UUID.
+      const resolveStaffPk = (member) => {
+        if (!member) return null
+        return member.staffPk ?? member.raw?.id ?? member.staffId ?? member.id ?? member.employeeId ?? null
+      }
+      const staffPk = resolveStaffPk(staff)
+      updateMutation.mutate({ id: staffPk || staff.id, data })
     } else {
       // Normalize restaurant id and validate required fields before sending
       const restaurantId = user?.restaurant_id?.id || user?.restaurant_id || user?.restaurant?.id || user?.restaurant?._id

@@ -5,6 +5,11 @@ export const getTables = async (restaurantId, params) => {
   return response?.data?.data || response?.data || []
 }
 
+export const getPublicTables = async (restaurantId, params) => {
+  const response = await api.get(`/restaurants/${restaurantId}/tables/public`, { params })
+  return response?.data?.data || response?.data || []
+}
+
 export const getTable = async (id) => {
   const response = await api.get(`/tables/${id}`)
   return response.data

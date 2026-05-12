@@ -55,6 +55,14 @@ const Restaurant = sequelize.define('Restaurant', {
     type: DataTypes.STRING(50),
     allowNull: true,
   },
+  sub_city: {
+    type: DataTypes.STRING(150),
+    allowNull: true,
+  },
+  whatsapp_number: {
+    type: DataTypes.STRING(50),
+    allowNull: true,
+  },
   email: {
     type: DataTypes.STRING(255),
     allowNull: true,
@@ -63,6 +71,22 @@ const Restaurant = sequelize.define('Restaurant', {
     },
   },
   website: {
+    type: DataTypes.STRING(255),
+    allowNull: true,
+  },
+  slogan: {
+    type: DataTypes.STRING(255),
+    allowNull: true,
+  },
+  business_license_number: {
+    type: DataTypes.STRING(128),
+    allowNull: true,
+  },
+  tin_number: {
+    type: DataTypes.STRING(128),
+    allowNull: true,
+  },
+  owner_name: {
     type: DataTypes.STRING(255),
     allowNull: true,
   },

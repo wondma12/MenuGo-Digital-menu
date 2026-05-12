@@ -15,6 +15,14 @@ const WaiterCommission = sequelize.define('WaiterCommission', {
       key: 'id',
     },
   },
+  order_id: {
+    type: DataTypes.UUID,
+    allowNull: true,
+    references: {
+      model: 'orders',
+      key: 'id',
+    },
+  },
   order_item_id: {
     type: DataTypes.UUID,
     allowNull: false,

@@ -17,7 +17,7 @@ const Select = forwardRef(({
   return (
     <div className={`mb-4 ${containerClassName}`}>
       {label && (
-        <label htmlFor={name} className="block text-sm font-medium text-gray-700 mb-1">
+        <label htmlFor={name} className="block text-sm font-medium text-black mb-1">
           {label}
           {required && <span className="text-red-500 ml-1">*</span>}
         </label>
@@ -35,13 +35,14 @@ const Select = forwardRef(({
           transition-all duration-200 appearance-none
           ${error ? 'border-red-500' : 'border-gray-300'}
           ${disabled ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'}
+          text-black
           ${className}
         `}
         {...props}
       >
-        <option value="">{placeholder}</option>
+        <option value="" className="text-black">{placeholder}</option>
         {options.map((option) => (
-          <option key={option.value} value={option.value}>
+          <option key={option.value} value={option.value} className="text-black">
             {option.label}
           </option>
         ))}

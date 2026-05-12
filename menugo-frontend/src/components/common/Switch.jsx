@@ -9,7 +9,7 @@ const Switch = ({ checked, onChange, label, disabled = false, className = '' }) 
           type="checkbox"
           className="sr-only"
           checked={checked}
-          onChange={onChange}
+          onChange={(e) => onChange && onChange(e.target.checked)}
           disabled={disabled}
         />
         <motion.div

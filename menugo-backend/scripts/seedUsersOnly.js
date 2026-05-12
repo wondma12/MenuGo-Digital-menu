@@ -32,27 +32,7 @@ async function seedUsers() {
         role: USER_ROLES.PLATFORM_ADMIN,
         password: 'Admin@123',
       },
-      {
-        email: 'restaurant.owner@menugo.com',
-        full_name: 'John Owner',
-        phone: '+1234567891',
-        role: USER_ROLES.RESTAURANT_ADMIN,
-        password: 'Owner@123',
-      },
-      {
-        email: 'waiter1@menugo.com',
-        full_name: 'Mike Waiter',
-        phone: '+1234567892',
-        role: USER_ROLES.WAITER,
-        password: 'Waiter@123',
-      },
-      {
-        email: 'customer@example.com',
-        full_name: 'Sarah Customer',
-        phone: '+1234567893',
-        role: USER_ROLES.CUSTOMER,
-        password: 'Customer@123',
-      },
+     
     ];
 
     for (const userData of users) {
@@ -94,10 +74,7 @@ async function seedUsers() {
     console.log('\n✅ User seeding completed!');
     console.log('\n🔐 Test credentials:');
     console.log('   Admin: admin@menugo.com / Admin@123');
-    console.log('   Owner: restaurant.owner@menugo.com / Owner@123');
-    console.log('   Waiter: waiter1@menugo.com / Waiter@123');
-    console.log('   Customer: customer@example.com / Customer@123');
-    
+   
     process.exit(0);
   } catch (error) {
     console.error('❌ Error seeding users:', error);

@@ -4,11 +4,14 @@ const transformStaff = (raw) => {
   if (!raw) return raw
   const assigned = raw.assigned_user || raw.assignedUser || {}
   return {
-    id: raw.id ?? raw.staff_id ?? assigned.id ?? raw.user_id ?? null,
+    // `id` should represent the restaurant_staff PK to avoid accidentally sending
+    // a user UUID into staff endpoints. Keep `staffPk` for clarity and expose
+    // the linked user id on `employeeId`.
+    id: raw.id ?? raw.staff_id ?? null,
     staffPk: raw.id ?? raw.staff_id ?? null,
     name: assigned.full_name ?? assigned.fullName ?? raw.full_name ?? raw.name ?? '',
     avatar: assigned.avatar_url ?? assigned.avatarUrl ?? raw.avatar ?? null,
-    employeeId: raw.user_id ?? raw.employee_id ?? raw.employeeId ?? assigned.id ?? raw.id ?? null,
+    employeeId: assigned.id ?? raw.user_id ?? raw.employee_id ?? raw.employeeId ?? raw.id ?? null,
     email: assigned.email ?? raw.email ?? null,
     phone: assigned.phone ?? raw.phone ?? null,
     role: raw.role ?? null,

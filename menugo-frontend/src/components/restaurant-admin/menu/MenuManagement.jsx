@@ -9,6 +9,7 @@ import MenuSearch from './MenuSearch'
 import MenuItemModal from './MenuItemModal'
 import BulkActions from './BulkActions'
 import Button from '../../common/Button'
+import PageHero from '../../common/PageHero'
 import Loading from '../../common/Loading'
 import EmptyState from '../../common/EmptyState'
 import { getMenuItems } from '../../../services/menuService'
@@ -43,53 +44,57 @@ const MenuManagement = () => {
     setSelectedItems([])
   }
 
+  const items = data?.items || []
+  const totalItems = items.length
+  const availableItems = items.filter(i => i.isAvailable).length
+
   return (
     <div className="p-6">
-      {/* Header */}
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Menu Management</h1>
-          <p className="text-gray-500 mt-1">Manage your restaurant menu items</p>
-        </div>
-        <Button onClick={() => setShowItemModal(true)} icon={PlusIcon}>
-          Add Menu Item
-        </Button>
-      </div>
+      <PageHero
+        title="Menu Management"
+        subtitle="Design, edit and publish your dishes — beautiful, fast and simple."
+        stats={[{ label: 'Total items', value: totalItems }, { label: 'Available', value: availableItems }]}
+        primaryAction={<Button onClick={() => setShowItemModal(true)} icon={PlusIcon}>Add Menu Item</Button>}
+      />
 
       {/* Search and Filters */}
-      <div className="flex flex-col sm:flex-row gap-4 mb-6">
+      <div className="flex flex-col lg:flex-row gap-4 mb-6 items-start">
         <div className="flex-1">
-          <MenuSearch value={searchTerm} onChange={setSearchTerm} />
-        </div>
-        <div className="flex gap-2">
-          <button
-            onClick={() => setShowFilters(!showFilters)}
-            className="px-4 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-2"
-          >
-            <FunnelIcon className="w-5 h-5" />
-            Filters
-          </button>
-          <div className="flex border border-gray-300 rounded-lg overflow-hidden">
+          <div className="bg-white rounded-lg shadow-sm p-3 flex items-center gap-3">
+            <MenuSearch value={searchTerm} onChange={setSearchTerm} />
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className="ml-2 h-10 w-36 flex items-center justify-center gap-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white text-sm text-gray-700"
+            >
+              <FunnelIcon className="w-5 h-5" />
+              Filters
+            </button>
+
             <button
               onClick={() => setViewMode('grid')}
-              className={`px-3 py-2 ${viewMode === 'grid' ? 'bg-primary-600 text-white' : 'bg-white text-gray-700'}`}
+              className={`ml-2 h-10 w-36 flex items-center justify-center border border-gray-300 rounded-lg ${viewMode === 'grid' ? 'bg-white text-primary-600 font-semibold' : 'bg-white text-gray-700'} focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 text-sm`}
             >
               Grid
             </button>
             <button
               onClick={() => setViewMode('list')}
-              className={`px-3 py-2 ${viewMode === 'list' ? 'bg-primary-600 text-white' : 'bg-white text-gray-700'}`}
+              className={`ml-2 h-10 w-36 flex items-center justify-center border border-gray-300 rounded-lg ${viewMode === 'list' ? 'bg-white text-primary-600 font-semibold' : 'bg-white text-gray-700'} focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 text-sm`}
             >
               List
             </button>
+
+
           </div>
         </div>
+        
       </div>
 
       {/* Filters Panel */}
       {showFilters && (
         <div className="mb-6">
-          <MenuFilters filters={filters} onFiltersChange={setFilters} />
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+            <MenuFilters filters={filters} onFiltersChange={setFilters} />
+          </div>
         </div>
       )}
 
@@ -105,7 +110,7 @@ const MenuManagement = () => {
       )}
 
       {/* Menu Items */}
-      {data?.items?.length === 0 ? (
+      {items.length === 0 ? (
         <EmptyState
           title="No menu items found"
           description="Add your first menu item to get started"
@@ -129,7 +134,7 @@ const MenuManagement = () => {
         />
       ) : (
         <MenuList
-          items={data?.items || []}
+          items={items}
           selectedItems={selectedItems}
           onSelectItem={(id) => {
             setSelectedItems(prev =>

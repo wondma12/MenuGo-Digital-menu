@@ -3,6 +3,7 @@ import React, { useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { XMarkIcon, ChevronDownIcon, ChevronRightIcon } from '@heroicons/react/24/outline'
+import { BarChart2, Store, Users, CreditCard, TrendingUp, HelpCircle, Settings, Clipboard, QrCode, Database, LogOut } from 'lucide-react'
 
 const MobileNav = ({ isOpen, onClose, menuItems, user, onLogout }) => {
   const [expandedMenus, setExpandedMenus] = useState({})
@@ -15,21 +16,21 @@ const MobileNav = ({ isOpen, onClose, menuItems, user, onLogout }) => {
   }
 
   const navItems = [
-    { path: '/platform/dashboard', label: 'Dashboard', icon: '📊' },
-    { path: '/platform/restaurants', label: 'Restaurants', icon: '🏪' },
-    { path: '/platform/users', label: 'Users', icon: '👥' },
-    { path: '/platform/subscriptions', label: 'Subscriptions', icon: '💳' },
-    { path: '/platform/analytics', label: 'Analytics', icon: '📈' },
-    { path: '/platform/support', label: 'Support', icon: '🎫' },
+    { path: '/platform/dashboard', label: 'Dashboard', icon: <BarChart2 className="w-5 h-5" /> },
+    { path: '/platform/restaurants', label: 'Restaurants', icon: <Store className="w-5 h-5" /> },
+    { path: '/platform/users', label: 'Users', icon: <Users className="w-5 h-5" /> },
+    { path: '/platform/subscriptions', label: 'Subscriptions', icon: <CreditCard className="w-5 h-5" /> },
+    { path: '/platform/analytics', label: 'Analytics', icon: <TrendingUp className="w-5 h-5" /> },
+    { path: '/platform/support', label: 'Support', icon: <HelpCircle className="w-5 h-5" /> },
     { 
       path: '/platform/system', 
       label: 'System', 
-      icon: '⚙️',
+      icon: <Settings className="w-5 h-5" />,
       submenu: [
-        { path: '/platform/system/settings', label: 'Settings', icon: '⚙️' },
-        { path: '/platform/system/audit-logs', label: 'Audit Logs', icon: '📋' },
-        { path: '/platform/system/health', label: 'System Health', icon: '💚' },
-        { path: '/platform/system/backups', label: 'Backups', icon: '💾' },
+        { path: '/platform/system/settings', label: 'Settings', icon: <Settings className="w-5 h-5" /> },
+        { path: '/platform/system/audit-logs', label: 'Audit Logs', icon: <Clipboard className="w-5 h-5" /> },
+        { path: '/platform/system/health', label: 'System Health', icon: <Database className="w-5 h-5" /> },
+        { path: '/platform/system/backups', label: 'Backups', icon: <Database className="w-5 h-5" /> },
       ]
     },
   ]
@@ -169,7 +170,7 @@ const MobileNav = ({ isOpen, onClose, menuItems, user, onLogout }) => {
                 }}
                 className="w-full flex items-center justify-center gap-2 px-4 py-2 text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors"
               >
-                <span>🚪</span>
+                <LogOut className="w-5 h-5" />
                 Logout
               </button>
             </div>

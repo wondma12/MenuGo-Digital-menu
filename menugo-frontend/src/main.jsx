@@ -34,6 +34,37 @@ if ('serviceWorker' in navigator) {
   }
 }
 
+// Monkey-patch HTMLMediaElement.play to catch AbortError rejections and avoid
+// unhandled promise errors when play() is interrupted by a pause or navigation.
+if (typeof window !== 'undefined' && typeof HTMLMediaElement !== 'undefined') {
+  try {
+    (function patchMediaPlay() {
+      const originalPlay = HTMLMediaElement.prototype.play
+      if (!originalPlay || originalPlay.__patched) return
+      const wrapped = function patchedPlay(...args) {
+        const result = originalPlay.apply(this, args)
+        if (result && typeof result.then === 'function') {
+          result.catch((err) => {
+            // Ignore common AbortError caused by calling pause() during play().
+            if (err && err.name === 'AbortError') return
+            // Preserve default behavior for other errors by rethrowing asynchronously
+            setTimeout(() => { throw err })
+          })
+        }
+        return result
+      }
+      try {
+        wrapped.__patched = true
+        HTMLMediaElement.prototype.play = wrapped
+      } catch (e) {
+        // ignore assignment errors in some sandboxed environments
+      }
+    })()
+  } catch (e) {
+    // ignore
+  }
+}
+
 // Add global error handler
 window.addEventListener('error', (event) => {
   console.error('Global error:', event.error)

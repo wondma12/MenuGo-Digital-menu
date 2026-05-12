@@ -3,6 +3,7 @@ import { useQuery } from 'react-query'
 import { motion, AnimatePresence } from 'framer-motion'
 import CallCard from './CallCard'
 import CallDetails from './CallDetails'
+import { Phone } from 'lucide-react'
 import Loading from '../../common/Loading'
 import { getWaiterCalls } from '../../../services/callService'
 
@@ -71,7 +72,7 @@ const CallRequests = () => {
 
       {calls?.length === 0 && (
         <div className="text-center py-12 bg-white rounded-xl border border-gray-200">
-          <div className="text-4xl mb-3">📞</div>
+          <div className="text-4xl mb-3"><Phone className="w-12 h-12 mx-auto text-gray-400" /></div>
           <h3 className="text-lg font-medium text-gray-900">No call requests</h3>
           <p className="text-gray-500 mt-1">Customer calls will appear here</p>
         </div>

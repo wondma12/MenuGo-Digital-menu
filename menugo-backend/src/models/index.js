@@ -316,6 +316,13 @@ const defineAliasSynonyms = () => {
   SupportTicket.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
   TicketMessage.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 
+  // Backward-compatible aliases for SupportTicket <-> Restaurant and ticket messages
+  // Some controllers expect `restaurant` and `messages` aliases instead of the canonical ones.
+  SupportTicket.belongsTo(Restaurant, { foreignKey: 'restaurant_id', as: 'restaurant' });
+  Restaurant.hasMany(SupportTicket, { foreignKey: 'restaurant_id', as: 'support_tickets' });
+  SupportTicket.hasMany(TicketMessage, { foreignKey: 'ticket_id', as: 'messages' });
+  TicketMessage.belongsTo(SupportTicket, { foreignKey: 'ticket_id', as: 'ticket' });
+
   // Review author alias
   Review.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 

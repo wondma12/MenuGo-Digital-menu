@@ -3,8 +3,8 @@ import { Bars3Icon } from '@heroicons/react/24/outline'
 
 const TopBar = ({ title, user, actions, onMenuClick }) => {
   return (
-    <div className="fixed top-0 left-0 right-0 bg-white shadow-sm z-40">
-      <div className="px-4 py-3 flex items-center justify-between">
+    <div className="fixed top-0 left-0 right-0 bg-white shadow-sm z-40 h-16">
+      <div className="px-4 py-3 flex items-center justify-between h-full">
         <div className="flex items-center gap-3">
           <button
             onClick={onMenuClick}

@@ -58,6 +58,7 @@ const RestaurantForm = () => {
     formState: { errors },
     setValue,
     reset,
+    watch,
   } = useForm({
     resolver: yupResolver(schema),
     defaultValues: {
@@ -78,10 +79,36 @@ const RestaurantForm = () => {
         cuisineType: restaurant.cuisineType,
         subscriptionTier: restaurant.subscriptionTier,
       })
-      setLogoPreview(restaurant.logoUrl)
-      setCoverPreview(restaurant.coverImageUrl)
+      // Normalize potential logo/cover keys from service
+      const logoUrl = restaurant.logoUrl || restaurant.logo || restaurant.logo_url || restaurant.logoUrl || null
+      const coverUrl = restaurant.coverImageUrl || restaurant.coverImage || restaurant.cover_image_url || restaurant.coverImageUrl || null
+      setLogoPreview(logoUrl)
+      setCoverPreview(coverUrl)
+
+      // Set these values into the form so manual URLs persist
+      setValue('logoUrl', logoUrl || '')
+      setValue('coverImageUrl', coverUrl || '')
     }
   }, [restaurant, reset])
+
+  // Watch manual URL fields and update previews when no uploaded file present
+  const watchedLogoUrl = watch('logoUrl')
+  const watchedCoverUrl = watch('coverImageUrl')
+
+  useEffect(() => {
+    // Only reflect manual URL into preview when there is no uploaded file
+    if (!logoFile) {
+      if (watchedLogoUrl) setLogoPreview(watchedLogoUrl)
+      else setLogoPreview(null)
+    }
+  }, [watchedLogoUrl, logoFile])
+
+  useEffect(() => {
+    if (!coverFile) {
+      if (watchedCoverUrl) setCoverPreview(watchedCoverUrl)
+      else setCoverPreview(null)
+    }
+  }, [watchedCoverUrl, coverFile])
 
   const createMutation = useMutation(createRestaurant, {
     onSuccess: () => {
@@ -181,6 +208,7 @@ const RestaurantForm = () => {
                     onClick={() => {
                       setCoverPreview(null)
                       setCoverFile(null)
+                      setValue('coverImageUrl', '')
                     }}
                     className="absolute top-2 right-2 p-1 bg-red-600 text-white rounded-full hover:bg-red-700"
                   >
@@ -189,11 +217,20 @@ const RestaurantForm = () => {
                 </div>
               ) : (
                 <FileUpload
-                  onFileSelect={(files) => handleCoverUpload(files[0])}
+                  onFileSelect={handleCoverUpload}
                   accept={{ 'image/*': ['.jpeg', '.png', '.jpg', '.gif'] }}
                   label="Upload cover image"
                 />
               )}
+            </div>
+            {/* Manual cover image URL (fallback if upload doesn't work) */}
+            <div className="mt-3">
+              <Input
+                label="Cover Image URL"
+                {...register('coverImageUrl')}
+                placeholder="https://example.com/cover.jpg"
+              />
+              <p className="text-xs text-gray-500 mt-1">If drag & drop doesn't work, paste the image URL here.</p>
             </div>
           </div>
 
@@ -213,6 +250,7 @@ const RestaurantForm = () => {
                     onClick={() => {
                       setLogoPreview(null)
                       setLogoFile(null)
+                      setValue('logoUrl', '')
                     }}
                     className="absolute -top-2 -right-2 p-1 bg-red-600 text-white rounded-full hover:bg-red-700"
                   >
@@ -221,11 +259,20 @@ const RestaurantForm = () => {
                 </div>
               ) : (
                 <FileUpload
-                  onFileSelect={(files) => handleLogoUpload(files[0])}
+                  onFileSelect={handleLogoUpload}
                   accept={{ 'image/*': ['.jpeg', '.png', '.jpg', '.svg'] }}
                   label="Upload logo"
                 />
               )}
+            </div>
+            {/* Manual logo URL (fallback) */}
+            <div className="mt-3 w-full md:w-1/2">
+              <Input
+                label="Logo URL"
+                {...register('logoUrl')}
+                placeholder="https://example.com/logo.png"
+              />
+              <p className="text-xs text-gray-500 mt-1">If upload fails, paste the logo URL here.</p>
             </div>
           </div>
         </div>

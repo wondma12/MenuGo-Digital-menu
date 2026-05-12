@@ -1,14 +1,15 @@
 import React from 'react'
 import { CheckCircleIcon, ClockIcon } from '@heroicons/react/24/outline'
+import { FileText, Check, Activity, Star } from 'lucide-react'
 
 const OrderTimeline = ({ order }) => {
   const steps = [
-    { key: 'created', label: 'Order Placed', time: order.createdAt, icon: '📝' },
-    { key: 'verified', label: 'Verified', time: order.verifiedAt, icon: '✅' },
-    { key: 'preparing', label: 'Preparing', time: order.preparationStartedAt, icon: '🔪' },
-    { key: 'ready', label: 'Ready', time: order.readyAt, icon: '🍽️' },
-    { key: 'served', label: 'Served', time: order.servedAt, icon: '✨' },
-    { key: 'completed', label: 'Completed', time: order.completedAt, icon: '🎉' },
+    { key: 'created', label: 'Order Placed', time: order.createdAt, icon: <FileText className="w-5 h-5" /> },
+    { key: 'verified', label: 'Verified', time: order.verifiedAt, icon: <Check className="w-5 h-5" /> },
+    { key: 'preparing', label: 'Preparing', time: order.preparationStartedAt, icon: <Activity className="w-5 h-5" /> },
+    { key: 'ready', label: 'Ready', time: order.readyAt, icon: <Check className="w-5 h-5" /> },
+    { key: 'served', label: 'Served', time: order.servedAt, icon: <Star className="w-5 h-5" /> },
+    { key: 'completed', label: 'Completed', time: order.completedAt, icon: <Check className="w-5 h-5" /> },
   ]
 
   const getStepStatus = (stepTime, currentStep) => {

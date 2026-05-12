@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react'
+import React, { useCallback, useState, useMemo } from 'react'
 import { useDropzone } from 'react-dropzone'
 import { CloudArrowUpIcon, DocumentIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -21,9 +21,13 @@ const FileUpload = ({ onFileSelect, accept = 'image/*', maxSize = 5 * 1024 * 102
       return
     }
 
-    setFiles(prev => multiple ? [...prev, ...acceptedFiles] : acceptedFiles)
-    onFileSelect?.(multiple ? [...files, ...acceptedFiles] : acceptedFiles[0])
-  }, [files, multiple, onFileSelect, maxSize])
+    // Update files using functional state update to avoid stale closures
+    setFiles(prev => {
+      const newFiles = multiple ? [...prev, ...acceptedFiles] : acceptedFiles
+      onFileSelect?.(multiple ? newFiles : newFiles[0])
+      return newFiles
+    })
+  }, [multiple, onFileSelect, maxSize])
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -31,6 +35,17 @@ const FileUpload = ({ onFileSelect, accept = 'image/*', maxSize = 5 * 1024 * 102
     maxSize,
     multiple,
   })
+
+  const acceptLabel = useMemo(() => {
+    try {
+      if (!accept) return 'any'
+      if (typeof accept === 'string') return accept
+      if (Array.isArray(accept)) return accept.join(', ')
+      return Object.values(accept).flat().join(', ')
+    } catch (e) {
+      return 'any'
+    }
+  }, [accept])
 
   const removeFile = (index) => {
     const newFiles = files.filter((_, i) => i !== index)
@@ -56,39 +71,45 @@ const FileUpload = ({ onFileSelect, accept = 'image/*', maxSize = 5 * 1024 * 102
         <p className="text-sm text-gray-600">
           {isDragActive ? 'Drop files here...' : 'Drag & drop files here, or click to select'}
         </p>
-        <p className="text-xs text-gray-400 mt-1">
-          Supported files: {Object.values(accept).join(', ')} up to {maxSize / 1024 / 1024}MB
-        </p>
+        <p className="text-xs text-gray-400 mt-1">Supported files: {acceptLabel} up to {maxSize / 1024 / 1024}MB</p>
       </div>
       {error && <p className="mt-1 text-sm text-red-500">{error}</p>}
       
-      {files.length > 0 && (
-        <div className="mt-4 space-y-2">
-          {files.map((file, index) => (
-            <motion.div
-              key={index}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 20 }}
-              className="flex items-center justify-between p-2 bg-gray-50 rounded-lg"
-            >
-              <div className="flex items-center gap-2">
-                <DocumentIcon className="w-5 h-5 text-gray-500" />
-                <div>
-                  <p className="text-sm font-medium text-gray-700">{file.name}</p>
-                  <p className="text-xs text-gray-500">{(file.size / 1024).toFixed(2)} KB</p>
-                </div>
-              </div>
-              <button
-                onClick={() => removeFile(index)}
-                className="p-1 hover:bg-gray-200 rounded"
-              >
-                <XMarkIcon className="w-4 h-4 text-gray-500" />
-              </button>
-            </motion.div>
-          ))}
-        </div>
-      )}
+          {files.length > 0 && (
+            <div className="mt-4 space-y-2">
+              {files.map((file, index) => {
+                const isImage = file.type && file.type.startsWith('image')
+                const previewUrl = isImage ? URL.createObjectURL(file) : null
+                return (
+                  <motion.div
+                    key={index}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 20 }}
+                    className="flex items-center justify-between p-2 bg-gray-50 rounded-lg"
+                  >
+                    <div className="flex items-center gap-2">
+                      {isImage ? (
+                        <img src={previewUrl} alt={file.name} className="w-10 h-10 object-cover rounded" />
+                      ) : (
+                        <DocumentIcon className="w-5 h-5 text-gray-500" />
+                      )}
+                      <div>
+                        <p className="text-sm font-medium text-gray-700">{file.name}</p>
+                        <p className="text-xs text-gray-500">{(file.size / 1024).toFixed(2)} KB</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => removeFile(index)}
+                      className="p-1 hover:bg-gray-200 rounded"
+                    >
+                      <XMarkIcon className="w-4 h-4 text-gray-500" />
+                    </button>
+                  </motion.div>
+                )
+              })}
+            </div>
+          )}
     </div>
   )
 }

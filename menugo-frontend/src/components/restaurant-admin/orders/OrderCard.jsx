@@ -4,7 +4,7 @@ import { ClockIcon, MapPinIcon, UserIcon } from '@heroicons/react/24/outline'
 import OrderStatusBadge from './OrderStatusBadge'
 import Badge from '../../../common/Badge'
 
-const OrderCard = ({ order, onClick, onRefresh }) => {
+const OrderCard = ({ order, displayNumber, onClick, onRefresh }) => {
   const getTimeElapsed = (createdAt) => {
     const minutes = Math.floor((new Date() - new Date(createdAt)) / 60000)
     if (minutes < 60) return `${minutes} min ago`
@@ -20,7 +20,7 @@ const OrderCard = ({ order, onClick, onRefresh }) => {
       {/* Header */}
       <div className="flex justify-between items-start mb-3">
         <div>
-          <h3 className="font-semibold text-gray-900">Order #{order.orderNumber}</h3>
+          <h3 className="font-semibold text-gray-900">Order #{displayNumber ?? order.orderNumber}</h3>
           <div className="flex items-center gap-2 mt-1">
             <UserIcon className="w-3 h-3 text-gray-400" />
             <span className="text-xs text-gray-500">{order.customerName || 'Guest'}</span>

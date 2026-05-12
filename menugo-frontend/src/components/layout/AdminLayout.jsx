@@ -5,6 +5,7 @@ import { useAuthStore } from '../../store/authStore'
 import Header from './Header'
 import Sidebar from './Sidebar'
 import MobileNav from './MobileNav'
+import { BarChart2, Store, Users, CreditCard, TrendingUp, HelpCircle, Settings } from 'lucide-react'
 import Footer from './Footer'
 
 const AdminLayout = () => {
@@ -33,13 +34,13 @@ const AdminLayout = () => {
   }
 
   const menuItems = [
-    { path: '/platform/dashboard', label: 'Dashboard', icon: '📊' },
-    { path: '/platform/restaurants', label: 'Restaurants', icon: '🏪' },
-    { path: '/platform/users', label: 'Users', icon: '👥' },
-    { path: '/platform/subscriptions', label: 'Subscriptions', icon: '💳' },
-    { path: '/platform/analytics', label: 'Analytics', icon: '📈' },
-    { path: '/platform/support', label: 'Support', icon: '🎫' },
-    { path: '/platform/system', label: 'System', icon: '⚙️' },
+    { path: '/platform/dashboard', label: 'Dashboard', icon: <BarChart2 className="w-5 h-5" /> },
+    { path: '/platform/restaurants', label: 'Restaurants', icon: <Store className="w-5 h-5" /> },
+    { path: '/platform/users', label: 'Users', icon: <Users className="w-5 h-5" /> },
+    { path: '/platform/subscriptions', label: 'Subscriptions', icon: <CreditCard className="w-5 h-5" /> },
+    { path: '/platform/analytics', label: 'Analytics', icon: <TrendingUp className="w-5 h-5" /> },
+    // { path: '/platform/support', label: 'Support', icon: <HelpCircle className="w-5 h-5" /> },
+    { path: '/platform/system', label: 'System', icon: <Settings className="w-5 h-5" /> },
   ]
 
   return (

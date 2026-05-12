@@ -97,15 +97,15 @@ const RestaurantCard = ({ restaurant, onUpdate }) => {
     <>
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
         {/* Header with Logo */}
-        <div className="relative h-32 bg-gradient-to-r from-primary-500 to-primary-700">
-          <div className="absolute -bottom-8 left-4">
-            <img
-              src={restaurant.logo_url || '/logo.svg'}
-              alt={restaurant.name}
-              className="w-16 h-16 rounded-xl border-4 border-white bg-white object-cover"
-              onError={(e) => { e.target.src = '/logo.svg'; }}
-            />
-          </div>
+        <div className="relative h-28 sm:h-32 bg-gradient-to-r from-primary-500 to-primary-700">
+            <div className="absolute -bottom-7 left-4">
+              <img
+                src={restaurant.logo_url || '/logo.svg'}
+                alt={restaurant.name}
+                className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl border-4 border-white bg-white object-cover"
+                onError={(e) => { e.target.src = '/logo.svg'; }}
+              />
+            </div>
           <div className="absolute top-3 right-3 flex gap-2">
             <span className={`px-2 py-1 rounded-full text-xs font-semibold flex items-center gap-1 ${statusBadge.color}`}>
               <StatusIcon className="w-3 h-3" />
@@ -123,7 +123,7 @@ const RestaurantCard = ({ restaurant, onUpdate }) => {
           <p className="text-sm text-gray-500 mb-3 line-clamp-2">{restaurant.description || 'No description'}</p>
 
           {/* Details */}
-          <div className="space-y-2 mb-4">
+          <div className="space-y-2 mb-4 break-words">
             {restaurant.address && (
               <div className="flex items-center gap-2 text-sm text-gray-600">
                 <MapPinIcon className="w-4 h-4 text-gray-400" />

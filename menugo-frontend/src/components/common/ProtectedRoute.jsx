@@ -14,18 +14,26 @@ const ProtectedRoute = ({ allowedRoles = [] }) => {
     return <Navigate to="/login" replace />
   }
 
-  if (allowedRoles.length > 0 && !allowedRoles.includes(user?.role)) {
-    // Redirect based on role
-    if (user?.role === 'restaurant_admin') {
-      return <Navigate to="/admin/dashboard" replace />
+  if (allowedRoles.length > 0) {
+    const hasRole = allowedRoles.includes(user?.role) || allowedRoles.includes(user?.staff?.role)
+    if (!hasRole) {
+      // Prefer staff role for redirects when available
+      const effectiveRole = user?.staff?.role || user?.role
+
+      if (effectiveRole === 'restaurant_admin' || user?.role === 'restaurant_admin') {
+        return <Navigate to="/admin/dashboard" replace />
+      }
+      if (effectiveRole === 'waiter' || user?.role === 'waiter') {
+        return <Navigate to="/waiter/dashboard" replace />
+      }
+      if (user?.role === 'platform_admin') {
+        return <Navigate to="/platform/dashboard" replace />
+      }
+      if (effectiveRole === 'chef') {
+        return <Navigate to="/chef/kitchen" replace />
+      }
+      return <Navigate to="/" replace />
     }
-    if (user?.role === 'waiter') {
-      return <Navigate to="/waiter/dashboard" replace />
-    }
-    if (user?.role === 'platform_admin') {
-      return <Navigate to="/platform/dashboard" replace />
-    }
-    return <Navigate to="/" replace />
   }
 
   return <Outlet />

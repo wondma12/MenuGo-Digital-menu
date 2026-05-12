@@ -22,13 +22,13 @@ const OrderHistory = () => {
           <div className="mb-8">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Active Orders</h2>
             <div className="space-y-4">
-              {activeOrders.map((order) => (
+              {activeOrders.map((order, idx) => (
                 <motion.div
                   key={order.id}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                 >
-                  <OrderCard order={order} />
+                  <OrderCard order={order} displayNumber={idx + 1} />
                 </motion.div>
               ))}
             </div>
@@ -39,13 +39,13 @@ const OrderHistory = () => {
           <div>
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Past Orders</h2>
             <div className="space-y-4">
-              {completedOrders.map((order) => (
+              {completedOrders.map((order, idx) => (
                 <motion.div
                   key={order.id}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                 >
-                  <OrderCard order={order} />
+                  <OrderCard order={order} displayNumber={idx + 1} />
                 </motion.div>
               ))}
             </div>

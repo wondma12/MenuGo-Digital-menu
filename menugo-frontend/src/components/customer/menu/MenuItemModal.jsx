@@ -14,6 +14,11 @@ const MenuItemModal = ({ item, onClose, restaurantId }) => {
   const totalPrice = (item.price + Object.values(selectedOptions).reduce((sum, val) => sum + val, 0)) * quantity
 
   const handleAddToCart = () => {
+    if (item && (item.is_available === false || item.available === false || item.isAvailable === false)) {
+      toast.error('Item unavailable. Please select available menu item')
+      return
+    }
+
     addItem({
       id: item.id,
       name: item.name,
@@ -29,9 +34,9 @@ const MenuItemModal = ({ item, onClose, restaurantId }) => {
 
   return (
     <Modal isOpen={true} onClose={onClose} title={item.name} size="md">
-      <div className="space-y-4">
+      <div className="space-y-4 max-w-full">
         {item.image && (
-            <img src={item.image} alt={item.name} className="w-full h-36 sm:h-44 md:h-48 lg:h-56 object-cover rounded-lg" />
+        <img src={item.image} alt={item.name} className="w-full h-36 sm:h-44 md:h-48 lg:h-56 object-cover rounded-lg" />
           )}
         
         <p className="text-gray-600">{item.description}</p>
@@ -51,30 +56,30 @@ const MenuItemModal = ({ item, onClose, restaurantId }) => {
           />
         </div>
 
-        <div className="flex items-center justify-between pt-4 border-t border-gray-200">
+        <div className="flex flex-col sm:flex-row items-center justify-between pt-4 border-t border-gray-200">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setQuantity(Math.max(1, quantity - 1))}
-              className="w-8 h-8 rounded-lg border border-gray-300 hover:bg-gray-50"
+              className="w-8 h-8 rounded-lg border border-gray-300 hover:bg-gray-50 text-gray-900 bg-white"
             >
               -
             </button>
-            <span className="w-8 text-center font-medium">{quantity}</span>
+            <span className="w-8 text-center font-medium text-gray-900">{quantity}</span>
             <button
               onClick={() => setQuantity(quantity + 1)}
-              className="w-8 h-8 rounded-lg border border-gray-300 hover:bg-gray-50"
+              className="w-8 h-8 rounded-lg border border-gray-300 hover:bg-gray-50 text-gray-900 bg-white"
             >
               +
             </button>
           </div>
-          <div className="text-right">
+          <div className="text-right mt-3 sm:mt-0">
             <p className="text-sm text-gray-500">Total</p>
-            <p className="text-xl font-bold text-primary-600">${totalPrice.toFixed(2)}</p>
+            <p className="text-xl font-bold text-gray-900">${totalPrice.toFixed(2)}</p>
           </div>
         </div>
 
-        <Button onClick={handleAddToCart} fullWidth>
-          Add to Cart
+        <Button onClick={handleAddToCart} fullWidth disabled={item && (item.is_available === false || item.available === false)}>
+          {item && (item.is_available === false || item.available === false) ? 'Unavailable' : 'Add to Cart'}
         </Button>
       </div>
     </Modal>

@@ -18,7 +18,7 @@ const SearchBar = ({ value, onChange, onFilterClick, viewMode, onViewModeChange 
       <div className="flex items-center gap-2 w-full sm:w-auto mt-2 sm:mt-0">
         <button
           onClick={onFilterClick}
-          className="flex-0 w-full sm:w-auto p-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+          className="flex-0 w-full sm:w-auto p-2 border border-gray-300 rounded-lg bg-white hover:bg-gray-50"
         >
           <FunnelIcon className="w-5 h-5 text-gray-600 mx-auto" />
         </button>

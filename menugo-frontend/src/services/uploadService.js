@@ -8,7 +8,9 @@ export const uploadFile = async (file, folder) => {
   const response = await api.post('/upload', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   })
-  return response.data
+  // Backend wraps result in ApiResponse: { success, message, data }
+  // Return the inner data payload when present for caller convenience.
+  return response.data?.data ?? response.data
 }
 
 export const uploadMultipleFiles = async (files, folder) => {
@@ -19,7 +21,7 @@ export const uploadMultipleFiles = async (files, folder) => {
   const response = await api.post('/upload/multiple', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   })
-  return response.data
+  return response.data?.data ?? response.data
 }
 
 export const deleteFile = async (publicId) => {

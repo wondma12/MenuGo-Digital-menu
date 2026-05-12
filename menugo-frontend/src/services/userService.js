@@ -22,8 +22,14 @@ export const updateUser = async (id, data) => {
   return response.data
 }
 
-export const deleteUser = async (id) => {
-  const response = await api.delete(`/users/${id}`)
+export const deleteUser = async (id, options = {}) => {
+  // options: { force: boolean }
+  let url = `/users/${id}`
+  const params = []
+  if (options.force) params.push('force=true')
+  if (params.length) url = `${url}?${params.join('&')}`
+
+  const response = await api.delete(url)
   return response.data
 }
 

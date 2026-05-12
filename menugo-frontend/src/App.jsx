@@ -1,6 +1,8 @@
 import React, { useEffect } from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
+import { ToastContainer } from 'react-toastify'
+import 'react-toastify/dist/ReactToastify.css'
 import { QueryClient, QueryClientProvider } from 'react-query'
 import { useAuthStore } from './store/authStore'
 import { useUiStore } from './store/uiStore'
@@ -12,6 +14,7 @@ import AdminLayout from './components/layout/AdminLayout'
 import RestaurantLayout from './components/layout/RestaurantLayout'
 import WaiterLayout from './components/layout/WaiterLayout'
 import CustomerLayout from './components/layout/CustomerLayout'
+import KitchenLayout from './components/layout/KitchenLayout'
 
 // Platform Admin Pages
 import PlatformDashboard from './components/platform-admin/dashboard/PlatformDashboard'
@@ -57,6 +60,8 @@ import CustomerReport from './components/restaurant-admin/analytics/CustomerRepo
 import ReviewManagement from './components/restaurant-admin/reviews/ReviewManagement'
 import RestaurantSettings from './components/restaurant-admin/settings/RestaurantSettings'
 import RestaurantQRCodePage from './components/restaurant-admin/qr/RestaurantQRCodePage'
+// Remove duplicate KitchenPage import from restaurant-admin/kitchen
+// import KitchenPage from './components/restaurant-admin/kitchen/KitchenPage'
 
 // Waiter Pages
 import WaiterDashboard from './components/waiter/dashboard/WaiterDashboard'
@@ -67,13 +72,18 @@ import CallRequests from './components/waiter/calls/CallRequests'
 import WaiterProfile from './components/waiter/profile/WaiterProfile'
 import WaiterNotifications from './components/waiter/notifications/WaiterNotificationList'
 
+// Kitchen Pages
+import KitchenPage from './pages/KitchenPage'
+
 // Customer Pages
 import MenuDisplay from './components/customer/menu/MenuDisplay'
+import MenuItemDetail from './components/customer/menu/MenuItemDetail'
 import CartPage from './components/customer/cart/CartPage'
 import OrderConfirmation from './components/customer/order/OrderConfirmation'
 import OrderTracking from './components/customer/order/OrderTracker'
 import OrderHistory from './components/customer/order/OrderHistory'
 import QRScanner from './components/customer/qr/QRScanner'
+import FavoritesPage from './components/customer/favorites/FavoritesPage'
 
 // Auth Pages
 import Login from './components/auth/Login'
@@ -110,6 +120,26 @@ function App() {
   const { isAuthenticated, user, isLoading, checkAuth } = useAuthStore()
   const { theme, setTheme } = useUiStore()
 
+  // Component used for root-level role-based redirects
+  const RootRedirect = () => {
+    try {
+      const params = new URLSearchParams(window.location.search)
+      const restaurantParam = params.get('restaurant')
+      if (restaurantParam) return <Navigate to={`/menu/${restaurantParam}`} replace />
+    } catch (err) {
+      // ignore
+    }
+
+    if (!isAuthenticated) {
+      return <Navigate to="/home" replace />
+    }
+    if (user?.role === 'platform_admin') return <Navigate to="/platform/dashboard" replace />
+    if (user?.role === 'restaurant_admin') return <Navigate to="/admin/dashboard" replace />
+    if (user?.role === 'chef' || user?.staff?.role === 'chef') return <Navigate to="/chef/kitchen" replace />
+    if (user?.role === 'waiter') return <Navigate to="/waiter/dashboard" replace />
+    return <Navigate to="/scan" replace />
+  }
+
   // Run one-time bootstrap work on initial mount.
   useEffect(() => {
     checkAuth()
@@ -126,18 +156,23 @@ function App() {
   }, [checkAuth, setTheme])
 
   // Suppress noisy unhandled promise rejections caused by browser extensions
-  // (e.g. "A listener indicated an asynchronous response by returning true...").
   useEffect(() => {
     const handleUnhandledRejection = (event) => {
       try {
         const reason = event?.reason
         const message = (reason && (reason.message || reason.toString())) || ''
-        if (typeof message === 'string' && message.includes('A listener indicated an asynchronous response by returning true')) {
-          // Prevent the default console error for this known benign extension issue
-          event.preventDefault()
-          // Optionally log minimally for diagnostics
-          // eslint-disable-next-line no-console
-          console.warn('Ignored extension runtime message error:', message)
+        // Suppress noisy extension/runtime messages and audio AbortError play/pause races
+        if (typeof message === 'string') {
+          const ignorePatterns = [
+            'A listener indicated an asynchronous response by returning true',
+            'The play() request was interrupted by a call to pause',
+            'The play() request was interrupted',
+          ]
+          const shouldIgnore = ignorePatterns.some(p => message.includes(p)) || (event?.reason && event.reason.name === 'AbortError')
+          if (shouldIgnore) {
+            event.preventDefault()
+            console.warn('Ignored extension/runtime audio error:', message)
+          }
         }
       } catch (err) {
         // ignore
@@ -151,7 +186,6 @@ function App() {
   // Only connect sockets after authentication is established.
   useEffect(() => {
     if (!isAuthenticated) return
-
     initWebSocket()
   }, [isAuthenticated])
 
@@ -193,29 +227,22 @@ function App() {
               },
             }}
           />
+          <ToastContainer
+            position="top-right"
+            autoClose={4000}
+            hideProgressBar={false}
+            newestOnTop={false}
+            closeOnClick
+            rtl={false}
+            pauseOnFocusLoss
+            draggable
+            pauseOnHover
+            theme={theme === 'dark' ? 'dark' : 'light'}
+          />
           
           <Routes>
-            <Route
-              path="/"
-              element={(() => {
-                // If a QR landed the user at root with ?restaurant=identifier, route to customer menu
-                try {
-                  const params = new URLSearchParams(window.location.search)
-                  const restaurantParam = params.get('restaurant')
-                  if (restaurantParam) return <Navigate to={`/menu/${restaurantParam}`} replace />
-                } catch (err) {
-                  // ignore
-                }
-
-                if (!isAuthenticated) {
-                  return <Navigate to="/home" replace />
-                }
-                if (user?.role === 'platform_admin') return <Navigate to="/platform/dashboard" replace />
-                if (user?.role === 'restaurant_admin') return <Navigate to="/admin/dashboard" replace />
-                if (user?.role === 'waiter') return <Navigate to="/waiter/dashboard" replace />
-                return <Navigate to="/scan" replace />
-              })()}
-            />
+            {/* Root Route with Role-Based Redirection */}
+            <Route path="/" element={<RootRedirect />} />
 
             {/* Public Routes */}
             <Route path="/home" element={<Home />} />
@@ -234,11 +261,14 @@ function App() {
             {/* Customer Routes - No Auth Required */}
             <Route path="/menu/:restaurantId" element={<CustomerLayout />}>
               <Route index element={<MenuDisplay />} />
+              <Route path="item/:itemId" element={<MenuItemDetail />} />
+              <Route path="favorites" element={<FavoritesPage />} />
               <Route path="cart" element={<CartPage />} />
               <Route path="order/:orderId" element={<OrderTracking />} />
               <Route path="history" element={<OrderHistory />} />
             </Route>
-            {/* Backwards-compatible customer path: /customer -> scanner, /customer/:id -> customer menu */}
+            
+            {/* Backwards-compatible customer path */}
             <Route path="/customer" element={<Navigate to="/scan" replace />} />
             <Route path="/customer/:restaurantId" element={<CustomerLayout />}>
               <Route index element={<MenuDisplay />} />
@@ -246,6 +276,7 @@ function App() {
               <Route path="order/:orderId" element={<OrderTracking />} />
               <Route path="history" element={<OrderHistory />} />
             </Route>
+            
             <Route path="/scan" element={<QRScanner />} />
             <Route path="/order-confirmation/:orderId" element={<OrderConfirmation />} />
             
@@ -275,6 +306,16 @@ function App() {
                 <Route path="support/:id" element={<TicketDetails />} />
                 <Route path="knowledge-base" element={<KnowledgeBase />} />
                 <Route path="settings" element={<SystemSettings />} />
+                {/* Backwards-compatible system route aliases */}
+                <Route path="system" element={<Navigate to="settings" replace />} />
+                {/* Support legacy URLs under /platform/system/... */}
+                <Route path="system/settings" element={<SystemSettings />} />
+                <Route path="system/health" element={<SystemHealth />} />
+                <Route path="system/audit-logs" element={<AuditLogs />} />
+                <Route path="system/backups" element={<BackupManager />} />
+                <Route path="settings/health" element={<SystemHealth />} />
+                <Route path="settings/audit-logs" element={<AuditLogs />} />
+                <Route path="settings/backups" element={<BackupManager />} />
                 <Route path="settings/email" element={<EmailSettings />} />
                 <Route path="settings/security" element={<SecuritySettings />} />
                 <Route path="audit-logs" element={<AuditLogs />} />
@@ -303,6 +344,18 @@ function App() {
                 <Route path="reviews" element={<ReviewManagement />} />
                 <Route path="restaurant/qr" element={<RestaurantQRCodePage />} />
                 <Route path="settings" element={<RestaurantSettings />} />
+              </Route>
+            </Route>
+            
+            {/* Chef/Kitchen Routes */}
+            <Route element={<ProtectedRoute allowedRoles={['chef', 'restaurant_admin', 'manager']} />}>
+              <Route path="/chef" element={<KitchenLayout />}>
+                <Route index element={<Navigate to="/chef/kitchen" />} />
+                  <Route path="kitchen" element={<KitchenPage />} />
+                  <Route path="kitchen/completed" element={<KitchenPage />} />
+                  <Route path="kitchen/active" element={<KitchenPage />} />
+                  <Route path="completed" element={<KitchenPage />} />
+                  <Route path="active" element={<KitchenPage />} />
               </Route>
             </Route>
             
@@ -338,7 +391,7 @@ function NotFound() {
         <p className="text-gray-500 dark:text-gray-400 mt-2">The page you're looking for doesn't exist.</p>
         <a
           href="/"
-          className="mt-6 inline-flex items-center px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+          className="mt-6 inline-flex items-center px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
         >
           Go Back Home
         </a>

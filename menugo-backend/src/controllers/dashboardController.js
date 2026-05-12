@@ -14,6 +14,17 @@ const { ApiResponse } = require('../utils/apiResponse');
 const { catchAsync } = require('../utils/catchAsync');
 const { Op } = require('sequelize');
 
+// Safe helpers to guard against missing model exports or unexpected runtime issues
+const safeCount = (model, options) => {
+  if (!model || typeof model.count !== 'function') return Promise.resolve(0);
+  return model.count(options).catch(() => 0);
+};
+
+const safeSum = (model, field, options) => {
+  if (!model || typeof model.sum !== 'function') return Promise.resolve(0);
+  return model.sum(field, options).catch(() => 0);
+};
+
 // Get platform admin dashboard
 const getPlatformDashboard = catchAsync(async (req, res) => {
   try {
@@ -95,13 +106,8 @@ const getPlatformDashboard = catchAsync(async (req, res) => {
       console.error('Revenue sum error:', err);
     }
     
-    // 5. Get Support Stats
-    let openTickets = 0;
-    try {
-      openTickets = await SupportTicket.count({ where: { status: 'open' } });
-    } catch (err) {
-      console.error('Ticket count error:', err);
-    }
+    // 5. Get Support Stats (use safeCount to tolerate missing table)
+    const openTickets = await safeCount(SupportTicket, { where: { status: 'open' } });
     
     // 6. Get Recent Restaurants (last 5)
     let recentRestaurants = [];
@@ -293,15 +299,50 @@ const getRestaurantDashboard = catchAsync(async (req, res) => {
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
     
-    const [totalMenuItems, totalCategories, totalTables, occupiedTables, pendingOrders, todayOrders, todayRevenue] = await Promise.all([
-      MenuItem.count({ where: { restaurant_id: restaurantId, deleted_at: null } }).catch(() => 0),
-      MenuCategory.count({ where: { restaurant_id: restaurantId, is_active: true } }).catch(() => 0),
-      Table.count({ where: { restaurant_id: restaurantId } }).catch(() => 0),
-      Table.count({ where: { restaurant_id: restaurantId, status: 'occupied' } }).catch(() => 0),
-      Order.count({ where: { restaurant_id: restaurantId, status: 'pending' } }).catch(() => 0),
-      Order.count({ where: { restaurant_id: restaurantId, created_at: { [Op.gte]: todayStart } } }).catch(() => 0),
-      Order.sum('total_amount', { where: { restaurant_id: restaurantId, status: 'completed', created_at: { [Op.gte]: todayStart } } }).catch(() => 0),
+    const [totalMenuItems, totalCategories, totalTables, occupiedTables, pendingOrders, todayOrders, todayRevenue, completedToday] = await Promise.all([
+      safeCount(MenuItem, { where: { restaurant_id: restaurantId, deleted_at: null } }),
+      safeCount(MenuCategory, { where: { restaurant_id: restaurantId, is_active: true } }),
+      safeCount(Table, { where: { restaurant_id: restaurantId } }),
+      safeCount(Table, { where: { restaurant_id: restaurantId, status: 'occupied' } }),
+      safeCount(Order, { where: { restaurant_id: restaurantId, status: 'pending' } }),
+      safeCount(Order, { where: { restaurant_id: restaurantId, created_at: { [Op.gte]: todayStart } } }),
+      safeSum(Order, 'total_amount', { where: { restaurant_id: restaurantId, status: 'completed', created_at: { [Op.gte]: todayStart } } }),
+      // Count completed orders for today
+      safeCount(Order, { where: { restaurant_id: restaurantId, status: 'completed', created_at: { [Op.gte]: todayStart } } }),
     ]);
+
+    // Build last 7 days revenue and order counts for the restaurant
+    const revenueData = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      d.setHours(0, 0, 0, 0);
+      const next = new Date(d);
+      next.setDate(next.getDate() + 1);
+
+      let dailyRevenue = 0;
+      let dailyOrders = 0;
+      try {
+        dailyRevenue = await Order.sum('total_amount', {
+          where: {
+            restaurant_id: restaurantId,
+            status: 'completed',
+            created_at: { [Op.between]: [d, next] },
+          },
+        }) || 0;
+
+        dailyOrders = await Order.count({
+          where: {
+            restaurant_id: restaurantId,
+            created_at: { [Op.between]: [d, next] },
+          },
+        }) || 0;
+      } catch (err) {
+        console.error('Daily chart data error for restaurant:', err);
+      }
+
+      revenueData.push({ date: d.toISOString().split('T')[0], revenue: dailyRevenue, orders: dailyOrders });
+    }
     
     res.json(ApiResponse.success({
       restaurant: {
@@ -318,7 +359,9 @@ const getRestaurantDashboard = catchAsync(async (req, res) => {
         pending_orders: pendingOrders,
         today_orders: todayOrders,
         today_revenue: todayRevenue || 0,
+        completed_today: completedToday || 0,
       },
+      revenue_data: revenueData,
       recent_orders: [],
     }, 'Restaurant dashboard data retrieved'));
   } catch (error) {
@@ -329,16 +372,84 @@ const getRestaurantDashboard = catchAsync(async (req, res) => {
 
 // Get waiter dashboard
 const getWaiterDashboard = catchAsync(async (req, res) => {
-  res.json(ApiResponse.success({
-    stats: {
-      active_orders: 0,
-      completed_orders_today: 0,
-      total_orders_served: 0,
-      total_tips: 0,
-    },
-    active_orders: [],
-    assigned_tables: [],
-  }, 'Waiter dashboard data retrieved'));
+  try {
+    const { Order, Table, WaiterTip } = require('../models');
+    const { Op } = require('sequelize');
+
+    const waiterId = req.waiterId || req.waiter?.id;
+
+    // Active orders assigned to this waiter (not completed/cancelled/rejected)
+    const activeOrders = await Order.findAll({
+      where: {
+        waiter_id: waiterId,
+        status: { [Op.notIn]: ['completed', 'cancelled', 'rejected'] },
+      },
+      order: [['created_at', 'DESC']],
+      limit: 50,
+    }).catch(() => []);
+
+    // Completed orders today
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+
+    const completedToday = await Order.count({
+      where: {
+        waiter_id: waiterId,
+        status: 'completed',
+        created_at: { [Op.gte]: todayStart },
+      },
+    }).catch(() => 0);
+
+    // Total orders served by waiter
+    const totalServed = await Order.count({
+      where: {
+        waiter_id: waiterId,
+        status: 'completed',
+      },
+    }).catch(() => 0);
+
+    // Total tips (from waiter_tips table)
+    const totalTips = await WaiterTip.sum('amount', { where: { waiter_id: waiterId } }).catch(() => 0) || 0;
+
+    // Assigned tables (current_waiter_id on Table)
+    const assignedTables = await Table.findAll({ where: { current_waiter_id: waiterId } }).catch(() => []);
+    const assignedTableIds = assignedTables.map(t => t.id).filter(Boolean);
+
+    // Pending verification: orders with status 'pending' assigned to this waiter or on their tables
+    const pendingVerification = await Order.count({
+      where: {
+        status: 'pending',
+        [Op.or]: [{ waiter_id: waiterId }, ...(assignedTableIds.length ? [{ table_id: { [Op.in]: assignedTableIds } }] : [])],
+      },
+    }).catch(() => 0);
+
+    // Rejected orders today
+    const todayEnd = new Date();
+    todayEnd.setHours(23, 59, 59, 999);
+    const rejectedToday = await Order.count({
+      where: {
+        waiter_id: waiterId,
+        status: 'rejected',
+        created_at: { [Op.between]: [todayStart, todayEnd] },
+      },
+    }).catch(() => 0);
+
+    res.json(ApiResponse.success({
+      stats: {
+        active_orders: activeOrders.length,
+        completed_orders_today: completedToday || 0,
+        pending_verification: pendingVerification || 0,
+        rejected_today: rejectedToday || 0,
+        total_orders_served: totalServed || 0,
+        total_tips: parseFloat(totalTips) || 0,
+      },
+      active_orders: activeOrders,
+      assigned_tables: assignedTables,
+    }, 'Waiter dashboard data retrieved'));
+  } catch (error) {
+    console.error('Waiter dashboard error:', error);
+    res.status(500).json(ApiResponse.error('Failed to load waiter dashboard', error.message));
+  }
 });
 
 // Get customer dashboard

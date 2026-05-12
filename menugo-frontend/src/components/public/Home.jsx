@@ -63,8 +63,8 @@ const Home = () => {
   ];
 
   const stats = [
-    { value: '10K+', label: 'Restaurants' },
-    { value: '1M+', label: 'Happy Customers' },
+    { value: '2+', label: 'Restaurants' },
+    { value: '23+', label: 'Happy Customers' },
     { value: '99.9%', label: 'Uptime' },
     { value: '24/7', label: 'Support' },
   ];

@@ -1,10 +1,11 @@
 import React from 'react'
 import { NavLink } from 'react-router-dom'
 import Avatar from '../common/Avatar'
+import { LogOut } from 'lucide-react'
 
 const WaiterSidebar = ({ menuItems = [], user, onLogout }) => {
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full justify-between">
       {/* Logo */}
       <div className="p-5 border-b border-gray-200">
         <div className="flex items-center gap-2">
@@ -15,7 +16,7 @@ const WaiterSidebar = ({ menuItems = [], user, onLogout }) => {
 
       {/* Navigation */}
       <nav className="flex-1 py-4 overflow-y-auto">
-        <div className="px-3 space-y-1">
+        <div className="px-3 space-y-1 pb-6">
           {menuItems.map((item, index) => (
             <NavLink
               key={index}
@@ -33,9 +34,9 @@ const WaiterSidebar = ({ menuItems = [], user, onLogout }) => {
         </div>
       </nav>
 
-      {/* User Section */}
-      <div className="p-4 border-t border-gray-200">
-        <div className="flex items-center gap-3 mb-3">
+      {/* User Section (pinned to bottom-left) */}
+      <div className="p-4 border-t border-gray-200 flex flex-col items-start">
+        <div className="flex items-center gap-3 mb-2">
           <Avatar name={user?.fullName} size="md" />
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-gray-900 truncate">{user?.fullName}</p>
@@ -44,9 +45,10 @@ const WaiterSidebar = ({ menuItems = [], user, onLogout }) => {
         </div>
         <button
           onClick={onLogout}
-          className="w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+          className="inline-flex items-center gap-2 px-2 py-1 text-sm text-red-600 hover:bg-red-50 rounded transition-colors"
         >
-          Logout
+          <LogOut className="w-4 h-4" />
+          <span>Logout</span>
         </button>
       </div>
     </div>

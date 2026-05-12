@@ -1,9 +1,30 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import Avatar from '../common/Avatar'
+import { getPendingVerifications } from '../../services/restaurantService'
 
 const Sidebar = ({ menuItems, onLogout, user }) => {
+  const [pendingCount, setPendingCount] = useState(0)
+
+  useEffect(() => {
+    let mounted = true
+    const load = async () => {
+      try {
+        if (user?.role === 'platform_admin') {
+          const list = await getPendingVerifications()
+          if (mounted) setPendingCount(Array.isArray(list) ? list.length : (list?.length || 0))
+        }
+      } catch (e) {
+        // ignore
+      }
+    }
+
+    load()
+
+    const id = setInterval(load, 30000)
+    return () => { mounted = false; clearInterval(id) }
+  }, [user])
   return (
     <div className="flex flex-col h-full">
       {/* Logo */}
@@ -28,13 +49,20 @@ const Sidebar = ({ menuItems, onLogout, user }) => {
               className={({ isActive }) =>
                 `flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 ${
                   isActive
-                    ? 'bg-primary-50 text-primary-700'
+                    ? 'bg-primary-50 text-primary-700 border-l-4 border-primary-600'
                     : 'text-gray-700 hover:bg-gray-100'
                 }`
               }
             >
               <span className="text-xl">{item.icon}</span>
-              <span className="text-sm font-medium">{item.label}</span>
+              <span className="text-sm font-medium flex items-center gap-2">
+                {item.label}
+                {item.path === '/platform/restaurants' && pendingCount > 0 && (
+                  <span className="ml-2 inline-flex items-center justify-center px-2 py-0.5 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                    {pendingCount}
+                  </span>
+                )}
+              </span>
             </NavLink>
           ))}
         </div>

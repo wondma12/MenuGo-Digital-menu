@@ -55,7 +55,7 @@ const PlatformAnalytics = () => {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <MetricCard title="Total Revenue" value={`$${(data?.totalRevenue || 0).toLocaleString()}`} change={data?.revenueGrowth} />
         <MetricCard title="Active Restaurants" value={data?.activeRestaurants || 0} change={data?.restaurantsGrowth} />
-        <MetricCard title="Total Users" value={(data?.totalUsers || 0).toLocaleString()} change={data?.usersGrowth} />
+        <MetricCard title="Active Users" value={(data?.activeUsers || 0).toLocaleString()} change={data?.usersGrowth} />
         <MetricCard title="Total Orders" value={(data?.totalOrders || 0).toLocaleString()} change={data?.ordersGrowth} />
       </div>
 
@@ -140,16 +140,25 @@ const PlatformAnalytics = () => {
   )
 }
 
-const MetricCard = ({ title, value, change }) => (
-  <div className="bg-white rounded-xl p-4 border border-gray-200">
-    <p className="text-sm text-gray-500">{title}</p>
-    <p className="text-2xl font-bold text-gray-900 mt-1">{value}</p>
-    {change !== undefined && (
-      <p className={`text-xs mt-1 ${change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-        {change >= 0 ? '+' : ''}{change}% from previous period
-      </p>
-    )}
-  </div>
-)
+const MetricCard = ({ title, value, change }) => {
+  const key = (title || '').toLowerCase()
+  let borderClass = 'border-l-blue-500'
+  if (key.includes('revenue')) borderClass = 'border-l-purple-500'
+  else if (key.includes('active')) borderClass = 'border-l-blue-500'
+  else if (key.includes('users')) borderClass = 'border-l-green-500'
+  else if (key.includes('orders')) borderClass = 'border-l-orange-500'
+
+  return (
+    <div className={`bg-white rounded-xl p-4 border border-gray-200 border-l-4 ${borderClass}`}>
+      <p className="text-sm text-gray-500">{title}</p>
+      <p className="text-2xl font-bold text-gray-900 mt-1">{value}</p>
+      {change !== undefined && (
+        <p className={`text-xs mt-1 ${change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+          {change >= 0 ? '+' : ''}{change}% from previous period
+        </p>
+      )}
+    </div>
+  )
+}
 
 export default PlatformAnalytics

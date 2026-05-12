@@ -155,6 +155,45 @@ const deleteUser = catchAsync(async (req, res) => {
     throw new ApiError(403, 'You do not have permission to delete this user');
   }
 
+  // Prevent deleting a restaurant owner without transferring ownership or removing restaurants
+  if (user.role === 'restaurant_admin') {
+    const ownedCount = await Restaurant.count({ where: { owner_id: id, deleted_at: null } });
+    if (ownedCount > 0) {
+      throw new ApiError(400, 'User owns one or more restaurants. Transfer ownership or remove restaurants before deleting this user.');
+    }
+  }
+
+  // Prevent deleting the last active platform admin
+  if (user.role === 'platform_admin') {
+    const activeAdmins = await User.count({ where: { role: 'platform_admin', is_active: true } });
+    // If this user is active and they are the only active admin, block deletion
+    if (user.is_active && activeAdmins <= 1) {
+      throw new ApiError(400, 'Cannot delete the last active platform admin. Assign another platform admin first.');
+    }
+  }
+
+  await user.update({ deleted_at: new Date(), is_active: false });
+
+  // Support permanent deletion when `?force=true` is provided (platform_admin only)
+  if (req.query.force === 'true') {
+    if (req.user.role !== 'platform_admin') {
+      throw new ApiError(403, 'Only platform admin can permanently delete users');
+    }
+
+    await sequelize.transaction(async (t) => {
+      // Best-effort cleanup of related records that reference this user
+      await UserSession.destroy({ where: { user_id: id }, force: true, transaction: t }).catch(() => {});
+      await RestaurantStaff.destroy({ where: { user_id: id }, force: true, transaction: t }).catch(() => {});
+      await Waiter.destroy({ where: { user_id: id }, force: true, transaction: t }).catch(() => {});
+
+      // Finally remove the user record (hard delete)
+      await user.destroy({ force: true, transaction: t });
+    });
+
+    return res.json(ApiResponse.success(null, 'User permanently deleted'));
+  }
+
+  // Soft delete (default)
   await user.update({ deleted_at: new Date(), is_active: false });
 
   // Revoke all sessions
@@ -190,6 +229,40 @@ const uploadAvatar = catchAsync(async (req, res) => {
   await user.update({ avatar_url: uploadResult.url });
 
   res.json(ApiResponse.success({ avatar_url: uploadResult.url }, 'Avatar uploaded'));
+});
+
+// Upload business license document (platform admin or during registration)
+const uploadBusinessLicense = catchAsync(async (req, res) => {
+  // Accepts multipart/form-data file under field `businessLicenseDocument` and `restaurant_id` or `user_id`
+  const { restaurant_id, user_id } = req.body;
+
+  if (!req.file) {
+    throw new ApiError(400, 'No file uploaded');
+  }
+
+  const uploadResult = await uploadToCloudinary(req.file.path, 'menugo/business_licenses');
+
+  // If restaurant_id provided, attach url to restaurant record
+  if (restaurant_id) {
+    const restaurant = await Restaurant.findByPk(restaurant_id);
+    if (!restaurant) throw new ApiError(404, 'Restaurant not found');
+    await restaurant.update({ business_license_url: uploadResult.url });
+    return res.json(ApiResponse.success({ url: uploadResult.url }, 'Business license uploaded'));
+  }
+
+  // If user_id provided, attach to user's preferences or a dedicated column
+  if (user_id) {
+    const user = await User.findByPk(user_id);
+    if (!user) throw new ApiError(404, 'User not found');
+    // store in preferences.business_license_url for flexibility
+    const prefs = user.preferences || {};
+    prefs.business_license_url = uploadResult.url;
+    await user.update({ preferences: prefs });
+    return res.json(ApiResponse.success({ url: uploadResult.url }, 'Business license uploaded'));
+  }
+
+  // Otherwise return uploaded URL
+  res.json(ApiResponse.success({ url: uploadResult.url }, 'Business license uploaded'));
 });
 
 // Get user sessions
@@ -270,8 +343,17 @@ const createUser = catchAsync(async (req, res) => {
     restaurant = await Restaurant.create({
       owner_id: user.id,
       name: req.body.restaurant_name,
-      email: user.email,
-      phone: phone || null,
+      email: req.body.business_email || user.email,
+      phone: req.body.restaurant_phone || phone || null,
+      address: req.body.restaurant_address || null,
+      city: req.body.restaurant_city || null,
+      country: req.body.restaurant_country || null,
+      website: req.body.restaurant_website || null,
+      slogan: req.body.restaurant_slogan || null,
+      sub_city: req.body.restaurant_sub_city || null,
+      business_license_number: req.body.business_license_number || null,
+      tin_number: req.body.tin_number || null,
+      owner_name: req.body.owner_name || full_name || null,
       is_verified: true,
       subscription_status: 'trial',
       subscription_start_date: new Date(),
@@ -341,4 +423,5 @@ module.exports = {
   getUserStats,
   createUser,
   toggleUserStatus,
+  uploadBusinessLicense,
 };

@@ -1,7 +1,7 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { ShoppingBagIcon, ClockIcon, CurrencyDollarIcon } from '@heroicons/react/24/outline'
+import { ShoppingBagIcon, ClockIcon, CurrencyDollarIcon, BuildingOfficeIcon } from '@heroicons/react/24/outline'
 import Badge from '../../../common/Badge'
 import Button from '../../../common/Button'
 
@@ -46,7 +46,7 @@ const RecentOrders = ({ orders }) => {
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-medium text-gray-900">Order #{order.orderNumber}</span>
+                    <span className="font-medium text-gray-900">Order #{index + 1}</span>
                     <Badge variant={getStatusColor(order.status)} size="sm">
                       {order.status}
                     </Badge>

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import OrderStatus from './OrderStatus'
 import EstimatedTime from './EstimatedTime'
 
-const OrderCard = ({ order }) => {
+const OrderCard = ({ order, displayNumber }) => {
   const navigate = useNavigate()
 
   return (
@@ -13,7 +13,7 @@ const OrderCard = ({ order }) => {
     >
       <div className="flex justify-between items-start mb-3">
         <div>
-          <p className="font-medium text-gray-900">Order #{order.orderNumber}</p>
+          <p className="font-medium text-gray-900">Order #{displayNumber ?? order.orderNumber}</p>
           <p className="text-sm text-gray-500">{new Date(order.createdAt).toLocaleDateString()}</p>
         </div>
         <OrderStatus status={order.status} />

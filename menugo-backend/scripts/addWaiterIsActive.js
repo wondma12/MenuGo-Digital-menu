@@ -5,7 +5,7 @@ const dbConfig = {
   host: process.env.DB_HOST || 'localhost',
   port: parseInt(process.env.DB_PORT, 10) || 3306,
   user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || '',
+  password: process.env.DB_PASSWORD || 'Haymi@mysql1',
   database: process.env.DB_NAME || 'menugo_db',
   multipleStatements: true,
 };
@@ -44,7 +44,7 @@ const dbConfig = {
     console.log('Done.');
     process.exit(0);
   } catch (error) {
-    if (connection) await connection.end().catch(() => {});
+    if (connection) {await connection.end().catch(() => {});}
     console.error('Error ensuring waiters.is_active:', error && error.message ? error.message : error);
     process.exit(1);
   }

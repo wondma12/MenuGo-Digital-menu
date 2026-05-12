@@ -1,5 +1,5 @@
 const { Notification, WaiterNotification, PushNotificationToken } = require('../models');
-const { emitToUser, emitToWaiter, emitToRestaurant } = require('./socketService');
+const { emitToUser, emitToWaiter, emitToRestaurant } = require('../sockets');
 const { sendSMS } = require('./smsService');
 const { sendEmail } = require('./emailService');
 const { logger } = require('../utils/logger');

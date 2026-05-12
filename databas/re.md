@@ -1,3 +1,28 @@
+menugo-frontend/src/
+├── components/
+│   └── kitchen/
+│       ├── KitchenDashboard.jsx
+│       ├── KitchenOrderCard.jsx
+│       ├── KitchenOrderList.jsx
+│       ├── KitchenStats.jsx
+│       ├── KitchenTimer.jsx
+│       ├── KitchenStatusBadge.jsx
+│       ├── KitchenOrderDetails.jsx
+│       ├── KitchenFilters.jsx
+│       ├── KitchenHeader.jsx
+│       ├── KitchenLineDisplay.jsx
+│       ├── KitchenCompletedOrders.jsx
+│       ├── KitchenInventoryAlert.jsx
+│       └── KitchenSoundNotification.jsx
+├── hooks/
+│   └── useKitchen.js
+├── services/
+│   └── kitchenService.js
+├── pages/
+│   └── KitchenPage.jsx
+└── styles/
+    └── kitchen.css
+
 
 menugo-frontend/
 ├── public/

@@ -47,6 +47,9 @@ const ReviewCard = ({ review, onRefresh }) => {
                   <RatingStars rating={review.rating} size="sm" />
                   <span className="text-xs text-gray-400">•</span>
                   <span className="text-xs text-gray-400">{new Date(review.createdAt).toLocaleDateString()}</span>
+                  {review.customerEmail && (
+                    <div className="text-xs text-gray-500 ml-3">{review.customerEmail}</div>
+                  )}
                 </div>
               </div>
             </div>

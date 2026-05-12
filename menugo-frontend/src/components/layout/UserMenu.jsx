@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { UserIcon, Cog6ToothIcon, ArrowRightOnRectangleIcon } from '@heroicons/react/24/outline'
 import Avatar from '../common/Avatar'
 
-const UserMenu = ({ user, onLogout }) => {
+const UserMenu = ({ user, onLogout, inHeader = false }) => {
   const [isOpen, setIsOpen] = useState(false)
   const menuRef = useRef(null)
 
@@ -28,7 +28,8 @@ const UserMenu = ({ user, onLogout }) => {
     <div className="relative" ref={menuRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 p-1 hover:bg-gray-100 rounded-lg transition-colors"
+        className={`flex items-center gap-2 p-1 rounded-lg transition-colors ${inHeader ? 'hover:bg-white/10' : 'hover:bg-gray-100'}`}
+        aria-label="User menu"
       >
         <Avatar name={user?.fullName} size="sm" />
       </button>

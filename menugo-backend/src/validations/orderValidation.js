@@ -33,11 +33,11 @@ const createOrderValidation = [
     .isLength({ min: 2, max: 100 })
     .withMessage('Customer name must be between 2 and 100 characters'),
   body('customer_phone')
-    .optional()
+    .optional({ checkFalsy: true })
     .isMobilePhone()
     .withMessage('Please provide a valid phone number'),
   body('customer_email')
-    .optional()
+    .optional({ checkFalsy: true })
     .isEmail()
     .withMessage('Please provide a valid email address'),
   body('special_instructions')

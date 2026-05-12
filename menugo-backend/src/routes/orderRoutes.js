@@ -4,8 +4,10 @@ const { protect, restrictTo } = require('../middleware/authMiddleware');
 const { isRestaurantStaff, isWaiter } = require('../middleware/roleMiddleware');
 const { validate } = require('../middleware/validationMiddleware');
 const { orderValidations } = require('../middleware/validationMiddleware');
+const { normalizeOrderPayload } = require('../middleware/normalizeMiddleware');
 const {
   createOrder,
+  createOrderByWaiter,
   getRestaurantOrders,
   getOrderById,
   updateOrderStatus,
@@ -15,7 +17,16 @@ const {
 } = require('../controllers/orderController');
 
 // Public route for creating order (no auth required)
-router.post('/', validate(orderValidations.create), createOrder);
+// Normalize incoming payloads (camelCase → snake_case) before validation
+router.post('/', normalizeOrderPayload, validate(orderValidations.create), createOrder);
+
+// Public GET for restaurant orders when `table` query param is present (customers viewing their table)
+router.get('/restaurant/:restaurantId', (req, res, next) => {
+  if (req.query && (req.query.table || req.query.table_number)) {
+    return getRestaurantOrders(req, res, next)
+  }
+  return next()
+})
 
 // Protected routes
 router.use(protect);
@@ -27,6 +38,7 @@ router.put('/:id/status', validate(orderValidations.updateStatus), updateOrderSt
 router.post('/:id/cancel', cancelOrder);
 
 // Waiter routes
+router.post('/waiter', isWaiter, normalizeOrderPayload, validate(orderValidations.create), createOrderByWaiter);
 router.get('/waiter/orders', isWaiter, getWaiterOrders);
 router.post('/:id/verify', isWaiter, validate(orderValidations.verify), verifyOrder);
 

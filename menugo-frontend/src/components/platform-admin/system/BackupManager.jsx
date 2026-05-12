@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { useQuery, useMutation } from 'react-query'
+import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { CloudArrowDownIcon, TrashIcon, PlusIcon, ArrowPathIcon } from '@heroicons/react/24/outline'
 import Button from '../../../common/Button'
@@ -8,7 +9,8 @@ import { getBackups, createBackup, deleteBackup, downloadBackup } from '../../..
 import toast from 'react-hot-toast'
 
 const BackupManager = () => {
-  const { data: backups, isLoading, refetch } = useQuery('backups', getBackups)
+  const navigate = useNavigate()
+  const { data: backups, isLoading, isError, error, refetch } = useQuery('backups', getBackups)
 
   const createMutation = useMutation(createBackup, {
     onSuccess: () => {
@@ -41,6 +43,31 @@ const BackupManager = () => {
   }
 
   if (isLoading) return <Loading />
+
+  if (isError) {
+    const status = error?.response?.status
+    if (status === 401) {
+      navigate('/login')
+      return null
+    }
+    if (status === 403) {
+      return (
+        <div className="p-6">
+          <h1 className="text-2xl font-bold text-gray-900">Backup Manager</h1>
+          <p className="text-red-500 mt-4">You do not have permission to manage backups.</p>
+        </div>
+      )
+    }
+    return (
+      <div className="p-6">
+        <h1 className="text-2xl font-bold text-gray-900">Backup Manager</h1>
+        <p className="text-gray-600 mt-2">Failed to load backups: {error?.message || 'Unknown error'}</p>
+        <div className="mt-4">
+          <button onClick={() => refetch()} className="px-4 py-2 bg-orange-600 text-white rounded">Retry</button>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="p-6">

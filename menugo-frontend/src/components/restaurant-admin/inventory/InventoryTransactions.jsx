@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { useQuery } from 'react-query'
 import { motion } from 'framer-motion'
 import { ArrowPathIcon } from '@heroicons/react/24/outline'
+import { Box, Coffee, Trash2, Settings, Clipboard } from 'lucide-react'
 import Badge from '../../../common/Badge'
 import Pagination from '../../../common/Pagination'
 import { getInventoryTransactions } from '../../../services/inventoryService'
@@ -34,12 +35,12 @@ const InventoryTransactions = () => {
 
   const getTransactionIcon = (type) => {
     const icons = {
-      purchase: '📦',
-      usage: '🍽️',
-      waste: '🗑️',
-      adjustment: '⚙️',
+      purchase: <Box className="w-4 h-4" />,
+      usage: <Coffee className="w-4 h-4" />,
+      waste: <Trash2 className="w-4 h-4" />,
+      adjustment: <Settings className="w-4 h-4" />,
     }
-    return icons[type] || '📋'
+    return icons[type] || <Clipboard className="w-4 h-4" />
   }
 
   return (

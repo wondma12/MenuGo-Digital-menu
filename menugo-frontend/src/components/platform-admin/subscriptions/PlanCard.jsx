@@ -9,6 +9,27 @@ const PlanCard = ({ plan, onEdit, onDelete }) => {
     enterprise: 'gold',
   }
 
+  const normalizeFeatures = (features) => {
+    if (!features) return []
+    if (Array.isArray(features)) return features
+    if (typeof features === 'string') {
+      // try JSON parse first (stored as JSON string)
+      try {
+        const parsed = JSON.parse(features)
+        if (Array.isArray(parsed)) return parsed
+      } catch (e) {
+        // ignore
+      }
+      // fallback: comma separated list
+      return features.split(',').map(f => f.trim()).filter(Boolean)
+    }
+    if (typeof features === 'object') {
+      // object -> return string values
+      const vals = Object.values(features).filter(v => v !== null && v !== undefined)
+      return vals.map(v => (typeof v === 'string' ? v : String(v)))
+    }
+    return []
+  }
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-all">
       <div className="p-6">
@@ -33,7 +54,7 @@ const PlanCard = ({ plan, onEdit, onDelete }) => {
         </div>
 
         <div className="mt-6 space-y-3">
-          {plan.features?.map((feature, index) => (
+          {normalizeFeatures(plan.features).map((feature, index) => (
             <div key={index} className="flex items-center gap-2">
               <CheckIcon className="w-4 h-4 text-green-500" />
               <span className="text-sm text-gray-700">{feature}</span>

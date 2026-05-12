@@ -9,6 +9,7 @@ import Modal from '../../../common/Modal'
 import Badge from '../../../common/Badge'
 import Loading from '../../../common/Loading'
 import { getReservations, updateReservationStatus } from '../../../services/reservationService'
+import { useRestaurantStore } from '../../../store/restaurantStore'
 import toast from 'react-hot-toast'
 
 const ReservationsList = () => {
@@ -16,7 +17,14 @@ const ReservationsList = () => {
   const [selectedReservation, setSelectedReservation] = useState(null)
   const [viewMode, setViewMode] = useState('list')
 
-  const { data: reservations, isLoading, refetch } = useQuery('reservations', getReservations)
+  const { restaurant } = useRestaurantStore()
+  const restaurantId = restaurant?.id || restaurant?.restaurant_id || null
+
+  const { data: reservations, isLoading, refetch } = useQuery(
+    ['reservations', restaurantId],
+    () => getReservations(restaurantId, {}),
+    { enabled: !!restaurantId }
+  )
 
   const updateMutation = useMutation(updateReservationStatus, {
     onSuccess: () => {

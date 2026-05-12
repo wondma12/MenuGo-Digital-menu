@@ -4,6 +4,7 @@ import Modal from '../../common/Modal'
 import Button from '../../common/Button'
 import { acknowledgeCall, resolveCall } from '../../../services/callService'
 import toast from 'react-hot-toast'
+import { Bell, CreditCard, HelpCircle, Coffee, MessageSquare } from 'lucide-react'
 
 const CallDetails = ({ isOpen, onClose, call, onRefresh }) => {
   const queryClient = useQueryClient()
@@ -28,13 +29,13 @@ const CallDetails = ({ isOpen, onClose, call, onRefresh }) => {
 
   const getCallTypeIcon = (type) => {
     const icons = {
-      service: '🛎️',
-      bill: '💰',
-      help: '❓',
-      food_issue: '🍽️',
-      other: '💬'
+      service: <Bell className="w-12 h-12" />,
+      bill: <CreditCard className="w-12 h-12" />,
+      help: <HelpCircle className="w-12 h-12" />,
+      food_issue: <Coffee className="w-12 h-12" />,
+      other: <MessageSquare className="w-12 h-12" />,
     }
-    return icons[type] || '🔔'
+    return icons[type] || <Bell className="w-12 h-12" />
   }
 
   const getCallTypeLabel = (type) => {

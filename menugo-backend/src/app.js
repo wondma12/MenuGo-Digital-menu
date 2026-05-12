@@ -6,15 +6,33 @@ const compression = require('compression');
 const cookieParser = require('cookie-parser');
 require('express-async-errors');
 
-const { logger } = require('./utils/logger');
+const { logger, stream: loggerStream } = require('./utils/logger');
 const { errorMiddleware } = require('./middleware/errorMiddleware');
 const { rateLimitMiddleware } = require('./middleware/rateLimitMiddleware');
 const { securityMiddleware } = require('./middleware/securityMiddleware');
+const passport = require('passport');
+// Load passport strategies (JWT is already configured in config/passport.js)
+require('./config/passport');
+// Load optional Google strategy
+try { require('./config/passportGoogle'); } catch (e) { /* ignore if not configured */ }
+// Load optional Facebook strategy
+try { require('./config/passportFacebook'); } catch (e) { /* ignore if not configured */ }
 
 // Import routes
 const routes = require('./routes');
 
 const app = express();
+
+// Disable automatic ETag generation for API responses to avoid conditional GET 304
+app.set('etag', false);
+
+// Prevent caching for API responses so clients always receive fresh JSON
+app.use('/api', (req, res, next) => {
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.set('Pragma', 'no-cache');
+  res.set('Expires', '0');
+  next();
+});
 
 // Security middleware
 app.use(helmet());
@@ -31,18 +49,16 @@ app.use(cors({
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());
+// Initialize passport for OAuth routes
+app.use(passport.initialize());
 
 // Compression
 app.use(compression());
 
-// Logging
-if (process.env.NODE_ENV === 'development') {
-  app.use(morgan('dev'));
-} else {
-  app.use(morgan('combined', {
-    stream: { write: (message) => logger.info(message.trim()) }
-  }));
-}
+// Logging: route morgan output through our winston stream so request logs
+// are persisted to `logs/combined.log` in all environments (helps debugging OAuth callbacks).
+const morganFormat = process.env.NODE_ENV === 'development' ? 'dev' : 'combined';
+app.use(morgan(morganFormat, { stream: loggerStream }));
 
 // Rate limiting
 if (process.env.NODE_ENV !== 'development') {
@@ -54,6 +70,17 @@ app.use('/uploads', express.static('uploads'));
 
 // API routes
 app.use('/api', routes);
+
+// Backwards-compatible public alias: some frontends may call /restaurants/:id/calls without the /api prefix.
+// Provide a thin public POST handler that forwards to the same controller used by the /api routes.
+try {
+  // require here to avoid circular deps at module load time
+  const { createCallRequest } = require('./controllers/customerController');
+  app.post('/restaurants/:id/calls', createCallRequest);
+} catch (e) {
+  // If controller isn't available for any reason, don't crash the app — just log.
+  logger.warn('Could not mount legacy /restaurants/:id/calls route alias:', e && e.message);
+}
 
 // Health check
 app.get('/health', (req, res) => {

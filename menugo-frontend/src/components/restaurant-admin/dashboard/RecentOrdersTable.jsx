@@ -41,9 +41,9 @@ const RecentOrdersTable = ({ orders }) => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {orders.map((order) => (
+              {orders.map((order, idx) => (
                 <tr key={order.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 text-sm font-medium text-gray-900">#{order.orderNumber}</td>
+                  <td className="px-6 py-4 text-sm font-medium text-gray-900">#{idx + 1}</td>
                   <td className="px-6 py-4 text-sm text-gray-600">{order.customerName}</td>
                   <td className="px-6 py-4 text-sm text-gray-600">{order.tableNumber}</td>
                   <td className="px-6 py-4 text-sm text-gray-600">{order.itemCount} items</td>
@@ -58,7 +58,7 @@ const RecentOrdersTable = ({ orders }) => {
                   </td>
                   <td className="px-6 py-4">
                     <button
-                      onClick={() => setSelectedOrder(order)}
+                      onClick={() => setSelectedOrder({ ...order, displayNumber: idx + 1 })}
                       className="text-primary-600 hover:text-primary-700"
                     >
                       <EyeIcon className="w-5 h-5" />

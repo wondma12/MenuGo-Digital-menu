@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { BellIcon } from '@heroicons/react/24/outline'
+import { Check, Star, Settings, Bell } from 'lucide-react'
 import { useQuery } from 'react-query'
 import { motion, AnimatePresence } from 'framer-motion'
 import { getUnreadNotificationCount, getNotifications, markNotificationAsRead } from '../../services/notificationService'
 import { useAuthStore } from '../../store/authStore'
 
-const NotificationBell = () => {
+const NotificationBell = ({ inHeader = false }) => {
   const [isOpen, setIsOpen] = useState(false)
   const [notifications, setNotifications] = useState([])
   const dropdownRef = useRef(null)
@@ -49,19 +50,20 @@ const NotificationBell = () => {
 
   const getNotificationIcon = (type) => {
     const icons = {
-      new_order: '🆕',
-      order_ready: '✅',
-      order_served: '✨',
-      system: '⚙️'
+      new_order: <Bell className="w-5 h-5" />, 
+      order_ready: <Check className="w-5 h-5" />,
+      order_served: <Star className="w-5 h-5" />,
+      system: <Settings className="w-5 h-5" />,
     }
-    return icons[type] || '🔔'
+    return icons[type] || <Bell className="w-5 h-5" />
   }
 
   return (
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="relative p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+        className={`relative p-2 rounded-lg transition-colors ${inHeader ? 'text-white hover:bg-white/10' : 'text-gray-600 hover:bg-gray-100'}`}
+        aria-label="Notifications"
       >
         <BellIcon className="w-5 h-5" />
         {unreadCount > 0 && (

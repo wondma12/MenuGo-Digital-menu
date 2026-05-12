@@ -2,19 +2,89 @@
 import api from './api';
 
 export const getRestaurantAnalytics = async (restaurantId, dateRange) => {
-  try {
-    const response = await api.get(`/restaurants/${restaurantId}/analytics`, { 
-      params: {
-        startDate: dateRange?.start?.toISOString(),
-        endDate: dateRange?.end?.toISOString(),
-      }
-    });
-    return response?.data?.data || response?.data || {};
-  } catch (error) {
-    console.error('Error fetching restaurant analytics:', error);
-    return {};
+  if (!restaurantId) return {}
+  const params = {
+    start_date: dateRange?.start ? dateRange.start.toISOString() : undefined,
+    end_date: dateRange?.end ? dateRange.end.toISOString() : undefined,
   }
-};
+
+  try {
+    const [revenueResp, salesResp, menuResp, hourlyResp, customerResp] = await Promise.all([
+      api.get(`/analytics/revenue/${restaurantId}`, { params }),
+      api.get(`/analytics/sales/${restaurantId}`, { params }),
+      api.get(`/analytics/menu/${restaurantId}`, { params }),
+      api.get(`/analytics/hourly/${restaurantId}`, { params: { date: params.start_date } }),
+      api.get(`/analytics/customers/${restaurantId}`, { params }),
+    ])
+
+    const revenue = revenueResp?.data?.data || revenueResp?.data || {}
+    const sales = salesResp?.data?.data || salesResp?.data || {}
+    const menu = menuResp?.data?.data || menuResp?.data || {}
+    const hourly = hourlyResp?.data?.data || hourlyResp?.data || {}
+    const customers = customerResp?.data?.data || customerResp?.data || {}
+
+    // Map backend fields to frontend shape
+    const totalRevenue = revenue.total_revenue || 0
+    const revenueChange = revenue.revenue_growth || 0
+    const revenueData = (revenue.revenue_data || []).map(d => ({ date: d.date || d.period || d.period, revenue: Number(d.revenue || d.total_revenue || 0) }))
+
+    const totalOrders = sales?.summary?.dataValues?.total_orders || sales?.summary?.total_orders || 0
+    const ordersData = (sales.data || []).map(s => ({ date: s.date, orders: s.total_orders || s.orders || 0 }))
+    const ordersChange = sales?.summary?.dataValues?.orders_change || sales?.summary?.orders_change || 0
+
+    const avgOrderValue = sales?.summary?.dataValues?.avg_order_value || sales?.summary?.avg_order_value || 0
+    const avgOrderChange = 0
+
+    const orderTypeDistribution = (menu?.category_performance || []).map((c, i) => ({ name: c.category_id || c.name || `Category ${i+1}`, value: Number(c.total_sales || c.item_count || 0) }))
+
+    const peakHours = (hourly?.peak_hours || []).map(h => ({ hour: h.hour || h.dataValues?.hour, orders: h.avg_orders || h.orders || 0 }))
+
+    const topCategories = (menu?.category_performance || []).map((c, i) => ({ name: c.category_id || c.category || `Category ${i+1}`, orders: Number(c.total_sales || 0), percentage: 0 }))
+
+    const paymentMethods = []
+
+    // Also include legacy keys expected by various dashboard components
+    const popularItems = (menu.top_items || []).map(item => ({
+      id: item.menu_item_id || item.analytics_item?.id || item.id,
+      name: item.analytics_item?.name || item.name || item.analytics_item?.title,
+      image: item.analytics_item?.image || item.analytics_item?.thumbnail || null,
+      orders: Number(item.total_orders || item.total_orders || 0),
+      revenue: Number(item.total_revenue || item.revenue || 0),
+    }))
+
+    const revenueByType = [
+      { name: 'Dine-in', value: revenue.dine_in_percentage || 0 },
+      { name: 'Takeaway', value: revenue.takeaway_percentage || 0 },
+      { name: 'Delivery', value: revenue.delivery_percentage || 0 },
+    ]
+
+    const hourlyData = hourly.hourly_data || hourly.hourlyData || []
+
+    return {
+      totalRevenue,
+      revenueChange,
+      totalOrders,
+      ordersChange,
+      avgOrderValue,
+      avgOrderChange,
+      avgRating: customers?.avg_rating || 0,
+      ratingChange: 0,
+      revenueData,
+      ordersData,
+      orderTypeDistribution,
+      peakHours,
+      topCategories,
+      paymentMethods,
+      // legacy/alternate keys
+      popularItems,
+      revenueByType,
+      hourlyData,
+    }
+  } catch (error) {
+    console.error('Error fetching restaurant analytics:', error)
+    return {}
+  }
+}
 
 export const getSalesReport = async (restaurantId, dateRange, filters) => {
   try {
@@ -140,14 +210,29 @@ export const getPlatformDashboardData = async (dateRange) => {
     if (response.data && response.data.success !== false) {
       const payload = response.data.data || response.data;
       const stats = payload.stats || {};
-      
+
+      // Fetch admin-only user summary (platform_admin + restaurant_admin)
+      // and prefer its active count for the dashboard Active Users metric.
+      let adminActiveUsers = null;
+      try {
+        const adminResp = await api.get('/users', {
+          params: { role: 'platform_admin,restaurant_admin', page: 1, limit: 1 }
+        });
+        const adminPayload = adminResp.data?.data || adminResp.data || {};
+        adminActiveUsers = adminPayload?.active ?? adminPayload?.activeUsers ?? null;
+      } catch (err) {
+        console.warn('Failed to fetch admin users summary:', err?.message || err);
+        adminActiveUsers = null;
+      }
+
       return {
         totalRestaurants: stats.total_restaurants || 0,
         activeRestaurants: stats.active_restaurants || 0,
         pendingVerification: stats.pending_verification || 0,
         restaurantsGrowth: stats.restaurants_growth || 0,
         totalUsers: stats.total_users || 0,
-        activeUsers: stats.active_users || 0,
+        // Prefer admin-only active user count when available
+        activeUsers: adminActiveUsers !== null ? adminActiveUsers : (stats.active_users || 0),
         usersGrowth: stats.users_growth || 0,
         totalOrders: stats.total_orders || 0,
         todayOrders: stats.today_orders || 0,

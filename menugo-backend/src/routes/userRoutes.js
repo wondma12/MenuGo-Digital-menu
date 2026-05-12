@@ -10,6 +10,7 @@ const {
   updateUser,
   deleteUser,
   uploadAvatar,
+  uploadBusinessLicense,
   getUserSessions,
   revokeSession,
   getUserStats,
@@ -36,7 +37,7 @@ router.post(
       .notEmpty()
       .withMessage('Restaurant name is required when creating a restaurant admin'),
   ]),
-  createUser
+  createUser,
 );
 router.get('/stats', restrictTo('platform_admin'), getUserStats);
 router.post('/:id/toggle-status', restrictTo('platform_admin'), toggleUserStatus);
@@ -45,6 +46,7 @@ router.post('/:id/toggle-status', restrictTo('platform_admin'), toggleUserStatus
 router.get('/me/sessions', getUserSessions);
 router.delete('/me/sessions/:sessionId', revokeSession);
 router.post('/me/avatar', uploadSingle('avatar'), uploadAvatar);
+router.post('/me/business-license', uploadSingle('businessLicenseDocument'), uploadBusinessLicense);
 
 // User CRUD routes
 router.get('/:id', getUserById);

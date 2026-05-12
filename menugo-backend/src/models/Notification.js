@@ -17,7 +17,7 @@ const Notification = sequelize.define('Notification', {
   },
   user_id: {
     type: DataTypes.UUID,
-    allowNull: false,
+    allowNull: true,
     references: {
       model: 'users',
       key: 'id',
@@ -35,6 +35,7 @@ const Notification = sequelize.define('Notification', {
     type: DataTypes.ENUM(
       'new_order',
       'order_verified',
+      'order_rejected',
       'order_preparing',
       'order_ready',
       'order_served',

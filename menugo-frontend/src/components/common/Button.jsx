@@ -16,13 +16,13 @@ const Button = ({
   ...props
 }) => {
   const variants = {
-    primary: 'bg-primary-600 hover:bg-primary-700 text-white focus:ring-primary-500',
-    secondary: 'bg-gray-200 hover:bg-gray-300 text-gray-800 focus:ring-gray-400',
-    outline: 'border-2 border-primary-600 text-primary-600 hover:bg-primary-600 hover:text-white focus:ring-primary-500',
+    primary: 'bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-600 hover:to-indigo-700 text-white shadow-md focus:ring-sky-300',
+    secondary: 'bg-white border border-gray-200 hover:bg-gray-50 text-gray-800 focus:ring-gray-300',
+    outline: 'border-2 border-sky-500 text-sky-600 hover:bg-sky-600 hover:text-white focus:ring-sky-300',
     danger: 'bg-red-600 hover:bg-red-700 text-white focus:ring-red-500',
     success: 'bg-green-600 hover:bg-green-700 text-white focus:ring-green-500',
     warning: 'bg-yellow-500 hover:bg-yellow-600 text-white focus:ring-yellow-400',
-    ghost: 'hover:bg-gray-100 text-gray-700 focus:ring-gray-400',
+    ghost: 'hover:bg-gray-100 text-gray-700 focus:ring-gray-300',
   }
 
   const sizes = {
@@ -34,8 +34,8 @@ const Button = ({
   return (
     <motion.button
       type={type}
-      whileHover={!disabled && !isLoading ? { scale: 1.02 } : {}}
-      whileTap={!disabled && !isLoading ? { scale: 0.98 } : {}}
+      whileHover={!disabled && !isLoading ? { scale: 1.03 } : {}}
+      whileTap={!disabled && !isLoading ? { scale: 0.985 } : {}}
       onClick={onClick}
       disabled={disabled || isLoading}
       className={`

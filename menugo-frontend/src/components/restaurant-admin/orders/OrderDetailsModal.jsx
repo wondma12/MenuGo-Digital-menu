@@ -4,7 +4,6 @@ import Modal from '../../../common/Modal'
 import Button from '../../../common/Button'
 import OrderItemsList from './OrderItemsList'
 import OrderStatusBadge from './OrderStatusBadge'
-import OrderTimeline from './OrderTimeline'
 import { updateOrderStatus } from '../../../services/orderService'
 import toast from 'react-hot-toast'
 
@@ -46,8 +45,9 @@ const OrderDetailsModal = ({ order, onClose, onRefresh }) => {
     return (statusFlow[order.status] || []).map(action => actions[action])
   }
 
+  const titleNum = order.displayNumber ?? order.orderNumber;
   return (
-    <Modal isOpen={true} onClose={onClose} title={`Order Details - #${order.orderNumber}`} size="lg">
+    <Modal isOpen={true} onClose={onClose} title={`Order Details - #${titleNum}`} size="lg">
       <div className="space-y-6">
         {/* Order Header */}
         <div className="flex justify-between items-start">
@@ -65,11 +65,10 @@ const OrderDetailsModal = ({ order, onClose, onRefresh }) => {
           </div>
         </div>
 
-        {/* Order Timeline */}
-        <OrderTimeline order={order} />
+        {/* Order Timeline removed per request */}
 
         {/* Order Items */}
-        <OrderItemsList items={order.items || []} />
+        <OrderItemsList items={order.items || []} order={order} />
 
         {/* Special Instructions */}
         {order.specialInstructions && (

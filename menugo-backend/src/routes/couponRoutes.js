@@ -13,7 +13,11 @@ const {
   validateCoupon,
   applyCoupon,
   getCouponAnalytics,
+  getPublicCoupons,
 } = require('../controllers/couponController');
+
+// Public route: get active/public coupons for a restaurant (used on menu page)
+router.get('/public/restaurant/:restaurantId', getPublicCoupons);
 
 // Protected routes
 router.use(protect);

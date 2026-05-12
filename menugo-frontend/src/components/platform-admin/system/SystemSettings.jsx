@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { useQuery, useMutation } from 'react-query'
+import { useNavigate } from 'react-router-dom'
 import { CheckIcon } from '@heroicons/react/24/outline'
 import Tabs from '../../../common/Tabs'
 import Button from '../../../common/Button'
@@ -10,13 +11,45 @@ import { getSystemSettings, updateSystemSettings } from '../../../services/syste
 import toast from 'react-hot-toast'
 
 const SystemSettings = () => {
-  const { data: settings, isLoading } = useQuery('systemSettings', getSystemSettings)
+  const navigate = useNavigate()
+  const { data: settings, isLoading, isError, error, refetch } = useQuery('systemSettings', getSystemSettings)
   const mutation = useMutation(updateSystemSettings, {
     onSuccess: () => toast.success('Settings saved successfully'),
     onError: () => toast.error('Failed to save settings'),
   })
 
   if (isLoading) return <Loading />
+
+  // Handle auth/permission errors from API
+  if (isError) {
+    const status = error?.response?.status
+    // If unauthorized, navigate to login so token refresh/login flow can occur
+    if (status === 401) {
+      navigate('/login')
+      return null
+    }
+
+    // Forbidden - show helpful message
+    if (status === 403) {
+      return (
+        <div className="p-6">
+          <h1 className="text-2xl font-bold text-gray-900">System Settings</h1>
+          <p className="text-red-500 mt-4">You do not have permission to view system settings.</p>
+        </div>
+      )
+    }
+
+    // Other errors - show retry option
+    return (
+      <div className="p-6">
+        <h1 className="text-2xl font-bold text-gray-900">System Settings</h1>
+        <p className="text-gray-600 mt-2">Failed to load settings: {error?.message || 'Unknown error'}</p>
+        <div className="mt-4">
+          <button onClick={() => refetch()} className="px-4 py-2 bg-orange-600 text-white rounded">Retry</button>
+        </div>
+      </div>
+    )
+  }
 
   const tabs = [
     { label: 'General', content: <GeneralSettings settings={settings} onSave={mutation.mutate} /> },

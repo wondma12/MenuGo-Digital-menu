@@ -304,13 +304,53 @@ export const updateRestaurantSettings = async (id, settings) => {
 }
 
 export const updateOperatingHours = async (hours) => {
-  const response = await api.put('/restaurants/settings/hours', hours)
+  // Determine restaurant id from auth store
+  const restaurantId = hours?.restaurantId || hours?.restaurant_id || useAuthStore.getState()?.user?.restaurant_id || useAuthStore.getState()?.user?.restaurant?.id
+  if (!restaurantId) {
+    console.error('updateOperatingHours: no restaurant id available')
+    throw new Error('Restaurant ID is required to update operating hours')
+  }
+
+  // Backend expects settings object under `{ settings: { operating_hours: ... } }`
+  const body = { settings: { operating_hours: hours } }
+  const response = await api.put(`/restaurants/${restaurantId}/settings`, body)
   return response?.data?.data || response?.data || {}
 }
 
 export const updateDeliverySettings = async (settings) => {
-  const response = await api.put('/restaurants/settings/delivery', settings)
-  return response?.data?.data || response?.data || {}
+  // Determine restaurant id from auth store if not provided
+  const restaurantId = settings?.restaurantId || settings?.restaurant_id || useAuthStore.getState()?.user?.restaurant_id || useAuthStore.getState()?.user?.restaurant?.id
+  if (!restaurantId) {
+    console.error('updateDeliverySettings: no restaurant id available')
+    throw new Error('Restaurant ID is required')
+  }
+
+  // Map frontend camelCase keys to backend snake_case/top-level fields
+  const topLevel = {}
+  const settingsPayload = {}
+
+  if (typeof settings.enableDelivery !== 'undefined') settingsPayload.enable_delivery = !!settings.enableDelivery
+  if (typeof settings.enableTakeaway !== 'undefined') settingsPayload.enable_takeaway = !!settings.enableTakeaway
+  if (typeof settings.freeDeliveryThreshold !== 'undefined') settingsPayload.free_delivery_threshold = Number(settings.freeDeliveryThreshold)
+  if (typeof settings.estimatedDeliveryTime !== 'undefined') settingsPayload.estimated_delivery_time = Number(settings.estimatedDeliveryTime)
+
+  if (typeof settings.deliveryRadius !== 'undefined') topLevel.delivery_radius_km = Number(settings.deliveryRadius)
+  if (typeof settings.deliveryFee !== 'undefined') topLevel.delivery_fee = Number(settings.deliveryFee)
+  if (typeof settings.minimumOrderAmount !== 'undefined') topLevel.minimum_order_amount = Number(settings.minimumOrderAmount)
+
+  // Send top-level updates (delivery_fee, delivery_radius_km, minimum_order_amount) if present
+  let topResp = null
+  if (Object.keys(topLevel).length > 0) {
+    topResp = await api.put(`/restaurants/${restaurantId}`, topLevel)
+  }
+
+  // Merge settings JSON via the dedicated settings endpoint so we don't overwrite other settings
+  let settingsResp = null
+  if (Object.keys(settingsPayload).length > 0) {
+    settingsResp = await api.put(`/restaurants/${restaurantId}/settings`, settingsPayload)
+  }
+
+  return (settingsResp?.data?.data || topResp?.data?.data) || (settingsResp?.data || topResp?.data) || {}
 }
 
 export const updatePaymentSettings = async (settings) => {
@@ -324,7 +364,36 @@ export const updateNotificationSettings = async (settings) => {
 }
 
 export const updateTaxSettings = async (settings) => {
-  const response = await api.put('/restaurants/settings/tax', settings)
+  // Determine restaurant id from payload or auth store
+  const restaurantId = settings?.restaurantId || settings?.restaurant_id || useAuthStore.getState()?.user?.restaurant_id || useAuthStore.getState()?.user?.restaurant?.id
+
+  if (!restaurantId) {
+    console.error('updateTaxSettings: no restaurant id available')
+    throw new Error('Restaurant ID is required')
+  }
+
+  // Sanitize settings to avoid accidental DOM elements or circular structures
+  const payload = {}
+
+  if (typeof settings === 'object' && settings !== null) {
+    if (typeof settings.taxRate !== 'undefined') {
+      const v = settings.taxRate
+      payload.taxRate = (v === '' || v === null) ? null : Number(v)
+    }
+    if (typeof settings.serviceCharge !== 'undefined') {
+      const v = settings.serviceCharge
+      payload.serviceCharge = (v === '' || v === null) ? null : Number(v)
+    }
+    if (typeof settings.serviceChargeType !== 'undefined') payload.serviceChargeType = String(settings.serviceChargeType)
+    if (typeof settings.applyTaxToDelivery !== 'undefined') payload.applyTaxToDelivery = Boolean(settings.applyTaxToDelivery)
+    if (typeof settings.taxInclusive !== 'undefined') payload.taxInclusive = Boolean(settings.taxInclusive)
+  } else {
+    throw new Error('Invalid settings payload')
+  }
+
+  // Backend expects body to include a `settings` object and the route to be restaurant-scoped
+  const body = { settings: payload }
+  const response = await api.put(`/restaurants/${restaurantId}/settings`, body)
   return response?.data?.data || response?.data || {}
 }
 
@@ -350,12 +419,47 @@ export const getRestaurantDashboardData = async ({ restaurantId, startDate, endD
     throw new Error('Invalid restaurant ID')
   }
 
-  const encodedId = encodeURIComponent(rid)
-  const response = await api.get(`/restaurants/${encodedId}/dashboard`, {
+  // The backend exposes a restaurant-specific dashboard at /dashboard/restaurant
+  // which derives the restaurant from the authenticated user. Use that endpoint
+  // and pass optional date range params. The frontend may call with restaurantId
+  // but the backend ignores it in favor of auth, so we rely on the token.
+  const response = await api.get('/dashboard/restaurant', {
     params: {
       startDate: startDate?.toISOString(),
       endDate: endDate?.toISOString(),
+      // include restaurantId as a hint for proxies that may accept it
+      restaurantId: rid,
     }
   })
-  return response?.data?.data || response?.data || {}
+
+  const payload = response?.data?.data || response?.data || {}
+
+  // backend returns { restaurant, stats, recent_orders, ... }
+  const stats = payload.stats || {}
+
+  const normalized = {
+    // basic restaurant info
+    restaurant: payload.restaurant || payload.restaurant || {},
+    // completed counts
+    completedToday: stats.completed_today ?? stats.completedToday ?? payload.completed_today ?? payload.completedToday ?? 0,
+    completedTotal: stats.completed_total ?? stats.completedTotal ?? payload.completed_total ?? payload.completedTotal ?? 0,
+    // flatten key names expected by UI
+    todayOrders: stats.today_orders ?? stats.todayOrders ?? payload.today_orders ?? payload.todayOrders ?? 0,
+    todayRevenue: stats.today_revenue ?? stats.todayRevenue ?? payload.today_revenue ?? payload.todayRevenue ?? 0,
+    ordersChange: stats.orders_growth ?? stats.ordersChange ?? payload.orders_growth ?? payload.ordersChange ?? 0,
+    revenueChange: stats.revenue_growth ?? stats.revenueChange ?? payload.revenue_growth ?? payload.revenueChange ?? 0,
+    totalMenuItems: stats.total_menu_items ?? stats.totalMenuItems ?? payload.total_menu_items ?? payload.totalMenuItems ?? 0,
+    activeCustomers: stats.active_customers ?? stats.activeCustomers ?? payload.active_customers ?? payload.activeCustomers ?? 0,
+    avgRating: stats.avg_rating ?? stats.avgRating ?? payload.avg_rating ?? payload.avgRating ?? 0,
+    ratingChange: stats.rating_change ?? stats.ratingChange ?? payload.rating_change ?? payload.ratingChange ?? 0,
+    revenueData: payload.revenue_data || payload.revenueData || [],
+    ordersData: payload.orders_data || payload.ordersData || payload.revenue_data || [],
+    popularItems: payload.popular_items || payload.popularItems || [],
+    lowStockItems: payload.low_stock_items || payload.lowStockItems || [],
+    recentOrders: payload.recent_orders || payload.recentOrders || [],
+    todaySchedule: payload.today_schedule || payload.todaySchedule || {},
+    customerInsights: payload.customer_insights || payload.customerInsights || {},
+  }
+
+  return normalized
 }

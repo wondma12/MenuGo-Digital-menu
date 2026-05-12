@@ -1,3 +1,108 @@
+src/
+├── components/
+│   ├── kitchen/
+│   │   ├── KitchenDashboard.jsx              # Main kitchen dashboard
+│   │   ├── KitchenOrderList.jsx              # List of all kitchen orders
+│   │   ├── KitchenOrderCard.jsx              # Individual order card
+│   │   ├── KitchenOrderDetails.jsx           # Order details modal
+│   │   ├── KitchenOrderItems.jsx             # Items within an order
+│   │   ├── KitchenOrderItemModifiers.jsx     # Modifiers for items
+│   │   ├── KitchenStatusBadge.jsx            # Status badge (pending/preparing/ready)
+│   │   ├── KitchenPriorityBadge.jsx          # Priority badge (low/normal/high/urgent)
+│   │   ├── KitchenFilters.jsx                # Filter by status, station, priority
+│   │   ├── KitchenSearch.jsx                 # Search orders
+│   │   ├── KitchenStations.jsx               # Station management
+│   │   ├── KitchenStationCard.jsx            # Individual station card
+│   │   ├── KitchenStationAssignment.jsx      # Assign order to station
+│   │   ├── KitchenTimer.jsx                  # Preparation timer
+│   │   ├── KitchenProgressBar.jsx            # Order progress
+│   │   ├── KitchenActivityLog.jsx            # Activity log viewer
+│   │   ├── KitchenPerformanceMetrics.jsx     # Performance charts
+│   │   ├── KitchenInventoryAlert.jsx         # Low stock alerts
+│   │   ├── KitchenPrintButton.jsx            # Print kitchen ticket
+│   │   ├── KitchenSoundAlert.jsx             # Sound for new orders
+│   │   ├── KitchenRefreshButton.jsx          # Manual refresh
+│   │   └── KitchenEmptyState.jsx             # Empty state component
+│   │
+│   ├── layout/
+│   │   └── KitchenLayout.jsx                 # Layout wrapper for kitchen pages
+│   │
+│   └── common/
+│       ├── ConfirmDialog.jsx                 # Reusable confirmation dialog
+│       └── AlertBanner.jsx                   # Alert banner component
+│
+├── pages/
+│   └── KitchenPage.jsx                       # Main kitchen page entry
+│
+├── hooks/
+│   ├── useKitchen.js                         # Kitchen data & mutations
+│   ├── useKitchenOrders.js                   # Fetch kitchen orders
+│   ├── useKitchenStations.js                 # Fetch stations
+│   ├── useKitchenWebSocket.js                # Real-time kitchen updates
+│   ├── useKitchenSound.js                    # Sound notifications
+│   └── useKitchenTimer.js                    # Timer logic
+│
+├── services/
+│   ├── kitchenService.js                     # API calls for kitchen
+│   └── kitchenSocketService.js               # WebSocket for real-time
+│
+├── store/
+│   ├── kitchenStore.js                       # Zustand/Redux store
+│   └── kitchenStationStore.js                # Station store
+│
+├── styles/
+│   └── kitchen.css                           # Kitchen-specific styles
+│
+└── utils/
+    ├── kitchenHelpers.js                     # Helper functions
+    └── kitchenConstants.js                   # Constants (statuses, priorities)
+
+    src/
+├── controllers/
+│   └── kitchenController.js                  # Kitchen business logic
+│
+├── routes/
+│   └── kitchenRoutes.js                      # Kitchen API endpoints
+│
+├── models/
+│   ├── KitchenOrder.js                       # Kitchen order model
+│   ├── KitchenOrderItem.js                   # Kitchen order item model
+│   ├── KitchenOrderItemModifier.js           # Item modifiers model
+│   ├── KitchenStation.js                     # Kitchen station model
+│   ├── KitchenStationAssignment.js           # Station assignment model
+│   ├── KitchenActivityLog.js                 # Activity log model
+│   ├── KitchenPerformanceMetric.js           # Performance metrics model
+│   └── KitchenInventoryAlert.js              # Inventory alert model
+│
+├── services/
+│   ├── kitchenService.js                     # Core kitchen logic
+│   ├── kitchenAssignmentService.js           # Station assignment logic
+│   └── kitchenNotificationService.js         # Kitchen notifications
+│
+├── sockets/
+│   └── kitchenSocket.js                      # Real-time kitchen events
+│
+├── validations/
+│   └── kitchenValidation.js                  # Request validation
+│
+├── jobs/
+│   ├── kitchenCleanupJob.js                  # Cleanup old kitchen orders
+│   └── kitchenPerformanceJob.js              # Daily performance metrics
+│
+└── utils/
+    └── kitchenHelpers.js                     # Kitchen utility functions
+    
+
+
+
+
+
+
+
+
+
+
+
 menugo-frontend/
 ├── public/
 │   ├── logo.svg

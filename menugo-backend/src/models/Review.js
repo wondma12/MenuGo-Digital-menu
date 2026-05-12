@@ -47,6 +47,17 @@ const Review = sequelize.define('Review', {
     type: DataTypes.TEXT,
     allowNull: true,
   },
+  customer_name: {
+    type: DataTypes.STRING(255),
+    allowNull: true,
+  },
+  customer_email: {
+    type: DataTypes.STRING(255),
+    allowNull: true,
+    validate: {
+      isEmail: true,
+    },
+  },
   images: {
     type: DataTypes.JSON,
     allowNull: true,

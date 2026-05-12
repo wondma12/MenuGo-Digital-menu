@@ -227,7 +227,13 @@ const getPlatformDashboardData = async (startDate, endDate) => {
     }) || 0;
     
     // Support stats
-    const openTickets = await SupportTicket.count({ where: { status: 'open' } });
+    let openTickets = 0;
+    try {
+      openTickets = await SupportTicket.count({ where: { status: 'open' } });
+    } catch (err) {
+      logger.warn('SupportTicket.count failed, returning 0 for openTickets', { err: err && err.message });
+      openTickets = 0;
+    }
     
     return {
       totalUsers,

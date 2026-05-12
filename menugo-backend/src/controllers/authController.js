@@ -10,7 +10,20 @@ const { catchAsync } = require('../utils/catchAsync');
 
 // Register new user
 const register = catchAsync(async (req, res) => {
-  const { email, password, full_name, phone, role, restaurant_name } = req.body;
+  const {
+    email,
+    password,
+    full_name,
+    phone,
+    role,
+    restaurant_name,
+    restaurant_address,
+    restaurant_city,
+    restaurant_country,
+    restaurant_phone,
+    restaurant_website,
+    restaurant_slogan,
+  } = req.body;
 
   // Check if user exists
   const existingUser = await User.findOne({ where: { email } });
@@ -23,26 +36,35 @@ const register = catchAsync(async (req, res) => {
   const password_hash = await bcrypt.hash(password, salt);
 
   // Create user
+  const isRestaurantAdmin = role === 'restaurant_admin';
   const user = await User.create({
     email,
     password_hash,
     full_name,
     phone,
     role: role || 'customer',
-    is_verified: role === 'restaurant_admin' ? false : true,
+    is_verified: isRestaurantAdmin ? false : true,
+    // Restaurant admins should not be active until platform admin verifies
+    is_active: isRestaurantAdmin ? false : true,
   });
 
   // If registering as restaurant admin, create restaurant
-  if (role === 'restaurant_admin' && restaurant_name) {
+  if (isRestaurantAdmin && restaurant_name) {
     const restaurant = await Restaurant.create({
       owner_id: user.id,
       name: restaurant_name,
-      email,
-      phone,
+      email: email || null,
+      phone: restaurant_phone || phone || null,
+      address: restaurant_address || null,
+      city: restaurant_city || null,
+      country: restaurant_country || null,
+      website: restaurant_website || null,
+      slogan: restaurant_slogan || null,
       is_verified: false,
       subscription_status: 'trial',
       subscription_start_date: new Date(),
       subscription_end_date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
+      is_active: true,
     });
 
     await RestaurantStaff.create({
@@ -59,11 +81,27 @@ const register = catchAsync(async (req, res) => {
     email_verification_token: verificationToken,
     email_verification_expires: new Date(Date.now() + 24 * 60 * 60 * 1000),
   });
+  // Send welcome email (do not fail registration if email sending errors)
+  try {
+    await sendWelcomeEmail(email, full_name);
+  } catch (emailErr) {
+    console.error('sendWelcomeEmail error (non-fatal):', emailErr && emailErr.message ? emailErr.message : emailErr);
+  }
 
-  // Send welcome email
-  await sendWelcomeEmail(email, full_name);
+  // If registering as restaurant_admin, do not auto-login or return tokens
+  if (isRestaurantAdmin) {
+    return res.status(201).json(ApiResponse.success({
+      user: {
+        id: user.id,
+        email: user.email,
+        full_name: user.full_name,
+        role: user.role,
+      },
+      message: 'Registration submitted. Await platform verification by the platform admin.',
+    }, 'Registration submitted'));
+  }
 
-  // Generate tokens
+  // Generate tokens for other user roles
   const token = generateToken(user.id, user.role);
   const refreshToken = generateRefreshToken(user.id);
 
@@ -91,8 +129,8 @@ const register = catchAsync(async (req, res) => {
 const login = catchAsync(async (req, res) => {
   const { email, password } = req.body;
 
-  // Find user
-  const user = await User.findOne({ where: { email, is_active: true } });
+  // Find user by email (we'll check active status after verifying password)
+  const user = await User.findOne({ where: { email } });
   if (!user) {
     throw new ApiError(401, 'Invalid credentials');
   }
@@ -147,6 +185,17 @@ const login = catchAsync(async (req, res) => {
     throw new ApiError(401, 'Invalid credentials');
   }
 
+  // If account is not active (e.g., restaurant_admin awaiting platform verification), return informative error
+  if (!user.is_active) {
+    throw new ApiError(403, 'Account not active. Await platform verification.');
+  }
+
+  // If this user is a restaurant staff member, ensure their staff record is active
+  const staffRecord = await RestaurantStaff.findOne({ where: { user_id: user.id } });
+  if (staffRecord && staffRecord.is_active === false) {
+    throw new ApiError(403, 'Staff account not active. Await restaurant activation.');
+  }
+
   // Reset login attempts
   await user.update({ login_attempts: 0, last_login: new Date() });
 
@@ -171,6 +220,15 @@ const login = catchAsync(async (req, res) => {
     }
   }
 
+  // Attach restaurant staff info (if any) so frontend can detect staff roles (chef, waiter, etc.)
+  let staff = null;
+  try {
+    const staffRecord = await RestaurantStaff.findOne({ where: { user_id: user.id }, attributes: ['id', 'role', 'restaurant_id', 'permissions', 'is_active'] });
+    if (staffRecord) staff = staffRecord && typeof staffRecord.toJSON === 'function' ? staffRecord.toJSON() : staffRecord;
+  } catch (e) {
+    staff = null;
+  }
+
   res.json(ApiResponse.success({
     user: {
       id: user.id,
@@ -180,6 +238,7 @@ const login = catchAsync(async (req, res) => {
       avatar_url: user.avatar_url,
     },
     restaurant,
+    staff,
     token,
     refreshToken,
   }, 'Login successful'));
@@ -335,7 +394,16 @@ const getMe = catchAsync(async (req, res) => {
     }
   }
 
-  res.json(ApiResponse.success({ user, restaurant }, 'User retrieved'));
+  // Include staff information for the authenticated user so the frontend can route staff-specific UIs
+  let staff = null;
+  try {
+    const staffRecord = await RestaurantStaff.findOne({ where: { user_id: user.id }, attributes: ['id', 'role', 'restaurant_id', 'permissions', 'is_active'] });
+    if (staffRecord) staff = staffRecord && typeof staffRecord.toJSON === 'function' ? staffRecord.toJSON() : staffRecord;
+  } catch (e) {
+    staff = null;
+  }
+
+  res.json(ApiResponse.success({ user, restaurant, staff }, 'User retrieved'));
 });
 
 // Update profile

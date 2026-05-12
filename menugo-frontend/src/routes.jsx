@@ -7,6 +7,7 @@ import AdminLayout from './components/layout/AdminLayout'
 import RestaurantLayout from './components/layout/RestaurantLayout'
 import WaiterLayout from './components/layout/WaiterLayout'
 import CustomerLayout from './components/layout/CustomerLayout'
+import KitchenLayout from './components/layout/KitchenLayout'
 
 // Platform Admin Pages
 const PlatformDashboard = React.lazy(() => import('./components/platform-admin/dashboard/PlatformDashboard'))
@@ -24,11 +25,14 @@ const SystemHealth = React.lazy(() => import('./components/platform-admin/system
 const AuditLogs = React.lazy(() => import('./components/platform-admin/system/AuditLogs'))
 const BackupManager = React.lazy(() => import('./components/platform-admin/system/BackupManager'))
 const CreateRestaurantForm = React.lazy(() => import('./components/platform-admin/restaurants/CreateRestaurantForm'))
+
 // Restaurant Admin Pages
 const RestaurantDashboard = React.lazy(() => import('./components/restaurant-admin/dashboard/RestaurantDashboard'))
 const MenuManagement = React.lazy(() => import('./components/restaurant-admin/menu/MenuManagement'))
 const CategoryManager = React.lazy(() => import('./components/restaurant-admin/categories/CategoryManager'))
 const OrderManagement = React.lazy(() => import('./components/restaurant-admin/orders/OrderManagement'))
+// Remove the duplicate KitchenPage import from restaurant-admin
+// const KitchenPage = React.lazy(() => import('./components/restaurant-admin/kitchen/KitchenPage'))
 const TableManagement = React.lazy(() => import('./components/restaurant-admin/tables/TableManagement'))
 const StaffManagement = React.lazy(() => import('./components/restaurant-admin/staff/StaffManagement'))
 const InventoryManagement = React.lazy(() => import('./components/restaurant-admin/inventory/InventoryManagement'))
@@ -37,6 +41,12 @@ const RestaurantAnalytics = React.lazy(() => import('./components/restaurant-adm
 const ReviewManagement = React.lazy(() => import('./components/restaurant-admin/reviews/ReviewManagement'))
 const RestaurantSettings = React.lazy(() => import('./components/restaurant-admin/settings/RestaurantSettings'))
 const RestaurantQRCodePage = React.lazy(() => import('./components/restaurant-admin/qr/RestaurantQRCodePage'))
+
+// Kitchen Pages (Chef)
+const KitchenDashboard = React.lazy(() => import('./pages/KitchenPage'))
+const KitchenActiveOrders = React.lazy(() => import('./pages/KitchenPage'))
+const KitchenCompletedPage = React.lazy(() => import('./pages/KitchenCompletedPage'))
+const KitchenOrderDetails = React.lazy(() => import('./components/kitchen/KitchenOrderDetails'))
 
 // Waiter Pages
 const WaiterDashboard = React.lazy(() => import('./components/waiter/dashboard/WaiterDashboard'))
@@ -48,7 +58,9 @@ const WaiterNotifications = React.lazy(() => import('./components/waiter/notific
 const WaiterProfile = React.lazy(() => import('./components/waiter/profile/WaiterProfile'))
 
 // Customer Pages
+const Landing = React.lazy(() => import('./components/customer/landing/Landing'))
 const MenuDisplay = React.lazy(() => import('./components/customer/menu/MenuDisplay'))
+const MenuItemDetail = React.lazy(() => import('./components/customer/menu/MenuItemDetail'))
 const CartPage = React.lazy(() => import('./components/customer/cart/CartPage'))
 const OrderConfirmation = React.lazy(() => import('./components/customer/order/OrderConfirmation'))
 const OrderTracking = React.lazy(() => import('./components/customer/order/OrderTracker'))
@@ -72,14 +84,18 @@ import ErrorBoundary from './components/common/ErrorBoundary'
 export const routeConfig = {
   public: [
     { path: '/login', element: Login },
+    { path: '/auth/login', element: Login },
     { path: '/register', element: Register },
+    { path: '/auth/register', element: Register },
     { path: '/forgot-password', element: ForgotPassword },
     { path: '/reset-password/:token', element: ResetPassword },
     { path: '/verify-email/:token', element: VerifyEmail },
     { path: '/2fa', element: TwoFactorAuth },
   ],
   customer: [
+    { path: '/menu/:restaurantId/landing', element: Landing, layout: CustomerLayout },
     { path: '/menu/:restaurantId', element: MenuDisplay, layout: CustomerLayout },
+    { path: '/menu/:restaurantId/item/:itemId', element: MenuItemDetail, layout: CustomerLayout },
     { path: '/menu/:restaurantId/cart', element: CartPage, layout: CustomerLayout },
     { path: '/order-confirmation/:orderId', element: OrderConfirmation },
     { path: '/order-tracking/:orderId', element: OrderTracking },
@@ -87,40 +103,51 @@ export const routeConfig = {
     { path: '/scan', element: QRScanner },
   ],
   platformAdmin: [
-    { path: '/platform/dashboard', element: PlatformDashboard },
-    { path: '/platform/restaurants', element: RestaurantList },
-    { path: '/platform/restaurants/new', element: RestaurantForm },
-    { path: '/platform/restaurants/create', element: CreateRestaurantForm },
-    { path: '/platform/restaurants/:id', element: RestaurantDetails },
-    { path: '/platform/restaurants/:id/edit', element: RestaurantForm },
-
-    { path: '/platform/users', element: UserList },
-    { path: '/platform/users/new', element: UserForm },
-    { path: '/platform/users/:id', element: UserDetails },
-    { path: '/platform/users/:id/edit', element: UserForm },
-    { path: '/platform/subscriptions', element: SubscriptionPlans },
-    { path: '/platform/analytics', element: PlatformAnalytics },
-    { path: '/platform/support', element: TicketList },
-    { path: '/platform/settings', element: SystemSettings },
-    { path: '/platform/system/health', element: SystemHealth },
-    { path: '/platform/system/audit-logs', element: AuditLogs },
-    { path: '/platform/system/backup', element: BackupManager },
+    { path: '/platform/dashboard', element: PlatformDashboard, layout: AdminLayout },
+    { path: '/platform/restaurants', element: RestaurantList, layout: AdminLayout },
+    { path: '/platform/restaurants/new', element: RestaurantForm, layout: AdminLayout },
+    { path: '/platform/restaurants/create', element: CreateRestaurantForm, layout: AdminLayout },
+    { path: '/platform/restaurants/:id', element: RestaurantDetails, layout: AdminLayout },
+    { path: '/platform/restaurants/:id/edit', element: RestaurantForm, layout: AdminLayout },
+    { path: '/platform/users', element: UserList, layout: AdminLayout },
+    { path: '/platform/users/new', element: UserForm, layout: AdminLayout },
+    { path: '/platform/users/:id', element: UserDetails, layout: AdminLayout },
+    { path: '/platform/users/:id/edit', element: UserForm, layout: AdminLayout },
+    { path: '/platform/subscriptions', element: SubscriptionPlans, layout: AdminLayout },
+    { path: '/platform/analytics', element: PlatformAnalytics, layout: AdminLayout },
+    { path: '/platform/support', element: TicketList, layout: AdminLayout },
+    { path: '/platform/settings', element: SystemSettings, layout: AdminLayout },
+    { path: '/platform/system', element: SystemSettings, layout: AdminLayout },
+    { path: '/platform/system/health', element: SystemHealth, layout: AdminLayout },
+    { path: '/platform/system/audit-logs', element: AuditLogs, layout: AdminLayout },
+    { path: '/platform/system/backup', element: BackupManager, layout: AdminLayout },
   ],
   restaurantAdmin: [
-    { path: '/restaurant/dashboard', element: RestaurantDashboard },
-    { path: '/admin/dashboard', element: RestaurantDashboard },
-    { path: '/restaurant/tables/qr', element: TableManagement },
-    { path: '/admin/menu', element: MenuManagement },
-    { path: '/admin/categories', element: CategoryManager },
-    { path: '/admin/orders', element: OrderManagement },
-    { path: '/admin/tables', element: TableManagement },
-    { path: '/admin/staff', element: StaffManagement },
-    { path: '/admin/inventory', element: InventoryManagement },
-    { path: '/admin/promotions', element: CouponManagement },
-    { path: '/admin/analytics', element: RestaurantAnalytics },
-    { path: '/admin/reviews', element: ReviewManagement },
-    { path: '/admin/restaurant/qr', element: RestaurantQRCodePage },
-    { path: '/admin/settings', element: RestaurantSettings },
+    { path: '/restaurant/dashboard', element: RestaurantDashboard, layout: RestaurantLayout },
+    { path: '/admin/dashboard', element: RestaurantDashboard, layout: RestaurantLayout },
+    { path: '/restaurant/tables/qr', element: TableManagement, layout: RestaurantLayout },
+    { path: '/admin/menu', element: MenuManagement, layout: RestaurantLayout },
+    { path: '/admin/categories', element: CategoryManager, layout: RestaurantLayout },
+    { path: '/admin/orders', element: OrderManagement, layout: RestaurantLayout },
+    { path: '/admin/tables', element: TableManagement, layout: RestaurantLayout },
+    { path: '/admin/staff', element: StaffManagement, layout: RestaurantLayout },
+    { path: '/admin/inventory', element: InventoryManagement, layout: RestaurantLayout },
+    { path: '/admin/promotions', element: CouponManagement, layout: RestaurantLayout },
+    { path: '/admin/analytics', element: RestaurantAnalytics, layout: RestaurantLayout },
+    { path: '/admin/reviews', element: ReviewManagement, layout: RestaurantLayout },
+    { path: '/admin/restaurant/qr', element: RestaurantQRCodePage, layout: RestaurantLayout },
+    { path: '/admin/settings', element: RestaurantSettings, layout: RestaurantLayout },
+  ],
+  // Kitchen Routes (Chef)
+  kitchen: [
+    { path: '/chef', element: KitchenDashboard, layout: KitchenLayout },
+    { path: '/chef/kitchen', element: KitchenDashboard, layout: KitchenLayout },
+    { path: '/chef/active', element: KitchenActiveOrders, layout: KitchenLayout },
+    { path: '/chef/completed', element: KitchenCompletedPage, layout: KitchenLayout },
+    { path: '/chef/orders/:orderId', element: KitchenOrderDetails, layout: KitchenLayout },
+    { path: '/kitchen/dashboard', element: KitchenDashboard, layout: KitchenLayout },
+    { path: '/kitchen/active', element: KitchenActiveOrders, layout: KitchenLayout },
+    { path: '/kitchen/completed', element: KitchenCompletedPage, layout: KitchenLayout },
   ],
   waiter: [
     { path: '/waiter/dashboard', element: WaiterDashboard, layout: WaiterLayout },
@@ -133,6 +160,17 @@ export const routeConfig = {
   ],
 }
 
+// Role to route mapping
+const roleRouteMap = {
+  // Platform admins should also be able to view restaurant/kitchen pages for diagnostics
+  platform_admin: ['public', 'platformAdmin', 'restaurantAdmin', 'kitchen'],
+  // Restaurant owners/admins can view kitchen dashboard as well
+  restaurant_admin: ['public', 'restaurantAdmin', 'kitchen'],
+  chef: ['public', 'kitchen'],
+  waiter: ['public', 'waiter'],
+  customer: ['public', 'customer'],
+}
+
 // Route Renderer Component
 export const AppRoutes = () => {
   const { user, isLoading } = useAuthStore()
@@ -142,60 +180,107 @@ export const AppRoutes = () => {
   }
 
   const getRoleBasedRoutes = () => {
-    if (!user) return routeConfig.public
-    
-    switch (user.role) {
-      case 'platform_admin':
-        // Platform admins should also be able to view restaurant admin pages
-        return [...routeConfig.public, ...routeConfig.platformAdmin, ...routeConfig.restaurantAdmin]
-      case 'restaurant_admin':
-        return [...routeConfig.public, ...routeConfig.restaurantAdmin]
-      case 'waiter':
-        return [...routeConfig.public, ...routeConfig.waiter]
-      default:
-        return [...routeConfig.public, ...routeConfig.customer]
+    if (!user) {
+        // In development allow quick access to kitchen and platform admin pages without login for preview/debug
+        if (process.env.NODE_ENV === 'development') {
+          return [...routeConfig.public, ...(routeConfig.kitchen || []), ...(routeConfig.platformAdmin || [])]
+        }
+        return routeConfig.public
     }
+    // Consider both top-level user role and any staff role attached to the user
+    const rolesToConsider = [user.role]
+    if (user.staff && user.staff.role && !rolesToConsider.includes(user.staff.role)) {
+      rolesToConsider.push(user.staff.role)
+    }
+
+    // Collect unique route keys for all applicable roles
+    const routeKeySet = new Set()
+    rolesToConsider.forEach(r => {
+      const keys = roleRouteMap[r] || roleRouteMap.customer
+      keys.forEach(k => routeKeySet.add(k))
+    })
+
+    // Collect all routes based on aggregated keys
+    let routes = []
+    Array.from(routeKeySet).forEach(key => {
+      if (routeConfig[key]) routes = [...routes, ...routeConfig[key]]
+    })
+
+    return routes
   }
 
   const routes = getRoleBasedRoutes()
+
+  // Group routes by layout to avoid nested Route elements inside layout components
+  const renderRoutes = () => {
+    // Separate routes with and without layout
+    const routesWithLayout = routes.filter(route => route.layout)
+    const routesWithoutLayout = routes.filter(route => !route.layout)
+
+    return (
+      <>
+        {/* Routes without layout */}
+        {routesWithoutLayout.map((route, index) => {
+          const Element = route.element
+          return <Route key={`nolayout-${index}`} path={route.path} element={<Element />} />
+        })}
+        
+        {/* Routes with layout - group by layout type */}
+        {[...new Set(routesWithLayout.map(r => r.layout))].map((Layout, layoutIndex) => {
+          const layoutRoutes = routesWithLayout.filter(r => r.layout === Layout)
+          return (
+            <Route key={`layout-${layoutIndex}`} element={<Layout />}>
+              {layoutRoutes.map((route, routeIndex) => {
+                const Element = route.element
+                return (
+                  <Route 
+                    key={`route-${layoutIndex}-${routeIndex}`} 
+                    path={route.path} 
+                    element={<Element />} 
+                  />
+                )
+              })}
+            </Route>
+          )
+        })}
+      </>
+    )
+  }
 
   return (
     <ErrorBoundary>
       <React.Suspense fallback={<Loading fullScreen />}>
         <Routes>
-          {routes.map((route, index) => {
-            const Element = route.element
-            const Layout = route.layout
-            const element = Layout ? (
-              <Layout>
-                <Element />
-              </Layout>
-            ) : (
-              <Element />
-            )
-            
-            return <Route key={index} path={route.path} element={element} />
-          })}
+          {renderRoutes()}
+          {/* Explicit protected platform system routes so direct URLs work */}
+          <Route element={<ProtectedRoute allowedRoles={["platform_admin"]} />}>
+            <Route path="/platform/system" element={<SystemSettings />} />
+            <Route path="/platform/system/health" element={<SystemHealth />} />
+            <Route path="/platform/system/audit-logs" element={<AuditLogs />} />
+            <Route path="/platform/system/backup" element={<BackupManager />} />
+          </Route>
           
-          {/* Default redirect */}
+          {/* Default redirect based on role */}
           <Route
             path="/"
             element={
               !user ? (
                 <Navigate to="/login" replace />
-              ) : user.role === 'platform_admin' ? (
+              ) : (user.staff && user.staff.role ? user.staff.role : user.role) === 'platform_admin' ? (
                 <Navigate to="/platform/dashboard" replace />
-              ) : user.role === 'restaurant_admin' ? (
+              ) : (user.staff && user.staff.role ? user.staff.role : user.role) === 'restaurant_admin' ? (
                 <Navigate to="/admin/dashboard" replace />
-              ) : user.role === 'waiter' ? (
+              ) : (user.staff && user.staff.role ? user.staff.role : user.role) === 'chef' ? (
+                <Navigate to="/chef/kitchen" replace />
+              ) : (user.staff && user.staff.role ? user.staff.role : user.role) === 'waiter' ? (
                 <Navigate to="/waiter/dashboard" replace />
               ) : (
-                <Navigate to="/menu" replace />
+                <Navigate to="/scan" replace />
               )
             }
           />
           
-          {/* 404 */}
+          {/* 404 Page */}
           <Route path="*" element={<NotFound />} />
         </Routes>
       </React.Suspense>
@@ -212,7 +297,7 @@ function NotFound() {
         <p className="text-gray-500 dark:text-gray-400 mt-2">The page you're looking for doesn't exist.</p>
         <a
           href="/"
-          className="mt-6 inline-flex items-center px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+          className="mt-6 inline-flex items-center px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
         >
           Go Back Home
         </a>

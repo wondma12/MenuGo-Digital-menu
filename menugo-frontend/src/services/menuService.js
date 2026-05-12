@@ -111,5 +111,38 @@ export const getRestaurantMenu = async (restaurantId) => {
   const raw = response.data?.data || response.data || {}
   const categories = raw.categories || []
   const items = (raw.items || []).map(transformMenuItem)
-  return { restaurant: raw.restaurant, categories, items }
+  const transformRestaurant = (r) => {
+    if (!r) return r
+    return {
+      id: r.id,
+      name: r.name,
+      description: r.description,
+      address: r.address,
+      city: r.city,
+      state: r.state,
+      country: r.country,
+      postalCode: r.postal_code || r.postalCode,
+      latitude: r.latitude || r.lat,
+      longitude: r.longitude || r.lng || r.lon,
+      phone: r.phone,
+      email: r.email,
+      website: r.website,
+      logo: r.logo_url || r.logo || r.logoUrl || null,
+      coverImage: r.cover_image_url || r.coverImage || r.coverImageUrl || null,
+      cuisineType: r.cuisine_type || r.cuisineType || null,
+      // Prefer explicit operating_hours but also check nested settings for older payloads
+      operating_hours: r.operating_hours || r.operatingHours || (r.settings && (r.settings.operating_hours || r.settings.operatingHours)) || null,
+      operatingHours: r.operating_hours || r.operatingHours || (r.settings && (r.settings.operating_hours || r.settings.operatingHours)) || null,
+      enableDelivery: (r.settings && (r.settings.enable_delivery ?? r.settings.enableDelivery)) ?? r.enable_delivery ?? false,
+      deliveryEnabled: (r.settings && (r.settings.enable_delivery ?? r.settings.enableDelivery)) ?? r.enable_delivery ?? false,
+      rating: r.average_rating ?? r.rating ?? 0,
+      reviewCount: r.total_reviews ?? r.review_count ?? 0,
+      isVerified: r.is_verified ?? r.isVerified ?? false,
+      settings: r.settings || {},
+      features: r.features || {},
+      whatsapp: r.whatsapp_number || r.whatsapp || null,
+    }
+  }
+
+  return { restaurant: transformRestaurant(raw.restaurant), categories, items }
 }

@@ -19,9 +19,7 @@ const UserFilters = ({ filters, onFiltersChange, showRole = true }) => {
               { value: 'platform_admin,restaurant_admin', label: 'Platform & Restaurant Admins' },
               { value: 'platform_admin', label: 'Platform Admin' },
               { value: 'restaurant_admin', label: 'Restaurant Admin' },
-              { value: 'support_agent', label: 'Support Agent' },
-              { value: 'waiter', label: 'Waiter' },
-              { value: 'customer', label: 'Customer' },
+              
             ]}
           />
         )}

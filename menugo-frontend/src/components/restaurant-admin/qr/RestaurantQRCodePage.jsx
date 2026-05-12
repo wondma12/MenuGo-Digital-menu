@@ -146,11 +146,12 @@ export default function RestaurantQRCodePage() {
             <label className="block text-sm font-medium text-gray-700 mb-1">Target Route</label>
             <select value={route} onChange={(e) => setRoute(e.target.value)} className="w-full border rounded px-3 py-2">
               <option value="menu">Menu Home</option>
+              <option value="customer">Customer Home</option>
               <option value="cart">Cart</option>
               <option value="table">Table (append ?table=)</option>
               <option value="order">Order (open specific order)</option>
               <option value="history">Order History</option>
-              <option value="root">Customer Root</option>
+              <option value="root">Customer Root (legacy)</option>
             </select>
           </div>
 

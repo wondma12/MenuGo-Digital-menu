@@ -27,16 +27,10 @@ const OrderItemOption = sequelize.define('OrderItemOption', {
     type: DataTypes.DECIMAL(10, 2),
     defaultValue: 0,
   },
-  created_at: {
-    type: DataTypes.DATE,
-    defaultValue: DataTypes.NOW,
-  },
 }, {
   tableName: 'order_item_options',
   underscored: true,
-  timestamps: true,
-  createdAt: 'created_at',
-  updatedAt: false,
+  timestamps: false,
 });
 
 module.exports = OrderItemOption;

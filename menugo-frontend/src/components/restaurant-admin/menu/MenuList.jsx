@@ -71,14 +71,14 @@ const MenuList = ({ items, selectedItems, onSelectItem, onEdit, onRefresh }) => 
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {items.map((item, index) => (
-                <motion.tr
-                  key={item.id}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: index * 0.03 }}
-                  className="hover:bg-gray-50"
-                >
+                {items.map((item, index) => (
+                  <motion.tr
+                    key={item.id}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.02 }}
+                    className="hover:bg-gray-50"
+                  >
                   <td className="px-4 py-3">
                     <input
                       type="checkbox"
@@ -90,10 +90,10 @@ const MenuList = ({ items, selectedItems, onSelectItem, onEdit, onRefresh }) => 
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
                       {item.image ? (
-                        <img src={item.image} alt={item.name} className="w-10 h-10 rounded-lg object-cover" />
+                        <img src={item.image} alt={item.name} className="w-16 h-16 rounded-lg object-cover" />
                       ) : (
-                        <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
-                          <span className="text-xs text-gray-400">No img</span>
+                        <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center">
+                          <span className="text-xs text-gray-400">No image</span>
                         </div>
                       )}
                       <div>

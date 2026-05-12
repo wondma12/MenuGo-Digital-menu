@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useMutation } from 'react-query'
 import { BellIcon, CheckCircleIcon, ClockIcon } from '@heroicons/react/24/outline'
@@ -12,17 +12,20 @@ const KitchenDisplay = ({ orders, onRefresh }) => {
   const [filter, setFilter] = useState('all')
   const { playSound } = useAudio()
   const [previousCount, setPreviousCount] = useState(0)
+  const [autoStart, setAutoStart] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('kitchen:autoStart') || 'false')
+    } catch (e) {
+      return false
+    }
+  })
+
+  const prevPendingIdsRef = useRef(new Set())
+  const didInitialLoadRef = useRef(false)
 
   const preparingOrders = orders.filter(o => o.status === 'preparing')
   const pendingOrders = orders.filter(o => o.status === 'verified')
   const readyOrders = orders.filter(o => o.status === 'ready')
-
-  useEffect(() => {
-    if (pendingOrders.length > previousCount) {
-      playSound('new-order')
-    }
-    setPreviousCount(pendingOrders.length)
-  }, [pendingOrders.length])
 
   const updateMutation = useMutation(updateOrderStatus, {
     onSuccess: () => {
@@ -30,6 +33,31 @@ const KitchenDisplay = ({ orders, onRefresh }) => {
       onRefresh()
     },
   })
+
+  // Watch for new pending (verified) orders. Play sound and optionally auto-start preparation.
+  useEffect(() => {
+    const currentIds = new Set(pendingOrders.map(o => o.id))
+
+    if (!didInitialLoadRef.current) {
+      // Initialize tracker on first load; don't auto-start existing orders
+      prevPendingIdsRef.current = currentIds
+      didInitialLoadRef.current = true
+      setPreviousCount(pendingOrders.length)
+      return
+    }
+
+    const newOrders = pendingOrders.filter(o => !prevPendingIdsRef.current.has(o.id))
+    if (newOrders.length > 0) {
+      playSound('new-order')
+      if (autoStart) {
+        // Auto-start each newly arrived verified order
+        newOrders.forEach(o => updateMutation.mutate({ id: o.id, status: 'preparing' }))
+      }
+    }
+
+    prevPendingIdsRef.current = currentIds
+    setPreviousCount(pendingOrders.length)
+  }, [pendingOrders, autoStart, playSound, updateMutation])
 
   const handleStatusUpdate = (orderId, newStatus) => {
     updateMutation.mutate({ id: orderId, status: newStatus })
@@ -48,13 +76,9 @@ const KitchenDisplay = ({ orders, onRefresh }) => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-xl font-bold text-gray-900">Kitchen Display</h2>
-          <p className="text-sm text-gray-500">Real-time kitchen orders</p>
-        </div>
-        <div className="flex gap-2">
+      {/* Compact toolbar - layout provides the main header */}
+      <div className="flex justify-end items-center mb-2">
+        <div className="flex gap-2 items-center">
           <button
             onClick={() => setFilter('all')}
             className={`px-3 py-1.5 rounded-lg text-sm ${filter === 'all' ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-700'}`}
@@ -73,13 +97,27 @@ const KitchenDisplay = ({ orders, onRefresh }) => {
           >
             Ready ({readyOrders.length})
           </button>
+          {/* Auto-start toggle */}
+          <label className="inline-flex items-center gap-2 ml-3 text-sm text-gray-600">
+            <input
+              type="checkbox"
+              checked={autoStart}
+              onChange={(e) => {
+                const v = e.target.checked
+                setAutoStart(v)
+                try { localStorage.setItem('kitchen:autoStart', JSON.stringify(v)) } catch (err) {}
+              }}
+              className="h-4 w-4"
+            />
+            <span>Auto-start</span>
+          </label>
         </div>
       </div>
 
       {/* Orders Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <AnimatePresence>
-          {filteredOrders().map((order) => (
+          {filteredOrders().map((order, idx) => (
             <motion.div
               key={order.id}
               initial={{ opacity: 0, scale: 0.9 }}
@@ -92,11 +130,11 @@ const KitchenDisplay = ({ orders, onRefresh }) => {
                 'border-l-yellow-500'
               }`}
             >
-              <div className="p-4">
+                <div className="p-4">
                 {/* Order Header */}
                 <div className="flex justify-between items-start mb-3">
                   <div>
-                    <h3 className="font-bold text-lg text-gray-900">#{order.orderNumber}</h3>
+                    <h3 className="font-bold text-lg text-gray-900">#{idx + 1}</h3>
                     <p className="text-sm text-gray-500">Table {order.tableNumber}</p>
                   </div>
                   <div className="text-right">
@@ -120,17 +158,22 @@ const KitchenDisplay = ({ orders, onRefresh }) => {
                 {/* Order Items */}
                 <div className="mb-4 max-h-48 overflow-y-auto">
                   {order.items?.map((item, idx) => (
-                    <div key={idx} className="py-1.5 border-b border-gray-100 last:border-0">
-                      <div className="flex justify-between">
-                        <span className="text-sm">
-                          <span className="font-medium">{item.quantity}x</span> {item.name}
-                        </span>
-                        {item.modifiers && item.modifiers.length > 0 && (
-                          <span className="text-xs text-gray-500">
-                            +{item.modifiers.length}
-                          </span>
-                        )}
-                      </div>
+                      <div key={idx} className="py-1.5 border-b border-gray-100 last:border-0">
+                        <div className="flex justify-between items-center">
+                          <div className="flex items-center gap-3">
+                            {item.image ? (
+                              <img src={item.image} alt={item.name} className="w-10 h-10 object-cover rounded" />
+                            ) : (
+                              <div className="w-10 h-10 bg-gray-100 rounded flex items-center justify-center text-xs text-gray-400">No Image</div>
+                            )}
+                            <span className="text-sm"><span className="font-medium">{item.quantity}x</span> {item.name}</span>
+                          </div>
+                          {item.modifiers && item.modifiers.length > 0 && (
+                            <span className="text-xs text-gray-500">
+                              +{item.modifiers.length}
+                            </span>
+                          )}
+                        </div>
                       {item.modifiers && item.modifiers.slice(0, 2).map((mod, i) => (
                         <div key={i} className="text-xs text-gray-500 ml-4">
                           + {mod.name}

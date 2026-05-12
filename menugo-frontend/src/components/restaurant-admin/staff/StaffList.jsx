@@ -12,7 +12,12 @@ const StaffList = ({ staff, onEdit, onRefresh }) => {
 
   const handleStatusToggle = async (staffMember) => {
     try {
-      await updateStaffStatus(staffMember.id, !staffMember.isActive)
+      const resolveStaffPk = (member) => {
+        if (!member) return null
+        return member.staffPk ?? member.raw?.id ?? member.staffId ?? member.id ?? member.employeeId ?? null
+      }
+      const staffPk = resolveStaffPk(staffMember)
+      await updateStaffStatus(staffPk, !staffMember.isActive)
       toast.success(`${staffMember.name} ${!staffMember.isActive ? 'activated' : 'deactivated'}`)
       onRefresh()
     } catch (error) {
@@ -22,7 +27,12 @@ const StaffList = ({ staff, onEdit, onRefresh }) => {
 
   const handleDelete = async () => {
     try {
-      await deleteStaff(deleteTarget.id)
+      const resolveStaffPk = (member) => {
+        if (!member) return null
+        return member.staffPk ?? member.raw?.id ?? member.staffId ?? member.id ?? member.employeeId ?? null
+      }
+      const staffPk = resolveStaffPk(deleteTarget)
+      await deleteStaff(staffPk)
       toast.success('Staff member deleted successfully')
       onRefresh()
       setDeleteTarget(null)
@@ -33,11 +43,11 @@ const StaffList = ({ staff, onEdit, onRefresh }) => {
 
   const roleColors = {
     admin: 'purple',
-    manager: 'blue',
+    // manager: 'blue',
     waiter: 'green',
     chef: 'orange',
-    cashier: 'cyan',
-    delivery: 'indigo',
+    // cashier: 'cyan',
+    // delivery: 'indigo',
   }
 
   return (

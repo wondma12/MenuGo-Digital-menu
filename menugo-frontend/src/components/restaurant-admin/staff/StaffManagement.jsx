@@ -16,7 +16,7 @@ import { getStaff } from '../../../services/staffService'
 import { useAuthStore } from '../../../store/authStore'
 
 const StaffManagement = () => {
-  const [viewMode, setViewMode] = useState('grid')
+  
   const [showModal, setShowModal] = useState(false)
   const [editingStaff, setEditingStaff] = useState(null)
   const [filters, setFilters] = useState({
@@ -58,21 +58,7 @@ const StaffManagement = () => {
             <h1 className="text-2xl font-bold text-gray-900">Staff Management</h1>
             <p className="text-gray-500 mt-1">Manage your restaurant team members</p>
           </div>
-          <div className="flex gap-3">
-            <div className="flex border border-gray-300 rounded-lg overflow-hidden">
-              <button
-                onClick={() => setViewMode('grid')}
-                className={`px-3 py-2 ${viewMode === 'grid' ? 'bg-primary-600 text-white' : 'bg-white text-gray-700'}`}
-              >
-                Grid
-              </button>
-              <button
-                onClick={() => setViewMode('list')}
-                className={`px-3 py-2 ${viewMode === 'list' ? 'bg-primary-600 text-white' : 'bg-white text-gray-700'}`}
-              >
-                List
-              </button>
-            </div>
+          <div className="flex gap-3 items-center">
             <Button onClick={() => setShowModal(true)} icon={PlusIcon}>
               Add Staff
             </Button>
@@ -81,29 +67,16 @@ const StaffManagement = () => {
 
         <StaffFilters filters={filters} onFiltersChange={setFilters} />
 
-        {viewMode === 'grid' ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mt-6">
-            {staff?.map((member, index) => (
-              <motion.div
-                key={member.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.05 }}
-              >
-                <StaffCard
-                  staff={member}
-                  onEdit={() => {
-                    setEditingStaff(member)
-                    setShowModal(true)
-                  }}
-                  onRefresh={refetch}
-                />
-              </motion.div>
-            ))}
-          </div>
-        ) : (
-          <StaffList staff={staff || []} onEdit={setEditingStaff} onRefresh={refetch} />
-        )}
+        <div className="mt-6">
+          <StaffList
+            staff={staff || []}
+            onEdit={(member) => {
+              setEditingStaff(member)
+              setShowModal(true)
+            }}
+            onRefresh={refetch}
+          />
+        </div>
       </>
     )
   }

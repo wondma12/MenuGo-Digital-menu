@@ -18,6 +18,7 @@ import Dropdown from '../../../common/Dropdown'
 import ConfirmationDialog from '../../../common/ConfirmationDialog'
 import Avatar from '../../../common/Avatar'
 import { updateUserStatus, deleteUser } from '../../../services/userService'
+import { useAuthStore } from '../../../store/authStore'
 import toast from 'react-hot-toast'
 
 const UserCard = ({ user, onUpdate }) => {
@@ -45,7 +46,9 @@ const UserCard = ({ user, onUpdate }) => {
 
   const handleDelete = async () => {
     try {
-      await deleteUser(user.id)
+      const currentUser = useAuthStore.getState().user
+      const force = currentUser?.role === 'platform_admin'
+      await deleteUser(user.id, { force })
       toast.success('User deleted successfully')
       onUpdate()
       setShowDeleteDialog(false)
@@ -96,15 +99,15 @@ const UserCard = ({ user, onUpdate }) => {
     <>
       <motion.div
         whileHover={{ y: -4 }}
-        className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-all"
+        className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-all min-h-[220px]"
       >
-        <div className="p-5">
+        <div className="p-6">
           <div className="flex items-start justify-between">
             <div className="flex gap-3">
-              <Avatar src={user.avatar} name={user.fullName} size="lg" />
+              <Avatar src={user.avatar} name={user.fullName} size="xl" />
               <div>
                 <Link to={`/platform/users/${user.id}`}>
-                  <h3 className="font-semibold text-gray-900 hover:text-primary-600">
+                  <h3 className="font-semibold text-gray-900 hover:text-primary-600 text-lg">
                     {user.fullName}
                   </h3>
                 </Link>
@@ -132,19 +135,19 @@ const UserCard = ({ user, onUpdate }) => {
             />
           </div>
 
-          <div className="mt-4 space-y-2">
-            <div className="flex items-center gap-2 text-sm text-gray-500">
-              <EnvelopeIcon className="w-4 h-4" />
+          <div className="mt-4 space-y-3">
+            <div className="flex items-center gap-3 text-base text-gray-600">
+              <EnvelopeIcon className="w-5 h-5" />
               <span>{user.email}</span>
             </div>
             {user.phone && (
-              <div className="flex items-center gap-2 text-sm text-gray-500">
-                <PhoneIcon className="w-4 h-4" />
+              <div className="flex items-center gap-3 text-base text-gray-600">
+                <PhoneIcon className="w-5 h-5" />
                 <span>{user.phone}</span>
               </div>
             )}
-            <div className="flex items-center gap-2 text-sm text-gray-500">
-              <CalendarIcon className="w-4 h-4" />
+            <div className="flex items-center gap-3 text-base text-gray-600">
+              <CalendarIcon className="w-5 h-5" />
               <span>Joined {new Date(user.createdAt).toLocaleDateString()}</span>
             </div>
           </div>

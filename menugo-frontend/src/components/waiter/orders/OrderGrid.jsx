@@ -1,5 +1,6 @@
 import React from 'react'
 import { motion } from 'framer-motion'
+import { Clock, Check, Activity } from 'lucide-react'
 import WaiterOrderCard from './WaiterOrderCard'
 
 const OrderGrid = ({ orders, onRefresh }) => {
@@ -9,15 +10,15 @@ const OrderGrid = ({ orders, onRefresh }) => {
     verified: orders?.filter(o => o.status === 'verified') || [],
     preparing: orders?.filter(o => o.status === 'preparing') || [],
     ready: orders?.filter(o => o.status === 'ready') || [],
-    served: orders?.filter(o => o.status === 'served') || []
+    completed: orders?.filter(o => o.status === 'completed') || []
   }
 
   const statusTitles = {
-    pending: { label: 'New Orders', color: 'bg-yellow-100 text-yellow-800', icon: '🆕' },
-    verified: { label: 'Verified', color: 'bg-blue-100 text-blue-800', icon: '✅' },
-    preparing: { label: 'Preparing', color: 'bg-orange-100 text-orange-800', icon: '🔪' },
-    ready: { label: 'Ready to Serve', color: 'bg-purple-100 text-purple-800', icon: '🍽️' },
-    served: { label: 'Served', color: 'bg-green-100 text-green-800', icon: '✨' }
+    pending: { label: 'New Orders', color: 'bg-yellow-100 text-yellow-800', icon: <Clock className="w-5 h-5" /> },
+    verified: { label: 'Verified', color: 'bg-blue-100 text-blue-800', icon: <Check className="w-5 h-5" /> },
+    preparing: { label: 'Preparing', color: 'bg-orange-100 text-orange-800', icon: <Activity className="w-5 h-5" /> },
+    ready: { label: 'Ready to Serve', color: 'bg-purple-100 text-purple-800', icon: <Check className="w-5 h-5" /> },
+    completed: { label: 'Completed', color: 'bg-green-100 text-green-800', icon: <Check className="w-5 h-5" /> }
   }
 
   return (

@@ -29,6 +29,7 @@ import {
 } from 'recharts'
 import DateRangePicker from './DateRangePicker'
 import ExportReport from './ExportReport'
+import { useAuthStore } from '../../../store/authStore'
 import Loading from '../../../common/Loading'
 import { getRestaurantAnalytics } from '../../../services/analyticsService'
 
@@ -40,9 +41,21 @@ const RestaurantAnalytics = () => {
     end: new Date(),
   })
 
+  const { user } = useAuthStore()
+  const restaurantId = user?.restaurant_id?.id || user?.restaurant_id || user?.restaurant?.id || user?.restaurant?._id
+
   const { data, isLoading } = useQuery(
-    ['restaurantAnalytics', dateRange],
-    () => getRestaurantAnalytics(dateRange)
+    ['restaurantAnalytics', restaurantId, dateRange],
+    () => getRestaurantAnalytics(restaurantId, dateRange),
+    { enabled: !!restaurantId }
+  )
+
+  if (!restaurantId) return (
+    <div className="p-6">
+      <div className="bg-white rounded-xl p-6 shadow-sm">
+        <p className="text-gray-700">No restaurant selected. Please select a restaurant to view analytics.</p>
+      </div>
+    </div>
   )
 
   if (isLoading) return <Loading />

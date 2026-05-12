@@ -24,6 +24,15 @@ router.post('/forgot-password', validate(authValidations.forgotPassword), forgot
 router.post('/reset-password', validate(authValidations.resetPassword), resetPassword);
 router.get('/verify-email/:token', verifyEmail);
 
+// Social auth routes (Google). Uses passport-google-oauth20 when configured.
+const { googleRedirect, googleCallback } = require('../controllers/socialAuthController');
+router.get('/google', googleRedirect);
+router.get('/google/callback', googleCallback);
+// Social auth routes (Facebook)
+const { facebookRedirect, facebookCallback } = require('../controllers/socialAuthController');
+router.get('/facebook', facebookRedirect);
+router.get('/facebook/callback', facebookCallback);
+
 // Protected routes
 router.use(protect);
 router.post('/logout', logout);

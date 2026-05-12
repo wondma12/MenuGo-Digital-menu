@@ -12,6 +12,7 @@ const Waiter = require('../src/models/Waiter');
 const WaiterShift = require('../src/models/WaiterShift');
 const WaiterPerformance = require('../src/models/WaiterPerformance');
 const WaiterRealtimeStatus = require('../src/models/WaiterRealtimeStatus');
+// eslint-disable-next-line no-unused-vars
 const WaiterActivityLog = require('../src/models/WaiterActivityLog');
 const MenuCategory = require('../src/models/MenuCategory');
 const MenuItem = require('../src/models/MenuItem');
@@ -28,6 +29,7 @@ const OrderItem = require('../src/models/OrderItem');
 const OrderItemOption = require('../src/models/OrderItemOption');
 const OrderItemModifier = require('../src/models/OrderItemModifier');
 const OrderStatusHistory = require('../src/models/OrderStatusHistory');
+// eslint-disable-next-line no-unused-vars
 const OrderVerificationAttempt = require('../src/models/OrderVerificationAttempt');
 const OrderRejectionReason = require('../src/models/OrderRejectionReason');
 const QRCode = require('../src/models/QRCode');
@@ -96,72 +98,7 @@ const seedUsers = async () => {
       email_verified: true,
       password: 'Admin@123',
     },
-    {
-      id: uuidv4(),
-      email: 'restaurant.owner@menugo.com',
-      full_name: 'John Owner',
-      phone: '+1234567891',
-      role: USER_ROLES.RESTAURANT_ADMIN,
-      is_active: true,
-      is_verified: true,
-      email_verified: true,
-      password: 'Owner@123',
-    },
-    {
-      id: uuidv4(),
-      email: 'waiter1@menugo.com',
-      full_name: 'Mike Waiter',
-      phone: '+1234567892',
-      role: USER_ROLES.WAITER,
-      is_active: true,
-      is_verified: true,
-      email_verified: true,
-      password: 'Waiter@123',
-    },
-    {
-      id: uuidv4(),
-      email: 'waiter2@menugo.com',
-      full_name: 'Sarah Williams',
-      phone: '+1234567893',
-      role: USER_ROLES.WAITER,
-      is_active: true,
-      is_verified: true,
-      email_verified: true,
-      password: 'Waiter@123',
-    },
-    {
-      id: uuidv4(),
-      email: 'customer@example.com',
-      full_name: 'Sarah Customer',
-      phone: '+1234567894',
-      role: USER_ROLES.CUSTOMER,
-      is_active: true,
-      is_verified: true,
-      email_verified: true,
-      password: 'Customer@123',
-    },
-    {
-      id: uuidv4(),
-      email: 'customer2@example.com',
-      full_name: 'John Smith',
-      phone: '+1234567895',
-      role: USER_ROLES.CUSTOMER,
-      is_active: true,
-      is_verified: true,
-      email_verified: true,
-      password: 'Customer@123',
-    },
-    {
-      id: uuidv4(),
-      email: 'support@menugo.com',
-      full_name: 'Support Agent',
-      phone: '+1234567896',
-      role: USER_ROLES.SUPPORT_AGENT,
-      is_active: true,
-      is_verified: true,
-      email_verified: true,
-      password: 'Support@123',
-    },
+    
   ];
 
   const users = [];
@@ -295,7 +232,9 @@ const seedRestaurant = async (users) => {
 const seedRestaurantSettings = async (restaurant) => {
   console.log('Seeding restaurant settings...');
   
-  if (!restaurant) return;
+  if (!restaurant) {
+    return;
+  }
 
   const settings = [
     {

@@ -47,7 +47,7 @@ const Pagination = ({
 
   const pageNumbers = getPageNumbers()
 
-  if (totalPages <= 1) return null
+  if (typeof totalPages !== 'number' || totalPages <= 1) return null
 
   return (
     <nav className={`flex items-center justify-center gap-1 ${className}`}>

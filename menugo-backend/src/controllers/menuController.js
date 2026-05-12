@@ -1,4 +1,4 @@
-const { MenuCategory, MenuItem, MenuItemOptionGroup, MenuItemOption, Restaurant } = require('../models');
+const { MenuCategory, MenuItem, MenuItemOptionGroup, MenuItemOption, Restaurant, SubscriptionPlan } = require('../models');
 const { ApiResponse } = require('../utils/apiResponse');
 const { ApiError } = require('../utils/apiError');
 const { catchAsync } = require('../utils/catchAsync');
@@ -99,15 +99,26 @@ const toggleCategoryStatus = catchAsync(async (req, res) => {
 // Get all menu items
 const getMenuItems = catchAsync(async (req, res) => {
   const { restaurantId } = req.params;
-  const { category_id, is_available, search } = req.query;
+  // frontend may send `category` / `availability` or `category_id` / `is_available`
+  const { category_id, is_available, category, availability, search } = req.query;
 
   const where = { restaurant_id: restaurantId, deleted_at: null };
-  if (category_id) where.category_id = category_id;
-  if (is_available !== undefined) where.is_available = is_available === 'true';
-  if (search) {
+
+  const cat = category_id || (category && category !== 'all' ? category : null);
+  if (cat && String(cat) !== 'all') where.category_id = cat;
+
+  const avail = typeof is_available !== 'undefined' ? is_available : (typeof availability !== 'undefined' ? availability : undefined);
+  if (typeof avail !== 'undefined' && String(avail) !== 'all') {
+    // treat 'true'/'false' strings properly
+    if (String(avail).toLowerCase() === 'true') where.is_available = true;
+    else if (String(avail).toLowerCase() === 'false') where.is_available = false;
+  }
+
+  const q = typeof search === 'string' ? search.trim() : '';
+  if (q.length > 0) {
     where[Op.or] = [
-      { name: { [Op.iLike]: `%${search}%` } },
-      { description: { [Op.iLike]: `%${search}%` } },
+      { name: { [Op.like]: `%${q}%` } },
+      { description: { [Op.like]: `%${q}%` } },
     ];
   }
 
@@ -150,6 +161,27 @@ const createMenuItem = catchAsync(async (req, res) => {
     is_gluten_free, spice_level, preparation_time, calories,
     allergens, tags, display_order,
   } = req.body;
+
+  // Find restaurant and enforce subscription limits (max menu items)
+  const restaurant = await Restaurant.findByPk(restaurantId);
+  if (!restaurant) throw new ApiError(404, 'Restaurant not found');
+
+  // Determine allowed max menu items: prefer explicit restaurant.max_menu_items,
+  // otherwise fall back to subscription plan limits JSON, otherwise default to 50
+  let allowedMax = Number(restaurant.max_menu_items) || 0;
+  if (!allowedMax) {
+    const plan = await SubscriptionPlan.findOne({ where: { tier: restaurant.subscription_tier } }).catch(() => null);
+    if (plan && plan.limits && typeof plan.limits.max_menu_items !== 'undefined') {
+      allowedMax = Number(plan.limits.max_menu_items) || 0;
+    }
+  }
+  if (!allowedMax) allowedMax = 50;
+
+  // Count existing active (not soft-deleted) menu items for this restaurant
+  const existingCount = await MenuItem.count({ where: { restaurant_id: restaurantId, deleted_at: null } }).catch(() => 0);
+  if (existingCount >= allowedMax) {
+    throw new ApiError(403, `Menu item limit reached for this restaurant (limit: ${allowedMax}). Upgrade your subscription to add more items.`);
+  }
 
   // Allow passing an image URL directly in the JSON payload (e.g. frontend uploaded separately
   // or provided a remote URL). If a file is uploaded in this request, it takes precedence
@@ -283,9 +315,27 @@ const getCustomerMenu = catchAsync(async (req, res) => {
     restaurant: {
       id: restaurant.id,
       name: restaurant.name,
+      description: restaurant.description,
+      address: restaurant.address,
+      city: restaurant.city,
+      state: restaurant.state,
+      country: restaurant.country,
+      postal_code: restaurant.postal_code,
+      phone: restaurant.phone,
+      whatsapp_number: restaurant.whatsapp_number,
+      email: restaurant.email,
+      website: restaurant.website,
       logo_url: restaurant.logo_url,
       cover_image_url: restaurant.cover_image_url,
+      cuisine_type: restaurant.cuisine_type,
+      cuisine_types: restaurant.cuisine_types,
       operating_hours: restaurant.operating_hours,
+      settings: restaurant.settings,
+      features: restaurant.features,
+      enable_delivery: restaurant.settings?.enable_delivery ?? restaurant.enable_delivery ?? false,
+      enable_pickup: restaurant.settings?.enable_pickup ?? restaurant.enable_pickup ?? false,
+      average_rating: restaurant.average_rating,
+      total_reviews: restaurant.total_reviews,
     },
     categories,
     items,

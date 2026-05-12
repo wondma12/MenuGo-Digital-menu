@@ -32,11 +32,14 @@ const ReviewResponse = ({ review, onClose, onRefresh }) => {
     <Modal isOpen={true} onClose={onClose} title="Respond to Review" size="md">
       <div className="space-y-4">
         <div className="bg-gray-50 rounded-lg p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="font-medium text-gray-900">{review.customerName || 'Anonymous'}</div>
+          <div className="flex items-center gap-2 mb-1">
+            <div className="font-medium text-gray-900">{review.customerName || review.user?.full_name || 'Anonymous'}</div>
             <div className="text-yellow-500">★</div>
             <div className="text-gray-600">{review.rating}</div>
           </div>
+          { (review.customerEmail || review.user?.email) && (
+            <div className="text-xs text-gray-500 mb-2">{review.customerEmail || review.user?.email}</div>
+          ) }
           <p className="text-gray-700 text-sm">{review.comment}</p>
         </div>
 

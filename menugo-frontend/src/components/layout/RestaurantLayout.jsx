@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useAuthStore } from '../../store/authStore'
 import Header from './Header'
 import Sidebar from './Sidebar'
+import { BarChart2, Clipboard, Folder, ShoppingCart, Table, QrCode, Users, Box, Tag, TrendingUp, Star, Settings } from 'lucide-react'
 import MobileNav from './MobileNav'
 import Footer from './Footer'
 
@@ -33,19 +34,24 @@ const RestaurantLayout = () => {
   }
 
   const menuItems = [
-    { path: '/admin/dashboard', label: 'Dashboard', icon: '📊' },
-    { path: '/admin/menu', label: 'Menu', icon: '📋' },
-    { path: '/admin/categories', label: 'Categories', icon: '📁' },
-    { path: '/admin/orders', label: 'Orders', icon: '🛒' },
-    { path: '/admin/tables', label: 'Tables', icon: '🪑' },
-    { path: '/admin/restaurant/qr', label: 'QR Code', icon: '🔳' },
-    { path: '/admin/staff', label: 'Staff', icon: '👥' },
-    { path: '/admin/inventory', label: 'Inventory', icon: '📦' },
-    { path: '/admin/promotions', label: 'Promotions', icon: '🏷️' },
-    { path: '/admin/analytics', label: 'Analytics', icon: '📈' },
-    { path: '/admin/reviews', label: 'Reviews', icon: '⭐' },
-    { path: '/admin/settings', label: 'Settings', icon: '⚙️' },
+    { path: '/admin/dashboard', label: 'Dashboard', icon: <BarChart2 className="w-5 h-5" /> },
+    { path: '/admin/menu', label: 'Menu', icon: <Clipboard className="w-5 h-5" /> },
+    { path: '/admin/categories', label: 'Categories', icon: <Folder className="w-5 h-5" /> },
+    { path: '/admin/orders', label: 'Orders', icon: <ShoppingCart className="w-5 h-5" /> },
+    // Kitchen intentionally omitted from restaurant admin sidebar
+    { path: '/admin/tables', label: 'Tables', icon: <Table className="w-5 h-5" /> },
+    { path: '/admin/restaurant/qr', label: 'QR Code', icon: <QrCode className="w-5 h-5" /> },
+    { path: '/admin/staff', label: 'Staff', icon: <Users className="w-5 h-5" /> },
+    { path: '/admin/inventory', label: 'Inventory', icon: <Box className="w-5 h-5" /> },
+    { path: '/admin/promotions', label: 'Promotions', icon: <Tag className="w-5 h-5" /> },
+    { path: '/admin/analytics', label: 'Analytics', icon: <TrendingUp className="w-5 h-5" /> },
+    { path: '/admin/reviews', label: 'Reviews', icon: <Star className="w-5 h-5" /> },
+    { path: '/admin/settings', label: 'Settings', icon: <Settings className="w-5 h-5" /> },
   ]
+
+  // For restaurant admin layout we always show the admin menu items.
+  // Staff-specific UIs (chef) use the KitchenLayout instead of RestaurantLayout.
+  const visibleMenuItems = menuItems
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -59,7 +65,7 @@ const RestaurantLayout = () => {
             transition={{ type: 'tween', duration: 0.3 }}
             className="fixed left-0 top-0 z-30 h-screen w-64 bg-white shadow-lg"
           >
-            <Sidebar menuItems={menuItems} onLogout={handleLogout} user={user} />
+            <Sidebar menuItems={visibleMenuItems} onLogout={handleLogout} user={user} />
           </motion.aside>
         )}
       </AnimatePresence>
@@ -83,7 +89,7 @@ const RestaurantLayout = () => {
       <MobileNav
         isOpen={mobileMenuOpen}
         onClose={() => setMobileMenuOpen(false)}
-        menuItems={menuItems}
+        menuItems={visibleMenuItems}
         user={user}
         onLogout={handleLogout}
       />

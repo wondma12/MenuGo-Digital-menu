@@ -38,7 +38,7 @@ const getInventoryItemById = catchAsync(async (req, res) => {
   const { id } = req.params;
 
   const item = await InventoryItem.findByPk(id, {
-    include: [{ model: InventoryTransaction, as: 'transactions', limit: 50, order: [['created_at', 'DESC']] }],
+    include: [{ model: InventoryTransaction, as: 'inventory_transactions', limit: 50, order: [['created_at', 'DESC']] }],
   });
 
   if (!item) {
@@ -195,7 +195,7 @@ const getInventoryTransactions = catchAsync(async (req, res) => {
 
   const { count, rows } = await InventoryTransaction.findAndCountAll({
     where,
-    include: [{ model: InventoryItem, as: 'inventory_item' }],
+    include: [{ model: InventoryItem, as: 'transaction_item' }],
     limit: parseInt(limit),
     offset,
     order: [['created_at', 'DESC']],
@@ -233,7 +233,7 @@ const getInventorySummary = catchAsync(async (req, res) => {
   const recentTransactions = await InventoryTransaction.findAll({
     where: { restaurant_id: restaurantId },
     limit: 10,
-    include: [{ model: InventoryItem, as: 'inventory_item' }],
+    include: [{ model: InventoryItem, as: 'transaction_item' }],
     order: [['created_at', 'DESC']],
   });
 

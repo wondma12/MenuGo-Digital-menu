@@ -1,4 +1,5 @@
 const { Sequelize } = require('sequelize');
+const mysql = require('mysql2/promise');
 require('dotenv').config();
 
 const shouldLogSql =
@@ -26,7 +27,28 @@ const sequelize = new Sequelize(
     },
     timezone: '+00:00',
   },
-
 );
 
-module.exports = { sequelize };
+// Create a mysql2 promise pool for raw queries used by some modules (db.execute/getConnection)
+const pool = mysql.createPool({
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
+  port: process.env.DB_PORT || 3306,
+  waitForConnections: true,
+  connectionLimit: parseInt(process.env.DB_POOL_MAX) || 10,
+  queueLimit: 0,
+  // set named placeholer behavior consistent with mysql2 default
+});
+
+// Export both Sequelize instance and a minimal db-like object with execute/getConnection/query
+module.exports = {
+  sequelize,
+  // provide the commonly used methods preserving `this` binding
+  execute: pool.execute.bind(pool),
+  query: pool.query.bind(pool),
+  getConnection: pool.getConnection.bind(pool),
+  // also expose the underlying pool in case callers need it
+  pool,
+};

@@ -11,9 +11,9 @@ const OrderStatusBadge = ({ status, size = 'sm' }) => {
   const config = {
     pending: { label: 'Pending', icon: Icons.Clock || DefaultIcon, color: 'bg-yellow-100 text-yellow-800' },
     verified: { label: 'Verified', icon: Icons.CheckCircle || DefaultIcon, color: 'bg-blue-100 text-blue-800' },
-    preparing: { label: 'Preparing', icon: Icons.Fire || Icons.Activity || DefaultIcon, color: 'bg-orange-100 text-orange-800' },
+    preparing: { label: 'Preparing', icon: Icons.Activity || DefaultIcon, color: 'bg-orange-100 text-orange-800' },
     ready: { label: 'Ready', icon: Icons.Truck || Icons.Package || DefaultIcon, color: 'bg-purple-100 text-purple-800' },
-    served: { label: 'Served', icon: Icons.Star || DefaultIcon, color: 'bg-green-100 text-green-800' }
+    completed: { label: 'Completed', icon: Icons.CheckCircle || DefaultIcon, color: 'bg-green-100 text-green-800' }
   }
 
   const sizeClasses = {

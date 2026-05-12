@@ -6,7 +6,7 @@ import { updateOperatingHours } from '../../../services/restaurantService'
 import toast from 'react-hot-toast'
 
 const OperatingHours = ({ settings }) => {
-  const [hours, setHours] = useState(settings?.operatingHours || {
+  const defaultHours = {
     monday: { open: '09:00', close: '22:00', isClosed: false },
     tuesday: { open: '09:00', close: '22:00', isClosed: false },
     wednesday: { open: '09:00', close: '22:00', isClosed: false },
@@ -14,7 +14,14 @@ const OperatingHours = ({ settings }) => {
     friday: { open: '09:00', close: '23:00', isClosed: false },
     saturday: { open: '10:00', close: '23:00', isClosed: false },
     sunday: { open: '10:00', close: '21:00', isClosed: false },
-  })
+  }
+
+  const initialHours = {
+    ...defaultHours,
+    ...(settings && settings.operatingHours ? settings.operatingHours : {}),
+  }
+
+  const [hours, setHours] = useState(initialHours)
 
   const queryClient = useQueryClient()
   const mutation = useMutation(updateOperatingHours, {
@@ -56,22 +63,22 @@ const OperatingHours = ({ settings }) => {
             </div>
             <div className="flex items-center gap-4">
               <Switch
-                checked={!hours[day.key].isClosed}
+                checked={!((hours[day.key] && hours[day.key].isClosed) ?? false)}
                 onChange={(checked) => handleChange(day.key, 'isClosed', !checked)}
                 label="Open"
               />
-              {!hours[day.key].isClosed && (
+              {!((hours[day.key] && hours[day.key].isClosed) ?? false) && (
                 <>
                   <input
                     type="time"
-                    value={hours[day.key].open}
+                    value={(hours[day.key] && hours[day.key].open) || '09:00'}
                     onChange={(e) => handleChange(day.key, 'open', e.target.value)}
                     className="px-3 py-1.5 border border-gray-300 rounded-lg"
                   />
                   <span className="text-gray-500">to</span>
                   <input
                     type="time"
-                    value={hours[day.key].close}
+                    value={(hours[day.key] && hours[day.key].close) || '21:00'}
                     onChange={(e) => handleChange(day.key, 'close', e.target.value)}
                     className="px-3 py-1.5 border border-gray-300 rounded-lg"
                   />

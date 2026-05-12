@@ -1,13 +1,14 @@
 import React from 'react'
-import { CheckCircleIcon, ClockIcon } from '@heroicons/react/24/outline'
+import { CheckCircleIcon } from '@heroicons/react/24/outline'
+import { Edit2, Check, Clock, Activity } from 'lucide-react'
 
 const OrderTracker = ({ order }) => {
   const steps = [
-    { key: 'pending', label: 'Order Placed', icon: '📝' },
-    { key: 'verified', label: 'Verified', icon: '✅' },
-    { key: 'preparing', label: 'Preparing', icon: '🔪' },
-    { key: 'ready', label: 'Ready', icon: '🍽️' },
-    { key: 'served', label: 'Served', icon: '✨' }
+    { key: 'pending', label: 'Order Placed', icon: <Edit2 className="w-5 h-5" /> },
+    { key: 'verified', label: 'Verified', icon: <Check className="w-5 h-5" /> },
+    { key: 'preparing', label: 'Preparing', icon: <Activity className="w-5 h-5" /> },
+    { key: 'ready', label: 'Ready', icon: <Check className="w-5 h-5" /> },
+    { key: 'served', label: 'Served', icon: <Check className="w-5 h-5" /> }
   ]
 
   const getStepStatus = (stepKey) => {

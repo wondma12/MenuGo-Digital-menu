@@ -9,7 +9,16 @@ import { useAuthStore } from '../../store/authStore'
 const TwoFactorAuth = () => {
   const navigate = useNavigate()
   const location = useLocation()
-  const { login: setAuth } = useAuthStore()
+  // We'll set auth state directly after successful 2FA
+  const setAuth = (user, token) => {
+    try {
+      useAuthStore.setState({ user, token, isAuthenticated: true })
+      localStorage.setItem('token', token)
+      localStorage.setItem('user', JSON.stringify(user))
+    } catch (e) {
+      console.error('Failed to set auth state:', e)
+    }
+  }
   const [code, setCode] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState(null)

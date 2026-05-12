@@ -48,15 +48,30 @@ const RecentRestaurants = ({ restaurants }) => {
                     </span>
                     <span className="flex items-center gap-1">
                       <CalendarIcon className="w-3 h-3" />
-                      {new Date(restaurant.createdAt).toLocaleDateString()}
+                      {(() => {
+                        const created = restaurant.created_at ?? restaurant.createdAt
+                        try {
+                          return created ? new Date(created).toLocaleDateString() : '-'
+                        } catch (e) {
+                          return '-'
+                        }
+                      })()}
                     </span>
                   </div>
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <Badge variant={restaurant.isVerified ? 'success' : 'warning'} size="sm">
-                  {restaurant.isVerified ? 'Verified' : 'Pending'}
-                </Badge>
+                {(() => {
+                  const isActive = restaurant.is_active ?? restaurant.isActive ?? false
+                  const isVerified = restaurant.is_verified ?? restaurant.isVerified ?? false
+                  if (isActive) {
+                    return <Badge variant="success" size="sm">Active</Badge>
+                  }
+                  if (isVerified) {
+                    return <Badge variant="success" size="sm">Verified</Badge>
+                  }
+                  return <Badge variant="warning" size="sm">Pending</Badge>
+                })()}
                 <Badge variant="info" size="sm">
                   {restaurant.subscriptionTier}
                 </Badge>

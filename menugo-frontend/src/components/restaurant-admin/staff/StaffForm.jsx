@@ -84,11 +84,9 @@ const StaffForm = ({ staff, onSubmit, onCancel, isLoading }) => {
 
   const roleOptions = [
     { value: 'admin', label: 'Administrator' },
-    { value: 'manager', label: 'Manager' },
     { value: 'waiter', label: 'Waiter' },
     { value: 'chef', label: 'Chef' },
-    { value: 'cashier', label: 'Cashier' },
-    { value: 'delivery', label: 'Delivery Driver' },
+   
   ]
 
   return (
