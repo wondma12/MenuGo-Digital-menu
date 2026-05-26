@@ -9,11 +9,11 @@ const DefaultIcon = ({ className }) => (
 
 const OrderStatusBadge = ({ status, size = 'sm' }) => {
   const config = {
-    pending: { label: 'Pending', icon: Icons.Clock || DefaultIcon, color: 'bg-yellow-100 text-yellow-800' },
-    verified: { label: 'Verified', icon: Icons.CheckCircle || DefaultIcon, color: 'bg-blue-100 text-blue-800' },
-    preparing: { label: 'Preparing', icon: Icons.Activity || DefaultIcon, color: 'bg-orange-100 text-orange-800' },
-    ready: { label: 'Ready', icon: Icons.Truck || Icons.Package || DefaultIcon, color: 'bg-purple-100 text-purple-800' },
-    completed: { label: 'Completed', icon: Icons.CheckCircle || DefaultIcon, color: 'bg-green-100 text-green-800' }
+    pending: { label: 'Pending', icon: Icons.Clock || DefaultIcon, color: 'bg-orange-50 text-orange-700 ring-1 ring-orange-100' },
+    verified: { label: 'Verified', icon: Icons.CheckCircle || DefaultIcon, color: 'bg-blue-50 text-blue-700 ring-1 ring-blue-100' },
+    preparing: { label: 'Preparing', icon: Icons.Activity || DefaultIcon, color: 'bg-amber-50 text-amber-700 ring-1 ring-amber-100' },
+    ready: { label: 'Ready', icon: Icons.Truck || Icons.Package || DefaultIcon, color: 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100' },
+    completed: { label: 'Completed', icon: Icons.CheckCircle || DefaultIcon, color: 'bg-slate-100 text-slate-700 ring-1 ring-slate-200' }
   }
 
   const sizeClasses = {

@@ -55,11 +55,11 @@ const OperatingHours = ({ settings }) => {
 
   return (
     <div className="space-y-6">
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <div className="bg-white rounded-xl border border-slate-100 overflow-hidden">
         {days.map((day, index) => (
-          <div key={day.key} className={`p-4 flex items-center justify-between ${index !== days.length - 1 ? 'border-b border-gray-100' : ''}`}>
+          <div key={day.key} className={`p-4 flex items-center justify-between ${index !== days.length - 1 ? 'border-b border-slate-100' : ''}`}>
             <div className="w-32">
-              <span className="font-medium text-gray-900">{day.label}</span>
+              <span className="font-medium text-slate-900">{day.label}</span>
             </div>
             <div className="flex items-center gap-4">
               <Switch
@@ -73,14 +73,14 @@ const OperatingHours = ({ settings }) => {
                     type="time"
                     value={(hours[day.key] && hours[day.key].open) || '09:00'}
                     onChange={(e) => handleChange(day.key, 'open', e.target.value)}
-                    className="px-3 py-1.5 border border-gray-300 rounded-lg"
+                    className="px-3 py-1.5 border border-slate-300 rounded-lg"
                   />
-                  <span className="text-gray-500">to</span>
+                  <span className="text-slate-500">to</span>
                   <input
                     type="time"
                     value={(hours[day.key] && hours[day.key].close) || '21:00'}
                     onChange={(e) => handleChange(day.key, 'close', e.target.value)}
-                    className="px-3 py-1.5 border border-gray-300 rounded-lg"
+                    className="px-3 py-1.5 border border-slate-300 rounded-lg"
                   />
                 </>
               )}

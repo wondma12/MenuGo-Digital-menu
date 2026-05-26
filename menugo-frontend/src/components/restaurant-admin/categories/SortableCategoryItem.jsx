@@ -24,33 +24,33 @@ const SortableCategoryItem = ({ category, index }) => {
     <div
       ref={setNodeRef}
       style={style}
-      className={`p-4 hover:bg-gray-50 transition-colors ${isDragging ? 'cursor-grabbing' : ''}`}
+      className={`p-4 transition-colors hover:bg-orange-50 ${isDragging ? 'cursor-grabbing' : ''}`}
     >
       <div className="flex items-center gap-4">
         <div
           {...attributes}
           {...listeners}
-          className="cursor-grab active:cursor-grabbing p-1 hover:bg-gray-100 rounded"
+          className="cursor-grab rounded-none p-1 active:cursor-grabbing hover:bg-orange-100"
         >
-          <Bars3Icon className="w-5 h-5 text-gray-400" />
+          <Bars3Icon className="h-5 w-5 text-slate-400" />
         </div>
         
         <div className="flex-1 flex items-center gap-3">
           {category.icon ? (
-            <img src={category.icon} alt={category.name} className="w-10 h-10 rounded-lg object-cover" />
+            <img src={category.icon} alt={category.name} className="h-10 w-10 rounded-none object-cover" />
           ) : (
-            <div className="w-10 h-10 bg-primary-100 rounded-lg flex items-center justify-center">
-              <FolderIcon className="w-5 h-5 text-primary-600" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-none bg-orange-50">
+              <FolderIcon className="h-5 w-5 text-orange-600" />
             </div>
           )}
           <div>
             <div className="flex items-center gap-2">
-              <p className="font-medium text-gray-900">{category.name}</p>
+              <p className="font-medium text-slate-900">{category.name}</p>
               {!category.isActive && (
                 <Badge variant="danger" size="sm">Inactive</Badge>
               )}
             </div>
-            <p className="text-sm text-gray-500 line-clamp-1">
+            <p className="line-clamp-1 text-sm text-slate-500">
               {category.description || 'No description'}
             </p>
           </div>
@@ -58,7 +58,7 @@ const SortableCategoryItem = ({ category, index }) => {
         
         <div className="flex items-center gap-4">
           <Badge variant="info" size="sm">{category.itemCount || 0} items</Badge>
-          <span className="text-sm text-gray-400 w-12 text-right">
+          <span className="w-12 text-right text-sm text-slate-400">
             Order: {index + 1}
           </span>
         </div>

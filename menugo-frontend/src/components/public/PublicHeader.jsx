@@ -1,47 +1,156 @@
-import React, { useState } from 'react'
-import { Link } from 'react-router-dom'
+import React, { useState, useEffect } from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Bars3Icon, XMarkIcon, SparklesIcon } from '@heroicons/react/24/outline';
 
 export default function PublicHeader() {
-  const [open, setOpen] = useState(false)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const location = useLocation();
+
+  // Handle scroll effect for sticky header
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 20);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Close mobile menu on route change
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [location]);
+
+  const navLinks = [
+    { path: '/home', label: 'Home' },
+    { path: '/about', label: 'About' },
+    { path: '/services', label: 'Services' },
+    { path: '/contact', label: 'Contact' },
+  ];
+
+  const isActive = (path) => location.pathname === path;
 
   return (
-    <header className="bg-white shadow-sm">
-      <div className="container mx-auto px-4 py-3 flex items-center justify-between">
-        <Link to="/home" className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-primary-600 rounded flex items-center justify-center text-white font-bold">MG</div>
-          <span className="font-semibold text-lg text-gray-900">MenuGo</span>
-        </Link>
+    <header
+      className={`fixed top-0 z-50 w-full transition-all duration-300 ${
+        scrolled
+          ? 'bg-white/90 backdrop-blur-md shadow-lg'
+          : 'bg-white/80 backdrop-blur-sm shadow-sm'
+      }`}
+    >
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="flex h-16 items-center justify-between lg:h-20">
+          {/* Logo */}
+          <Link to="/home" className="flex items-center gap-2 group">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-orange-500 to-orange-600 shadow-md transition-all group-hover:scale-105">
+              <SparklesIcon className="h-5 w-5 text-white" />
+            </div>
+            <span className="text-xl font-extrabold tracking-tight text-slate-900">
+              Menu<span className="text-orange-600">Go</span>
+            </span>
+          </Link>
 
-        <nav className="hidden md:flex items-center gap-4">
-          <Link to="/home" className="text-gray-700 hover:text-primary-600">Home</Link>
-          <Link to="/about" className="text-gray-700 hover:text-primary-600">About</Link>
-          <Link to="/services" className="text-gray-700 hover:text-primary-600">Services</Link>
-          <Link to="/contact" className="text-gray-700 hover:text-primary-600">Contact</Link>
-        </nav>
+          {/* Desktop Navigation */}
+          <nav className="hidden md:flex items-center gap-8">
+            {navLinks.map((link) => (
+              <Link
+                key={link.path}
+                to={link.path}
+                className={`relative text-sm font-semibold transition-colors duration-200 ${
+                  isActive(link.path)
+                    ? 'text-orange-600'
+                    : 'text-slate-600 hover:text-orange-600'
+                }`}
+              >
+                {link.label}
+                {isActive(link.path) && (
+                  <motion.span
+                    layoutId="active-nav"
+                    className="absolute -bottom-1 left-0 right-0 h-0.5 rounded-full bg-orange-600"
+                    transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+                  />
+                )}
+              </Link>
+            ))}
+          </nav>
 
-        <div className="flex items-center gap-3">
-          <Link to="/login" className="px-4 py-2 bg-primary-600 text-white rounded-md hidden sm:inline-block">Sign In</Link>
+          {/* Desktop CTA Buttons */}
+          <div className="hidden md:flex items-center gap-3">
+            <Link
+              to="/login"
+              className="rounded-full px-5 py-2 text-sm font-semibold text-slate-700 transition-colors hover:text-orange-600"
+            >
+              Sign In
+            </Link>
+            <Link
+              to="/contact"
+              className="rounded-full bg-orange-600 px-5 py-2 text-sm font-semibold text-white shadow-md transition-all hover:-translate-y-0.5 hover:bg-orange-700 hover:shadow-lg"
+            >
+              Get Started
+            </Link>
+          </div>
+
+          {/* Mobile menu button */}
           <button
-            onClick={() => setOpen(v => !v)}
-            className="md:hidden p-2 rounded-md text-gray-700 hover:bg-gray-100"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="rounded-lg p-2 text-slate-600 transition-colors hover:bg-slate-100 hover:text-orange-600 md:hidden"
             aria-label="Toggle menu"
           >
-            ☰
+            {mobileMenuOpen ? (
+              <XMarkIcon className="h-6 w-6" />
+            ) : (
+              <Bars3Icon className="h-6 w-6" />
+            )}
           </button>
         </div>
       </div>
 
-      {open && (
-        <div className="md:hidden bg-white border-t">
-          <div className="container mx-auto px-4 py-3 flex flex-col gap-2">
-            <Link to="/home" onClick={() => setOpen(false)} className="text-gray-700">Home</Link>
-            <Link to="/about" onClick={() => setOpen(false)} className="text-gray-700">About</Link>
-            <Link to="/services" onClick={() => setOpen(false)} className="text-gray-700">Services</Link>
-            <Link to="/contact" onClick={() => setOpen(false)} className="text-gray-700">Contact</Link>
-            <Link to="/login" onClick={() => setOpen(false)} className="text-gray-700">Sign In</Link>
-          </div>
-        </div>
-      )}
+      {/* Mobile Menu */}
+      <AnimatePresence>
+        {mobileMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.3 }}
+            className="border-t border-slate-100 bg-white/95 backdrop-blur-md md:hidden"
+          >
+            <div className="flex flex-col space-y-3 px-4 py-6">
+              {navLinks.map((link) => (
+                <Link
+                  key={link.path}
+                  to={link.path}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={`rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
+                    isActive(link.path)
+                      ? 'bg-orange-50 text-orange-600'
+                      : 'text-slate-600 hover:bg-slate-50 hover:text-orange-600'
+                  }`}
+                >
+                  {link.label}
+                </Link>
+              ))}
+              <div className="flex flex-col gap-2 pt-4">
+                <Link
+                  to="/login"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="rounded-full border border-slate-200 px-4 py-2 text-center text-sm font-semibold text-slate-700 transition-colors hover:border-orange-300 hover:text-orange-600"
+                >
+                  Sign In
+                </Link>
+                <Link
+                  to="/contact"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="rounded-full bg-orange-600 px-4 py-2 text-center text-sm font-semibold text-white transition-colors hover:bg-orange-700"
+                >
+                  Get Started
+                </Link>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </header>
-  )
+  );
 }

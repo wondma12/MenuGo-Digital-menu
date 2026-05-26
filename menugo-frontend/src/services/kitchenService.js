@@ -2,7 +2,7 @@
 import api from './api';
 
 const kitchenService = {
-  getDashboard: (restaurantId) => api.get(`/kitchen/dashboard/${restaurantId}`),
+  getDashboard: (restaurantId, params = {}) => api.get(`/kitchen/dashboard/${restaurantId}`, { params }),
   updateStatus: (orderId, data) => api.put(`/kitchen/orders/${orderId}/status`, data),
   getOrderDetails: (orderId) => api.get(`/kitchen/orders/${orderId}`),
   bulkUpdate: (data) => api.post('/kitchen/orders/bulk-update', data),

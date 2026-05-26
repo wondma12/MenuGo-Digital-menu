@@ -72,13 +72,13 @@ const PlanForm = ({ initialData, onSubmit, onCancel, isLoading }) => {
   }
 
   return (
-    <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
+    <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4 text-slate-900">
       <Input label="Plan Name" {...register('name')} error={errors.name?.message} required />
       
-      <select {...register('tier')} className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-black">
-        <option value="basic" className="text-black">Basic</option>
-        <option value="premium" className="text-black">Premium</option>
-        <option value="enterprise" className="text-black">Enterprise</option>
+      <select {...register('tier')} className="w-full rounded-none border border-slate-300 px-4 py-2.5 text-slate-900 focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-100">
+        <option value="basic" className="text-slate-900">Basic</option>
+        <option value="premium" className="text-slate-900">Premium</option>
+        <option value="enterprise" className="text-slate-900">Enterprise</option>
       </select>
       
       <Textarea label="Description" {...register('description')} error={errors.description?.message} rows={3} />
@@ -90,7 +90,7 @@ const PlanForm = ({ initialData, onSubmit, onCancel, isLoading }) => {
 
       {/* Features */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Features</label>
+        <label className="mb-2 block text-sm font-medium text-slate-700">Features</label>
         <div className="space-y-2">
           {features.map((feature, index) => (
             <div key={index} className="flex gap-2">
@@ -99,15 +99,15 @@ const PlanForm = ({ initialData, onSubmit, onCancel, isLoading }) => {
                 value={feature}
                 onChange={(e) => updateFeature(index, e.target.value)}
                 placeholder="Enter feature"
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="flex-1 rounded-none border border-slate-300 px-4 py-2 text-slate-900 focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-100"
               />
               {index === features.length - 1 && (
-                <button type="button" onClick={addFeature} className="p-2 text-primary-600 hover:bg-primary-50 rounded-lg">
+                <button type="button" onClick={addFeature} className="rounded-none p-2 text-orange-600 hover:bg-orange-50">
                   <PlusIcon className="w-5 h-5" />
                 </button>
               )}
               {features.length > 1 && (
-                <button type="button" onClick={() => removeFeature(index)} className="p-2 text-red-600 hover:bg-red-50 rounded-lg">
+                <button type="button" onClick={() => removeFeature(index)} className="rounded-none p-2 text-rose-600 hover:bg-rose-50">
                   <XMarkIcon className="w-5 h-5" />
                 </button>
               )}
@@ -118,7 +118,7 @@ const PlanForm = ({ initialData, onSubmit, onCancel, isLoading }) => {
 
       {/* Limits */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Limits</label>
+        <label className="mb-2 block text-sm font-medium text-slate-700">Limits</label>
         <div className="grid grid-cols-2 gap-4">
           <Input label="Max Menu Items" type="number" value={limits.maxMenuItems} onChange={(e) => setLimits({ ...limits, maxMenuItems: parseInt(e.target.value) })} />
           <Input label="Max Staff" type="number" value={limits.maxStaff} onChange={(e) => setLimits({ ...limits, maxStaff: parseInt(e.target.value) })} />
@@ -128,8 +128,8 @@ const PlanForm = ({ initialData, onSubmit, onCancel, isLoading }) => {
       </div>
 
       <div className="flex justify-end gap-3 pt-4">
-        <Button type="button" variant="secondary" onClick={onCancel}>Cancel</Button>
-        <Button type="submit" isLoading={isLoading}>{initialData ? 'Update Plan' : 'Create Plan'}</Button>
+          <Button type="button" variant="secondary" onClick={onCancel} className="rounded-none">Cancel</Button>
+        <Button type="submit" isLoading={isLoading} className="rounded-none bg-gradient-to-r from-orange-500 to-blue-500 hover:from-orange-600 hover:to-blue-600">{initialData ? 'Update Plan' : 'Create Plan'}</Button>
       </div>
     </form>
   )

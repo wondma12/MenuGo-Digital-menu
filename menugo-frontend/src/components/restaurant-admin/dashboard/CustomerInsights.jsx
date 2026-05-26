@@ -1,5 +1,6 @@
 import React from 'react'
 import { ChartBarIcon, UserGroupIcon, HeartIcon } from '@heroicons/react/24/outline'
+import { formatPrice } from '../../../utils/currency'
 
 const CustomerInsights = ({ insights }) => {
   const defaultInsights = {
@@ -37,7 +38,7 @@ const CustomerInsights = ({ insights }) => {
     },
     {
       label: 'Avg Spend',
-      value: `$${data.avgSpend.toLocaleString()}`,
+      value: formatPrice(data.avgSpend || 0),
       change: data.avgSpendChange,
       icon: ChartBarIcon,
       color: 'green',
@@ -54,8 +55,8 @@ const CustomerInsights = ({ insights }) => {
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-sm p-5 border border-gray-100">
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">Customer Insights</h3>
+    <div className="rounded-none bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.06)]">
+      <h3 className="mb-4 text-lg font-semibold text-slate-900">Customer Insights</h3>
       
       {/* Metrics Grid */}
       <div className="grid grid-cols-3 gap-4 mb-6">
@@ -63,13 +64,13 @@ const CustomerInsights = ({ insights }) => {
           const colors = getColorClasses(metric.color)
           return (
             <div key={index} className="text-center">
-              <div className={`inline-flex p-2 rounded-lg ${colors.bg} mb-2`}>
+              <div className={`mb-2 inline-flex rounded-none p-2 ${colors.bg}`}>
                 <metric.icon className={`w-4 h-4 ${colors.text}`} />
               </div>
-              <p className="text-xl font-bold text-gray-900">{metric.value}</p>
-              <p className="text-xs text-gray-500">{metric.label}</p>
+              <p className="text-xl font-black text-slate-900">{metric.value}</p>
+              <p className="text-xs text-slate-500">{metric.label}</p>
               {metric.change !== 0 && (
-                <p className={`text-xs ${metric.change > 0 ? 'text-green-600' : 'text-red-600'} mt-1`}>
+                <p className={`mt-1 text-xs ${metric.change > 0 ? 'text-green-600' : 'text-red-600'}`}>
                   {metric.change > 0 ? '+' : ''}{metric.change}%
                 </p>
               )}
@@ -79,17 +80,17 @@ const CustomerInsights = ({ insights }) => {
       </div>
 
       {/* Popular Times */}
-      <div className="pt-4 border-t border-gray-100">
-        <p className="text-sm font-medium text-gray-700 mb-3">Peak Hours</p>
+      <div className="pt-4">
+        <p className="mb-3 text-sm font-medium text-slate-700">Peak Hours</p>
         <div className="flex gap-1 items-end h-32">
           {data.peakHours.map((hour, index) => (
             <div key={index} className="flex-1 flex flex-col items-center">
               <div 
-                className="w-full bg-primary-500 rounded-t-lg transition-all duration-300 hover:bg-primary-600"
+                className="w-full rounded-none bg-gradient-to-t from-orange-500 to-blue-500 transition-all duration-300 hover:from-orange-600 hover:to-blue-600"
                 style={{ height: `${Math.min(hour.percentage, 100)}%`, maxHeight: '80px' }}
               />
-              <p className="text-xs text-gray-500 mt-2">{hour.hour}</p>
-              <p className="text-xs font-medium text-gray-700">{hour.percentage}%</p>
+              <p className="mt-2 text-xs text-slate-500">{hour.hour}</p>
+              <p className="text-xs font-medium text-slate-700">{hour.percentage}%</p>
             </div>
           ))}
         </div>

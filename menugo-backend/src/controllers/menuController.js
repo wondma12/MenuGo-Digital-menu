@@ -6,11 +6,17 @@ const { uploadToCloudinary, deleteFromCloudinary } = require('../config/cloudina
 const { Op } = require('sequelize');
 
 // Get all categories for a restaurant
+// If query param `include_inactive=true` is provided, return all categories
 const getCategories = catchAsync(async (req, res) => {
   const { restaurantId } = req.params;
+  const { include_inactive, includeInactive } = req.query;
+  const includeInactiveFlag = (include_inactive === 'true') || (includeInactive === 'true');
+
+  const where = { restaurant_id: restaurantId };
+  if (!includeInactiveFlag) where.is_active = true;
 
   const categories = await MenuCategory.findAll({
-    where: { restaurant_id: restaurantId, is_active: true },
+    where,
     order: [['display_order', 'ASC']],
   });
 

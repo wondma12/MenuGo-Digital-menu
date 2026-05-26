@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from 'react-query'
 import {
   getNotifications,
@@ -9,6 +10,7 @@ import {
   markWaiterNotificationAsRead,
 } from '../services/notificationService'
 import toast from 'react-hot-toast'
+import { onEvent } from '../services/webSocketService'
 
 export const useNotifications = (userId) => {
   const queryClient = useQueryClient()
@@ -64,7 +66,7 @@ export const useWaiterNotifications = (waiterId) => {
 
   const { data, isLoading } = useQuery(
     ['waiter-notifications', waiterId],
-    () => getWaiterNotifications(waiterId),
+    () => getWaiterNotifications(),
     { enabled: !!waiterId, refetchInterval: 10000 }
   )
 
@@ -73,6 +75,23 @@ export const useWaiterNotifications = (waiterId) => {
       queryClient.invalidateQueries(['waiter-notifications', waiterId])
     },
   })
+
+  // Subscribe to websocket waiter notification events to refresh list in real-time
+  useEffect(() => {
+    if (!waiterId) return
+    const off = onEvent('new_waiter_notification', (payload) => {
+      // payload may include waiter_id or be the notification object
+      try {
+        queryClient.invalidateQueries(['waiter-notifications', waiterId])
+      } catch (e) {
+        // ignore
+      }
+    })
+
+    return () => {
+      if (off) off()
+    }
+  }, [waiterId, queryClient])
 
   return {
     notifications: data?.notifications || [],

@@ -12,6 +12,7 @@ export default defineConfig({
       '@services': path.resolve(__dirname, './src/services'),
       '@store': path.resolve(__dirname, './src/store'),
       '@utils': path.resolve(__dirname, './src/utils'),
+      	  'react-hot-toast': path.resolve(__dirname, './src/utils/hotToastShim.js'),
       '@styles': path.resolve(__dirname, './src/styles'),
       '@assets': path.resolve(__dirname, './src/assets'),
       '@config': path.resolve(__dirname, './src/config'),
@@ -24,17 +25,25 @@ export default defineConfig({
     open: true,
     proxy: {
       '/api': {
-        target: 'http://localhost:5000',
+        // Forward API requests to the backend. In local development we
+        // default to the backend port the server started on (5000),
+        // which is what the backend logs show when you restart it.
+        // You can override this by setting the `API_URL` env var.
+        // Default matches the backend `PORT` in menugo-backend/.env (5003).
+        target: process.env.API_URL || 'http://localhost:5003',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, '/api'),
+        timeout: 120000,
       },
       '/ws': {
-        target: 'ws://localhost:5000',
+        // WebSocket proxy: derive ws target from API_URL when possible
+        target: (process.env.API_URL && process.env.API_URL.replace(/^http/, 'ws')) || 'ws://localhost:5003',
         ws: true,
       },
       '/uploads': {
-        target: 'http://localhost:5000',
+        target: process.env.API_URL || 'http://localhost:5003',
         changeOrigin: true,
+        timeout: 120000,
       },
     },
   },

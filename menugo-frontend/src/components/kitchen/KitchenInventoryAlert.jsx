@@ -42,18 +42,18 @@ const KitchenInventoryAlert = () => {
   };
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 w-80">
-      <div className="bg-white rounded-lg shadow-xl border overflow-hidden">
-        <div className="bg-red-600 text-white px-4 py-2 flex justify-between items-center">
+    <div className="fixed z-50 bottom-4 left-2 right-2 max-w-md md:left-auto md:right-4 md:w-80">
+      <div className="overflow-hidden rounded-2xl border border-orange-100 bg-white shadow-2xl">
+        <div className="flex items-center justify-between bg-gradient-to-r from-orange-500 to-blue-500 px-4 py-3 text-white">
           <span className="font-semibold">Inventory Alerts</span>
-          <button onClick={() => setShow(false)} className="text-white hover:text-gray-200">
+          <button onClick={() => setShow(false)} className="text-white/90 hover:text-white">
             ✕
           </button>
         </div>
         
         <div className="max-h-96 overflow-y-auto">
           {alerts.map((alert) => (
-            <div key={alert.id} className={`p-3 border-b ${getAlertColor(alert.status)}`}>
+            <div key={alert.id} className={`border-b p-3 ${getAlertColor(alert.status)}`}>
               <div className="flex items-start">
                 <span className="text-xl mr-2">{getAlertIcon(alert.status)}</span>
                 <div className="flex-1">

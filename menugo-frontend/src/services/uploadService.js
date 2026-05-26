@@ -6,7 +6,11 @@ export const uploadFile = async (file, folder) => {
   if (folder) formData.append('folder', folder)
 
   const response = await api.post('/upload', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
+    // Remove any default JSON Content-Type so the browser sets the correct multipart boundary.
+    transformRequest: [(data, headers) => {
+      try { delete headers['Content-Type'] } catch (e) {}
+      return data
+    }]
   })
   // Backend wraps result in ApiResponse: { success, message, data }
   // Return the inner data payload when present for caller convenience.
@@ -19,7 +23,10 @@ export const uploadMultipleFiles = async (files, folder) => {
   if (folder) formData.append('folder', folder)
 
   const response = await api.post('/upload/multiple', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
+    transformRequest: [(data, headers) => {
+      try { delete headers['Content-Type'] } catch (e) {}
+      return data
+    }]
   })
   return response.data?.data ?? response.data
 }

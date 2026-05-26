@@ -5,7 +5,7 @@ const { protect, restrictTo, optionalAuth } = require('../middleware/authMiddlew
 const { isRestaurantOwner, isRestaurantStaff } = require('../middleware/roleMiddleware');
 const { validate } = require('../middleware/validationMiddleware');
 const { restaurantValidations } = require('../middleware/validationMiddleware');
-const { uploadSingle } = require('../middleware/uploadMiddleware');
+const { uploadSingle, uploadFields } = require('../middleware/uploadMiddleware');
 const {
   getAllRestaurants,
   getRestaurantById,
@@ -55,8 +55,9 @@ router.put('/settings/:section', updateSettingsSection);
 // (pending-verifications route moved above to avoid conflict with '/:id')
 
 // Restaurant owner routes
-router.post('/', validate(restaurantValidations.create), createRestaurant);
-router.put('/:id', isRestaurantOwner, validate(restaurantValidations.update), updateRestaurant);
+// Accept multiple optional files in the same multipart: document (business license), logo, banner, coverImage
+router.post('/', uploadFields([{ name: 'document', maxCount: 1 }, { name: 'logo', maxCount: 1 }, { name: 'banner', maxCount: 1 }, { name: 'coverImage', maxCount: 1 }]), validate(restaurantValidations.create), createRestaurant);
+router.put('/:id', isRestaurantOwner, uploadFields([{ name: 'document', maxCount: 1 }, { name: 'logo', maxCount: 1 }, { name: 'banner', maxCount: 1 }, { name: 'coverImage', maxCount: 1 }]), validate(restaurantValidations.update), updateRestaurant);
 // Allow platform admins to delete restaurants too — controller enforces owner OR platform_admin.
 router.delete('/:id', deleteRestaurant);
 router.get('/:id/dashboard', isRestaurantOwner, getDashboardStats);

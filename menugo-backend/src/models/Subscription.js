@@ -37,7 +37,7 @@ const Subscription = sequelize.define('Subscription', {
   },
   currency: {
     type: DataTypes.STRING(3),
-    defaultValue: 'USD',
+    defaultValue: 'ETB',
   },
   billing_interval: {
     type: DataTypes.STRING(20),

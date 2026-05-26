@@ -16,7 +16,7 @@ const initStripe = () => {
 };
 
 // Create payment intent
-const createPaymentIntent = async (amount, currency = 'usd', metadata = {}) => {
+const createPaymentIntent = async (amount, currency = (process.env.STRIPE_CURRENCY || 'ETB'), metadata = {}) => {
   if (!stripe) {
     throw new Error('Stripe not configured');
   }

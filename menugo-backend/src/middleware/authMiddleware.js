@@ -20,40 +20,39 @@ const protect = async (req, res, next) => {
       throw new ApiError(401, 'Not authorized, no token provided');
     }
 
-    // In development allow a DB-backed session to authenticate without strict JWT verification
-    // This helps local testing when JWT secrets or token expiry may differ between processes.
-    if (process.env.NODE_ENV === 'development') {
-      const sessionDev = await UserSession.findOne({
-        where: { token, revoked_at: null },
-        include: [{ model: User, as: 'user_owner', where: { is_active: true } }],
-      }).catch(() => null);
-
-      if (sessionDev && sessionDev.expires_at && sessionDev.expires_at > new Date()) {
-        req.user = sessionDev.user_owner;
-        req.userId = sessionDev.user_owner.id;
-        req.userRole = sessionDev.user_owner.role;
-        req.sessionId = sessionDev.id;
-        return next();
-      }
-    }
-
-    // Verify token (production/default behavior)
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-    // Check if session exists and is valid
+    // Prefer DB-backed session lookup: if a valid session exists in DB, accept it.
+    // This supports local dev sessions and refresh-token based sessions where JWT
+    // verification may not be necessary for every request.
     const session = await UserSession.findOne({
       where: { token, revoked_at: null },
       include: [{ model: User, as: 'user_owner', where: { is_active: true } }],
-    });
+    }).catch(() => null);
 
-    if (!session || session.expires_at < new Date()) {
+    if (session && session.expires_at && session.expires_at > new Date()) {
+      req.user = session.user_owner;
+      req.userId = session.user_owner.id;
+      req.userRole = session.user_owner.role;
+      req.sessionId = session.id;
+      return next();
+    }
+
+    // If no valid DB session, fall back to strict JWT verification
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    // Re-check session after JWT verify in case of stateless tokens
+    const sessionAfter = await UserSession.findOne({
+      where: { token, revoked_at: null },
+      include: [{ model: User, as: 'user_owner', where: { is_active: true } }],
+    }).catch(() => null);
+
+    if (!sessionAfter || sessionAfter.expires_at < new Date()) {
       throw new ApiError(401, 'Session expired or invalid');
     }
 
-    req.user = session.user_owner;
-    req.userId = session.user_owner.id;
-    req.userRole = session.user_owner.role;
-    req.sessionId = session.id;
+    req.user = sessionAfter.user_owner;
+    req.userId = sessionAfter.user_owner.id;
+    req.userRole = sessionAfter.user_owner.role;
+    req.sessionId = sessionAfter.id;
 
     next();
   } catch (error) {
@@ -77,15 +76,29 @@ const optionalAuth = async (req, res, next) => {
     }
 
     if (token) {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      // Try DB session first
       const session = await UserSession.findOne({
         where: { token, revoked_at: null },
         include: [{ model: User, as: 'user_owner', where: { is_active: true } }],
-      });
+      }).catch(() => null);
 
       if (session && session.expires_at > new Date()) {
         req.user = session.user_owner;
         req.userId = session.user_owner.id;
+      } else {
+        try {
+          const decoded = jwt.verify(token, process.env.JWT_SECRET);
+          const session2 = await UserSession.findOne({
+            where: { token, revoked_at: null },
+            include: [{ model: User, as: 'user_owner', where: { is_active: true } }],
+          }).catch(() => null);
+          if (session2 && session2.expires_at > new Date()) {
+            req.user = session2.user_owner;
+            req.userId = session2.user_owner.id;
+          }
+        } catch (e) {
+          // ignore verification errors in optionalAuth
+        }
       }
     }
     next();

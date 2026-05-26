@@ -49,10 +49,10 @@ const PermissionManager = () => {
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-      <div className="p-5 border-b border-gray-200">
-        <h3 className="text-lg font-semibold text-gray-900">Individual Permissions</h3>
-        <p className="text-sm text-gray-500">Set custom permissions for each staff member</p>
+    <div className="overflow-hidden rounded-none border border-slate-200 bg-white shadow-[0_16px_40px_rgba(15,23,42,0.06)]">
+      <div className="border-b border-slate-100 p-5">
+        <h3 className="text-lg font-black tracking-tight text-slate-900">Individual Permissions</h3>
+        <p className="text-sm text-slate-500">Set custom permissions for each staff member</p>
       </div>
 
       <div className="p-5">
@@ -75,17 +75,17 @@ const PermissionManager = () => {
             animate={{ opacity: 1, y: 0 }}
             className="mt-6 space-y-6"
           >
-            <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-              <UserIcon className="w-8 h-8 text-gray-400" />
+            <div className="flex items-center gap-3 rounded-none bg-slate-50 p-3">
+              <UserIcon className="w-8 h-8 text-slate-400" />
               <div>
-                <p className="font-medium text-gray-900">{selectedStaff.name}</p>
-                <p className="text-sm text-gray-500">Role: {selectedStaff.role}</p>
+                <p className="font-medium text-slate-900">{selectedStaff.name}</p>
+                <p className="text-sm text-slate-500">Role: {selectedStaff.role}</p>
               </div>
             </div>
 
             {Object.entries(permissionCategories).map(([category, categoryPermissions]) => (
               <div key={category}>
-                <h4 className="font-medium text-gray-800 mb-3">{category}</h4>
+                <h4 className="mb-3 font-semibold text-slate-700">{category}</h4>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                   {categoryPermissions.map((permission) => (
                     <label key={permission} className="flex items-center gap-2 cursor-pointer">
@@ -93,16 +93,16 @@ const PermissionManager = () => {
                         type="checkbox"
                         checked={permissions.includes(permission)}
                         onChange={() => handlePermissionToggle(permission)}
-                        className="w-4 h-4 text-primary-600 rounded"
+                        className="h-4 w-4 rounded-none text-orange-600 focus:ring-orange-500"
                       />
-                      <span className="text-sm text-gray-700 capitalize">{permission.replace(/_/g, ' ')}</span>
+                      <span className="text-sm text-slate-600 capitalize">{permission.replace(/_/g, ' ')}</span>
                     </label>
                   ))}
                 </div>
               </div>
             ))}
 
-            <div className="flex justify-end pt-4 border-t border-gray-200">
+            <div className="flex justify-end border-t border-slate-100 pt-4">
               <Button onClick={handleSave} isLoading={updateMutation.isLoading} icon={ShieldCheckIcon}>
                 Save Permissions
               </Button>

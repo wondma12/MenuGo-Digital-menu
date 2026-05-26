@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { UserIcon, Cog6ToothIcon, ArrowRightOnRectangleIcon } from '@heroicons/react/24/outline'
+import { ArrowRightOnRectangleIcon, Cog6ToothIcon } from '@heroicons/react/24/outline'
 import Avatar from '../common/Avatar'
 
 const UserMenu = ({ user, onLogout, inHeader = false }) => {
@@ -18,14 +18,23 @@ const UserMenu = ({ user, onLogout, inHeader = false }) => {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
+  const navigate = useNavigate()
+
+  const settingsPath = user?.role === 'platform_admin'
+    ? '/platform/profile'
+    : user?.role === 'waiter'
+      ? '/waiter/profile'
+      : user?.role === 'restaurant_admin'
+        ? '/admin/settings'
+        : '/settings'
+
   const menuItems = [
-    { label: 'Profile', icon: UserIcon, path: '/profile' },
-    { label: 'Settings', icon: Cog6ToothIcon, path: '/settings' },
+    { label: 'Settings', icon: Cog6ToothIcon, path: settingsPath },
     { label: 'Logout', icon: ArrowRightOnRectangleIcon, onClick: onLogout, danger: true },
   ]
 
   return (
-    <div className="relative" ref={menuRef}>
+    <div className="relative z-50" ref={menuRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
         className={`flex items-center gap-2 p-1 rounded-lg transition-colors ${inHeader ? 'hover:bg-white/10' : 'hover:bg-gray-100'}`}
@@ -40,11 +49,11 @@ const UserMenu = ({ user, onLogout, inHeader = false }) => {
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-50 overflow-hidden"
+            className="absolute right-0 z-[70] mt-2 w-48 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg"
           >
             <div className="p-3 border-b border-gray-200">
               <p className="text-sm font-medium text-gray-900">{user?.fullName}</p>
-              <p className="text-xs text-gray-500 truncate">{user?.email}</p>
+              <p className="text-xs text-gray-500 truncate capitalize">{String(user?.role || 'account').replace('_', ' ')}</p>
             </div>
             <div className="py-1">
               {menuItems.map((item, index) => (
@@ -53,6 +62,8 @@ const UserMenu = ({ user, onLogout, inHeader = false }) => {
                   onClick={() => {
                     if (item.onClick) {
                       item.onClick()
+                    } else if (item.path) {
+                      navigate(item.path)
                     }
                     setIsOpen(false)
                   }}

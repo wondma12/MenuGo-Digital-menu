@@ -1,22 +1,37 @@
 import axios from 'axios'
 import { useAuthStore } from '../store/authStore'
 
-// Default to the backend dev server port (backend typically runs on 5000 locally).
-// If you run the backend on a different port, set `VITE_API_URL` in your frontend
-// environment instead of editing this file.
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
+// Default API base URL.
+// In development, prefer a relative `/api` so Vite's dev server proxy handles forwarding
+// to the backend (avoids cross-port connection attempts and long fallback timeouts).
+// In production or when `VITE_API_URL` is explicitly provided, use the configured value.
+// During development prefer the Vite dev server proxy (`/api`) so requests
+// are forwarded to the backend defined in `vite.config.js`. This avoids
+// cross-port requests and makes local fallback probing unnecessary.
+const API_URL = import.meta.env.DEV ? '/api' : (import.meta.env.VITE_API_URL || 'http://localhost:5000/api')
+
+// Ensure the configured API_URL always includes the `/api` suffix so
+// requests like `api.get('/dashboard/platform')` resolve to
+// `http(s)://host:port/api/dashboard/platform` regardless of how
+// `VITE_API_URL` was provided (with or without trailing `/api`).
+const normalizeApiUrl = (url) => {
+  if (!url) return url
+  let normalized = url.replace(/\/$/, '')
+  if (!/\/api(\/)?$/.test(normalized)) normalized = `${normalized}/api`
+  return normalized
+}
+
+const NORMALIZED_API_URL = normalizeApiUrl(API_URL)
 
 // Fallback ports to try when the configured API is unreachable during local development.
-// Put the expected local backend port first to avoid unnecessary failed attempts.
-const FALLBACK_PORTS = [5000, 5008, 5007, 5006, 5005]
+// Include common local backend ports (5002 and 5003 used by this repo), then other candidates.
+const FALLBACK_PORTS = [5003, 5002, 5000, 5008, 5007, 5006, 5005]
 
 const buildApiCandidates = () => {
   const seen = new Set()
   const add = (u) => {
     if (!u) return
-    let normalized = u.replace(/\/$/, '')
-    // Ensure we have the /api suffix
-    if (!/\/api(\/)?$/.test(normalized)) normalized = `${normalized}/api`
+    let normalized = normalizeApiUrl(u)
     if (!seen.has(normalized)) {
       seen.add(normalized)
     }
@@ -34,36 +49,68 @@ const buildApiCandidates = () => {
   }
 
   // Always ensure API_URL is present as a last resort
-  add(API_URL)
+  add(NORMALIZED_API_URL)
 
   return Array.from(seen)
 }
 
 const attemptFallback = async (originalRequest) => {
-  const candidates = buildApiCandidates()
-  const currentBase = (api.defaults && api.defaults.baseURL) ? api.defaults.baseURL.replace(/\/$/, '') : API_URL.replace(/\/$/, '')
+  // Only attempt automatic fallback for idempotent requests to avoid
+  // re-sending large uploads or mutating POSTs to unknown hosts.
+  const method = (originalRequest && originalRequest.method) ? originalRequest.method.toLowerCase() : 'get'
+  if (!['get', 'head'].includes(method)) {
+    return Promise.reject(originalRequest._originalError || new Error('Network error: non-idempotent request; not attempting fallback'))
+  }
 
+  // Use a small cache so we don't probe repeatedly during a dev session
+  const cacheKey = 'menugo_api_base'
+  const cached = typeof sessionStorage !== 'undefined' ? sessionStorage.getItem(cacheKey) : null
+  if (cached) {
+    api.defaults.baseURL = cached
+    try {
+      return await api(originalRequest)
+    } catch (e) {
+      // fall through to probing candidates
+    }
+  }
+
+  const candidates = buildApiCandidates()
+  const currentBase = (api.defaults && api.defaults.baseURL) ? api.defaults.baseURL.replace(/\/$/, '') : NORMALIZED_API_URL.replace(/\/$/, '')
+
+  // Limit the number of probes and use a short probe timeout to avoid long delays
+  let probed = 0
+  const MAX_PROBES = 3
   for (const candidate of candidates) {
+    if (probed >= MAX_PROBES) break
     const base = candidate.replace(/\/$/, '')
     if (base === currentBase) continue
+    probed += 1
     try {
+      const healthUrl = `${base.replace(/\/$/, '')}/health`
+      if (import.meta.env.DEV) console.warn('Probing fallback baseURL health:', healthUrl)
+      await axios.get(healthUrl, { timeout: 1200 })
+      // If probe succeeded, switch base and cache it for this session
       api.defaults.baseURL = base
-      if (import.meta.env.DEV) console.warn('Trying API fallback baseURL:', base)
-      // Retry original request using updated baseURL
+      try {
+        if (typeof sessionStorage !== 'undefined') sessionStorage.setItem(cacheKey, base)
+      } catch (e) {
+        // ignore storage errors
+      }
+      if (import.meta.env.DEV) console.warn('Using API fallback baseURL:', base)
       return await api(originalRequest)
     } catch (err) {
-      if (import.meta.env.DEV) console.warn('Fallback candidate failed:', base, (err && err.message) || err)
+      if (import.meta.env.DEV) console.warn('Fallback candidate probe failed:', base, (err && err.message) || err)
       // try next candidate
     }
   }
 
-  // restore default
-  api.defaults.baseURL = API_URL
+  // restore default and give up
+  api.defaults.baseURL = NORMALIZED_API_URL
   return Promise.reject(originalRequest._originalError || new Error('All API fallback attempts failed'))
 }
 
 const api = axios.create({
-  baseURL: API_URL,
+  baseURL: NORMALIZED_API_URL,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -84,6 +131,7 @@ const publicPaths = [
 // Flag to prevent multiple refresh token calls
 let isRefreshing = false
 let failedQueue = []
+const authSessionStorage = typeof window !== 'undefined' ? window.sessionStorage : null
 
 const processQueue = (error, token = null) => {
   failedQueue.forEach(prom => {
@@ -100,12 +148,24 @@ const processQueue = (error, token = null) => {
 api.interceptors.request.use(
   (config) => {
     // Get token from store
-    const token = useAuthStore.getState().token || localStorage.getItem('token')
+    const token = useAuthStore.getState().token || authSessionStorage?.getItem('token')
     
     // Add token to headers if it exists and not a public path
     const isPublicPath = publicPaths.some(path => config.url?.includes(path))
     if (token && !isPublicPath) {
       config.headers.Authorization = `Bearer ${token}`
+    }
+
+    // If this is a file upload (FormData) increase timeout to avoid client-side
+    // timeouts for large uploads or slow Cloudinary responses.
+    try {
+      const isFormData = (typeof FormData !== 'undefined') && (config.data instanceof FormData)
+      const contentType = config.headers && (config.headers['Content-Type'] || config.headers['content-type'] || '')
+      if (isFormData || /multipart\//i.test(contentType)) {
+        config.timeout = 120000 // 2 minutes
+      }
+    } catch (e) {
+      // ignore
     }
     
     // Log request in development
@@ -151,7 +211,7 @@ api.interceptors.response.use(
     const isPublicPath = publicPaths.some(path => requestUrl.includes(path))
     
     // Get current token
-    const token = useAuthStore.getState().token || localStorage.getItem('token')
+    const token = useAuthStore.getState().token || authSessionStorage?.getItem('token')
     
     // Handle 401 Unauthorized
     if (error.response?.status === 401 && token && !isPublicPath && !originalRequest?._retry) {
@@ -172,14 +232,14 @@ api.interceptors.response.use(
       
       try {
         // Attempt to refresh token
-        const refreshToken = useAuthStore.getState().refreshToken || localStorage.getItem('refreshToken')
+        const refreshToken = useAuthStore.getState().refreshToken || authSessionStorage?.getItem('refreshToken')
 
         if (!refreshToken) {
           throw new Error('No refresh token available')
         }
 
-        // Use the current api.defaults.baseURL if we've switched; otherwise fall back to configured API_URL.
-        const refreshBase = (api.defaults && api.defaults.baseURL) ? api.defaults.baseURL.replace(/\/$/, '') : API_URL.replace(/\/$/, '')
+        // Use the current api.defaults.baseURL if we've switched; otherwise fall back to configured NORMALIZED_API_URL.
+        const refreshBase = (api.defaults && api.defaults.baseURL) ? api.defaults.baseURL.replace(/\/$/, '') : NORMALIZED_API_URL.replace(/\/$/, '')
         const response = await axios.post(`${refreshBase}/auth/refresh-token`, {
           refreshToken
         })
@@ -204,9 +264,11 @@ api.interceptors.response.use(
             isAuthenticated: true 
           })
           
-          // Update localStorage
-          localStorage.setItem('token', newToken)
-          if (newRefreshToken) localStorage.setItem('refreshToken', newRefreshToken)
+          // Update session auth storage
+          if (authSessionStorage) {
+            authSessionStorage.setItem('token', newToken)
+            if (newRefreshToken) authSessionStorage.setItem('refreshToken', newRefreshToken)
+          }
           
           // Update failed requests queue
           processQueue(null, newToken)

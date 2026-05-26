@@ -36,7 +36,7 @@ const Dropdown = ({ trigger, items, align = 'left', className = '' }) => {
             transition={{ duration: 0.15 }}
             className={`
               absolute mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200
-              z-50 overflow-hidden ${alignClasses[align]} ${className}
+              z-[60] overflow-hidden ${alignClasses[align]} ${className}
             `}
           >
             {items.map((item, index) => (

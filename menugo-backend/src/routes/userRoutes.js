@@ -10,6 +10,7 @@ const {
   updateUser,
   deleteUser,
   uploadAvatar,
+  getUserActivity,
   uploadBusinessLicense,
   getUserSessions,
   revokeSession,
@@ -47,6 +48,9 @@ router.get('/me/sessions', getUserSessions);
 router.delete('/me/sessions/:sessionId', revokeSession);
 router.post('/me/avatar', uploadSingle('avatar'), uploadAvatar);
 router.post('/me/business-license', uploadSingle('businessLicenseDocument'), uploadBusinessLicense);
+
+// Activity logs for a user
+router.get('/:id/activity', getUserActivity);
 
 // User CRUD routes
 router.get('/:id', getUserById);

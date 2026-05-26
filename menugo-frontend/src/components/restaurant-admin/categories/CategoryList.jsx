@@ -20,66 +20,56 @@ const CategoryList = ({ categories, onEdit, onRefresh }) => {
     }
   }
 
-  const handleToggleStatus = async (category) => {
-    try {
-      await updateCategoryStatus(category.id, !category.isActive)
-      toast.success(`Category ${!category.isActive ? 'activated' : 'deactivated'}`)
-      onRefresh()
-    } catch (error) {
-      toast.error('Failed to update status')
-    }
-  }
+  // Status is display-only in this view; toggling removed per admin request
 
   return (
     <>
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+      <div className="overflow-hidden rounded-none bg-white shadow-[0_16px_40px_rgba(15,23,42,0.06)]">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50">
+            <thead className="bg-orange-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Items</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Order</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase text-slate-500">Name</th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase text-slate-500">Description</th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase text-slate-500">Items</th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase text-slate-500">Status</th>
+                
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase text-slate-500">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
+            <tbody className="divide-y divide-slate-100">
               {categories.map((category, index) => (
                 <motion.tr
                   key={category.id}
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: index * 0.03 }}
-                  className="hover:bg-gray-50"
+                  className="hover:bg-orange-50"
                 >
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
                       {category.icon ? (
-                        <img src={category.icon} alt={category.name} className="w-8 h-8 rounded-lg object-cover" />
+                        <img src={category.icon} alt={category.name} className="h-8 w-8 rounded-none object-cover" />
                       ) : (
-                        <div className="w-8 h-8 bg-primary-100 rounded-lg flex items-center justify-center">
-                          <span className="text-primary-600 text-sm">{category.name.charAt(0)}</span>
+                        <div className="flex h-8 w-8 items-center justify-center rounded-none bg-orange-50">
+                          <span className="text-sm text-orange-600">{category.name.charAt(0)}</span>
                         </div>
                       )}
-                      <span className="font-medium text-gray-900">{category.name}</span>
+                      <span className="font-medium text-slate-900">{category.name}</span>
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
+                  <td className="max-w-xs truncate px-6 py-4 text-sm text-slate-500">
                     {category.description || '-'}
                   </td>
                   <td className="px-6 py-4">
                     <Badge variant="info" size="sm">{category.itemCount || 0} items</Badge>
                   </td>
                   <td className="px-6 py-4">
-                    <button
-                      onClick={() => handleToggleStatus(category)}
-                      className={`px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 ${
-                        category.isActive
-                          ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                          : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
-                      }`}
+                    <div className={`flex w-fit items-center gap-1 px-2 py-1 text-xs font-medium ${
+                      category.isActive
+                        ? 'bg-emerald-50 text-emerald-700'
+                        : 'bg-slate-100 text-slate-500'
+                    }`}
                     >
                       {category.isActive ? (
                         <EyeIcon className="w-3 h-3" />
@@ -87,20 +77,20 @@ const CategoryList = ({ categories, onEdit, onRefresh }) => {
                         <EyeSlashIcon className="w-3 h-3" />
                       )}
                       {category.isActive ? 'Active' : 'Inactive'}
-                    </button>
+                    </div>
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-600">{category.displayOrder}</td>
+                  
                   <td className="px-6 py-4">
                     <div className="flex gap-2">
                       <button
                         onClick={() => onEdit(category)}
-                        className="p-1 text-gray-500 hover:text-primary-600"
+                        className="p-1 text-slate-500 hover:text-orange-600"
                       >
                         <PencilIcon className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => setDeleteTarget(category)}
-                        className="p-1 text-gray-500 hover:text-red-600"
+                        className="p-1 text-slate-500 hover:text-rose-600"
                         disabled={category.itemCount > 0}
                         title={category.itemCount > 0 ? "Cannot delete category with items" : ""}
                       >

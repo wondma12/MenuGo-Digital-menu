@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { NavLink } from 'react-router-dom'
+import { NavLink, Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import Avatar from '../common/Avatar'
 import { getPendingVerifications } from '../../services/restaurantService'
@@ -26,17 +26,17 @@ const Sidebar = ({ menuItems, onLogout, user }) => {
     return () => { mounted = false; clearInterval(id) }
   }, [user])
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex h-full flex-col bg-white/95 text-slate-900">
       {/* Logo */}
-      <div className="p-5 border-b border-gray-200">
+      <div className="border-b border-slate-200 p-5">
         <div className="flex items-center gap-2">
           <img src="/logo.svg" alt="MenuGo" className="w-8 h-8" />
-          <span className="text-xl font-bold text-primary-600">MenuGo</span>
+          <span className="text-xl font-bold text-orange-600">MenuGo</span>
         </div>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 py-4 overflow-y-auto">
+      <nav className="flex-1 overflow-y-auto py-4">
         <div className="px-3 space-y-1">
           {menuItems.map((item, index) => (
 
@@ -47,18 +47,18 @@ const Sidebar = ({ menuItems, onLogout, user }) => {
               key={index}
               to={item.path}
               className={({ isActive }) =>
-                `flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 ${
+                `flex items-center gap-3 rounded-xl border-l-4 px-3 py-2.5 transition-all duration-200 ${
                   isActive
-                    ? 'bg-primary-50 text-primary-700 border-l-4 border-primary-600'
-                    : 'text-gray-700 hover:bg-gray-100'
+                    ? 'border-orange-500 bg-gradient-to-r from-orange-50 to-blue-50 text-slate-900 shadow-[0_8px_24px_rgba(15,23,42,0.05)]'
+                    : 'border-transparent text-slate-600 hover:border-orange-200 hover:bg-slate-50 hover:text-slate-900'
                 }`
               }
             >
               <span className="text-xl">{item.icon}</span>
-              <span className="text-sm font-medium flex items-center gap-2">
+              <span className="flex items-center gap-2 text-sm font-medium">
                 {item.label}
                 {item.path === '/platform/restaurants' && pendingCount > 0 && (
-                  <span className="ml-2 inline-flex items-center justify-center px-2 py-0.5 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                  <span className="ml-2 inline-flex items-center justify-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">
                     {pendingCount}
                   </span>
                 )}
@@ -69,17 +69,20 @@ const Sidebar = ({ menuItems, onLogout, user }) => {
       </nav>
 
       {/* User Section */}
-      <div className="p-4 border-t border-gray-200">
+      <div className="border-t border-slate-200 p-4">
         <div className="flex items-center gap-3 mb-3">
           <Avatar name={user?.fullName} size="md" />
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-gray-900 truncate">{user?.fullName}</p>
-            <p className="text-xs text-gray-500 truncate">{user?.email}</p>
+            <p className="truncate text-sm font-medium text-slate-900">{user?.fullName}</p>
+            <p className="truncate text-xs text-slate-500">{user?.email}</p>
           </div>
         </div>
+        {/* <div className="mb-2">
+          
+        </div> */}
         <button
           onClick={onLogout}
-          className="w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+          className="w-full rounded-lg px-3 py-2 text-sm text-rose-600 transition-colors hover:bg-rose-50"
         >
           Logout
         </button>

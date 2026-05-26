@@ -30,7 +30,7 @@ const PaymentSettings = ({ settings }) => {
 
   return (
     <div className="space-y-6">
-      <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
+      <div className="bg-white rounded-xl border border-slate-100 p-6 space-y-4">
         <Switch
           label="Cash Payment"
           checked={formData.allowCashPayment}
@@ -48,7 +48,7 @@ const PaymentSettings = ({ settings }) => {
         />
 
         {formData.allowOnlinePayment && (
-          <div className="ml-6 pl-4 border-l-2 border-gray-200 space-y-4">
+          <div className="ml-6 pl-4 border-l-2 border-slate-100 space-y-4">
             <Switch
               label="Stripe Integration"
               checked={formData.stripeEnabled}
@@ -57,22 +57,22 @@ const PaymentSettings = ({ settings }) => {
             {formData.stripeEnabled && (
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Stripe Public Key</label>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Stripe Public Key</label>
                   <input
                     type="text"
                     value={formData.stripePublicKey}
                     onChange={(e) => setFormData({ ...formData, stripePublicKey: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg"
                     placeholder="pk_test_..."
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Stripe Secret Key</label>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Stripe Secret Key</label>
                   <input
                     type="password"
                     value={formData.stripeSecretKey}
                     onChange={(e) => setFormData({ ...formData, stripeSecretKey: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg"
                     placeholder="sk_test_..."
                   />
                 </div>

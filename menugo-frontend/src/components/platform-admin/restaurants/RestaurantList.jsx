@@ -34,40 +34,37 @@ const RestaurantList = () => {
   if (isLoading) return <Loading />
 
   return (
-    <div className="p-4 sm:p-6">
-     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Restaurant Management</h1>
-          <p className="text-gray-500 mt-1">Manage all restaurants on the platform</p>
-        </div>
-        {/* <button
-          onClick={() => navigate('/platform/restaurants/create')}
-          className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
-        >
-          <PlusIcon className="w-5 h-5" />
-          Create Restaurant
-        </button> */}
+    <div className="space-y-6 bg-white p-4 font-['Manrope',system-ui,sans-serif] text-slate-900 sm:p-6 lg:p-8">
+       {/* <div className="relative overflow-hidden rounded-3xl border border-orange-100 bg-white p-5 shadow-sm sm:p-6 lg:p-7"> */}
+         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_rgba(251,146,60,0.12),transparent_45%),radial-gradient(ellipse_at_bottom_left,_rgba(59,130,246,0.08),transparent_55%)]" />
+          <div className="relative flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div className="max-w-2xl">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-orange-600">Platform restaurants</p>
+            <h1 className="mt-1.5 text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">Restaurant Management</h1>
+            <p className="mt-2 text-sm leading-6 text-slate-500 sm:text-base">Manage all restaurants on the platform</p>
+          </div>
+      {/* </div> */}
       </div>
       {/* Search and Filter Bar */}
-      <div className="flex flex-col sm:flex-row gap-4 mb-6">
+      <div className="flex flex-col gap-4 sm:flex-row">
         <div className="flex-1 relative">
-          <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-black" />
+          <MagnifyingGlassIcon className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-orange-400" />
           <input
             type="text"
             placeholder="Search restaurants by name, email, or phone..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+            className="w-full rounded-none border border-slate-200 bg-white py-3 pl-12 pr-4 text-slate-900 shadow-sm outline-none transition focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
           />
         </div>
         <button
           onClick={() => setShowFilters(!showFilters)}
-          className="px-4 py-2.5 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 flex items-center gap-2"
+          className="inline-flex items-center gap-2 rounded-none border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-orange-200 hover:bg-orange-50"
         >
-          <FunnelIcon className="w-5 h-5 text-black" />
-          <span className="text-black">Filters</span>
+          <FunnelIcon className="h-5 w-5 text-orange-500" />
+          <span>Filters</span>
           {(filters.status !== 'all' || filters.tier !== 'all' || filters.country !== 'all') && (
-            <span className="w-2 h-2 bg-primary-600 rounded-full" />
+            <span className="h-2 w-2 rounded-full bg-orange-500" />
           )}
         </button>
       </div>
@@ -87,22 +84,30 @@ const RestaurantList = () => {
       </AnimatePresence>
 
       {/* Stats Summary */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <div className="bg-white rounded-lg p-4 border border-gray-200 border-l-4 border-l-blue-500">
-          <p className="text-sm text-gray-500">Total Restaurants</p>
-          <p className="text-2xl font-bold text-gray-900">{data?.total || 0}</p>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-4">
+        <div className="flex h-24 items-center justify-between rounded-none border border-slate-100 bg-white p-5 shadow-sm">
+          <div>
+            <p className="text-sm font-semibold text-slate-500">Total Restaurants</p>
+            <p className="text-2xl font-black text-slate-900">{data?.total || 0}</p>
+          </div>
         </div>
-        <div className="bg-white rounded-lg p-4 border border-gray-200 border-l-4 border-l-green-500">
-          <p className="text-sm text-gray-500">Active</p>
-          <p className="text-2xl font-bold text-green-600">{data?.active || 0}</p>
+        <div className="flex h-24 items-center justify-between rounded-none border border-slate-100 bg-white p-5 shadow-sm">
+          <div>
+            <p className="text-sm font-semibold text-slate-500">Active</p>
+            <p className="text-2xl font-black text-emerald-600">{data?.active || 0}</p>
+          </div>
         </div>
-        <div className="bg-white rounded-lg p-4 border border-gray-200 border-l-4 border-l-yellow-500">
-          <p className="text-sm text-gray-500">Pending Verification</p>
-          <p className="text-2xl font-bold text-yellow-600">{data?.pending || 0}</p>
+        <div className="flex h-24 items-center justify-between rounded-none border border-slate-100 bg-white p-5 shadow-sm">
+          <div>
+            <p className="text-sm font-semibold text-slate-500">Pending Verification</p>
+            <p className="text-2xl font-black text-amber-600">{data?.pending || 0}</p>
+          </div>
         </div>
-        <div className="bg-white rounded-lg p-4 border border-gray-200 border-l-4 border-l-purple-500">
-          <p className="text-sm text-gray-500">Premium</p>
-          <p className="text-2xl font-bold text-purple-600">{data?.premium || 0}</p>
+        <div className="flex h-24 items-center justify-between rounded-none border border-slate-100 bg-white p-5 shadow-sm">
+          <div>
+            <p className="text-sm font-semibold text-slate-500">Premium</p>
+            <p className="text-2xl font-black text-violet-600">{data?.premium || 0}</p>
+          </div>
         </div>
       </div>
 
@@ -115,7 +120,7 @@ const RestaurantList = () => {
         />
       ) : (
         <>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3">
             {data?.restaurants?.map((restaurant, index) => (
               <motion.div
                 key={restaurant.id}

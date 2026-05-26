@@ -7,7 +7,7 @@ import Loading from '../../common/Loading'
 
 const WaiterNotificationList = () => {
   const { user } = useAuthStore()
-  const { notifications, isLoading } = useWaiterNotifications(user?.id)
+  const { notifications, isLoading, markAsRead } = useWaiterNotifications(user?.id)
 
   if (isLoading) return <Loading />
 
@@ -20,7 +20,7 @@ const WaiterNotificationList = () => {
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: index * 0.05 }}
         >
-          <WaiterNotificationItem notification={notification} />
+          <WaiterNotificationItem notification={notification} markAsRead={markAsRead} />
         </motion.div>
       ))}
       {(!notifications || notifications.length === 0) && (

@@ -51,27 +51,27 @@ const UserManagement = () => {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h3 className="text-lg font-semibold text-gray-900">Team Members</h3>
+        <h3 className="text-lg font-semibold text-slate-900">Team Members</h3>
         <Button onClick={() => setShowInviteModal(true)} icon={PlusIcon}>Invite User</Button>
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div className="divide-y divide-gray-200">
+      <div className="bg-white rounded-xl overflow-hidden">
+        <div>
           {users?.map((user) => (
             <div key={user.id} className="p-4 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <Avatar name={user.name} size="md" />
                 <div>
-                  <p className="font-medium text-gray-900">{user.name}</p>
-                  <p className="text-sm text-gray-500">{user.email}</p>
+                  <p className="font-medium text-slate-900">{user.name}</p>
+                  <p className="text-sm text-slate-500">{user.email}</p>
                 </div>
               </div>
               <div className="flex items-center gap-3">
                 {editingUser?.id === user.id ? (
-                  <select
+                    <select
                     value={editingUser.role}
                     onChange={(e) => setEditingUser({ ...editingUser, role: e.target.value })}
-                    className="px-3 py-1 border border-gray-300 rounded-lg text-sm"
+                    className="px-3 py-1 border border-slate-300 rounded-lg text-sm"
                   >
                     {roleOptions.map(opt => (
                       <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -87,10 +87,10 @@ const UserManagement = () => {
                   </>
                 ) : (
                   <>
-                    <button onClick={() => setEditingUser(user)} className="p-1 text-gray-500 hover:text-primary-600">
+                    <button onClick={() => setEditingUser(user)} className="p-1 text-slate-500 hover:text-primary-600">
                       <PencilIcon className="w-4 h-4" />
                     </button>
-                    <button onClick={() => removeUserMutation.mutate(user.id)} className="p-1 text-gray-500 hover:text-red-600">
+                    <button onClick={() => removeUserMutation.mutate(user.id)} className="p-1 text-slate-500 hover:text-red-600">
                       <TrashIcon className="w-4 h-4" />
                     </button>
                   </>

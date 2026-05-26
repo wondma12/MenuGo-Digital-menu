@@ -3,11 +3,24 @@ const path = require('path');
 const fs = require('fs');
 const { ApiError } = require('../utils/apiError');
 
-// Ensure upload directories exist
-const uploadDirs = ['uploads/menus', 'uploads/qrcodes', 'uploads/avatars', 'uploads/invoices', 'uploads/temp'];
+// Ensure upload directories exist (include documents)
+const uploadDirs = [
+  'uploads',
+  'uploads/menus',
+  'uploads/qrcodes',
+  'uploads/avatars',
+  'uploads/invoices',
+  'uploads/documents',
+  'uploads/temp',
+];
 uploadDirs.forEach(dir => {
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
+  try {
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+  } catch (err) {
+    // If directory creation fails, log and continue; middleware will handle errors later
+    console.error('Failed to ensure upload dir exists:', dir, err && err.message);
   }
 });
 
@@ -37,6 +50,11 @@ const storage = multer.diskStorage({
 
 // File filter
 const fileFilter = (req, file, cb) => {
+  // Allow bypass in development for local testing convenience
+  if (process.env.ALLOW_DEV_UPLOAD_ANY === 'true') {
+    return cb(null, true)
+  }
+
   const allowedTypes = /jpeg|jpg|png|gif|webp|pdf|svg/;
   const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
   const mimetype = allowedTypes.test(file.mimetype);
@@ -63,13 +81,13 @@ const uploadSingle = (fieldName) => {
     uploadMiddleware(req, res, (err) => {
       if (err instanceof multer.MulterError) {
         if (err.code === 'FILE_TOO_LARGE') {
-          throw new ApiError(400, 'File too large. Maximum size is 5MB');
+          return next(new ApiError(400, 'File too large. Maximum size is 5MB'));
         }
-        throw new ApiError(400, err.message);
+        return next(new ApiError(400, err.message));
       } else if (err) {
-        throw new ApiError(400, err.message);
+        return next(new ApiError(400, err.message));
       }
-      next();
+      return next();
     });
   };
 };
@@ -82,13 +100,13 @@ const uploadMultiple = (fieldName, maxCount = 5) => {
     uploadMiddleware(req, res, (err) => {
       if (err instanceof multer.MulterError) {
         if (err.code === 'FILE_TOO_LARGE') {
-          throw new ApiError(400, 'File too large. Maximum size is 5MB');
+          return next(new ApiError(400, 'File too large. Maximum size is 5MB'));
         }
-        throw new ApiError(400, err.message);
+        return next(new ApiError(400, err.message));
       } else if (err) {
-        throw new ApiError(400, err.message);
+        return next(new ApiError(400, err.message));
       }
-      next();
+      return next();
     });
   };
 };
@@ -101,13 +119,13 @@ const uploadFields = (fields) => {
     uploadMiddleware(req, res, (err) => {
       if (err instanceof multer.MulterError) {
         if (err.code === 'FILE_TOO_LARGE') {
-          throw new ApiError(400, 'File too large. Maximum size is 5MB');
+          return next(new ApiError(400, 'File too large. Maximum size is 5MB'));
         }
-        throw new ApiError(400, err.message);
+        return next(new ApiError(400, err.message));
       } else if (err) {
-        throw new ApiError(400, err.message);
+        return next(new ApiError(400, err.message));
       }
-      next();
+      return next();
     });
   };
 };

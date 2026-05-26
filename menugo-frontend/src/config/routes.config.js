@@ -15,6 +15,7 @@ export const ROUTES = {
   // Platform Admin Routes
   PLATFORM: {
     DASHBOARD: '/platform/dashboard',
+    PROFILE: '/platform/profile',
     RESTAURANTS: '/platform/restaurants',
     RESTAURANT_DETAILS: '/platform/restaurants/:id',
     RESTAURANT_EDIT: '/platform/restaurants/:id/edit',
@@ -103,7 +104,6 @@ export const NAVIGATION = {
     { path: ROUTES.ADMIN.PROMOTIONS, label: 'Promotions', icon: <Tag className="w-5 h-5" /> },
     { path: ROUTES.ADMIN.ANALYTICS, label: 'Analytics', icon: <TrendingUp className="w-5 h-5" /> },
     { path: ROUTES.ADMIN.REVIEWS, label: 'Reviews', icon: <Star className="w-5 h-5" /> },
-    { path: ROUTES.ADMIN.SETTINGS, label: 'Settings', icon: <Settings className="w-5 h-5" /> },
   ],
   WAITER: [
     { path: ROUTES.WAITER.DASHBOARD, label: 'Dashboard', icon: <BarChart2 className="w-5 h-5" /> },

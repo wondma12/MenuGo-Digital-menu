@@ -9,28 +9,28 @@ const TableFilters = ({ filters, onFiltersChange }) => {
 
   const clearFilters = () => {
     onFiltersChange({
-      status: 'all',
+      status: 'available',
       section: 'all',
       search: '',
     })
   }
 
-  const hasActiveFilters = filters.search || filters.status !== 'all' || filters.section !== 'all'
+  const hasActiveFilters = filters.search || filters.status !== 'available' || filters.section !== 'all'
 
   return (
-    <div className="bg-white rounded-xl p-4 border border-gray-200">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div className="rounded-none border border-slate-200 bg-white p-4 shadow-[0_16px_40px_rgba(15,23,42,0.06)]">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <div className="relative">
-          <MagnifyingGlassIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <MagnifyingGlassIcon className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
             placeholder="Search by table number..."
             value={filters.search}
             onChange={(e) => handleChange('search', e.target.value)}
-            className={`w-full pl-11 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 appearance-none text-black bg-white`}
+            className="w-full appearance-none rounded-none border border-slate-200 bg-white py-2.5 pl-11 pr-4 text-slate-700 transition-colors focus:border-orange-300 focus:outline-none focus:ring-2 focus:ring-orange-100"
           />
           {filters.search && (
-            <button onClick={() => handleChange('search', '')} className="absolute right-1 top-1/2 -translate-y-1/2 h-10 px-3 border border-gray-300 rounded-lg bg-white text-gray-500 hover:text-gray-700 text-sm">
+            <button onClick={() => handleChange('search', '')} className="absolute right-1 top-1/2 h-10 -translate-y-1/2 rounded-none border border-slate-200 bg-white px-3 text-sm text-slate-500 hover:text-slate-700">
               Clear
             </button>
           )}
@@ -40,11 +40,7 @@ const TableFilters = ({ filters, onFiltersChange }) => {
           value={filters.status}
           onChange={(e) => handleChange('status', e.target.value)}
           options={[
-            { value: 'all', label: 'All Status' },
             { value: 'available', label: 'Available' },
-            { value: 'occupied', label: 'Occupied' },
-            { value: 'reserved', label: 'Reserved' },
-            { value: 'cleaning', label: 'Cleaning' },
           ]}
         />
         <Select
@@ -62,8 +58,8 @@ const TableFilters = ({ filters, onFiltersChange }) => {
       </div>
 
       {hasActiveFilters && (
-        <div className="flex justify-end mt-4 pt-3 border-t border-gray-100">
-          <button onClick={clearFilters} className="text-sm text-primary-600 hover:text-primary-700">
+        <div className="mt-4 flex justify-end border-t border-slate-100 pt-3">
+          <button onClick={clearFilters} className="text-sm font-medium text-orange-600 hover:text-orange-700">
             Clear Filters
           </button>
         </div>

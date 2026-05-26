@@ -22,6 +22,7 @@ import Button from '../../../common/Button'
 import { getRevenueReport } from '../../../services/subscriptionService'
 import { exportToCSV, exportToPDF } from '../../../utils/exportUtils'
 import toast from 'react-hot-toast'
+import { formatPrice } from '../../../utils/currency'
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899']
 
@@ -57,54 +58,58 @@ const RevenueReport = () => {
   if (isLoading) return <Loading />
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Revenue Report</h1>
-          <p className="text-gray-500 mt-1">Track platform revenue and subscription metrics</p>
-        </div>
-        <div className="flex gap-3">
+    <div className="space-y-6 bg-white p-4 font-['Manrope',system-ui,sans-serif] text-slate-900 sm:p-6 lg:p-8">
+      <div className="relative overflow-hidden rounded-none border border-orange-100 bg-white p-6 shadow-sm sm:p-8">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_rgba(251,146,60,0.12),transparent_45%),radial-gradient(ellipse_at_bottom_left,_rgba(59,130,246,0.08),transparent_55%)]" />
+        <div className="relative flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-orange-600">Subscriptions</p>
+            <h1 className="mt-1.5 text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">Revenue Report</h1>
+            <p className="mt-2 text-sm leading-6 text-slate-500 sm:text-base">Track platform revenue and subscription metrics</p>
+          </div>
+          <div className="flex flex-wrap gap-3">
           <DateRangePicker value={dateRange} onChange={setDateRange} />
-          <Button onClick={handleExportCSV} variant="outline" icon={DocumentArrowDownIcon}>
+          <Button onClick={handleExportCSV} variant="outline" icon={DocumentArrowDownIcon} className="rounded-none border-orange-200 text-orange-600 hover:bg-orange-50">
             CSV
           </Button>
-          <Button onClick={handleExportPDF} variant="outline" icon={DocumentArrowDownIcon}>
+          <Button onClick={handleExportPDF} variant="outline" icon={DocumentArrowDownIcon} className="rounded-none border-orange-200 text-orange-600 hover:bg-orange-50">
             PDF
           </Button>
+          </div>
         </div>
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
         <SummaryCard
           title="Total Revenue"
-          value={`$${data?.totalRevenue?.toLocaleString() || 0}`}
+          value={formatPrice(data?.totalRevenue || 0)}
           change={data?.revenueChange}
           color="blue"
         />
         <SummaryCard
           title="Subscription Revenue"
-          value={`$${data?.subscriptionRevenue?.toLocaleString() || 0}`}
+          value={formatPrice(data?.subscriptionRevenue || 0)}
           change={data?.subscriptionChange}
           color="green"
         />
         <SummaryCard
           title="MRR"
-          value={`$${data?.mrr?.toLocaleString() || 0}`}
+          value={formatPrice(data?.mrr || 0)}
           change={data?.mrrChange}
           color="purple"
         />
         <SummaryCard
           title="ARR"
-          value={`$${data?.arr?.toLocaleString() || 0}`}
+          value={formatPrice(data?.arr || 0)}
           change={data?.arrChange}
           color="orange"
         />
       </div>
 
       {/* Revenue Trend Chart */}
-      <div className="bg-white rounded-xl p-5 border border-gray-200">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Revenue Trend</h3>
+      <div className="rounded-none border border-orange-100 bg-white p-5 shadow-sm">
+        <h3 className="mb-4 text-lg font-semibold text-slate-900">Revenue Trend</h3>
         <ResponsiveContainer width="100%" height={350}>
           <LineChart data={data?.revenueTrend || []}>
             <CartesianGrid strokeDasharray="3 3" />
@@ -119,9 +124,9 @@ const RevenueReport = () => {
       </div>
 
       {/* Revenue by Tier and Plan Distribution */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-xl p-5 border border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Revenue by Tier</h3>
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <div className="rounded-none border border-orange-100 bg-white p-5 shadow-sm">
+          <h3 className="mb-4 text-lg font-semibold text-slate-900">Revenue by Tier</h3>
           <ResponsiveContainer width="100%" height={300}>
             <PieChart>
               <Pie
@@ -142,8 +147,8 @@ const RevenueReport = () => {
           </ResponsiveContainer>
         </div>
 
-        <div className="bg-white rounded-xl p-5 border border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Plan Distribution</h3>
+        <div className="rounded-none border border-orange-100 bg-white p-5 shadow-sm">
+          <h3 className="mb-4 text-lg font-semibold text-slate-900">Plan Distribution</h3>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={data?.planDistribution || []} layout="vertical">
               <CartesianGrid strokeDasharray="3 3" />
@@ -157,8 +162,8 @@ const RevenueReport = () => {
       </div>
 
       {/* Monthly Breakdown */}
-      <div className="bg-white rounded-xl p-5 border border-gray-200">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Monthly Breakdown</h3>
+      <div className="rounded-none border border-orange-100 bg-white p-5 shadow-sm">
+        <h3 className="mb-4 text-lg font-semibold text-slate-900">Monthly Breakdown</h3>
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-50">
@@ -193,9 +198,9 @@ const RevenueReport = () => {
 }
 
 const SummaryCard = ({ title, value, change, color }) => (
-  <div className="bg-white rounded-xl p-4 border border-gray-200">
-    <p className="text-sm text-gray-500">{title}</p>
-    <p className="text-2xl font-bold text-gray-900 mt-1">{value}</p>
+  <div className="rounded-none border border-orange-100 border-l-4 border-l-orange-500 bg-white p-4 shadow-sm">
+    <p className="text-sm text-slate-500">{title}</p>
+    <p className="mt-1 text-2xl font-black text-slate-900">{value}</p>
     {change !== undefined && (
       <p className={`text-xs mt-1 ${change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
         {change >= 0 ? '+' : ''}{change}% from last period

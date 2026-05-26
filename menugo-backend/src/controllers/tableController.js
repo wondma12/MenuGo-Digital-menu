@@ -7,7 +7,7 @@ const { uploadToCloudinary } = require('../config/cloudinary');
 const { Op } = require('sequelize');
 
 // Get all tables for a restaurant
-const getTables = catchAsync(async (req, res) => {
+const getTables = catchAsync(async (req, res) =>  {
   const { restaurantId } = req.params;
 
   const tables = await Table.findAll({
@@ -96,9 +96,22 @@ const deleteTable = catchAsync(async (req, res) => {
     throw new ApiError(404, 'Table not found');
   }
 
-  // Check if table has active orders
-  if (table.status === 'occupied') {
-    throw new ApiError(400, 'Cannot delete occupied table');
+  // If the table is currently occupied, release any linked order and clear table state
+  if (table.status === 'occupied' || table.current_order_id || table.current_waiter_id || table.current_customer_name || table.occupied_since) {
+    if (table.current_order_id) {
+      await Order.update(
+        { table_id: null },
+        { where: { id: table.current_order_id } }
+      );
+    }
+
+    await table.update({
+      status: 'available',
+      current_order_id: null,
+      current_waiter_id: null,
+      current_customer_name: null,
+      occupied_since: null,
+    });
   }
 
   await table.destroy();

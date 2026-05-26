@@ -22,7 +22,7 @@ const StatsCard = ({ title, value, icon: Icon, trend, trendValue, color = 'blue'
       <div className="flex items-center justify-between">
         <div>
           <p className="text-gray-500 text-sm font-medium">{title}</p>
-          <p className="text-2xl font-bold mt-2">{value}</p>
+          <p className="text-xl font-bold mt-2">{value}</p>
           {trend && (
             <div className="flex items-center mt-2">
               {trend > 0 ? (

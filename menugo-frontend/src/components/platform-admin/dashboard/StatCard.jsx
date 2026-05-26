@@ -4,13 +4,13 @@ import { ArrowTrendingUpIcon, ArrowTrendingDownIcon } from '@heroicons/react/24/
 
 const StatCard = ({ title, value, icon: Icon, trend, trendValue, color }) => {
   const colors = {
-    blue: 'bg-blue-500',
-    green: 'bg-green-500',
-    purple: 'bg-purple-500',
-    orange: 'bg-orange-500',
-    red: 'bg-red-500',
-    teal: 'bg-teal-500',
-    yellow: 'bg-yellow-500',
+    blue: 'from-blue-500 to-blue-400',
+    green: 'from-emerald-500 to-emerald-400',
+    purple: 'from-violet-500 to-violet-400',
+    orange: 'from-orange-500 to-amber-400',
+    red: 'from-rose-500 to-rose-400',
+    teal: 'from-cyan-500 to-blue-500',
+    yellow: 'from-amber-500 to-orange-400',
   }
 
   const bgColors = {
@@ -48,27 +48,23 @@ const StatCard = ({ title, value, icon: Icon, trend, trendValue, color }) => {
   const isPositiveTrend = trend > 0
 
   return (
-    <div className={`bg-white rounded-xl shadow-sm p-5 border border-gray-100 hover:shadow-md transition-all border-l-4 ${borderClass} h-full`}>
-      <div className="flex items-center justify-between">
-        <div className="flex-1">
-          <p className="text-sm text-gray-500">{title}</p>
-          <p className="text-2xl font-bold text-gray-900 mt-1">{value}</p>
-          {trend !== undefined && (
-            <div className="flex items-center gap-1 mt-2">
-              {isPositiveTrend ? (
-                <ArrowTrendingUpIcon className="w-3 h-3 text-green-500" />
-              ) : (
-                <ArrowTrendingDownIcon className="w-3 h-3 text-red-500" />
-              )}
-              <span className={`text-xs ${isPositiveTrend ? 'text-green-600' : 'text-red-600'}`}>
-                {trendValue || `${Math.abs(trend)}%`} from last period
-              </span>
-            </div>
-          )}
-        </div>
-        <div className={`p-3 rounded-full ${bgColors[color]} ${textColors[color]}`}>
-          <Icon className="w-6 h-6" />
-        </div>
+    <div className={`group relative flex h-28 items-center justify-between overflow-hidden rounded-none border border-slate-100 border-l-4 bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-xl ${borderClass}`}>
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(251,146,60,0.08),transparent_40%)] opacity-0 transition-opacity group-hover:opacity-100" />
+      <div>
+        <p className="text-sm font-semibold text-slate-500">{title}</p>
+        <p className="mt-1 text-2xl font-black tracking-tight text-slate-900">{value}</p>
+        {trend !== undefined && (
+          <div className="flex items-center gap-1 mt-1">
+            {isPositiveTrend ? (
+              <ArrowTrendingUpIcon className="w-3 h-3 text-emerald-500" />
+            ) : (
+              <ArrowTrendingDownIcon className="w-3 h-3 text-rose-500" />
+            )}
+          </div>
+        )}
+      </div>
+      <div className={`rounded-none bg-gradient-to-r ${colors[color]} p-3 text-white shadow-sm`}>
+        <Icon className="w-6 h-6" />
       </div>
     </div>
   )

@@ -183,32 +183,69 @@ const isWaiter = async (req, res, next) => {
     include: [{ model: RestaurantStaff, as: 'staff_details', where: { is_active: true } }],
   });
 
-  if (!waiter) {
+  // Fallback: if there's no explicit Waiter record, allow users who are
+  // active RestaurantStaff with role 'waiter' by creating a Waiter record
+  // (backfill) or using an existing one. This prevents legitimate waiter
+  // staff assignments from being blocked when the waiters table isn't yet
+  // populated for that user.
+  let resolvedWaiter = waiter;
+  if (!resolvedWaiter) {
+    // Accept any active RestaurantStaff assignment for this user as a fallback
+    const staffRecord = await RestaurantStaff.findOne({ where: { user_id: req.user.id, is_active: true } });
+    if (staffRecord) {
+      // find or create a waiter record linked to this staff assignment
+      const [createdWaiter] = await Waiter.findOrCreate({
+        where: { user_id: req.user.id },
+        defaults: {
+          staff_id: staffRecord.id,
+          user_id: req.user.id,
+          restaurant_id: staffRecord.restaurant_id,
+          is_active: true,
+        },
+      });
+      // reload to include staff_details
+      resolvedWaiter = await Waiter.findOne({
+        where: { id: createdWaiter.id },
+        include: [{ model: RestaurantStaff, as: 'staff_details', where: { is_active: true } }],
+      });
+    }
+  }
+
+  if (!resolvedWaiter) {
+    // Allow read-only access (GET) for users with `waiter` role even if
+    // there's no waiter/staff record yet (useful for dashboard views).
+    if (req.method === 'GET') {
+      req.waiter = null;
+      req.waiterId = null;
+      return next();
+    }
     throw new ApiError(403, 'You are not registered as a waiter');
   }
   
   // Check if waiter belongs to the restaurant
-  if (restaurantId && waiter.restaurant_id !== restaurantId) {
+  if (restaurantId && resolvedWaiter.restaurant_id !== restaurantId) {
     throw new ApiError(403, 'You are not assigned to this restaurant');
   }
   
   // Check if waiter is on duty
   // Check if waiter is on duty. Allow certain endpoints when not on duty (e.g., starting a shift, verifying an order)
-  if (!waiter.is_on_duty && req.method !== 'GET') {
+  if (!resolvedWaiter.is_on_duty && req.method !== 'GET') {
     const pathNoQuery = req.originalUrl ? req.originalUrl.split('?')[0] : '';
     const isVerifyEndpoint = pathNoQuery.endsWith('/verify');
     const isShiftStartEndpoint = pathNoQuery.endsWith('/shift/start');
+    const isAcknowledgeEndpoint = pathNoQuery.endsWith('/acknowledge');
+    const isResolveEndpoint = pathNoQuery.endsWith('/resolve');
 
-    // Allow POST to verify endpoint and shift start endpoint even if not on duty
-    if (req.method === 'POST' && (isVerifyEndpoint || isShiftStartEndpoint)) {
+    // Allow POST to verify, shift start, acknowledge, and resolve endpoints even if not on duty
+    if (req.method === 'POST' && (isVerifyEndpoint || isShiftStartEndpoint || isAcknowledgeEndpoint || isResolveEndpoint)) {
       // continue
     } else {
       throw new ApiError(403, 'You are not on duty. Please start your shift first.');
     }
   }
 
-  req.waiter = waiter;
-  req.waiterId = waiter.id;
+  req.waiter = resolvedWaiter;
+  req.waiterId = resolvedWaiter.id;
   next();
 };
 

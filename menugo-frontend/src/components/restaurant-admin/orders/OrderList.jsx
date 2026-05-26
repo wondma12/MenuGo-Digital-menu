@@ -31,14 +31,14 @@ const OrderList = ({ orders, onRefresh }) => {
       <div className="space-y-8">
         {Object.entries(groupedOrders).map(([status, statusOrders]) => 
           statusOrders.length > 0 && (
-            <div key={status}>
+            <div key={status} className="rounded-none bg-white p-4 shadow-[0_16px_40px_rgba(15,23,42,0.06)]">
               <div className="flex items-center gap-2 mb-4">
-                <h2 className="text-lg font-semibold text-gray-900">{statusTitles[status].icon}{statusTitles[status].label}</h2>
-                <span className="px-2 py-0.5 text-xs bg-gray-100 text-gray-600 rounded-full">
+                <h2 className="text-lg font-semibold text-slate-900">{statusTitles[status].icon}{statusTitles[status].label}</h2>
+                <span className="px-2 py-0.5 text-xs bg-orange-50 text-orange-700 rounded-none">
                   {statusOrders.length}
                 </span>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 <AnimatePresence>
                   {statusOrders.map((order, index) => (
                     <motion.div
@@ -64,10 +64,10 @@ const OrderList = ({ orders, onRefresh }) => {
       </div>
 
       {orders.length === 0 && (
-        <div className="text-center py-12">
-          <div className="text-6xl mb-4"><Box className="w-12 h-12 mx-auto text-gray-300" /></div>
-          <h3 className="text-lg font-medium text-gray-900">No orders found</h3>
-          <p className="text-gray-500 mt-1">Orders will appear here once customers place them</p>
+        <div className="py-12 text-center">
+          <div className="mb-4 text-6xl"><Box className="mx-auto h-12 w-12 text-slate-300" /></div>
+          <h3 className="text-lg font-medium text-slate-900">No orders found</h3>
+          <p className="mt-1 text-slate-500">Orders will appear here once customers place them</p>
         </div>
       )}
 

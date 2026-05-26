@@ -4,7 +4,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: '2023-10-16',
 });
 
-const createPaymentIntent = async (amount, currency = 'usd', metadata = {}) => {
+const createPaymentIntent = async (amount, currency = (process.env.STRIPE_CURRENCY || 'ETB'), metadata = {}) => {
   try {
     const paymentIntent = await stripe.paymentIntents.create({
       amount: Math.round(amount * 100),

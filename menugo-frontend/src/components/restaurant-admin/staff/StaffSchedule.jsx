@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { useQuery, useMutation } from 'react-query'
 import { motion } from 'framer-motion'
-import { CalendarIcon, ClockIcon, UserIcon } from '@heroicons/react/24/outline'
+import { CalendarIcon, ClockIcon, UserIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline'
 import { Sun, Moon, Star } from 'lucide-react'
 import Button from '../../../common/Button'
 import Loading from '../../../common/Loading'
@@ -66,70 +66,72 @@ const StaffSchedule = ({ staff }) => {
 
   return (
     <div className="space-y-6">
-      {/* Date Selector */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+      <div className="rounded-none border border-slate-200 bg-white p-4 shadow-[0_16px_40px_rgba(15,23,42,0.06)]">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <CalendarIcon className="w-5 h-5 text-gray-400" />
-            <span className="text-lg font-semibold text-gray-900">
+            <CalendarIcon className="w-5 h-5 text-slate-400" />
+            <span className="text-lg font-black tracking-tight text-slate-900">
               {selectedDate.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
             </span>
           </div>
           <div className="flex gap-2">
             <button
               onClick={() => setSelectedDate(new Date(selectedDate.setDate(selectedDate.getDate() - 1)))}
-              className="px-3 py-1 border rounded-lg hover:bg-gray-50"
+              className="flex items-center justify-center rounded-none border border-slate-200 px-3 py-1 text-slate-700 hover:bg-orange-50"
+              title="Previous Day"
+              aria-label="Previous Day"
             >
-              Previous Day
+              <ChevronLeftIcon className="w-5 h-5" />
             </button>
             <button
               onClick={() => setSelectedDate(new Date())}
-              className="px-3 py-1 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
+              className="rounded-none bg-gradient-to-r from-orange-500 to-blue-500 px-3 py-1 text-white hover:from-orange-600 hover:to-blue-600"
             >
               Today
             </button>
             <button
               onClick={() => setSelectedDate(new Date(selectedDate.setDate(selectedDate.getDate() + 1)))}
-              className="px-3 py-1 border rounded-lg hover:bg-gray-50"
+              className="flex items-center justify-center rounded-none border border-slate-200 px-3 py-1 text-slate-700 hover:bg-orange-50"
+              title="Next Day"
+              aria-label="Next Day"
             >
-              Next Day
+              <ChevronRightIcon className="w-5 h-5" />
             </button>
           </div>
         </div>
       </div>
 
-      {/* Schedule Grid */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+      <div className="overflow-hidden rounded-none border border-slate-200 bg-white shadow-[0_16px_40px_rgba(15,23,42,0.06)]">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50">
+            <thead className="bg-slate-50">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Staff Member</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Staff Member</th>
                 {shifts.map(shift => (
-                  <th key={shift.name} className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  <th key={shift.name} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
                     <div className="flex items-center gap-1">
                       <span>{shift.icon}</span>
                       <span>{shift.name}</span>
                     </div>
-                    <div className="text-xs font-normal text-gray-400">{shift.time}</div>
+                    <div className="text-xs font-normal text-slate-400">{shift.time}</div>
                   </th>
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
+            <tbody className="divide-y divide-slate-100">
               {staff?.map((staffMember) => (
                 <motion.tr
                   key={staffMember.id}
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  className="hover:bg-gray-50"
+                  className="hover:bg-orange-50/40"
                 >
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
-                      <UserIcon className="w-4 h-4 text-gray-400" />
+                      <UserIcon className="w-4 h-4 text-slate-400" />
                       <div>
-                        <p className="font-medium text-gray-900">{staffMember.name}</p>
-                        <p className="text-xs text-gray-500">{staffMember.role}</p>
+                        <p className="font-medium text-slate-900">{staffMember.name}</p>
+                        <p className="text-xs text-slate-500">{staffMember.role}</p>
                       </div>
                     </div>
                   </td>
@@ -141,10 +143,10 @@ const StaffSchedule = ({ staff }) => {
                       <td key={shift.name} className="px-4 py-3">
                         <button
                           onClick={() => handleScheduleUpdate(staffMember, shift.name, !isAssigned)}
-                          className={`w-8 h-8 rounded-full transition-all ${
+                          className={`h-8 w-8 rounded-none transition-all ${
                             isAssigned
-                              ? 'bg-green-500 text-white hover:bg-green-600'
-                              : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
+                              ? 'bg-gradient-to-r from-orange-500 to-blue-500 text-white hover:from-orange-600 hover:to-blue-600'
+                              : 'bg-slate-100 text-slate-400 hover:bg-orange-50'
                           }`}
                         >
                           {isAssigned ? '✓' : '+'}
@@ -159,19 +161,18 @@ const StaffSchedule = ({ staff }) => {
         </div>
       </div>
 
-      {/* Shift Summary */}
-      <div className="bg-blue-50 rounded-xl p-4">
+      <div className="rounded-none border border-slate-200 bg-white p-4 shadow-[0_16px_40px_rgba(15,23,42,0.06)]">
         <div className="flex items-center gap-2 mb-3">
-          <ClockIcon className="w-5 h-5 text-blue-600" />
-          <h3 className="font-semibold text-blue-900">Shift Summary</h3>
+          <ClockIcon className="w-5 h-5 text-orange-600" />
+          <h3 className="font-black tracking-tight text-slate-900">Shift Summary</h3>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {shifts.map(shift => {
             const count = schedule?.filter(s => s.shift === shift.name).length || 0
             return (
               <div key={shift.name} className="text-center">
-                <p className="text-sm text-blue-700">{shift.name}</p>
-                <p className="text-xl font-bold text-blue-900">{count} staff</p>
+                <p className="text-sm text-slate-500">{shift.name}</p>
+                <p className="text-xl font-black text-slate-900">{count} staff</p>
               </div>
             )
           })}

@@ -5,6 +5,15 @@ import { useAuthStore } from '../../store/authStore'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
 
+const normalizeApiUrl = (url) => {
+  if (!url) return url
+  let normalized = url.replace(/\/$/, '')
+  if (!/\/api(\/)?$/.test(normalized)) normalized = `${normalized}/api`
+  return normalized
+}
+
+const NORMALIZED_API_URL = normalizeApiUrl(API_URL)
+
 const SocialLogin = () => {
   const navigate = useNavigate()
   // We'll update the store directly for social callback handling
@@ -24,8 +33,8 @@ const SocialLogin = () => {
 
   const handleSocialLogin = async (provider) => {
     try {
-      // Redirect to OAuth provider
-      window.location.href = `${API_URL}/auth/${provider}`
+      // Redirect to OAuth provider (ensure /api is present)
+      window.location.href = `${NORMALIZED_API_URL}/auth/${provider}`
     } catch (error) {
       console.error('Social login failed:', error)
     }

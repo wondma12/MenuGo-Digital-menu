@@ -41,7 +41,7 @@ const SystemSettings = () => {
 
     // Other errors - show retry option
     return (
-      <div className="p-6">
+      <div className="space-y-6 bg-white p-4 sm:p-6 lg:p-8">
         <h1 className="text-2xl font-bold text-gray-900">System Settings</h1>
         <p className="text-gray-600 mt-2">Failed to load settings: {error?.message || 'Unknown error'}</p>
         <div className="mt-4">
@@ -59,10 +59,10 @@ const SystemSettings = () => {
   ]
 
   return (
-    <div className="p-6">
+    <div className="relative overflow-hidden bg-slate-50 px-4 py-6 sm:px-6 lg:px-8 font-['Manrope',system-ui,sans-serif] text-slate-900">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">System Settings</h1>
-        <p className="text-gray-500 mt-1">Configure platform-wide settings</p>
+        <h1 className="text-2xl font-extrabold text-slate-900">System Settings</h1>
+        <p className="text-sm text-slate-600 mt-1">Configure platform-wide settings</p>
       </div>
       <Tabs tabs={tabs} />
     </div>
@@ -83,13 +83,13 @@ const GeneralSettings = ({ settings, onSave }) => {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="bg-white rounded-xl p-6 border border-gray-200 space-y-4">
+    <form onSubmit={handleSubmit} className="bg-white p-6 border border-orange-100 border-l-4 border-l-orange-500 rounded-none shadow-[0_16px_40px_rgba(15,23,42,0.06)] space-y-4">
       <Input label="Platform Name" value={formData.platformName} onChange={(e) => setFormData({ ...formData, platformName: e.target.value })} />
       <Input label="Support Email" type="email" value={formData.supportEmail} onChange={(e) => setFormData({ ...formData, supportEmail: e.target.value })} />
       <Switch label="Maintenance Mode" checked={formData.maintenanceMode} onChange={(checked) => setFormData({ ...formData, maintenanceMode: checked })} />
       <Switch label="Allow New Registrations" checked={formData.allowRegistration} onChange={(checked) => setFormData({ ...formData, allowRegistration: checked })} />
       <div className="flex justify-end">
-        <Button type="submit" icon={CheckIcon}>Save Changes</Button>
+        <Button type="submit" icon={CheckIcon} className="bg-orange-600 hover:bg-orange-700 text-white rounded-none px-4 py-2.5 shadow-sm">Save Changes</Button>
       </div>
     </form>
   )
@@ -111,7 +111,7 @@ const EmailSettings = ({ settings, onSave }) => {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="bg-white rounded-xl p-6 border border-gray-200 space-y-4">
+    <form onSubmit={handleSubmit} className="bg-white p-6 border border-orange-100 border-l-4 border-l-orange-500 rounded-none shadow-[0_16px_40px_rgba(15,23,42,0.06)] space-y-4">
       <Input label="SMTP Host" value={formData.smtpHost} onChange={(e) => setFormData({ ...formData, smtpHost: e.target.value })} />
       <Input label="SMTP Port" type="number" value={formData.smtpPort} onChange={(e) => setFormData({ ...formData, smtpPort: parseInt(e.target.value) })} />
       <Input label="SMTP Username" value={formData.smtpUser} onChange={(e) => setFormData({ ...formData, smtpUser: e.target.value })} />
@@ -119,7 +119,7 @@ const EmailSettings = ({ settings, onSave }) => {
       <Input label="From Email" type="email" value={formData.fromEmail} onChange={(e) => setFormData({ ...formData, fromEmail: e.target.value })} />
       <Input label="From Name" value={formData.fromName} onChange={(e) => setFormData({ ...formData, fromName: e.target.value })} />
       <div className="flex justify-end">
-        <Button type="submit" icon={CheckIcon}>Save Changes</Button>
+        <Button type="submit" icon={CheckIcon} className="bg-orange-600 hover:bg-orange-700 text-white rounded-none px-4 py-2.5 shadow-sm">Save Changes</Button>
       </div>
     </form>
   )
@@ -139,13 +139,13 @@ const SecuritySettings = ({ settings, onSave }) => {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="bg-white rounded-xl p-6 border border-gray-200 space-y-4">
+    <form onSubmit={handleSubmit} className="bg-white p-6 border border-orange-100 border-l-4 border-l-orange-500 rounded-none shadow-[0_16px_40px_rgba(15,23,42,0.06)] space-y-4">
       <Input label="Session Timeout (minutes)" type="number" value={formData.sessionTimeout} onChange={(e) => setFormData({ ...formData, sessionTimeout: parseInt(e.target.value) })} />
       <Input label="Max Login Attempts" type="number" value={formData.maxLoginAttempts} onChange={(e) => setFormData({ ...formData, maxLoginAttempts: parseInt(e.target.value) })} />
       <Input label="Password Expiry (days)" type="number" value={formData.passwordExpiryDays} onChange={(e) => setFormData({ ...formData, passwordExpiryDays: parseInt(e.target.value) })} />
       <Switch label="Require Two-Factor Authentication for Admins" checked={formData.twoFactorRequired} onChange={(checked) => setFormData({ ...formData, twoFactorRequired: checked })} />
       <div className="flex justify-end">
-        <Button type="submit" icon={CheckIcon}>Save Changes</Button>
+        <Button type="submit" icon={CheckIcon} className="bg-orange-600 hover:bg-orange-700 text-white rounded-none px-4 py-2.5 shadow-sm">Save Changes</Button>
       </div>
     </form>
   )
@@ -165,13 +165,37 @@ const IntegrationSettings = ({ settings, onSave }) => {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="bg-white rounded-xl p-6 border border-gray-200 space-y-4">
-      <Input label="Stripe Secret Key" type="password" value={formData.stripeSecretKey} onChange={(e) => setFormData({ ...formData, stripeSecretKey: e.target.value })} />
-      <Input label="Stripe Webhook Secret" type="password" value={formData.stripeWebhookSecret} onChange={(e) => setFormData({ ...formData, stripeWebhookSecret: e.target.value })} />
-      <Input label="Google Analytics ID" value={formData.googleAnalyticsId} onChange={(e) => setFormData({ ...formData, googleAnalyticsId: e.target.value })} />
-      <Input label="Sentry DSN" value={formData.sentryDsn} onChange={(e) => setFormData({ ...formData, sentryDsn: e.target.value })} />
+    <form onSubmit={handleSubmit} className="bg-white p-6 border border-orange-100 border-l-4 border-l-orange-500 rounded-none shadow-[0_16px_40px_rgba(15,23,42,0.06)] space-y-5">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <Input
+          label="Stripe Secret Key"
+          type="password"
+          value={formData.stripeSecretKey}
+          onChange={(e) => setFormData({ ...formData, stripeSecretKey: e.target.value })}
+          className="rounded-none border-slate-200 text-slate-900 focus:border-orange-300 focus:ring-orange-100"
+        />
+        <Input
+          label="Stripe Webhook Secret"
+          type="password"
+          value={formData.stripeWebhookSecret}
+          onChange={(e) => setFormData({ ...formData, stripeWebhookSecret: e.target.value })}
+          className="rounded-none border-slate-200 text-slate-900 focus:border-orange-300 focus:ring-orange-100"
+        />
+        <Input
+          label="Google Analytics ID"
+          value={formData.googleAnalyticsId}
+          onChange={(e) => setFormData({ ...formData, googleAnalyticsId: e.target.value })}
+          className="rounded-none border-slate-200 text-slate-900 focus:border-orange-300 focus:ring-orange-100"
+        />
+        <Input
+          label="Sentry DSN"
+          value={formData.sentryDsn}
+          onChange={(e) => setFormData({ ...formData, sentryDsn: e.target.value })}
+          className="rounded-none border-slate-200 text-slate-900 focus:border-orange-300 focus:ring-orange-100"
+        />
+      </div>
       <div className="flex justify-end">
-        <Button type="submit" icon={CheckIcon}>Save Changes</Button>
+        <Button type="submit" icon={CheckIcon} className="rounded-none bg-orange-600 px-4 py-2.5 text-white shadow-sm hover:bg-orange-700">Save Changes</Button>
       </div>
     </form>
   )

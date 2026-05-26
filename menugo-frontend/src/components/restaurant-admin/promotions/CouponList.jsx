@@ -5,6 +5,7 @@ import Badge from '../../../common/Badge'
 import ConfirmationDialog from '../../../common/ConfirmationDialog'
 import { updateCouponStatus, deleteCoupon } from '../../../services/promotionService'
 import toast from 'react-hot-toast'
+import { formatPrice } from '../../../utils/currency'
 
 const CouponList = ({ coupons, onEdit, onRefresh }) => {
   const [deleteTarget, setDeleteTarget] = useState(null)
@@ -34,7 +35,7 @@ const CouponList = ({ coupons, onEdit, onRefresh }) => {
     if (coupon.discountType === 'percentage') {
       return `${coupon.discountValue}% OFF`
     }
-    return `$${coupon.discountValue} OFF`
+    return `${formatPrice(coupon.discountValue)} OFF`
   }
 
   return (
@@ -70,7 +71,7 @@ const CouponList = ({ coupons, onEdit, onRefresh }) => {
                   <td className="px-6 py-4">
                     <Badge variant="success" size="sm">{getDiscountDisplay(coupon)}</Badge>
                     {coupon.minimumOrderAmount && (
-                      <p className="text-xs text-gray-500 mt-1">Min: ${coupon.minimumOrderAmount}</p>
+                      <p className="text-xs text-gray-500 mt-1">Min: {formatPrice(coupon.minimumOrderAmount)}</p>
                     )}
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-600">

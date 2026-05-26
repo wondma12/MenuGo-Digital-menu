@@ -54,22 +54,22 @@ const StaffCard = ({ staff, onEdit, onRefresh }) => {
     <>
       <motion.div
         whileHover={{ y: -4 }}
-        className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-all h-full flex flex-col"
+        className="flex h-full flex-col overflow-hidden rounded-none border border-slate-200 bg-white shadow-[0_16px_40px_rgba(15,23,42,0.06)] transition-all hover:-translate-y-1 hover:shadow-[0_24px_60px_rgba(15,23,42,0.10)]"
       >
         <div className="p-6 flex-1 flex flex-col">
           <div className="flex items-start justify-between mb-4">
             <div className="flex items-center gap-3">
               <Avatar src={staff.avatar} name={staff.name} size="xl" />
               <div>
-                <h3 className="font-semibold text-gray-900">{staff.name}</h3>
-                <p className="text-xs text-gray-500">ID: {staff.employeeId}</p>
+                <h3 className="font-black tracking-tight text-slate-900">{staff.name}</h3>
+                <p className="text-xs text-slate-500">ID: {staff.employeeId}</p>
               </div>
             </div>
             <div className="flex gap-1">
-              <button onClick={onEdit} className="p-1.5 text-gray-500 hover:bg-gray-100 rounded-lg">
+              <button onClick={onEdit} className="rounded-none p-1.5 text-slate-500 hover:bg-orange-50">
                 <PencilIcon className="w-4 h-4" />
               </button>
-              <button onClick={() => setShowDeleteDialog(true)} className="p-1.5 text-gray-500 hover:bg-red-50 rounded-lg">
+              <button onClick={() => setShowDeleteDialog(true)} className="rounded-none p-1.5 text-slate-500 hover:bg-orange-50">
                 <TrashIcon className="w-4 h-4" />
               </button>
             </div>
@@ -80,36 +80,36 @@ const StaffCard = ({ staff, onEdit, onRefresh }) => {
               <Badge variant={roleColors[staff.role]} size="sm">{staff.role}</Badge>
               <button
                 onClick={handleStatusToggle}
-                className={`text-xs px-2 py-0.5 rounded-full ${
-                  staff.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
+                className={`text-xs px-2 py-0.5 rounded-none ${
+                  staff.isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'
                 }`}
               >
                 {staff.isActive ? 'Active' : 'Inactive'}
               </button>
             </div>
             
-            <div className="flex items-center gap-2 text-sm text-gray-600">
-              <EnvelopeIcon className="w-4 h-4 text-gray-400" />
+            <div className="flex items-center gap-2 text-sm text-slate-600">
+              <EnvelopeIcon className="w-4 h-4 text-slate-400" />
               <span className="truncate">{staff.email}</span>
             </div>
             
-            <div className="flex items-center gap-2 text-sm text-gray-600">
-              <PhoneIcon className="w-4 h-4 text-gray-400" />
+            <div className="flex items-center gap-2 text-sm text-slate-600">
+              <PhoneIcon className="w-4 h-4 text-slate-400" />
               <span>{staff.phone}</span>
             </div>
             
-            <div className="flex items-center gap-2 text-sm text-gray-600">
-              <ClockIcon className="w-4 h-4 text-gray-400" />
+            <div className="flex items-center gap-2 text-sm text-slate-600">
+              <ClockIcon className="w-4 h-4 text-slate-400" />
               <span>{staff.shiftStart} - {staff.shiftEnd}</span>
             </div>
           </div>
 
         </div>
 
-        <div className="pt-3 border-t border-gray-100 p-4 bg-gray-50">
-          <p className="text-xs text-gray-500">Hired: {staff.hireDate ? new Date(staff.hireDate).toLocaleDateString() : '—'}</p>
+        <div className="border-t border-slate-100 bg-slate-50 p-4 pt-3">
+          <p className="text-xs text-slate-500">Hired: {staff.hireDate ? new Date(staff.hireDate).toLocaleDateString() : '—'}</p>
           {staff.hourlyRate && (
-            <p className="text-xs text-gray-500 mt-1">Hourly Rate: ${staff.hourlyRate}/hr</p>
+            <p className="mt-1 text-xs text-slate-500">Hourly Rate: ${staff.hourlyRate}/hr</p>
           )}
         </div>
       </motion.div>

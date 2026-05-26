@@ -7,8 +7,8 @@ const UserFilters = ({ filters, onFiltersChange, showRole = true }) => {
   }
 
   return (
-    <div className="bg-white rounded-xl p-5 border border-gray-200">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div className="rounded-none border border-orange-100 bg-gradient-to-br from-white to-orange-50/40 p-5 shadow-sm">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         {showRole && (
           <Select
             label="Role"

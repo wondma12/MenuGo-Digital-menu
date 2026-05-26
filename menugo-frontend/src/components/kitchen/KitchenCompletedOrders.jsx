@@ -21,12 +21,19 @@ const KitchenCompletedOrders = ({
   onPaginationChange,
   showTitle = true,
 }) => {
+  const toLocalDateString = (value) => {
+    const date = value instanceof Date ? value : new Date(value)
+    if (Number.isNaN(date.getTime())) return ''
+    const offset = date.getTimezoneOffset() * 60000
+    return new Date(date.getTime() - offset).toISOString().slice(0, 10)
+  }
+
   const [orders, setOrders] = useState(Array.isArray(propOrders) ? propOrders : []);
   const [loading, setLoading] = useState(!Array.isArray(propOrders));
   const [pagination, setPagination] = useState({ page: 1, limit: 20, total: 0, pages: 0 });
   // default to today range (YYYY-MM-DD) so backend DATE(completed_at) comparisons work
   const today = new Date();
-  const todayStr = today.toISOString().slice(0,10);
+  const todayStr = toLocalDateString(today);
   const [dateRange, setDateRange] = useState({ start: todayStr, end: todayStr });
 
   // If parent passed orders, keep them in sync and don't call the API
@@ -61,8 +68,8 @@ const KitchenCompletedOrders = ({
         page: currentPage,
         limit: currentLimit,
       };
-      if (currentDateRange && currentDateRange.start) params.startDate = ('' + currentDateRange.start).slice(0,10);
-      if (currentDateRange && currentDateRange.end) params.endDate = ('' + currentDateRange.end).slice(0,10);
+      if (currentDateRange && currentDateRange.start) params.startDate = toLocalDateString(currentDateRange.start);
+      if (currentDateRange && currentDateRange.end) params.endDate = toLocalDateString(currentDateRange.end);
 
       const response = await kitchenService.getCompletedOrders(restaurantId, params);
 
@@ -149,29 +156,34 @@ const KitchenCompletedOrders = ({
         start = new Date(); start.setHours(0,0,0,0);
     }
 
-    const startStr = start.toISOString().slice(0,10);
-    const endStr = end.toISOString().slice(0,10);
+    const startStr = toLocalDateString(start);
+    const endStr = toLocalDateString(end);
     setDateRange({ start: startStr, end: endStr });
     if (typeof onDateRangeChange === 'function') onDateRangeChange({ start: startStr, end: endStr });
   };
 
   if (loading) {
-    return <div className="text-center py-8">Loading...</div>;
+    return <div className="rounded-2xl border border-gray-100 bg-white/90 py-10 text-center text-gray-600 shadow-sm">Loading...</div>;
   }
 
   return (
-    <div className="bg-white rounded-lg shadow">
-      <div className="p-4 border-b">
+    <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white/90 shadow-sm backdrop-blur-sm">
+      <div className="border-b border-gray-100 bg-gradient-to-r from-orange-50 to-blue-50 p-5">
         {showTitle && (
           <div className="flex justify-between items-center">
-            <h2 className="text-xl font-semibold">Completed Orders</h2>
+            <div>
+              <h2 className="text-xl font-bold tracking-tight text-gray-900">Completed Orders</h2>
+              <p className="text-sm text-gray-500">Review completed orders and historical reports</p>
+            </div>
             <div className="flex items-center space-x-2">
               {['today','weekly','monthly','yearly'].map(key => (
                 <button
                   key={key}
                   onClick={() => setPredefinedRange(key)}
-                  className={`px-3 py-1 rounded-md text-sm ${
-                    (new Date(dateRange.start).toDateString() === (key === 'today' ? new Date().toDateString() : new Date(new Date().setDate(new Date().getDate() - (key==='weekly'?6:0))).toDateString()) && key==='today') ? 'bg-gray-200 text-black' : 'bg-white text-gray-700 border'
+                  className={`rounded-xl px-3 py-2 text-sm font-semibold transition-all ${
+                    key === 'today'
+                      ? 'bg-gradient-to-r from-orange-500 to-blue-500 text-white shadow-sm'
+                      : 'border border-gray-200 bg-white text-gray-700 hover:bg-gray-50'
                   }`}
                 >
                   {key.charAt(0).toUpperCase() + key.slice(1)}
@@ -183,19 +195,19 @@ const KitchenCompletedOrders = ({
       </div>
       
       <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
+        <table className="min-w-full divide-y divide-gray-100">
+          <thead className="bg-white">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Order #</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Table</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Customer</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Menu</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Items</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Prep Time</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Completed At</th>
+              <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wide text-gray-500">Order #</th>
+              <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wide text-gray-500">Table</th>
+              <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wide text-gray-500">Customer</th>
+              <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wide text-gray-500">Menu</th>
+              <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wide text-gray-500">Items</th>
+              <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wide text-gray-500">Prep Time</th>
+              <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wide text-gray-500">Completed At</th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody className="divide-y divide-gray-100 bg-white">
             {orders.map((order, idx) => {
               // compute display number taking pagination into account
               const base = ((pagination.page || 1) - 1) * (pagination.limit || currentLimit);
@@ -213,21 +225,21 @@ const KitchenCompletedOrders = ({
               const completedAt = order.completed_at || order.completedAt || order.updatedAt || order.completed_at;
 
               return (
-                <tr key={order.id || orderNumber} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">#{displayNumber}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Table {table}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{customer}</td>
-                  <td className="px-6 py-4 text-sm text-gray-500">{itemCount} items</td>
+                <tr key={order.id || orderNumber} className="transition-colors hover:bg-orange-50/60">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">#{displayNumber}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">Table {table}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{customer}</td>
+                  <td className="px-6 py-4 text-sm text-gray-600">{itemCount} items</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {menuImage ? (
-                      <img src={menuImage} alt={menuName} className="w-12 h-8 object-cover rounded mr-2 inline-block" />
+                      <img src={menuImage} alt={menuName} className="inline-block h-8 w-12 rounded-lg object-cover ring-1 ring-gray-100 mr-2" />
                     ) : (
-                      <div className="inline-block w-12 h-8 bg-gray-100 rounded mr-2" />
+                      <div className="inline-block h-8 w-12 rounded-lg bg-gray-100 mr-2" />
                     )}
-                    <span className="align-middle">{menuName || '—'}</span>
+                    <span className="align-middle text-gray-700">{menuName || '—'}</span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{prepTime} {prepTime !== '-' ? 'min' : ''}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatTime(completedAt)}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{prepTime} {prepTime !== '-' ? 'min' : ''}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{formatTime(completedAt)}</td>
                 </tr>
               );
             })}

@@ -53,10 +53,11 @@ const StaffManagement = () => {
   function renderStaffContent() {
     return (
       <>
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Staff Management</h1>
-            <p className="text-gray-500 mt-1">Manage your restaurant team members</p>
+        <div className="mb-6 flex flex-col gap-4 rounded-none border border-slate-200 bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.06)] lg:flex-row lg:items-center lg:justify-between">
+          <div className="space-y-2">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-orange-600">Restaurant staff</p>
+            <h1 className="text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">Staff Management</h1>
+            <p className="text-sm leading-6 text-slate-500 sm:text-base">Manage your restaurant team members with the analytics palette.</p>
           </div>
           <div className="flex gap-3 items-center">
             <Button onClick={() => setShowModal(true)} icon={PlusIcon}>
@@ -82,22 +83,28 @@ const StaffManagement = () => {
   }
 
   return (
-    <div className="p-6">
-      <Tabs tabs={tabs} />
+    <div className="relative overflow-hidden space-y-6 bg-white p-4 sm:p-6 lg:p-8 font-['Manrope',system-ui,sans-serif] text-slate-900">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(251,146,60,0.12),transparent_35%),radial-gradient(circle_at_bottom_left,_rgba(59,130,246,0.08),transparent_35%)]" />
+      <div className="pointer-events-none absolute -left-24 top-24 h-72 w-72 rounded-full bg-orange-300/20 blur-3xl" />
+      <div className="pointer-events-none absolute -right-20 top-1/2 h-80 w-80 rounded-full bg-blue-300/20 blur-3xl" />
+
+      {/* <div className="relative mx-auto max-w-7xl space-y-6"> */}
+        <Tabs tabs={tabs} />
       
-      <StaffModal
-        isOpen={showModal}
-        onClose={() => {
-          setShowModal(false)
-          setEditingStaff(null)
-        }}
-        staff={editingStaff}
-        onSuccess={() => {
-          refetch()
-          setShowModal(false)
-          setEditingStaff(null)
-        }}
-      />
+        <StaffModal
+          isOpen={showModal}
+          onClose={() => {
+            setShowModal(false)
+            setEditingStaff(null)
+          }}
+          staff={editingStaff}
+          onSuccess={() => {
+            refetch()
+            setShowModal(false)
+            setEditingStaff(null)
+          }}
+        />
+      {/* </div> */}
     </div>
   )
 }

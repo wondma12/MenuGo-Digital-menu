@@ -20,6 +20,7 @@ import DatePicker from '../../../common/DatePicker'
 import Loading from '../../../common/Loading'
 import Button from '../../../common/Button'
 import { getRestaurantAnalytics } from '../../../services/analyticsService'
+import { formatPrice } from '../../../utils/currency'
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899']
 
@@ -87,12 +88,12 @@ const RestaurantAnalytics = ({ restaurantId }) => {
         />
         <MetricCard
           title="Total Revenue"
-          value={`$${data?.totalRevenue?.toLocaleString() || 0}`}
+          value={formatPrice(data?.totalRevenue || 0)}
           change={data?.revenueChange}
         />
         <MetricCard
           title="Average Order Value"
-          value={`$${data?.avgOrderValue?.toFixed(2) || 0}`}
+          value={formatPrice(data?.avgOrderValue || 0)}
           change={data?.avgOrderChange}
         />
         <MetricCard
@@ -188,7 +189,7 @@ const RestaurantAnalytics = ({ restaurantId }) => {
 const MetricCard = ({ title, value, change }) => (
   <div className="bg-white rounded-xl p-4 border border-gray-200">
     <p className="text-sm text-gray-500">{title}</p>
-    <p className="text-2xl font-bold text-gray-900 mt-1">{value}</p>
+    <p className="text-lg font-bold text-gray-900 mt-1">{value}</p>
     {change !== undefined && (
       <p className={`text-xs mt-1 ${change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
         {change >= 0 ? '+' : ''}{change}% from previous period

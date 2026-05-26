@@ -1,10 +1,14 @@
 import { CURRENCY } from './constants'
 
-export const formatPrice = (price, currency = CURRENCY.CODE) => {
-  if (price === null || price === undefined) return `${CURRENCY.SYMBOL}0.00`
+export const formatPrice = (price, currency = CURRENCY.CODE, useCode = true) => {
+  // Default to showing the currency code (e.g. "ETB 350.00") so it's always visible on dashboards.
+  // If callers prefer the currency symbol, pass `useCode = false`.
+  if (price === null || price === undefined) return `${useCode ? CURRENCY.CODE : CURRENCY.SYMBOL} 0.00`
+
   return new Intl.NumberFormat(CURRENCY.LOCALE, {
     style: 'currency',
     currency,
+    currencyDisplay: useCode ? 'code' : 'symbol',
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(price)
@@ -68,4 +72,19 @@ export const getPriceBreakdown = (items, taxRate = 10, serviceChargeRate = 0, de
     discountAmount: roundPrice(discountAmount),
     total: roundPrice(total),
   }
+}
+
+export const formatPriceShort = (value, currency = CURRENCY.CODE) => {
+  if (value === null || value === undefined || Number.isNaN(Number(value))) return `${currency} 0.00`
+  const v = Number(value)
+  const abs = Math.abs(v)
+  if (abs >= 1000000) {
+    const m = v / 1000000
+    return `${currency} ${Number.isInteger(m) ? m.toLocaleString() + 'M' : m.toFixed(1) + 'M'}`
+  }
+  if (abs >= 1000) {
+    const k = v / 1000
+    return `${currency} ${Number.isInteger(k) ? k.toLocaleString() + 'k' : k.toFixed(1) + 'k'}`
+  }
+  return `${currency} ${v.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 }

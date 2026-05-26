@@ -9,8 +9,8 @@ const LowStockAlert = ({ items }) => {
 
   if (lowStockItems.length === 0) {
     return (
-      <div className="bg-white rounded-xl shadow-sm p-5 border border-gray-100">
-        <div className="flex items-center gap-3 text-green-600">
+      <div className="rounded-none bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.06)]">
+        <div className="flex items-center gap-3 text-emerald-600">
           <ExclamationTriangleIcon className="w-5 h-5" />
           <span className="text-sm font-medium">All inventory levels are healthy</span>
         </div>
@@ -19,22 +19,22 @@ const LowStockAlert = ({ items }) => {
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-sm p-5 border border-gray-100">
-      <div className="flex items-center justify-between mb-4">
+    <div className="rounded-none bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.06)]">
+      <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="p-1.5 bg-yellow-100 rounded-lg">
+          <div className="rounded-none bg-amber-100 p-1.5">
             <ExclamationTriangleIcon className="w-5 h-5 text-yellow-600" />
           </div>
           <div>
-            <h3 className="text-lg font-semibold text-gray-900">Low Stock Alert</h3>
-            <p className="text-xs text-gray-500">{lowStockItems.length} items need attention</p>
+            <h3 className="text-lg font-semibold text-slate-900">Low Stock Alert</h3>
+            <p className="text-xs text-slate-500">{lowStockItems.length} items need attention</p>
           </div>
         </div>
         <Button 
           variant="ghost" 
           size="sm" 
           onClick={() => navigate('/restaurant/inventory')}
-          className="text-primary-600 hover:text-primary-700"
+          className="text-orange-600 hover:text-orange-700"
         >
           View All
         </Button>
@@ -42,28 +42,28 @@ const LowStockAlert = ({ items }) => {
 
       <div className="space-y-3">
         {lowStockItems.slice(0, 5).map((item, index) => (
-          <div key={item.id || index} className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg hover:bg-yellow-100 transition-colors">
+          <div key={item.id || index} className="flex items-center justify-between rounded-none bg-amber-50 p-3 transition-colors hover:bg-amber-100">
             <div className="flex-1">
               <div className="flex items-center gap-2">
-                <p className="font-medium text-gray-900">{item.name}</p>
+                <p className="font-medium text-slate-900">{item.name}</p>
                 {item.unit && (
-                  <span className="text-xs text-gray-500">({item.unit})</span>
+                  <span className="text-xs text-slate-500">({item.unit})</span>
                 )}
               </div>
               <div className="flex items-center gap-3 mt-1">
                 <div className="flex items-center gap-1">
-                  <span className="text-xs text-gray-500">Current:</span>
+                  <span className="text-xs text-slate-500">Current:</span>
                   <span className="text-xs font-medium text-red-600">{item.stock || item.quantity || 0}</span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <span className="text-xs text-gray-500">Reorder at:</span>
-                  <span className="text-xs font-medium text-gray-700">{item.reorderLevel || 10}</span>
+                  <span className="text-xs text-slate-500">Reorder at:</span>
+                  <span className="text-xs font-medium text-slate-700">{item.reorderLevel || 10}</span>
                 </div>
               </div>
             </div>
             <button 
               onClick={() => navigate(`/restaurant/inventory/reorder/${item.id}`)}
-              className="flex items-center gap-1 px-3 py-1.5 text-xs bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+              className="flex items-center gap-1 rounded-none border border-orange-100 bg-white px-3 py-1.5 text-xs transition-colors hover:bg-orange-50"
             >
               <ShoppingCartIcon className="w-3 h-3" />
               Reorder
@@ -76,7 +76,7 @@ const LowStockAlert = ({ items }) => {
         <div className="mt-3 text-center">
           <button 
             onClick={() => navigate('/restaurant/inventory')}
-            className="text-xs text-primary-600 hover:text-primary-700"
+            className="text-xs text-orange-600 hover:text-orange-700"
           >
             + {lowStockItems.length - 5} more items
           </button>

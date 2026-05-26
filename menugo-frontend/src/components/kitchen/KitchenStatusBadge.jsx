@@ -3,17 +3,17 @@ import React from 'react';
 
 const KitchenStatusBadge = ({ status }) => {
   const statusConfig = {
-    pending: { label: 'Pending', color: 'bg-yellow-100 text-yellow-800' },
-    preparing: { label: 'Preparing', color: 'bg-blue-100 text-blue-800' },
-    ready: { label: 'Ready', color: 'bg-green-100 text-green-800' },
-    completed: { label: 'Completed', color: 'bg-gray-100 text-gray-800' },
-    cancelled: { label: 'Cancelled', color: 'bg-red-100 text-red-800' },
+    pending: { label: 'Pending', color: 'bg-orange-50 text-orange-700 ring-1 ring-orange-100' },
+    preparing: { label: 'Preparing', color: 'bg-blue-50 text-blue-700 ring-1 ring-blue-100' },
+    ready: { label: 'Ready', color: 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100' },
+    completed: { label: 'Completed', color: 'bg-slate-100 text-slate-700 ring-1 ring-slate-200' },
+    cancelled: { label: 'Cancelled', color: 'bg-red-50 text-red-700 ring-1 ring-red-100' },
   };
 
   const config = statusConfig[status] || statusConfig.pending;
 
   return (
-    <span className={`px-2 py-1 text-xs font-medium rounded-full ${config.color}`}>
+    <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${config.color}`}>
       {config.label}
     </span>
   );

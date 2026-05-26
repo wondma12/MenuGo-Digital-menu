@@ -8,11 +8,14 @@ const {
   MenuItem,
   MenuCategory,
   Table,
+  TableReservation,
   Review,
+  MenuItemAnalytics,
 } = require('../models');
 const { ApiResponse } = require('../utils/apiResponse');
 const { catchAsync } = require('../utils/catchAsync');
 const { Op } = require('sequelize');
+const { getPopularItems: getPopularItemsFromAnalytics } = require('../services/analyticsService');
 
 // Safe helpers to guard against missing model exports or unexpected runtime issues
 const safeCount = (model, options) => {
@@ -25,10 +28,104 @@ const safeSum = (model, field, options) => {
   return model.sum(field, options).catch(() => 0);
 };
 
+const toStartOfDay = (value) => {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return null
+  date.setHours(0, 0, 0, 0)
+  return date
+}
+
+const toEndOfDay = (value) => {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return null
+  date.setHours(23, 59, 59, 999)
+  return date
+}
+
+const toDayStart = (value) => {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return null
+  date.setHours(0, 0, 0, 0)
+  return date
+}
+
+const toDayEnd = (value) => {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return null
+  date.setHours(23, 59, 59, 999)
+  return date
+}
+
+const toLocalDateString = (value) => {
+  const date = value instanceof Date ? value : new Date(value)
+  if (Number.isNaN(date.getTime())) return ''
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+const toLocalDay = (value, endOfDay = false) => {
+  if (!value) return null
+
+  if (typeof value === 'string') {
+    const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/)
+    if (match) {
+      const year = Number(match[1])
+      const month = Number(match[2]) - 1
+      const day = Number(match[3])
+      const date = new Date(year, month, day)
+      if (endOfDay) date.setHours(23, 59, 59, 999)
+      else date.setHours(0, 0, 0, 0)
+      return date
+    }
+  }
+
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return null
+  if (endOfDay) date.setHours(23, 59, 59, 999)
+  else date.setHours(0, 0, 0, 0)
+  return date
+}
+
+const buildTodaySchedule = (reservations, tables) => {
+  const slots = [
+    '11:00 AM',
+    '12:00 PM',
+    '1:00 PM',
+    '2:00 PM',
+    '6:00 PM',
+    '7:00 PM',
+    '8:00 PM',
+    '9:00 PM',
+  ]
+
+  const openTables = Math.max((tables || []).length, 0)
+  return slots.map((time) => {
+    const matchingReservations = (reservations || []).filter((reservation) => reservation.reservation_time === time)
+    const reservationCount = matchingReservations.length
+    const occupiedTables = matchingReservations.filter((reservation) => ['seated', 'confirmed'].includes(reservation.status)).length
+    const availableTables = Math.max(openTables - occupiedTables, 0)
+
+    return {
+      time,
+      reservations: reservationCount,
+      available: availableTables,
+    }
+  })
+}
+
 // Get platform admin dashboard
 const getPlatformDashboard = catchAsync(async (req, res) => {
   try {
     console.log('=== Platform Dashboard API Called ===');
+
+    const rawStartDate = req.query.startDate || req.query.start_date || null
+    const rawEndDate = req.query.endDate || req.query.end_date || null
+    const requestedStart = rawStartDate ? toLocalDay(rawStartDate, false) : null
+    const requestedEnd = rawEndDate ? toLocalDay(rawEndDate, true) : null
+    const revenueStart = requestedStart || (() => { const d = new Date(); d.setDate(d.getDate() - 6); return toDayStart(d) })()
+    const revenueEnd = requestedEnd || toDayEnd(new Date())
     
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
@@ -158,14 +255,13 @@ const getPlatformDashboard = catchAsync(async (req, res) => {
       { tier: 'enterprise', count: enterpriseCount || 0 },
     ];
     
-    // 9. Generate Last 7 Days Revenue Data
+    // 9. Generate daily Revenue Data for the requested range (or last 7 days fallback)
     const revenueData = [];
-    for (let i = 6; i >= 0; i--) {
-      const date = new Date();
-      date.setDate(date.getDate() - i);
-      date.setHours(0, 0, 0, 0);
-      
-      const nextDate = new Date(date);
+    for (let date = new Date(revenueStart); date <= revenueEnd; date.setDate(date.getDate() + 1)) {
+      const dayStart = new Date(date);
+      dayStart.setHours(0, 0, 0, 0);
+
+      const nextDate = new Date(dayStart);
       nextDate.setDate(nextDate.getDate() + 1);
       
       let dailyRevenue = 0;
@@ -175,22 +271,60 @@ const getPlatformDashboard = catchAsync(async (req, res) => {
         dailyRevenue = await Order.sum('total_amount', {
           where: {
             status: 'completed',
-            created_at: { [Op.between]: [date, nextDate] },
+            created_at: { [Op.between]: [dayStart, nextDate] },
           },
         }) || 0;
         
         dailyOrders = await Order.count({
-          where: { created_at: { [Op.between]: [date, nextDate] } },
+          where: { created_at: { [Op.between]: [dayStart, nextDate] } },
         }) || 0;
       } catch (err) {
-        console.error(`Daily data error for ${date}:`, err);
+        console.error(`Daily data error for ${dayStart}:`, err);
       }
       
       revenueData.push({
-        date: date.toISOString().split('T')[0],
+        date: toLocalDateString(dayStart),
         revenue: dailyRevenue,
         orders: dailyOrders,
       });
+    }
+
+    // 10. Generate monthly growth data for the last 12 months
+    const growthData = [];
+    try {
+      const months = [];
+      const now = new Date();
+      for (let i = 11; i >= 0; i--) {
+        const monthStart = new Date(now.getFullYear(), now.getMonth() - i, 1, 0, 0, 0, 0);
+        const monthEnd = new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 1, 0, 0, 0, 0);
+        months.push({ monthStart, monthEnd });
+      }
+
+      for (const m of months) {
+        const newCount = await Restaurant.count({
+          where: {
+            created_at: { [Op.between]: [m.monthStart, m.monthEnd] },
+            deleted_at: null,
+          }
+        }).catch(() => 0) || 0;
+
+        const totalCount = await Restaurant.count({
+          where: {
+            created_at: { [Op.lt]: m.monthEnd },
+            deleted_at: null,
+          }
+        }).catch(() => 0) || 0;
+
+        growthData.push({
+          // friendly month label and an ISO start date for frontend parsing
+          month: m.monthStart.toLocaleString('default', { month: 'short', year: 'numeric' }),
+          startDate: toLocalDateString(m.monthStart),
+          new_restaurants: newCount,
+          total_restaurants: totalCount,
+        })
+      }
+    } catch (err) {
+      console.error('Growth data generation error:', err)
     }
     
     // Prepare response stats
@@ -214,11 +348,39 @@ const getPlatformDashboard = catchAsync(async (req, res) => {
       health_trend: 0.5,
     };
     
+    // Build metrics object for frontend dashboard cards
+    const metrics = {
+      avgOrderValue: totalOrders > 0 ? Math.round((totalRevenue / totalOrders) * 100) / 100 : 0,
+      avgOrderValueChange: 0,
+      activeUsers: activeUsers || 0,
+      activeUsersChange: 0,
+      conversionRate: 0, // placeholder - requires events/visits data
+      conversionRateChange: 0,
+      retentionRate: 0, // placeholder - requires cohort data
+      retentionRateChange: 0,
+    }
+
+    // 11. Build user role distribution for analytics (user distribution pie)
+    let roleBreakdown = []
+    try {
+      const roles = ['platform_admin', 'restaurant_admin', 'restaurant_owner', 'waiter', 'chef', 'customer']
+      const counts = await Promise.all(roles.map(r => User.count({ where: { role: r, deleted_at: null } }).catch(() => 0)))
+      roleBreakdown = roles.map((r, i) => ({ name: r.replace('_', ' '), value: counts[i] || 0 }))
+    } catch (err) {
+      console.error('Role breakdown error:', err)
+      roleBreakdown = []
+    }
+
+    // expose role breakdown under metrics for backward compatibility
+    metrics.role_breakdown = roleBreakdown
+
     console.log('Dashboard stats calculated successfully');
-    
+
     res.json(ApiResponse.success({
       stats,
       revenue_data: revenueData,
+      growth_data: growthData,
+      metrics,
       recent_restaurants: recentRestaurants,
       recent_orders: recentOrders,
       subscription_breakdown: subscriptionBreakdown,
@@ -267,6 +429,11 @@ const getPlatformDashboard = catchAsync(async (req, res) => {
 const getRestaurantDashboard = catchAsync(async (req, res) => {
   try {
     let restaurantId = req.user.restaurantId;
+
+    const rawStartDate = req.query.startDate || req.query.start_date || null
+    const rawEndDate = req.query.endDate || req.query.end_date || null
+    const requestedStart = rawStartDate ? toLocalDay(rawStartDate, false) : null
+    const requestedEnd = rawEndDate ? toLocalDay(rawEndDate, true) : null
     
     if (!restaurantId) {
       const staff = await RestaurantStaff.findOne({
@@ -311,14 +478,16 @@ const getRestaurantDashboard = catchAsync(async (req, res) => {
       safeCount(Order, { where: { restaurant_id: restaurantId, status: 'completed', created_at: { [Op.gte]: todayStart } } }),
     ]);
 
-    // Build last 7 days revenue and order counts for the restaurant
+    const seriesStart = requestedStart || (() => { const d = new Date(); d.setDate(d.getDate() - 6); return toStartOfDay(d) })()
+    const seriesEnd = requestedEnd || toEndOfDay(new Date())
+
+    // Build daily revenue and order counts for the restaurant across the requested range
     const revenueData = [];
-    for (let i = 6; i >= 0; i--) {
-      const d = new Date();
-      d.setDate(d.getDate() - i);
-      d.setHours(0, 0, 0, 0);
-      const next = new Date(d);
-      next.setDate(next.getDate() + 1);
+    for (let d = new Date(seriesStart); d <= seriesEnd; d.setDate(d.getDate() + 1)) {
+      const dayStart = new Date(d)
+      dayStart.setHours(0, 0, 0, 0)
+      const next = new Date(dayStart)
+      next.setDate(next.getDate() + 1)
 
       let dailyRevenue = 0;
       let dailyOrders = 0;
@@ -327,21 +496,102 @@ const getRestaurantDashboard = catchAsync(async (req, res) => {
           where: {
             restaurant_id: restaurantId,
             status: 'completed',
-            created_at: { [Op.between]: [d, next] },
+            created_at: { [Op.between]: [dayStart, next] },
           },
         }) || 0;
 
         dailyOrders = await Order.count({
           where: {
             restaurant_id: restaurantId,
-            created_at: { [Op.between]: [d, next] },
+            created_at: { [Op.between]: [dayStart, next] },
           },
         }) || 0;
       } catch (err) {
         console.error('Daily chart data error for restaurant:', err);
       }
 
-      revenueData.push({ date: d.toISOString().split('T')[0], revenue: dailyRevenue, orders: dailyOrders });
+      revenueData.push({ date: toLocalDateString(dayStart), revenue: dailyRevenue, orders: dailyOrders });
+    }
+
+    const todayKey = toLocalDateString(todayStart)
+    let todayReservations = []
+    try {
+      todayReservations = await TableReservation.findAll({
+        where: {
+          restaurant_id: restaurantId,
+          reservation_date: todayKey,
+        },
+        order: [['reservation_time', 'ASC']],
+      })
+    } catch (err) {
+      console.error('Today reservations error:', err)
+      todayReservations = []
+    }
+
+    let restaurantTables = []
+    try {
+      restaurantTables = await Table.findAll({
+        where: { restaurant_id: restaurantId },
+        attributes: ['id', 'table_number', 'status'],
+      })
+    } catch (err) {
+      console.error('Restaurant tables error:', err)
+      restaurantTables = []
+    }
+
+    let popularItems = []
+    try {
+      const popularRows = await getPopularItemsFromAnalytics(restaurantId, 5)
+      popularItems = popularRows.map((row) => {
+        const plain = typeof row?.get === 'function' ? row.get({ plain: true }) : row
+        const item = plain.analytics_item || plain.MenuItem || {}
+        return {
+          id: plain.menu_item_id || item.id,
+          name: item.name || item.title || 'Menu Item',
+          category: item.category_name || item.category || 'Uncategorized',
+          image: item.image_url || item.image || item.thumbnail_url || null,
+          orders: Number(plain.total_orders ?? plain.total_quantity ?? 0),
+          revenue: Number(plain.total_revenue ?? 0),
+        }
+      }).filter((item) => item.id)
+    } catch (err) {
+      console.error('Popular items error:', err)
+      popularItems = []
+    }
+
+    const tableCount = restaurantTables.length || 0
+    const todaySchedule = {
+      totalReservations: todayReservations.length,
+      availableTables: restaurantTables.filter((table) => table.status === 'available').length,
+      occupiedTables: restaurantTables.filter((table) => table.status === 'occupied').length,
+      reservedTables: restaurantTables.filter((table) => table.status === 'reserved').length,
+      slots: [
+        '11:00 AM',
+        '12:00 PM',
+        '1:00 PM',
+        '2:00 PM',
+        '6:00 PM',
+        '7:00 PM',
+        '8:00 PM',
+        '9:00 PM',
+      ].map((time) => {
+        const slotReservations = todayReservations.filter((reservation) => reservation.reservation_time === time)
+        const reservedCount = slotReservations.length
+        const reservedTables = slotReservations.filter((reservation) => ['confirmed', 'seated'].includes(reservation.status)).length
+        return {
+          time,
+          reservations: reservedCount,
+          available: Math.max(tableCount - reservedTables, 0),
+        }
+      }),
+      reservations: todayReservations.map((reservation) => ({
+        id: reservation.id,
+        customerName: reservation.customer_name,
+        tableNumber: reservation.table_number,
+        partySize: reservation.party_size,
+        time: reservation.reservation_time,
+        status: reservation.status,
+      })),
     }
     
     res.json(ApiResponse.success({
@@ -362,6 +612,8 @@ const getRestaurantDashboard = catchAsync(async (req, res) => {
         completed_today: completedToday || 0,
       },
       revenue_data: revenueData,
+      popular_items: popularItems,
+      today_schedule: todaySchedule,
       recent_orders: [],
     }, 'Restaurant dashboard data retrieved'));
   } catch (error) {

@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  db:
+    image: mysql:8.0
+    container_name: menugo_db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: menugo
+      MYSQL_USER: menugo
+      MYSQL_PASSWORD: menugo
+      TZ: UTC
+    ports:
+      - '3306:3306'
+    volumes:
+      - ./docker/mysql-data:/var/lib/mysql
+
+  backend:
+    image: node:18
+    container_name: menugo_backend
+    working_dir: /app
+    restart: unless-stopped
+    volumes:
+      - ./menugo-backend:/app:cached
+      - /app/node_modules
+    ports:
+      - '5000:5000'
+    command: sh -c "npm install --no-audit --no-fund && npm run dev"
+    environment:
+      PORT: 5000
+      NODE_ENV: development
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_USER: menugo
+      DB_PASSWORD: menugo
+      DB_NAME: menugo
+      DB_SYNC_ALTER: 'true'
+      ALLOW_PORT_FALLBACK: 'true'
+      API_URL: http://localhost:5000/api
+    depends_on:
+      - db

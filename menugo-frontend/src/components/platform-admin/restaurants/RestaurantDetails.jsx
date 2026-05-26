@@ -89,16 +89,18 @@ const RestaurantDetails = () => {
   const coverImage = restaurant?.cover_image_url || restaurant?.coverImageUrl || '/placeholder-food.jpg';
   const logo = restaurant?.logo_url || restaurant?.logoUrl || '/logo.svg';
   const name = restaurant?.name || 'Restaurant Name';
-  const description = restaurant?.description || 'No description available';
+  const description = restaurant?.description || restaurant?.slogan || restaurant?.restaurant_slogan || 'No description available';
   const address = restaurant?.address || '';
   const city = restaurant?.city || '';
   const state = restaurant?.state || '';
   const country = restaurant?.country || '';
   const phone = restaurant?.phone || '';
+  const whatsapp = restaurant?.whatsapp_number || restaurant?.whatsapp || '';
   const email = restaurant?.email || '';
   const website = restaurant?.website || null;
   const cuisineType = restaurant?.cuisine_type || 'Various';
-  const averageRating = restaurant?.average_rating || 0;
+  // Coerce possible string/null values into a number for safe formatting
+  const averageRating = Number(restaurant?.average_rating ?? restaurant?.avg_rating ?? restaurant?.rating ?? 0);
   const totalReviews = restaurant?.total_reviews || 0;
   const totalMenuItems = restaurant?.total_menu_items || restaurant?.menu_items?.length || 0;
   const totalStaff = restaurant?.staff?.length || 0;
@@ -109,7 +111,15 @@ const RestaurantDetails = () => {
   const fullAddress = [address, city, state, country].filter(Boolean).join(', ');
 
   // Get owner info
-  const owner = restaurant?.owner || {};
+  const owner = restaurant?.restaurant_owner || restaurant?.owner || {};
+  const ownerFullName = restaurant?.owner_name || owner?.full_name || owner?.fullName || '';
+  const ownerEmail = owner?.email || restaurant?.email || '';
+  const ownerPhone = owner?.phone || restaurant?.phone || '';
+  const subCity = restaurant?.sub_city || '';
+  const googleMaps = restaurant?.website || restaurant?.google_maps || '';
+  const businessLicenseNumber = restaurant?.business_license_number || '';
+  const tinNumber = restaurant?.tin_number || '';
+  const businessLicenseDoc = restaurant?.settings?.business_license?.url || restaurant?.business_license_url || null;
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
@@ -163,7 +173,7 @@ const RestaurantDetails = () => {
           
           <div className="flex flex-wrap gap-4 mb-4">
             {/* Rating */}
-            {averageRating > 0 && (
+            {Number.isFinite(averageRating) && averageRating > 0 && (
               <div className="flex items-center gap-1">
                 <StarIcon className="w-5 h-5 text-yellow-400" />
                 <span className="font-semibold">{averageRating.toFixed(1)}</span>
@@ -199,7 +209,7 @@ const RestaurantDetails = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
         {/* Contact Information */}
         <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2 text-gray-900">
             <BuildingOfficeIcon className="w-5 h-5 text-primary-600" />
             Contact Information
           </h2>
@@ -215,6 +225,14 @@ const RestaurantDetails = () => {
                 <PhoneIcon className="w-5 h-5 text-gray-400" />
                 <a href={`tel:${phone}`} className="text-gray-600 hover:text-primary-600">
                   {phone}
+                </a>
+              </div>
+            )}
+            {whatsapp && (
+              <div className="flex items-center gap-3">
+                <PhoneIcon className="w-5 h-5 text-gray-400" />
+                <a href={`https://wa.me/${whatsapp.replace(/[^0-9]/g, '')}`} target="_blank" rel="noopener noreferrer" className="text-gray-600 hover:text-primary-600">
+                  WhatsApp: {whatsapp}
                 </a>
               </div>
             )}
@@ -239,7 +257,7 @@ const RestaurantDetails = () => {
 
         {/* Business Hours */}
         <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2 text-gray-900">
             <ClockIcon className="w-5 h-5 text-primary-600" />
             Business Hours
           </h2>
@@ -261,24 +279,59 @@ const RestaurantDetails = () => {
       </div>
 
       {/* Owner Information */}
-      {owner && Object.keys(owner).length > 0 && (
+      {(
+        ownerFullName || ownerEmail || ownerPhone || subCity || googleMaps || businessLicenseNumber || tinNumber || businessLicenseDoc
+      ) && (
         <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 mb-8">
-          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2 text-gray-900">
             <UsersIcon className="w-5 h-5 text-primary-600" />
-            Owner Information
+            Owner & Business Information
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <p className="text-sm text-gray-500">Name</p>
-              <p className="font-medium">{owner.full_name || 'N/A'}</p>
+              <p className="text-sm text-gray-600">Owner Full Name</p>
+              <p className="font-medium text-gray-900">{ownerFullName || 'N/A'}</p>
             </div>
             <div>
-              <p className="text-sm text-gray-500">Email</p>
-              <p className="font-medium">{owner.email || 'N/A'}</p>
+              <p className="text-sm text-gray-600">Owner Email</p>
+              <p className="font-medium text-gray-900">{ownerEmail || 'N/A'}</p>
             </div>
             <div>
-              <p className="text-sm text-gray-500">Phone</p>
-              <p className="font-medium">{owner.phone || 'N/A'}</p>
+              <p className="text-sm text-gray-600">Owner Phone</p>
+              <p className="font-medium text-gray-900">{ownerPhone || 'N/A'}</p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-600">Sub-city / District</p>
+              <p className="font-medium text-gray-900">{subCity || 'N/A'}</p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-600">Google Maps Link</p>
+              {googleMaps ? (
+                <a href={googleMaps} target="_blank" rel="noopener noreferrer" className="text-primary-600">
+                  {googleMaps}
+                </a>
+              ) : (
+                <p className="font-medium text-gray-900">N/A</p>
+              )}
+            </div>
+            
+            <div>
+              <p className="text-sm text-gray-600">Business License Number</p>
+              <p className="font-medium text-gray-900">{businessLicenseNumber || 'N/A'}</p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-600">TIN Number</p>
+              <p className="font-medium text-gray-900">{tinNumber || 'N/A'}</p>
+            </div>
+            <div className="md:col-span-2">
+              <p className="text-sm text-gray-600">Business License Document</p>
+              {businessLicenseDoc ? (
+                <a href={businessLicenseDoc} target="_blank" rel="noopener noreferrer" className="text-primary-600">
+                  View / Download document
+                </a>
+              ) : (
+                <p className="font-medium text-gray-700">No file uploaded</p>
+              )}
             </div>
           </div>
         </div>

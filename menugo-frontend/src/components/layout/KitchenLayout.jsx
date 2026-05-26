@@ -2,6 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
+import { toast } from 'react-toastify';
+import { SUCCESS_MESSAGES } from '../../utils/constants';
 import { useWebSocket } from '../../hooks/useWebSocket';
 import KitchenSoundNotification from '../kitchen/KitchenSoundNotification';
 import { Activity, Check, User, Coffee, Settings, LogOut } from 'lucide-react'
@@ -29,6 +31,12 @@ const KitchenLayout = () => {
 
   const handleLogout = async () => {
     await logout();
+    // Show a friendly toast notification on logout so kitchen users see feedback
+    try {
+      toast.success(SUCCESS_MESSAGES.LOGOUT || 'Logged out');
+    } catch (e) {
+      // ignore toast errors
+    }
     navigate('/login');
   };
 
@@ -36,8 +44,8 @@ const KitchenLayout = () => {
   const bannerSrc = user?.restaurant?.banner || user?.restaurant?.image || null;
 
   const menuItems = [
-    { path: '/chef/kitchen', label: 'Active Orders', icon: <Activity className="w-5 h-5" /> },
-    { path: '/chef/completed', label: 'Completed', icon: <Check className="w-5 h-5" /> },
+    // { path: '/chef/kitchen', label: 'Active Orders', icon: <Activity className="w-5 h-5" /> },
+    // { path: '/chef/completed', label: 'Completed', icon: <Check className="w-5 h-5" /> },
   ];
 
   const isActivePath = (p) => {
@@ -51,11 +59,11 @@ const KitchenLayout = () => {
   };
 
   return (
-    <div className="kitchen-layout min-h-screen bg-gray-100">
+    <div className="kitchen-layout min-h-screen bg-white font-['Manrope',system-ui,sans-serif] text-gray-900">
       <KitchenSoundNotification enabled={true} />
       
       {/* Top Navigation Bar (now white with dark text to match restaurant header) */}
-      <nav className="bg-white text-black border-b shadow-sm sticky top-0 z-50">
+      <nav className="sticky top-0 z-50 border-b border-orange-100 bg-white/90 text-black shadow-sm backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-4">
@@ -67,8 +75,10 @@ const KitchenLayout = () => {
               )}
 
               <div className="flex items-center space-x-2">
-                <User className="w-6 h-6 text-gray-700" />
-                <span className="font-bold text-xl">Kitchen Display</span>
+                <div className="rounded-full bg-gradient-to-r from-orange-500 to-blue-500 p-1.5 text-white shadow-sm">
+                  <User className="w-4 h-4" />
+                </div>
+                <span className="font-extrabold text-xl tracking-tight">Kitchen Display</span>
               </div>
 
               <div className="hidden md:flex space-x-4">
@@ -76,13 +86,12 @@ const KitchenLayout = () => {
                   <button
                     key={item.path}
                     onClick={() => navigate(item.path)}
-                    className={`px-3 py-2 rounded-md text-sm font-medium transition ${
+                    className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition-all ${
                       isActivePath(item.path)
-                        ? 'bg-orange-100 text-orange-700'
-                        : 'text-gray-700 hover:bg-gray-100'
+                        ? 'bg-orange-100 text-orange-700 shadow-sm ring-1 ring-orange-200'
+                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                     }`}
                   >
-                    <span className="mr-2">{item.icon}</span>
                     {item.label}
                   </button>
                 ))}
@@ -93,42 +102,42 @@ const KitchenLayout = () => {
               {/* Connection Status */}
               <div className="flex items-center space-x-2">
                 <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
-                <span className="text-sm hidden md:inline">
+                <span className="text-sm hidden md:inline text-gray-600">
                   {isConnected ? 'Live' : 'Reconnecting'}
                 </span>
               </div>
               
               {/* Time */}
-              <div className="hidden md:block text-sm">
+              <div className="hidden md:block text-sm text-gray-600">
                 {currentTime.toLocaleTimeString()}
               </div>
               
               {/* User Menu */}
               <div className="relative group">
-                <button className="flex items-center space-x-2 focus:outline-none">
-                  <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
+                <button className="flex items-center space-x-2 rounded-full border border-gray-200 bg-white px-2 py-1 shadow-sm focus:outline-none">
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-orange-500 to-blue-500 flex items-center justify-center shadow-sm">
                     {user?.name ? (
-                      <span className="text-sm font-bold text-black">{user.name.charAt(0)}</span>
+                      <span className="text-sm font-bold text-white">{user.name.charAt(0)}</span>
                     ) : (
-                      <span className="text-sm font-bold">C</span>
+                      <span className="text-sm font-bold text-white">C</span>
                     )}
                   </div>
-                  <span className="hidden md:inline text-sm">{user?.name || 'Chef'}</span>
+                  <span className="hidden md:inline text-sm font-semibold text-gray-700">{user?.name || 'Chef'}</span>
                 </button>
                 
-                <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 hidden group-hover:block z-50">
-                  <div className="px-4 py-2 text-xs text-gray-600 border-b">
+                <div className="absolute right-0 mt-2 w-52 overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-2xl hidden group-hover:block z-50">
+                  <div className="px-4 py-3 text-xs text-gray-500 border-b border-gray-100">
                     {user?.email}
                   </div>
                   <button
                     onClick={() => navigate('/chef/kitchen')}
-                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    className="block w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-orange-50"
                   >
-                    <Settings className="w-4 h-4 inline-block mr-2" /> Profile Settings
+                    <Settings className="w-4 h-4 inline-block mr-2 text-orange-600" /> Profile Settings
                   </button>
                   <button
                     onClick={handleLogout}
-                    className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
+                    className="block w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50"
                   >
                     <LogOut className="w-4 h-4 inline-block mr-2" /> Logout
                   </button>
@@ -147,7 +156,7 @@ const KitchenLayout = () => {
       </nav>
       
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 py-6">
+      <main className="relative max-w-7xl mx-auto px-4 py-6">
         <Outlet />
       </main>
       

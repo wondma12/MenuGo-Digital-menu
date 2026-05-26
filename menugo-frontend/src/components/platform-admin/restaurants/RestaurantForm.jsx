@@ -20,8 +20,7 @@ import Button from '../../../common/Button'
 import FileUpload from '../../../common/FileUpload'
 import Loading from '../../../common/Loading'
 import Alert from '../../../common/Alert'
-import { createRestaurant, updateRestaurant, getRestaurantDetails } from '../../../services/restaurantService'
-import { uploadFile } from '../../../services/uploadService'
+import { createRestaurant, updateRestaurant, getRestaurantDetails, uploadDocument } from '../../../services/restaurantService'
 import toast from 'react-hot-toast'
 
 const schema = yup.object({
@@ -31,6 +30,11 @@ const schema = yup.object({
   address: yup.string().required('Address is required'),
   city: yup.string().required('City is required'),
   country: yup.string().required('Country is required'),
+  ownerName: yup.string().required('Owner full name is required'),
+  ownerEmail: yup.string().email('Invalid owner email').required('Owner email is required'),
+  businessLicenseNumber: yup.string().required('Business license number is required'),
+  tinNumber: yup.string().required('TIN number is required'),
+  googleMapsLink: yup.string().url('Invalid URL').required('Google Maps link is required'),
   description: yup.string().max(500, 'Description cannot exceed 500 characters'),
   cuisineType: yup.string(),
   subscriptionTier: yup.string().required('Subscription tier is required'),
@@ -42,9 +46,13 @@ const RestaurantForm = () => {
   const isEditing = !!id
   const [logoFile, setLogoFile] = useState(null)
   const [coverFile, setCoverFile] = useState(null)
+  const [logoRawFile, setLogoRawFile] = useState(null)
+  const [coverRawFile, setCoverRawFile] = useState(null)
   const [logoPreview, setLogoPreview] = useState(null)
   const [coverPreview, setCoverPreview] = useState(null)
   const [isUploading, setIsUploading] = useState(false)
+  const [licenseFile, setLicenseFile] = useState(null)
+  const [licensePreview, setLicensePreview] = useState(null)
 
   const { data: restaurant, isLoading: isLoadingRestaurant } = useQuery(
     ['restaurant', id],
@@ -88,8 +96,30 @@ const RestaurantForm = () => {
       // Set these values into the form so manual URLs persist
       setValue('logoUrl', logoUrl || '')
       setValue('coverImageUrl', coverUrl || '')
+
+      // Owner / business fields
+      setValue('ownerName', restaurant.owner_name || restaurant.ownerName || '')
+      setValue('ownerEmail', restaurant.owner_email || restaurant.ownerEmail || '')
+      setValue('ownerPhone', restaurant.owner_phone || restaurant.ownerPhone || '')
+      setValue('subCity', restaurant.sub_city || restaurant.subCity || '')
+      setValue('businessLicenseNumber', restaurant.business_license_number || restaurant.businessLicenseNumber || '')
+      setValue('tinNumber', restaurant.tin_number || restaurant.tinNumber || '')
+      setValue('slogan', restaurant.slogan || restaurant.restaurant_slogan || '')
+      setValue('googleMapsLink', restaurant.google_maps_link || restaurant.googleMapsLink || restaurant.restaurant_website || '')
     }
   }, [restaurant, reset])
+
+  // Set license preview from restaurant settings if available
+  useEffect(() => {
+    if (restaurant) {
+      const license = restaurant.settings?.business_license || restaurant.business_license || null
+      if (license && license.url) setLicensePreview(license.url)
+      else if (restaurant.settings && restaurant.settings.business_license && typeof restaurant.settings.business_license === 'string') {
+        // fallback: if stored as string URL
+        setLicensePreview(restaurant.settings.business_license)
+      }
+    }
+  }, [restaurant])
 
   // Watch manual URL fields and update previews when no uploaded file present
   const watchedLogoUrl = watch('logoUrl')
@@ -111,9 +141,15 @@ const RestaurantForm = () => {
   }, [watchedCoverUrl, coverFile])
 
   const createMutation = useMutation(createRestaurant, {
-    onSuccess: () => {
+    onSuccess: (res) => {
+      const created = res?.data || res || {}
+      const restaurantId = created.id || created.restaurant?.id
       toast.success('Restaurant created successfully')
-      navigate('/platform/restaurants')
+      if (restaurantId) {
+        navigate(`/platform/restaurants/${restaurantId}/edit`)
+      } else {
+        navigate('/platform/restaurants')
+      }
     },
     onError: (error) => {
       toast.error(error.response?.data?.message || 'Failed to create restaurant')
@@ -121,42 +157,43 @@ const RestaurantForm = () => {
   })
 
   const updateMutation = useMutation(updateRestaurant, {
-    onSuccess: () => {
+    onSuccess: (res) => {
+      const updated = res?.data || res || {}
+      // If backend returned updated settings with business_license, show preview
+      const license = (updated && (updated.settings?.business_license || updated.restaurant?.settings?.business_license))
+      if (license && license.url) setLicensePreview(license.url)
       toast.success('Restaurant updated successfully')
-      navigate('/platform/restaurants')
+      // Keep user on the page so they can see the uploaded license preview
     },
     onError: (error) => {
       toast.error(error.response?.data?.message || 'Failed to update restaurant')
     },
   })
 
-  const handleLogoUpload = async (file) => {
+  const handleLogoUpload = (file) => {
     if (file) {
-      setIsUploading(true)
-      try {
-        const result = await uploadFile(file, 'restaurant-logos')
-        setLogoFile(result.url)
-        setLogoPreview(URL.createObjectURL(file))
-      } catch (error) {
-        toast.error('Failed to upload logo')
-      } finally {
-        setIsUploading(false)
-      }
+      setLogoRawFile(file)
+      // Show local preview; actual upload happens on form submit
+      setLogoPreview(URL.createObjectURL(file))
+      // clear any previously persisted uploaded URL
+      setLogoFile(null)
     }
   }
 
-  const handleCoverUpload = async (file) => {
+  const handleCoverUpload = (file) => {
     if (file) {
-      setIsUploading(true)
-      try {
-        const result = await uploadFile(file, 'restaurant-covers')
-        setCoverFile(result.url)
-        setCoverPreview(URL.createObjectURL(file))
-      } catch (error) {
-        toast.error('Failed to upload cover image')
-      } finally {
-        setIsUploading(false)
-      }
+      setCoverRawFile(file)
+      // Show local preview; actual upload happens on form submit
+      setCoverPreview(URL.createObjectURL(file))
+      setCoverFile(null)
+    }
+  }
+
+  const handleLicenseSelect = async (file) => {
+    if (file) {
+      // Keep the raw file and show its name as preview; actual upload happens on submit
+      setLicenseFile(file)
+      setLicensePreview(file.name || 'license_document')
     }
   }
 
@@ -167,10 +204,50 @@ const RestaurantForm = () => {
       coverImageUrl: coverFile || coverPreview,
     }
 
-    if (isEditing) {
-      updateMutation.mutate({ id, data: formData })
-    } else {
-      createMutation.mutate(formData)
+    // Map owner/business fields to backend expected keys
+    if (formData.ownerName) formData.owner_name = formData.ownerName
+    if (formData.ownerEmail) formData.owner_email = formData.ownerEmail
+    if (formData.ownerPhone) formData.owner_phone = formData.ownerPhone
+    if (formData.businessLicenseNumber) formData.business_license_number = formData.businessLicenseNumber
+    if (formData.tinNumber) formData.tin_number = formData.tinNumber
+    if (formData.googleMapsLink) formData.restaurant_website = formData.googleMapsLink
+    if (formData.slogan) formData.restaurant_slogan = formData.slogan
+
+    try {
+      if (licenseFile || logoRawFile || coverRawFile) {
+        // Build multipart FormData including the license file and other fields
+        const fd = new FormData()
+        // Append top-level restaurant fields
+        Object.keys(formData).forEach((key) => {
+          const val = formData[key]
+          if (val === null || typeof val === 'undefined') return
+          // don't append nested objects like settings directly
+          if (typeof val === 'object' && !(val instanceof File) && !(val instanceof Blob)) {
+            fd.append(key, JSON.stringify(val))
+          } else {
+            fd.append(key, val)
+          }
+        })
+        // Append license file under 'document' to match backend route
+        if (licenseFile) fd.append('document', licenseFile)
+        if (logoRawFile) fd.append('logo', logoRawFile)
+        if (coverRawFile) fd.append('coverImage', coverRawFile)
+
+        if (isEditing) {
+          await updateMutation.mutateAsync({ id, data: fd })
+        } else {
+          await createMutation.mutateAsync(fd)
+        }
+      } else {
+        // No file: continue with existing JSON flow
+        if (isEditing) {
+          await updateMutation.mutateAsync({ id, data: formData })
+        } else {
+          await createMutation.mutateAsync(formData)
+        }
+      }
+    } catch (err) {
+      console.error(err)
     }
   }
 
@@ -348,6 +425,88 @@ const RestaurantForm = () => {
             />
           </div>
         </div>
+
+          {/* Owner & Business Information */}
+          <div className="bg-white rounded-xl p-6 border border-gray-200">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Owner & Business Information</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Input
+                label="Owner Full Name"
+                {...register('ownerName')}
+                error={errors.ownerName?.message}
+                required
+              />
+              <Input
+                label="Owner Email"
+                type="email"
+                {...register('ownerEmail')}
+                error={errors.ownerEmail?.message}
+                required
+              />
+              <Input
+                label="Owner Phone"
+                {...register('ownerPhone')}
+                error={errors.ownerPhone?.message}
+              />
+              <Input
+                label="Sub-city / District"
+                {...register('subCity')}
+                error={errors.subCity?.message}
+              />
+              <Input
+                label="Google Maps Link"
+                {...register('googleMapsLink')}
+                error={errors.googleMapsLink?.message}
+                placeholder="https://maps.google.com/..."
+              />
+              <Input
+                label="Slogan"
+                {...register('slogan')}
+                error={errors.slogan?.message}
+              />
+              <Input
+                label="Business License Number"
+                {...register('businessLicenseNumber')}
+                error={errors.businessLicenseNumber?.message}
+                required
+              />
+              <Input
+                label="TIN Number"
+                {...register('tinNumber')}
+                error={errors.tinNumber?.message}
+                required
+              />
+            </div>
+
+            <div className="mt-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Business License Document</label>
+              {licensePreview ? (
+                <div className="flex items-center gap-4">
+                  {/https?:\/\//i.test(licensePreview) ? (
+                    <a href={licensePreview} target="_blank" rel="noopener noreferrer" className="text-primary-600 text-sm">
+                      View / Download document
+                    </a>
+                  ) : (
+                    <div className="text-sm text-gray-700">{licensePreview}</div>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => { setLicenseFile(null); setLicensePreview(null); }}
+                    className="px-2 py-1 text-sm bg-red-600 text-white rounded"
+                  >
+                    Remove
+                  </button>
+                </div>
+              ) : (
+                <FileUpload
+                  onFileSelect={handleLicenseSelect}
+                  accept={{ '*': ['.pdf', '.doc', '.docx', '.png', '.jpg'] }}
+                  label="Upload business license (PDF or image)"
+                />
+              )}
+              <p className="text-xs text-gray-500 mt-2">Upload the official business license document for verification.</p>
+            </div>
+          </div>
 
         {/* Subscription Information */}
         <div className="bg-white rounded-xl p-6 border border-gray-200">

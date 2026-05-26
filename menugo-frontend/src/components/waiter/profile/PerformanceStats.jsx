@@ -1,6 +1,7 @@
 import React from 'react'
 import { motion } from 'framer-motion'
 import { Star, ShoppingBag, DollarSign, BarChart } from 'lucide-react'
+import { formatPrice } from '../../../utils/currency'
 
 const PerformanceStats = ({ stats }) => {
   const items = [
@@ -12,7 +13,7 @@ const PerformanceStats = ({ stats }) => {
     },
     {
       label: 'Total Revenue Generated',
-      value: `$${stats?.totalRevenue?.toLocaleString() || 0}`,
+      value: formatPrice(stats?.totalRevenue || 0),
       icon: DollarSign,
       color: 'green'
     },
@@ -24,7 +25,7 @@ const PerformanceStats = ({ stats }) => {
     },
     {
       label: 'Total Tips Earned',
-      value: `$${stats?.totalTips?.toLocaleString() || 0}`,
+      value: formatPrice(stats?.totalTips || 0),
       icon: DollarSign,
       color: 'purple'
     }

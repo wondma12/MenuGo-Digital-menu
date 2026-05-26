@@ -40,58 +40,58 @@ const RestaurantFilters = ({ filters, onFiltersChange }) => {
   const hasActiveFilters = filters.status !== 'all' || filters.tier !== 'all' || filters.country !== 'all';
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-4">
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="font-medium text-black">Filters</h3>
+    <div className="rounded-none border border-orange-100 bg-gradient-to-br from-white to-orange-50/40 p-4 shadow-sm">
+      <div className="mb-4 flex items-center justify-between">
+        <h3 className="font-black text-slate-900">Filters</h3>
         {hasActiveFilters && (
           <button
             onClick={clearFilters}
-            className="text-sm text-black hover:text-gray-700"
+            className="text-sm font-semibold text-orange-600 hover:text-orange-700"
           >
             Clear all
           </button>
         )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         {/* Status Filter */}
         <div>
-          <label className="block text-sm font-medium text-black mb-1">Status</label>
+          <label className="mb-1 block text-sm font-semibold text-slate-700">Status</label>
           <select
             value={filters.status}
             onChange={(e) => handleFilterChange('status', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-primary-500 focus:border-transparent text-black"
+            className="w-full rounded-none border border-slate-200 bg-white px-3 py-2 text-slate-900 outline-none focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
           >
             {statusOptions.map(option => (
-              <option key={option.value} value={option.value} className="text-black">{option.label}</option>
+              <option key={option.value} value={option.value} className="text-slate-900">{option.label}</option>
             ))}
           </select>
         </div>
 
         {/* Subscription Tier Filter */}
         <div>
-          <label className="block text-sm font-medium text-black mb-1">Subscription</label>
+          <label className="mb-1 block text-sm font-semibold text-slate-700">Subscription</label>
           <select
             value={filters.tier}
             onChange={(e) => handleFilterChange('tier', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-primary-500 focus:border-transparent text-black"
+            className="w-full rounded-none border border-slate-200 bg-white px-3 py-2 text-slate-900 outline-none focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
           >
             {tierOptions.map(option => (
-              <option key={option.value} value={option.value} className="text-black">{option.label}</option>
+              <option key={option.value} value={option.value} className="text-slate-900">{option.label}</option>
             ))}
           </select>
         </div>
 
         {/* Country Filter */}
         <div>
-          <label className="block text-sm font-medium text-black mb-1">Country</label>
+          <label className="mb-1 block text-sm font-semibold text-slate-700">Country</label>
           <select
             value={filters.country}
             onChange={(e) => handleFilterChange('country', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-primary-500 focus:border-transparent text-black"
+            className="w-full rounded-none border border-slate-200 bg-white px-3 py-2 text-slate-900 outline-none focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
           >
             {countryOptions.map(option => (
-              <option key={option.value} value={option.value} className="text-black">{option.label}</option>
+              <option key={option.value} value={option.value} className="text-slate-900">{option.label}</option>
             ))}
           </select>
         </div>

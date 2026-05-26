@@ -16,9 +16,9 @@ const Button = ({
   ...props
 }) => {
   const variants = {
-    primary: 'bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-600 hover:to-indigo-700 text-white shadow-md focus:ring-sky-300',
+    primary: 'bg-gradient-to-r from-orange-500 to-blue-500 hover:from-orange-600 hover:to-blue-600 text-white shadow-md focus:ring-orange-300',
     secondary: 'bg-white border border-gray-200 hover:bg-gray-50 text-gray-800 focus:ring-gray-300',
-    outline: 'border-2 border-sky-500 text-sky-600 hover:bg-sky-600 hover:text-white focus:ring-sky-300',
+    outline: 'border-2 border-orange-500 text-orange-600 hover:bg-orange-600 hover:text-white focus:ring-orange-300',
     danger: 'bg-red-600 hover:bg-red-700 text-white focus:ring-red-500',
     success: 'bg-green-600 hover:bg-green-700 text-white focus:ring-green-500',
     warning: 'bg-yellow-500 hover:bg-yellow-600 text-white focus:ring-yellow-400',

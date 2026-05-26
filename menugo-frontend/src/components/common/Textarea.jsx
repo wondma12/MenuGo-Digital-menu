@@ -19,7 +19,7 @@ const Textarea = forwardRef(({
   return (
     <div className={`mb-4 ${containerClassName}`}>
       {label && (
-        <label htmlFor={name} className="block text-sm font-medium text-gray-700 mb-1">
+        <label htmlFor={name} className="block text-sm font-medium text-slate-700 mb-1">
           {label}
           {required && <span className="text-red-500 ml-1">*</span>}
         </label>
@@ -36,16 +36,16 @@ const Textarea = forwardRef(({
         disabled={disabled}
         readOnly={readOnly}
         className={`
-          w-full px-4 py-2.5 border rounded-lg resize-y
-          focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent
+          w-full border border-slate-200 bg-white px-4 py-2.5 text-slate-900 rounded-none resize-y
+          focus:outline-none focus:ring-2 focus:ring-orange-100 focus:border-orange-300
           transition-all duration-200
-          ${error ? 'border-red-500' : 'border-gray-300'}
-          ${disabled ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'}
+          ${error ? 'border-rose-500 focus:border-rose-500 focus:ring-rose-100' : ''}
+          ${disabled ? 'bg-slate-50 cursor-not-allowed text-slate-400' : ''}
           ${className}
         `}
         {...props}
       />
-      {error && <p className="mt-1 text-sm text-red-500">{error}</p>}
+      {error && <p className="mt-1 text-sm text-rose-500">{error}</p>}
     </div>
   )
 })

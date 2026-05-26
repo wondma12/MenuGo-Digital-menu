@@ -1,4 +1,4 @@
-import React, { useCallback, useState, useMemo } from 'react'
+import React, { useCallback, useState, useMemo, useEffect } from 'react'
 import { useDropzone } from 'react-dropzone'
 import { CloudArrowUpIcon, DocumentIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -24,7 +24,6 @@ const FileUpload = ({ onFileSelect, accept = 'image/*', maxSize = 5 * 1024 * 102
     // Update files using functional state update to avoid stale closures
     setFiles(prev => {
       const newFiles = multiple ? [...prev, ...acceptedFiles] : acceptedFiles
-      onFileSelect?.(multiple ? newFiles : newFiles[0])
       return newFiles
     })
   }, [multiple, onFileSelect, maxSize])
@@ -50,30 +49,40 @@ const FileUpload = ({ onFileSelect, accept = 'image/*', maxSize = 5 * 1024 * 102
   const removeFile = (index) => {
     const newFiles = files.filter((_, i) => i !== index)
     setFiles(newFiles)
-    onFileSelect?.(multiple ? newFiles : newFiles[0])
   }
+
+  // Notify parent when `files` changes, avoid updating parent state during render
+  useEffect(() => {
+    try {
+      onFileSelect?.(multiple ? files : files[0] || null)
+    } catch (e) {
+      // swallow errors from parent handlers to avoid breaking upload UI
+      // parent should handle its own errors
+      console.error('FileUpload onFileSelect error', e)
+    }
+  }, [files, multiple, onFileSelect])
 
   return (
     <div className={className}>
-      {label && <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>}
+      {label && <label className="block text-sm font-medium text-slate-700 mb-1">{label}</label>}
       
       <div
         {...getRootProps()}
         className={`
-          border-2 border-dashed rounded-lg p-6 text-center cursor-pointer
+          border-2 border-dashed border-slate-200 rounded-none p-6 text-center cursor-pointer bg-white
           transition-colors duration-200
-          ${isDragActive ? 'border-primary-500 bg-primary-50' : 'border-gray-300 hover:border-primary-400'}
-          ${error ? 'border-red-500' : ''}
+          ${isDragActive ? 'border-orange-400 bg-orange-50' : 'hover:border-orange-300'}
+          ${error ? 'border-rose-500' : ''}
         `}
       >
         <input {...getInputProps()} />
-        <CloudArrowUpIcon className="mx-auto h-12 w-12 text-gray-400 mb-3" />
-        <p className="text-sm text-gray-600">
+        <CloudArrowUpIcon className="mx-auto mb-3 h-12 w-12 text-orange-400" />
+        <p className="text-sm text-slate-600">
           {isDragActive ? 'Drop files here...' : 'Drag & drop files here, or click to select'}
         </p>
-        <p className="text-xs text-gray-400 mt-1">Supported files: {acceptLabel} up to {maxSize / 1024 / 1024}MB</p>
+        <p className="mt-1 text-xs text-slate-400">Supported files: {acceptLabel} up to {maxSize / 1024 / 1024}MB</p>
       </div>
-      {error && <p className="mt-1 text-sm text-red-500">{error}</p>}
+      {error && <p className="mt-1 text-sm text-rose-500">{error}</p>}
       
           {files.length > 0 && (
             <div className="mt-4 space-y-2">
@@ -86,24 +95,24 @@ const FileUpload = ({ onFileSelect, accept = 'image/*', maxSize = 5 * 1024 * 102
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: 20 }}
-                    className="flex items-center justify-between p-2 bg-gray-50 rounded-lg"
+                    className="flex items-center justify-between bg-slate-50 p-2 rounded-none"
                   >
                     <div className="flex items-center gap-2">
                       {isImage ? (
-                        <img src={previewUrl} alt={file.name} className="w-10 h-10 object-cover rounded" />
+                        <img src={previewUrl} alt={file.name} className="h-10 w-10 rounded-none object-cover" />
                       ) : (
-                        <DocumentIcon className="w-5 h-5 text-gray-500" />
+                        <DocumentIcon className="h-5 w-5 text-slate-500" />
                       )}
                       <div>
-                        <p className="text-sm font-medium text-gray-700">{file.name}</p>
-                        <p className="text-xs text-gray-500">{(file.size / 1024).toFixed(2)} KB</p>
+                        <p className="text-sm font-medium text-slate-700">{file.name}</p>
+                        <p className="text-xs text-slate-500">{(file.size / 1024).toFixed(2)} KB</p>
                       </div>
                     </div>
                     <button
                       onClick={() => removeFile(index)}
-                      className="p-1 hover:bg-gray-200 rounded"
+                      className="rounded-none p-1 hover:bg-slate-200"
                     >
-                      <XMarkIcon className="w-4 h-4 text-gray-500" />
+                      <XMarkIcon className="h-4 w-4 text-slate-500" />
                     </button>
                   </motion.div>
                 )

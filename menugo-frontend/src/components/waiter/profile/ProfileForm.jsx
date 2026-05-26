@@ -30,18 +30,28 @@ const ProfileForm = ({ profile }) => {
   })
 
   const handleAvatarUpload = async (files) => {
-    if (files[0]) {
-      setIsUploading(true)
+    // FileUpload may pass a single File, an array of Files, or null
+    const file = Array.isArray(files) ? files[0] : files
+    if (!file) return
+
+    setIsUploading(true)
+    try {
+      const result = await uploadFile(file, 'avatars')
+      // `uploadFile` should return an object with `url` pointing to stored file
+      setAvatarFile(result?.url || null)
+      // preview using local file when available
       try {
-        const result = await uploadFile(files[0], 'avatars')
-        setAvatarFile(result.url)
-        setAvatarPreview(URL.createObjectURL(files[0]))
-      } catch (error) {
-        toast.error('Failed to upload avatar')
-      } finally {
-        setIsUploading(false)
+        setAvatarPreview(URL.createObjectURL(file))
+      } catch (e) {
+        // fallback to returned URL
+        if (result?.url) setAvatarPreview(result.url)
       }
+    } catch (error) {
+      toast.error('Failed to upload avatar')
+    } finally {
+      setIsUploading(false)
     }
+    return
   }
 
   const onSubmit = (data) => {

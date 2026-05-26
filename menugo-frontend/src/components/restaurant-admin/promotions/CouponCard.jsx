@@ -5,6 +5,7 @@ import Badge from '../../../common/Badge'
 import ConfirmationDialog from '../../../common/ConfirmationDialog'
 import { updateCouponStatus, deleteCoupon } from '../../../services/promotionService'
 import toast from 'react-hot-toast'
+import { formatPrice } from '../../../utils/currency'
 
 const CouponCard = ({ coupon, onEdit, onRefresh }) => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
@@ -34,7 +35,7 @@ const CouponCard = ({ coupon, onEdit, onRefresh }) => {
     if (coupon.discountType === 'percentage') {
       return `${coupon.discountValue}% OFF`
     }
-    return `$${coupon.discountValue} OFF`
+    return `${formatPrice(coupon.discountValue)} OFF`
   }
 
   const isExpired = new Date(coupon.endDate) <= new Date()
@@ -70,7 +71,7 @@ const CouponCard = ({ coupon, onEdit, onRefresh }) => {
               {coupon.minimumOrderAmount && (
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-500">Min. Order:</span>
-                  <span className="font-medium text-gray-900">${coupon.minimumOrderAmount}</span>
+                  <span className="font-medium text-gray-900">{formatPrice(coupon.minimumOrderAmount)}</span>
                 </div>
               )}
               <div className="flex justify-between text-sm">

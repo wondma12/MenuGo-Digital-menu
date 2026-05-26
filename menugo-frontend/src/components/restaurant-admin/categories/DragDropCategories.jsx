@@ -40,15 +40,15 @@ const DragDropCategories = ({ categories, onReorder }) => {
   }
 
   return (
-    <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-      <div className="border-b border-gray-200 bg-gray-50 p-4">
+    <div className="overflow-hidden rounded-none bg-white shadow-[0_16px_40px_rgba(15,23,42,0.06)]">
+      <div className="p-4">
         <div className="flex items-center gap-2">
-          <Bars3Icon className="h-5 w-5 text-gray-500" />
-          <span className="text-sm text-gray-600">Use the arrows to reorder categories</span>
+          <Bars3Icon className="h-5 w-5 text-slate-500" />
+          <span className="text-sm text-slate-600">Use the arrows to reorder categories</span>
         </div>
       </div>
 
-      <div className="divide-y divide-gray-100">
+      <div className="divide-y divide-slate-100">
         {items.map((category, index) => (
           <motion.div
             key={category.id}
@@ -57,17 +57,17 @@ const DragDropCategories = ({ categories, onReorder }) => {
             className="flex items-center justify-between p-4"
           >
             <div className="flex items-center gap-3">
-              <Bars3Icon className="h-5 w-5 text-gray-400" />
+              <Bars3Icon className="h-5 w-5 text-slate-400" />
               {category.icon ? (
-                <img src={category.icon} alt={category.name} className="h-8 w-8 rounded-lg object-cover" />
+                <img src={category.icon} alt={category.name} className="h-8 w-8 rounded-none object-cover" />
               ) : (
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary-100">
-                  <FolderIcon className="h-4 w-4 text-primary-600" />
+                <div className="flex h-8 w-8 items-center justify-center rounded-none bg-orange-50">
+                  <FolderIcon className="h-4 w-4 text-orange-600" />
                 </div>
               )}
               <div>
-                <p className="font-medium text-gray-900">{category.name}</p>
-                <p className="text-xs text-gray-500">{category.itemCount || 0} items</p>
+                <p className="font-medium text-slate-900">{category.name}</p>
+                <p className="text-xs text-slate-500">{category.itemCount || 0} items</p>
               </div>
             </div>
 
@@ -76,7 +76,7 @@ const DragDropCategories = ({ categories, onReorder }) => {
                 type="button"
                 onClick={() => moveItem(index, -1)}
                 disabled={index === 0}
-                className="rounded-lg border border-gray-200 p-2 text-gray-500 disabled:opacity-40"
+                className="rounded-none border border-slate-200 p-2 text-slate-500 disabled:opacity-40"
               >
                 <ArrowUpIcon className="h-4 w-4" />
               </button>
@@ -84,7 +84,7 @@ const DragDropCategories = ({ categories, onReorder }) => {
                 type="button"
                 onClick={() => moveItem(index, 1)}
                 disabled={index === items.length - 1}
-                className="rounded-lg border border-gray-200 p-2 text-gray-500 disabled:opacity-40"
+                className="rounded-none border border-slate-200 p-2 text-slate-500 disabled:opacity-40"
               >
                 <ArrowDownIcon className="h-4 w-4" />
               </button>

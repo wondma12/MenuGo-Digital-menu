@@ -9,7 +9,8 @@ class KitchenController {
   async getDashboardData(req, res) {
     try {
       const { restaurantId } = req.params;
-      const data = await KitchenOrder.getDashboardData(restaurantId);
+      const { date } = req.query;
+      const data = await KitchenOrder.getDashboardData(restaurantId, date);
       // Normalize DB snake_case -> frontend camelCase shape
       const normalizeItem = (it) => ({
         id: it.id,

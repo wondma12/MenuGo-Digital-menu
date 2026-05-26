@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { motion } from 'framer-motion'
 import { useQuery } from 'react-query'
 import { useAuthStore } from '../../../store/authStore'
+import { startOfMonth, endOfMonth } from 'date-fns'
 import {
   ShoppingBagIcon,
   CurrencyDollarIcon,
@@ -20,16 +21,16 @@ import LowStockAlert from './LowStockAlert'
 import CustomerInsights from './CustomerInsights'
 import Loading from '../../common/Loading'
 import Alert from '../../common/Alert'
-import PageHero from '../../common/PageHero'
 import { getRestaurantDashboardData } from '../../../services/restaurantService'
+import { formatPrice } from '../../../utils/currency'
 
 const RestaurantDashboard = () => {
   const { user } = useAuthStore()
   // Normalize restaurant id from user object (accept string or nested object)
   const restaurantId = user?.restaurant_id?.id || user?.restaurant_id || user?.restaurant?.id || user?.restaurant?._id
   const [dateRange, setDateRange] = useState({
-    start: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-    end: new Date(),
+    start: startOfMonth(new Date()),
+    end: endOfMonth(new Date()),
   })
 
   const { data, isLoading, error, refetch } = useQuery(
@@ -66,47 +67,50 @@ const RestaurantDashboard = () => {
       title: 'Today\'s Orders',
       value: data?.todayOrders || 0,
       change: data?.ordersChange || 0,
-      icon: ShoppingBagIcon,
       color: 'blue',
     },
     {
       title: 'Completed Today',
       value: data?.completedToday || data?.completed_today || 0,
       change: 0,
-      icon: ClockIcon,
       color: 'teal',
     },
     {
       title: 'Today\'s Revenue',
-      value: `$${data?.todayRevenue?.toLocaleString() || 0}`,
+      value: formatPrice(data?.todayRevenue || 0),
       change: data?.revenueChange || 0,
-      icon: CurrencyDollarIcon,
       color: 'green',
     },
     {
       title: 'Avg Rating',
       value: `${data?.avgRating || 0}/5`,
       change: data?.ratingChange || 0,
-      icon: StarIcon,
       color: 'yellow',
     },
   ]
 
   return (
-    <div className="p-6 space-y-6">
-      <PageHero
-        title="Restaurant Dashboard"
-        subtitle={`Welcome back, ${user?.full_name?.split(' ')?.[0] || ''}! Here's your business overview`}
-        // stats={[
-        //   { label: "Today's Orders", value: data?.todayOrders || 0 },
-        //   { label: "Completed Today", value: data?.completedToday || data?.completed_today || 0 },
-        //   { label: "Active Customers", value: data?.activeCustomers || 0 },
-        // ]}
-        primaryAction={<QuickActions restaurantId={restaurantId} />}
-      />
+    <div className="relative overflow-hidden space-y-6 bg-white p-4 sm:p-6 lg:p-8 font-['Manrope',system-ui,sans-serif] text-slate-900">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(251,146,60,0.12),transparent_35%),radial-gradient(circle_at_bottom_left,_rgba(59,130,246,0.08),transparent_35%)]" />
+      <div className="pointer-events-none absolute -left-24 top-24 h-72 w-72 rounded-full bg-orange-300/20 blur-3xl" />
+      <div className="pointer-events-none absolute -right-20 top-1/2 h-80 w-80 rounded-full bg-blue-300/20 blur-3xl" />
+
+      <div className="relative mx-auto max-w-7xl space-y-6">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="max-w-2xl space-y-2">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-orange-600">Restaurant dashboard</p>
+            <h1 className="text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">Restaurant Dashboard</h1>
+            <p className="text-sm leading-6 text-slate-500 sm:text-base">Welcome back, {user?.full_name?.split(' ')?.[0] || ''}! Here&apos;s your business overview.</p>
+          </div>
+          <div className="relative z-50">
+            <QuickActions restaurantId={restaurantId} />
+          </div>
+        </div>
+
+      </div>
 
       {/* Metrics Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
         {metrics.map((metric, index) => (
           <motion.div
             key={metric.title}
@@ -120,10 +124,10 @@ const RestaurantDashboard = () => {
       </div>
 
       {/* Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* <div className="grid grid-cols-1 lg:grid-cols-2 gap-6"> */}
         <RevenueChart data={data?.revenueData || []} />
         <OrdersChart data={data?.ordersData || []} />
-      </div>
+      {/* </div> */}
 
       {/* Popular Items & Today Schedule */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -132,7 +136,7 @@ const RestaurantDashboard = () => {
       </div>
 
       {/* Alerts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <LowStockAlert items={data?.lowStockItems || []} />
         <CustomerInsights insights={data?.customerInsights || {}} />
       </div>

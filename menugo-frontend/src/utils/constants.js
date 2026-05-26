@@ -151,9 +151,9 @@ export const DATE_FORMATS = {
 
 // Currency
 export const CURRENCY = {
-  CODE: 'USD',
-  SYMBOL: '$',
-  LOCALE: 'en-US',
+  CODE: 'ETB',
+  SYMBOL: 'Br',
+  LOCALE: 'en-ET',
 }
 
 // File upload limits

@@ -30,13 +30,13 @@ const BulkActions = ({ selectedCount, onAction, onClear }) => {
 
   return (
     <>
-      <div className="bg-primary-50 rounded-lg p-3 flex items-center justify-between">
+      <div className="flex items-center justify-between bg-orange-50 p-3">
         <div className="flex items-center gap-3">
-          <span className="text-sm font-medium text-primary-700">
+          <span className="text-sm font-medium text-orange-700">
             {selectedCount} item{selectedCount !== 1 ? 's' : ''} selected
           </span>
-          <div className="h-4 w-px bg-primary-300" />
-          <button onClick={onClear} className="text-sm text-primary-600 hover:text-primary-700 flex items-center gap-1">
+          <div className="h-4 w-px bg-orange-300" />
+          <button onClick={onClear} className="flex items-center gap-1 text-sm text-orange-600 hover:text-orange-700">
             <XMarkIcon className="w-4 h-4" />
             Clear
           </button>

@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { motion } from 'framer-motion'
 import { useQuery } from 'react-query'
+import { startOfMonth, endOfMonth } from 'date-fns'
 import {
   BuildingOfficeIcon,
   UserGroupIcon,
@@ -20,7 +21,11 @@ import Loading from '../../common/Loading'
 import { getPlatformDashboardData } from '../../../services/analyticsService'
 
 const PlatformDashboard = () => {
-  const [dateRange, setDateRange] = useState({ start: new Date(), end: new Date() })
+  // Default to the current month so charts reflect the selected month range
+  const now = new Date()
+  const defaultStart = startOfMonth(now)
+  const defaultEnd = endOfMonth(now)
+  const [dateRange, setDateRange] = useState({ start: defaultStart, end: defaultEnd })
   
   const { data, isLoading } = useQuery(
     ['platformDashboard', dateRange],
@@ -48,12 +53,12 @@ const PlatformDashboard = () => {
       color: 'green'
     },
     {
-      title: 'Open Tickets',
-      value: data?.openTickets || 0,
-      icon: TicketIcon,
-      trend: data?.ticketsTrend || 0,
-      trendValue: '-5%',
-      color: 'red'
+      title: 'Pending Verification',
+      value: data?.pendingVerification || 0,
+      icon: ExclamationTriangleIcon,
+      trend: undefined,
+      trendValue: '',
+      color: 'yellow'
     },
     {
       title: 'Platform Health',
@@ -66,18 +71,23 @@ const PlatformDashboard = () => {
   ]
 
   return (
-    <div className="p-6 space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Platform Dashboard</h1>
-          <p className="text-gray-500 mt-1">Overview of your entire platform performance</p>
+    <div className="space-y-6 bg-white p-4 sm:p-6 lg:p-8 font-['Manrope',system-ui,sans-serif] text-slate-900">
+      {/* <div className="relative z-30 overflow-visible rounded-none border border-orange-100 bg-white p-5 pb-10 shadow-sm sm:p-6 sm:pb-12 lg:p-7 lg:pb-12"> */}
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_rgba(251,146,60,0.12),transparent_45%),radial-gradient(ellipse_at_bottom_left,_rgba(59,130,246,0.08),transparent_55%)]" />
+        <div className="relative z-40 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div className="max-w-2xl">
+            {/* <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-orange-600">Platform overview</p> */}
+            <h1 className="mt-1.5 text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">Platform Dashboard</h1>
+            <p className="mt-2 text-sm leading-6 text-slate-500 sm:text-base">Overview of your entire platform performance</p>
+          </div>
+          <div className="relative z-50">
+            <QuickActions />
+          </div>
         </div>
-        <QuickActions />
-      </div>
+      {/* </div> */}
 
       {/* Stats Grid: use same columns as restaurant dashboard for consistent card sizes */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="relative z-10 -mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4 sm:-mt-6">
         {stats.map((stat, index) => (
           <motion.div
             key={index}
@@ -92,13 +102,16 @@ const PlatformDashboard = () => {
       </div>
 
       {/* Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="relative z-10 flex items-center justify-between mb-2">
+        <p className="text-xs text-slate-500">Note: totals and chart counts reflect completed orders only.</p>
+      </div>
+      {/* <div className="grid grid-cols-1 gap-6 lg:grid-cols-2"> */}
         <RevenueChart data={data?.revenueData || []} />
         <RestaurantGrowthChart data={data?.growthData || []} />
-      </div>
+      {/* </div> */}
 
       {/* Metrics & Health Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2">
           <PlatformMetrics data={data?.metrics || {}} />
         </div>
@@ -108,21 +121,21 @@ const PlatformDashboard = () => {
       </div>
 
       {/* Recent Activity Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <RecentRestaurants restaurants={data?.recentRestaurants || []} />
         <RecentOrders orders={data?.recentOrders || []} />
-      </div>
+      </div> */}
 
       {/* Alerts Section */}
       {data?.alerts && data.alerts.length > 0 && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+        <div className="rounded-3xl border border-amber-100 bg-gradient-to-br from-white to-amber-50/50 p-4 shadow-sm">
           <div className="flex items-center gap-2 mb-3">
-            <ExclamationTriangleIcon className="w-5 h-5 text-yellow-600" />
-            <h3 className="font-semibold text-yellow-800">System Alerts</h3>
+            <ExclamationTriangleIcon className="w-5 h-5 text-amber-500" />
+            <h3 className="font-bold text-slate-900">System Alerts</h3>
           </div>
           <div className="space-y-2">
             {data.alerts.map((alert, index) => (
-              <div key={index} className="text-sm text-yellow-700">
+              <div key={index} className="text-sm text-slate-600">
                 • {alert.message}
               </div>
             ))}

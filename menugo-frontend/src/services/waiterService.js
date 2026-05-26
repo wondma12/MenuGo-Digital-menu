@@ -78,7 +78,18 @@ export const getWaiterTables = async () => {
 
   try {
     const response = await api.get(`/tables/restaurant/${restaurantId}`)
-    return response?.data?.data ?? response.data ?? []
+    const rawTables = response?.data?.data ?? response.data ?? []
+
+    return Array.isArray(rawTables)
+      ? rawTables.map((table) => ({
+          ...table,
+          tableNumber: table?.tableNumber ?? table?.table_number ?? table?.number ?? table?.tableNo ?? table?.table_no ?? null,
+          status: String(
+            table?.status ||
+            (table?.current_order_id || table?.current_waiter_id || table?.current_customer_name || table?.occupied_since ? 'occupied' : 'available')
+          ).toLowerCase(),
+        }))
+      : []
   } catch (err) {
     console.error('getWaiterTables: failed to fetch tables', err)
     return []

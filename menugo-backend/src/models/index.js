@@ -176,6 +176,8 @@ const defineAssociations = () => {
   
   Waiter.hasMany(WaiterCallRequest, { foreignKey: 'waiter_id', as: 'waiter_calls' });
   WaiterCallRequest.belongsTo(Waiter, { foreignKey: 'waiter_id', as: 'call_waiter' });
+  // Associate call requests with tables for convenience
+  WaiterCallRequest.belongsTo(Table, { foreignKey: 'table_id', as: 'table' });
   
   Waiter.hasMany(WaiterTip, { foreignKey: 'waiter_id', as: 'waiter_tips' });
   WaiterTip.belongsTo(Waiter, { foreignKey: 'waiter_id', as: 'tip_waiter' });

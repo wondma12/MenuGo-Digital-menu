@@ -240,8 +240,8 @@ const DATE_FORMATS = {
 
 // Currency
 const CURRENCY = {
-  CODE: 'USD',
-  SYMBOL: '$',
+  CODE: 'ETB',
+  SYMBOL: 'Br',
   DECIMAL_PLACES: 2,
 };
 

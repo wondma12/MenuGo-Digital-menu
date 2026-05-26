@@ -71,29 +71,29 @@ async function run() {
     console.log('  Created order id:', orderId);
 
     console.log('\n3) Logging in as waiter to verify the order');
-      // Ensure restaurant owner is available to create staff mapping if needed
-      console.log('\n3) Ensuring waiter is registered as staff (owner login)');
-      const loginOwnerForStaff = await axios.post(`${API}/auth/login`, ownerCreds);
-      const ownerTokenForStaff = loginOwnerForStaff.data?.data?.token;
-      if (!ownerTokenForStaff) throw new Error('Failed to obtain owner token for staff seeding');
-      try {
-        await axios.post(`${API}/staff`, { restaurant_id: restaurantId, email: waiterCreds.email, role: 'waiter' }, { headers: { Authorization: `Bearer ${ownerTokenForStaff}` } });
-        console.log('  Created restaurant staff mapping for waiter');
-      } catch (e) {
-        console.log('  Staff create skipped or failed (may already exist):', e.response?.data?.message || e.message);
-      }
+    // Ensure restaurant owner is available to create staff mapping if needed
+    console.log('\n3) Ensuring waiter is registered as staff (owner login)');
+    const loginOwnerForStaff = await axios.post(`${API}/auth/login`, ownerCreds);
+    const ownerTokenForStaff = loginOwnerForStaff.data?.data?.token;
+    if (!ownerTokenForStaff) throw new Error('Failed to obtain owner token for staff seeding');
+    try {
+      await axios.post(`${API}/staff`, { restaurant_id: restaurantId, email: waiterCreds.email, role: 'waiter' }, { headers: { Authorization: `Bearer ${ownerTokenForStaff}` } });
+      console.log('  Created restaurant staff mapping for waiter');
+    } catch (e) {
+      console.log('  Staff create skipped or failed (may already exist):', e.response?.data?.message || e.message);
+    }
 
-      console.log('\n4) Logging in as waiter to verify the order');
-      const loginWaiter = await axios.post(`${API}/auth/login`, waiterCreds);
-      const waiterToken = loginWaiter.data?.data?.token;
-      if (!waiterToken) throw new Error('Failed to obtain waiter token');
-      console.log('  Waiter token acquired');
+    console.log('\n4) Logging in as waiter to verify the order');
+    const loginWaiter = await axios.post(`${API}/auth/login`, waiterCreds);
+    const waiterToken = loginWaiter.data?.data?.token;
+    if (!waiterToken) throw new Error('Failed to obtain waiter token');
+    console.log('  Waiter token acquired');
 
-      console.log('5) Verifying order as waiter (method=manual)');
-      await axios.post(`${API}/orders/${orderId}/verify`, { method: 'manual' }, {
-        headers: { Authorization: `Bearer ${waiterToken}` }
-      });
-      console.log('  Order verified by waiter');
+    console.log('5) Verifying order as waiter (method=manual)');
+    await axios.post(`${API}/orders/${orderId}/verify`, { method: 'manual' }, {
+      headers: { Authorization: `Bearer ${waiterToken}` }
+    });
+    console.log('  Order verified by waiter');
 
     console.log('\n5) Logging in as restaurant owner to inspect kitchen dashboard and advance statuses');
     const loginOwner = await axios.post(`${API}/auth/login`, ownerCreds);

@@ -4,7 +4,7 @@ import { useMutation } from 'react-query'
 import Modal from '../../../common/Modal'
 import Button from '../../../common/Button'
 import { ArrowDownTrayIcon, PrinterIcon } from '@heroicons/react/24/outline'
-import { generateRestaurantQRCode } from '../../../services/qrService'
+import { generateTableQRCode } from '../../../services/qrService'
 import toast from 'react-hot-toast'
 import html2canvas from 'html2canvas'
 
@@ -12,27 +12,35 @@ const QRCodeGenerator = ({ isOpen, onClose, table }) => {
   const qrRef = useRef()
   const [qrUrl, setQrUrl] = useState(null)
 
-  const generateMutation = useMutation(generateRestaurantQRCode, {
+  const generateMutation = useMutation(
+    ({ restaurantId, tableId }) => generateTableQRCode(restaurantId, tableId),
+    {
     onSuccess: (data) => {
-      // data expected: { qr_code, qr_image_url, qr_base64 }
       const payload = data || {}
-      const qrTarget = payload.qr_code?.url || payload.url || payload.qr_image_url || payload.qr_base64
+      const qrTarget = payload.qr_code?.url || payload.url || ''
+      if (!qrTarget) {
+        toast.error('QR target URL was not returned')
+        return
+      }
       setQrUrl(qrTarget)
       toast.success('QR Code generated successfully')
     },
-  })
+    }
+  )
 
   const handleGenerate = () => {
     const restaurantId = table?.restaurant_id || table?.restaurantId
+    const tableId = table?.id
     if (!restaurantId) return toast.error('Restaurant ID not available')
-    generateMutation.mutate(restaurantId)
+    if (!tableId) return toast.error('Table ID not available')
+    generateMutation.mutate({ restaurantId, tableId })
   }
 
   const handleDownload = async () => {
     if (qrRef.current) {
       const canvas = await html2canvas(qrRef.current)
       const link = document.createElement('a')
-      link.download = `table_${table.tableNumber}_qr.png`
+      link.download = `table_${table?.tableNumber || table?.table_number}_qr.png`
       link.href = canvas.toDataURL()
       link.click()
       toast.success('QR Code downloaded')
@@ -47,7 +55,7 @@ const QRCodeGenerator = ({ isOpen, onClose, table }) => {
       const printWindow = window.open('', '_blank')
       printWindow.document.write(`
         <html>
-          <head><title>QR Code - Table ${table.tableNumber}</title></head>
+          <head><title>QR Code - Table ${table?.tableNumber || table?.table_number}</title></head>
           <body style="display:flex;justify-content:center;align-items:center;height:100vh">
             <img src="${dataUrl}" />
           </body>
@@ -58,7 +66,7 @@ const QRCodeGenerator = ({ isOpen, onClose, table }) => {
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={`QR Code - Table ${table?.tableNumber}`} size="sm">
+    <Modal isOpen={isOpen} onClose={onClose} title={`QR Code - Table ${table?.tableNumber || table?.table_number}`} size="sm">
       <div className="text-center space-y-6">
         {!qrUrl ? (
           <div className="py-8">
@@ -76,8 +84,8 @@ const QRCodeGenerator = ({ isOpen, onClose, table }) => {
             </div>
             <div>
               <p className="text-sm text-gray-500 mb-2">Scan to view menu</p>
-              {table?.tableNumber && (
-                <p className="text-xs text-gray-400">Table {table.tableNumber}</p>
+              {(table?.tableNumber || table?.table_number) && (
+                <p className="text-xs text-gray-400">Table {table?.tableNumber || table?.table_number}</p>
               )}
               <div className="flex gap-3 justify-center">
                 <Button onClick={handleDownload} variant="outline" icon={ArrowDownTrayIcon}>

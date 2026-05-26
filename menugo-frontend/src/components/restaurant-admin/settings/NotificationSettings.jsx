@@ -33,8 +33,8 @@ const NotificationSettings = ({ settings }) => {
 
   return (
     <div className="space-y-6">
-      <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Order Notifications</h3>
+      <div className="bg-white rounded-xl border border-slate-100 p-6 space-y-4">
+        <h3 className="text-lg font-semibold text-slate-900 mb-4">Order Notifications</h3>
         <Switch
           label="New Order Notifications"
           checked={formData.orderNotifications}
@@ -56,8 +56,8 @@ const NotificationSettings = ({ settings }) => {
           onChange={(checked) => setFormData({ ...formData, orderStatusSms: checked })}
         />
 
-        <div className="border-t border-gray-200 pt-4 mt-4">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Business Notifications</h3>
+        <div className="border-t border-slate-100 pt-4 mt-4">
+          <h3 className="text-lg font-semibold text-slate-900 mb-4">Business Notifications</h3>
           <Switch
             label="Email Notifications"
             checked={formData.emailNotifications}

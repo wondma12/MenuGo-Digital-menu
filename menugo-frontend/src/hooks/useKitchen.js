@@ -2,6 +2,15 @@
 import { useState, useEffect, useCallback } from 'react';
 import kitchenService from '../services/kitchenService';
 
+const toLocalDateString = (value) => {
+  const date = value instanceof Date ? value : new Date(value)
+  if (Number.isNaN(date.getTime())) return ''
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
 export const useKitchen = (restaurantId) => {
   const [orders, setOrders] = useState([]);
   const [stats, setStats] = useState({});
@@ -13,7 +22,7 @@ export const useKitchen = (restaurantId) => {
     
     try {
       setLoading(true);
-      const response = await kitchenService.getDashboard(restaurantId);
+      const response = await kitchenService.getDashboard(restaurantId, { date: toLocalDateString(new Date()) });
       const payload = response?.data?.data || response?.data || response || {};
       setOrders(payload.orders || []);
       setStats(payload.stats || {});
@@ -37,6 +46,12 @@ export const useKitchen = (restaurantId) => {
   };
 
   useEffect(() => {
+    if (!restaurantId) {
+      setLoading(false);
+      setError('Missing restaurant ID');
+      return;
+    }
+
     fetchDashboard();
     const interval = setInterval(fetchDashboard, 30000);
     return () => clearInterval(interval);

@@ -1,23 +1,25 @@
-import React, { useState, useEffect } from 'react'
-import { Outlet, useNavigate } from 'react-router-dom'
+import React, { useEffect, useState } from 'react'
+import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useAuthStore } from '../../store/authStore'
 import { useWebSocket } from '../../hooks/useWebSocket'
 import { useAudio } from '../../hooks/useAudio'
 import TopBar from './TopBar'
-import BottomNav from './MobileNav'
-import NotificationBell from './NotificationBell'
-import UserMenu from './UserMenu'
 import WaiterSidebar from './WaiterSidebar'
-import Header from './Header'
-import Footer from './Footer'
-import { BarChart2, ShoppingCart, Table, Calendar, Phone, Bell, User } from 'lucide-react'
+import BottomNav from './MobileNav'
+import NotificationBell from '../waiter/notifications/NotificationBell'
+import UserMenu from './UserMenu'
+import toast from '../../utils/hotToastShim'
+import { BarChart2, ShoppingCart, Table, Phone } from 'lucide-react'
+
 const WaiterLayout = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [sidebarOpen, setSidebarOpen] = useState(true)
   const { user, logout } = useAuthStore()
   const navigate = useNavigate()
   const { lastMessage } = useWebSocket()
   const { playSound } = useAudio()
+  const location = useLocation()
 
   useEffect(() => {
     if (lastMessage?.type === 'new_order') {
@@ -26,65 +28,77 @@ const WaiterLayout = () => {
   }, [lastMessage, playSound])
 
   const handleLogout = async () => {
-    await logout()
-    navigate('/login')
+    try {
+      await logout()
+      toast.success('Logged out')
+      navigate('/login')
+    } catch (error) {
+      console.error('Logout failed', error)
+      toast.error('Logout failed')
+    }
   }
 
   const menuItems = [
-    { path: '/waiter/dashboard', label: 'Dashboard', icon: <BarChart2 className="w-5 h-5" /> },
-    { path: '/waiter/orders', label: 'Orders', icon: <ShoppingCart className="w-5 h-5" /> },
-    { path: '/waiter/tables', label: 'Tables', icon: <Table className="w-5 h-5" /> },
-    // { path: '/waiter/reservations', label: 'Reservations', icon: <Calendar className="w-5 h-5" /> },
-    { path: '/waiter/calls', label: 'Calls', icon: <Phone className="w-5 h-5" /> },
-    // { path: '/waiter/notifications', label: 'Notifications', icon: <Bell className="w-5 h-5" /> },
-    { path: '/waiter/profile', label: 'Profile', icon: <User className="w-5 h-5" /> },
+    { path: '/waiter/dashboard', label: 'Dashboard', icon: <BarChart2 className="h-4 w-4" /> },
+    { path: '/waiter/orders', label: 'Orders', icon: <ShoppingCart className="h-4 w-4" /> },
+    { path: '/waiter/tables', label: 'Tables', icon: <Table className="h-4 w-4" /> },
+    { path: '/waiter/calls', label: 'Calls', icon: <Phone className="h-4 w-4" /> },
   ]
 
+  const mobileMenuItems = menuItems.filter((item) => item.path === '/waiter/orders' || item.path === '/waiter/calls')
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-white font-['Manrope',system-ui,sans-serif] text-gray-900">
       <TopBar
         title="Waiter Panel"
         user={user}
-        actions={
+        actions={(
           <div className="flex items-center gap-3">
             <NotificationBell />
             <UserMenu user={user} onLogout={handleLogout} />
           </div>
-        }
-        onMenuClick={() => setIsMobileMenuOpen(true)}
+        )}
+        onMenuClick={() => setSidebarOpen(!sidebarOpen)}
+        showMenuButton={true}
       />
 
-      {/* Main Content */}
-      <main className="pt-16 pb-24">
-        <div className="transition-all duration-300 lg:ml-64">
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="lg:flex lg:items-start lg:gap-6">
-              <aside className="hidden lg:block w-64 fixed inset-y-0 left-0 bg-white border-r border-gray-200">
-                <WaiterSidebar menuItems={menuItems} onLogout={handleLogout} user={user} />
-              </aside>
-
-              <div className="flex-1 mt-0 lg:mt-0">
-                <motion.div
-                  className="mt-4 p-4 sm:p-6 bg-white rounded-lg shadow-sm space-y-6"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <Outlet />
-                </motion.div>
-              </div>
-            </div>
+      {/* Sidebar */}
+      {sidebarOpen && (
+        <motion.aside
+          initial={{ x: -280 }}
+          animate={{ x: 0 }}
+          exit={{ x: -280 }}
+          transition={{ type: 'tween', duration: 0.25 }}
+          className="fixed left-0 top-0 z-30 h-screen w-64 border-r border-slate-200 bg-white/95 shadow-[12px_0_40px_rgba(15,23,42,0.06)] backdrop-blur"
+        >
+          <div className="h-full p-4">
+            <WaiterSidebar menuItems={menuItems} user={user} onLogout={handleLogout} />
           </div>
-        </div>
-      </main>
+        </motion.aside>
+      )}
 
-      <Footer centered />
+      {/* Main Content */}
+      <div className={`transition-all duration-300 ${sidebarOpen ? 'pl-64' : 'pl-0'}`}>
+        <main className="bg-white pt-16 pb-24">
+          <div className="container mx-auto px-3 sm:px-4 lg:px-8">
+            {/* Header nav removed per request */}
 
-      {/* Bottom Navigation (Mobile) */}
+            <motion.div
+              className="mt-4"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              <Outlet />
+            </motion.div>
+          </div>
+        </main>
+      </div>
+
       <BottomNav
         isOpen={isMobileMenuOpen}
         onClose={() => setIsMobileMenuOpen(false)}
-        menuItems={menuItems}
+        menuItems={mobileMenuItems}
         user={user}
         onLogout={handleLogout}
       />

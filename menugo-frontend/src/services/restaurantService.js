@@ -107,22 +107,43 @@ export const getRestaurantSettings = async () => {
 }
 
 export const createRestaurant = async (data) => {
-  const response = await api.post('/restaurants', data)
+  let response
+  if (data instanceof FormData) {
+    response = await api.post('/restaurants', data, { headers: { 'Content-Type': 'multipart/form-data' } })
+  } else {
+    response = await api.post('/restaurants', data)
+  }
   return response?.data?.data || response?.data || {}
 }
 
 // src/services/restaurantService.js
 
-export const updateRestaurant = async (id, data) => {
-  // Ensure id is a string, not an object
-  const restaurantId = typeof id === 'object' ? id.id || id._id : id;
-  
+export const updateRestaurant = async (idOrPayload, maybeData) => {
+  // Support both signatures: (id, data) and ({ id, data })
+  let restaurantId
+  let data
+
+  if (typeof idOrPayload === 'object' && idOrPayload !== null && !Array.isArray(idOrPayload) && typeof maybeData === 'undefined') {
+    // Called as updateRestaurant({ id, data })
+    restaurantId = idOrPayload.id || idOrPayload._id || idOrPayload.restaurant_id
+    data = idOrPayload.data || idOrPayload.payload || null
+  } else {
+    restaurantId = typeof idOrPayload === 'object' ? idOrPayload.id || idOrPayload._id : idOrPayload
+    data = maybeData
+  }
+
   if (!restaurantId || restaurantId === '[object Object]') {
-    console.error('Invalid restaurant ID:', id);
+    console.error('Invalid restaurant ID:', idOrPayload);
     throw new Error('Invalid restaurant ID');
   }
-  
-  const response = await api.put(`/restaurants/${restaurantId}`, data);
+
+  let response
+  if (data instanceof FormData) {
+    response = await api.put(`/restaurants/${restaurantId}`, data, { headers: { 'Content-Type': 'multipart/form-data' } })
+  } else {
+    response = await api.put(`/restaurants/${restaurantId}`, data)
+  }
+
   return response?.data?.data || response?.data || {};
 };
 
@@ -402,6 +423,73 @@ export const updateThemeSettings = async (settings) => {
   return response?.data?.data || response?.data || {}
 }
 
+const parseLocalDate = (value) => {
+  if (!value) return null
+  if (value instanceof Date) return new Date(value)
+
+  if (typeof value === 'string') {
+    const trimmed = value.trim()
+    const dateOnlyMatch = trimmed.match(/^(\d{4})-(\d{2})-(\d{2})$/)
+    if (dateOnlyMatch) {
+      const year = Number(dateOnlyMatch[1])
+      const month = Number(dateOnlyMatch[2]) - 1
+      const day = Number(dateOnlyMatch[3])
+      return new Date(year, month, day)
+    }
+  }
+
+  const parsed = new Date(value)
+  if (Number.isNaN(parsed.getTime())) return null
+  return parsed
+}
+
+const formatDateKey = (value) => {
+  const parsed = parseLocalDate(value)
+  if (!parsed) return null
+
+  const year = parsed.getFullYear()
+  const month = String(parsed.getMonth() + 1).padStart(2, '0')
+  const day = String(parsed.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+const buildDailySeries = (series, startDate, endDate) => {
+  const start = parseLocalDate(startDate)
+  const end = parseLocalDate(endDate)
+  if (!start || !end) return Array.isArray(series) ? series : []
+
+  const map = new Map()
+  ;(Array.isArray(series) ? series : []).forEach((item) => {
+    const key = formatDateKey(item.date || item.label || item.period || item.month || item.day || item.time)
+    if (!key) return
+
+    map.set(key, {
+      date: key,
+      revenue: Number(item.revenue ?? item.total_revenue ?? item.amount ?? item.value ?? 0),
+      orders: Number(item.orders ?? item.total_orders ?? item.order_count ?? item.count ?? 0),
+    })
+  })
+
+  const normalized = []
+  const cursor = new Date(start)
+  cursor.setHours(0, 0, 0, 0)
+  const last = new Date(end)
+  last.setHours(0, 0, 0, 0)
+
+  while (cursor <= last) {
+    const key = formatDateKey(cursor)
+    const existing = map.get(key) || {}
+    normalized.push({
+      date: key,
+      revenue: Number(existing.revenue ?? 0),
+      orders: Number(existing.orders ?? 0),
+    })
+    cursor.setDate(cursor.getDate() + 1)
+  }
+
+  return normalized
+}
+
 // export const getRestaurantDashboardData = async (dateRange) => {
 //   const response = await api.get('/restaurants/dashboard', { params: dateRange })
 //   return response?.data?.data || response?.data || {}
@@ -425,8 +513,8 @@ export const getRestaurantDashboardData = async ({ restaurantId, startDate, endD
   // but the backend ignores it in favor of auth, so we rely on the token.
   const response = await api.get('/dashboard/restaurant', {
     params: {
-      startDate: startDate?.toISOString(),
-      endDate: endDate?.toISOString(),
+      startDate: formatDateKey(startDate),
+      endDate: formatDateKey(endDate),
       // include restaurantId as a hint for proxies that may accept it
       restaurantId: rid,
     }
@@ -452,8 +540,28 @@ export const getRestaurantDashboardData = async ({ restaurantId, startDate, endD
     activeCustomers: stats.active_customers ?? stats.activeCustomers ?? payload.active_customers ?? payload.activeCustomers ?? 0,
     avgRating: stats.avg_rating ?? stats.avgRating ?? payload.avg_rating ?? payload.avgRating ?? 0,
     ratingChange: stats.rating_change ?? stats.ratingChange ?? payload.rating_change ?? payload.ratingChange ?? 0,
-    revenueData: payload.revenue_data || payload.revenueData || [],
-    ordersData: payload.orders_data || payload.ordersData || payload.revenue_data || [],
+    revenueData: buildDailySeries(payload.revenue_data || payload.revenueData || [], startDate, endDate).map((point) => {
+      const todayKey = formatDateKey(new Date())
+      if (point.date === todayKey) {
+        return {
+          ...point,
+          revenue: Number(stats.today_revenue ?? payload.today_revenue ?? point.revenue ?? 0),
+          orders: Number(stats.today_orders ?? payload.today_orders ?? point.orders ?? 0),
+        }
+      }
+      return point
+    }),
+    ordersData: buildDailySeries(payload.orders_data || payload.ordersData || payload.revenue_data || payload.revenueData || [], startDate, endDate).map((point) => {
+      const todayKey = formatDateKey(new Date())
+      if (point.date === todayKey) {
+        return {
+          ...point,
+          orders: Number(stats.today_orders ?? payload.today_orders ?? point.orders ?? 0),
+          revenue: Number(stats.today_revenue ?? payload.today_revenue ?? point.revenue ?? 0),
+        }
+      }
+      return point
+    }),
     popularItems: payload.popular_items || payload.popularItems || [],
     lowStockItems: payload.low_stock_items || payload.lowStockItems || [],
     recentOrders: payload.recent_orders || payload.recentOrders || [],

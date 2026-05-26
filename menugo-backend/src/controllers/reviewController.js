@@ -63,40 +63,62 @@ const getRestaurantReviews = catchAsync(async (req, res) => {
     return obj
   })
 
-  // Get average rating
+  // Ensure `total` is a numeric count even if Sequelize returns a non-numeric
+  // value for `count` in some edge cases (group/include combinations).
+  let total = 0;
+  if (typeof count === 'number') {
+    total = count;
+  } else {
+    // Fall back to a safe COUNT query when findAndCountAll didn't return
+    // a numeric total (this happens with GROUP BY in some dialects).
+    total = await Review.count({ where });
+  }
+
+  // Get average rating (approved only) and normalize to a number
   const avgRating = await Review.findOne({
     where: { restaurant_id: restaurantId, status: 'approved' },
     attributes: [[sequelize.fn('AVG', sequelize.col('rating')), 'average_rating']],
   });
+  const average_rating = parseFloat((avgRating && (avgRating.dataValues?.average_rating || avgRating.get && avgRating.get('average_rating'))) || 0) || 0;
 
-  // Get rating distribution
-  const ratingDistribution = await Review.findAll({
+  // Get rating distribution (approved only) and normalize shape
+  const ratingDistributionRaw = await Review.findAll({
     where: { restaurant_id: restaurantId, status: 'approved' },
     attributes: ['rating', [sequelize.fn('COUNT', sequelize.col('rating')), 'count']],
     group: ['rating'],
   });
+  const rating_distribution = (ratingDistributionRaw || []).map(r => {
+    const rv = r && r.dataValues ? r.dataValues : r;
+    return {
+      rating: Number(rv.rating),
+      count: Number(rv.count || (r.get && r.get('count')) || 0),
+    };
+  });
 
-  // Get counts per status (approved, pending, rejected, etc.) for accurate frontend tabs
+  // Get counts per status (approved, pending, rejected, etc.) for frontend tabs
   const statusCountsRaw = await Review.findAll({
     where: { restaurant_id: restaurantId },
     attributes: ['status', [sequelize.fn('COUNT', sequelize.col('status')), 'count']],
     group: ['status'],
   });
-
   const status_counts = (statusCountsRaw || []).reduce((acc, row) => {
-    const st = row.dataValues.status || row.status
-    const cnt = parseInt(row.dataValues.count || row.get('count') || 0)
-    acc[st] = cnt
-    return acc
-  }, {})
+    const rv = row && row.dataValues ? row.dataValues : row;
+    const st = rv.status || row.status;
+    const cnt = parseInt(rv.count || (row.get && row.get('count')) || 0, 10) || 0;
+    acc[st] = cnt;
+    return acc;
+  }, {});
+
+  // Ensure common status keys are present with default 0
+  ['pending', 'approved', 'rejected'].forEach(k => { if (!status_counts[k]) status_counts[k] = 0 });
 
   res.json(ApiResponse.success({
     reviews: normalizedRows,
-    total: count,
+    total,
     page: parseInt(page),
-    totalPages: Math.ceil(count / limit),
-    average_rating: avgRating?.dataValues?.average_rating || 0,
-    rating_distribution: ratingDistribution,
+    totalPages: Math.ceil(total / parseInt(limit) || 1),
+    average_rating,
+    rating_distribution,
     status_counts,
   }, 'Reviews retrieved'));
 });

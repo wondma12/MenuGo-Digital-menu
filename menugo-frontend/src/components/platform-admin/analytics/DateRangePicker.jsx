@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { CalendarIcon } from '@heroicons/react/24/outline'
-import { format } from 'date-fns'
+import { format, endOfMonth } from 'date-fns'
 
 const DateRangePicker = ({ value, onChange, className = '' }) => {
   const [isOpen, setIsOpen] = useState(false)
@@ -34,6 +34,7 @@ const DateRangePicker = ({ value, onChange, className = '' }) => {
       start.setDate(end.getDate() - preset.days)
     } else if (preset.type === 'month') {
       start = new Date(end.getFullYear(), end.getMonth(), 1)
+      end = endOfMonth(end)
     } else if (preset.type === 'lastMonth') {
       start = new Date(end.getFullYear(), end.getMonth() - 1, 1)
       end.setDate(0)
@@ -51,20 +52,20 @@ const DateRangePicker = ({ value, onChange, className = '' }) => {
     <div className={`relative ${className}`} ref={pickerRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="px-4 py-2 border border-gray-300 rounded-lg flex items-center gap-2 hover:bg-gray-50"
+        className="inline-flex shrink-0 items-center gap-2 rounded-none border border-orange-200 bg-white px-3 py-2 text-xs font-medium whitespace-nowrap text-slate-700 shadow-sm transition-all duration-200 hover:border-orange-300 hover:bg-orange-50/70 hover:text-slate-900"
       >
-        <CalendarIcon className="w-4 h-4 text-gray-400" />
-        <span className="text-sm text-gray-700">{displayValue}</span>
+        <CalendarIcon className="h-3.5 w-3.5 text-orange-500" />
+        <span>{displayValue}</span>
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+        <div className="absolute right-0 z-50 mt-2 w-72 overflow-hidden rounded-none border border-orange-100 bg-white/95 shadow-[0_24px_60px_rgba(15,23,42,0.14)] backdrop-blur">
           <div className="p-2">
             {presets.map((preset, index) => (
               <button
                 key={index}
                 onClick={() => applyPreset(preset)}
-                className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 rounded-lg"
+                className="w-full rounded-none px-3 py-2 text-left text-xs text-slate-700 transition-colors duration-150 hover:bg-gradient-to-r hover:from-orange-50 hover:to-blue-50 hover:text-slate-900"
               >
                 {preset.label}
               </button>

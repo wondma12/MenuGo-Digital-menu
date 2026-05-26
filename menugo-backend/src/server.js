@@ -77,6 +77,128 @@ const startServer = async () => {
     await sequelize.authenticate();
     logger.info('Database connected successfully');
 
+    // Ensure kitchen-related tables exist to avoid runtime errors when migrations
+    // haven't been applied. These are non-destructive CREATE TABLE IF NOT EXISTS
+    // statements and intentionally avoid strict FOREIGN KEY constraints so they
+    // can be created even if referenced tables are not present in some dev setups.
+    try {
+      const db = require('./config/database');
+
+      // Split the CREATE statements and execute them individually. Some MySQL
+      // client pools do not enable multipleStatements by default which causes
+      // multi-statement batches to be parsed as a syntax error by the server.
+      const creates = [
+        `CREATE TABLE IF NOT EXISTS kitchen_orders (
+          id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+          order_id CHAR(36) NOT NULL,
+          restaurant_id CHAR(36) NOT NULL,
+          order_number VARCHAR(50) NOT NULL,
+          table_number VARCHAR(20) DEFAULT NULL,
+          customer_name VARCHAR(100) DEFAULT 'Guest',
+          waiter_id CHAR(36) NULL,
+          waiter_name VARCHAR(100) NULL,
+          status ENUM('pending','preparing','ready','completed','cancelled') DEFAULT 'pending',
+          station VARCHAR(50) DEFAULT 'all',
+          priority ENUM('low','normal','high','urgent') DEFAULT 'normal',
+          started_at DATETIME NULL,
+          ready_at DATETIME NULL,
+          completed_at DATETIME NULL,
+          estimated_time INT DEFAULT 0,
+          notes TEXT NULL,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        )`,
+
+        `CREATE TABLE IF NOT EXISTS kitchen_order_items (
+          id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+          kitchen_order_id INT NOT NULL,
+          item_id CHAR(36) NOT NULL,
+          item_name VARCHAR(200) NOT NULL,
+          quantity INT NOT NULL DEFAULT 1,
+          preparation_time INT DEFAULT 5,
+          special_instructions TEXT NULL,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )`,
+
+        `CREATE TABLE IF NOT EXISTS kitchen_order_item_modifiers (
+          id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+          kitchen_order_item_id INT NOT NULL,
+          modifier_name VARCHAR(100) NOT NULL,
+          modifier_price DECIMAL(10,2) DEFAULT 0,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )`,
+
+        `CREATE TABLE IF NOT EXISTS kitchen_stations (
+          id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+          restaurant_id CHAR(36) NOT NULL,
+          name VARCHAR(100) NOT NULL,
+          station_type ENUM('grill','pizza','salad','dessert','prep','expo','all') NOT NULL,
+          chef_id CHAR(36) NULL,
+          is_active BOOLEAN DEFAULT TRUE,
+          display_order INT DEFAULT 0,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )`,
+
+        `CREATE TABLE IF NOT EXISTS kitchen_station_assignments (
+          id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+          station_id INT NOT NULL,
+          kitchen_order_id INT NOT NULL,
+          started_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          completed_at DATETIME NULL
+        )`,
+
+        `CREATE TABLE IF NOT EXISTS kitchen_activity_logs (
+          id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+          restaurant_id CHAR(36) NOT NULL,
+          kitchen_order_id INT NULL,
+          chef_id CHAR(36) NULL,
+          action VARCHAR(50) NOT NULL,
+          old_status VARCHAR(50) NULL,
+          new_status VARCHAR(50) NULL,
+          notes TEXT NULL,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )`,
+
+        `CREATE TABLE IF NOT EXISTS kitchen_performance_metrics (
+          id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+          restaurant_id CHAR(36) NOT NULL,
+          date DATE NOT NULL,
+          total_orders_completed INT DEFAULT 0,
+          average_prep_time_minutes DECIMAL(10,2) DEFAULT 0,
+          average_wait_time_minutes DECIMAL(10,2) DEFAULT 0,
+          peak_hour_orders INT DEFAULT 0,
+          cancelled_orders INT DEFAULT 0,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )`,
+
+        `CREATE TABLE IF NOT EXISTS kitchen_inventory_alerts (
+          id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+          restaurant_id CHAR(36) NOT NULL,
+          item_id CHAR(36) NOT NULL,
+          item_name VARCHAR(200) NOT NULL,
+          current_stock DECIMAL(10,2) NOT NULL,
+          threshold_level DECIMAL(10,2) NOT NULL,
+          status ENUM('low','critical','out_of_stock') DEFAULT 'low',
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          resolved_at DATETIME NULL
+        )`,
+      ];
+
+      for (const stmt of creates) {
+        try {
+          await db.execute(stmt);
+        } catch (errStmt) {
+          // Log individual statement errors but continue; some dev DBs
+          // might not support certain types or enums. We'll warn with detail.
+          logger.warn('Could not run ensure-statement for kitchen table:', errStmt && errStmt.message ? errStmt.message : errStmt);
+        }
+      }
+
+      logger.info('Ensured kitchen-related tables exist (CREATE TABLE IF NOT EXISTS individual statements).');
+    } catch (ensureError) {
+      logger.warn('Could not ensure kitchen tables on startup:', ensureError && ensureError.message ? ensureError.message : ensureError);
+    }
+
     // Keep destructive schema alteration opt-in to avoid long dev boots and port collisions.
     if (shouldAlterSchema) {
       await sequelize.sync({ alter: true });
@@ -92,7 +214,9 @@ const startServer = async () => {
     server.listen(currentPort, () => {
       logger.info(`Server running on port ${currentPort}`);
       logger.info(`Environment: ${process.env.NODE_ENV}`);
-      logger.info(`API URL: ${process.env.API_URL || `http://localhost:${currentPort}`}`);
+      // Ensure process.env.API_URL reflects actual listening port so generated URLs (local uploads) are correct
+      process.env.API_URL = `http://localhost:${currentPort}`;
+      logger.info(`API URL: ${process.env.API_URL}`);
     });
 
   } catch (error) {

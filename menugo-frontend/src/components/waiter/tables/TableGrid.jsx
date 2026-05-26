@@ -19,32 +19,32 @@ const TableGrid = ({ tables, onTableClick }) => {
     <div className="space-y-6">
       {/* Status Summary */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="bg-green-50 rounded-lg p-3 text-center">
-          <div className="text-2xl font-bold text-green-600">{statusCounts.available}</div>
-          <div className="text-xs text-green-700">Available</div>
+        <div className="rounded-2xl border border-emerald-100 bg-white p-3 text-center shadow-sm">
+          <div className="text-2xl font-black text-emerald-600">{statusCounts.available}</div>
+          <div className="text-xs font-semibold text-emerald-700">Available</div>
         </div>
-        <div className="bg-red-50 rounded-lg p-3 text-center">
-          <div className="text-2xl font-bold text-red-600">{statusCounts.occupied}</div>
-          <div className="text-xs text-red-700">Occupied</div>
+        <div className="rounded-2xl border border-rose-100 bg-white p-3 text-center shadow-sm">
+          <div className="text-2xl font-black text-rose-600">{statusCounts.occupied}</div>
+          <div className="text-xs font-semibold text-rose-700">Occupied</div>
         </div>
-        <div className="bg-yellow-50 rounded-lg p-3 text-center">
-          <div className="text-2xl font-bold text-yellow-600">{statusCounts.reserved}</div>
-          <div className="text-xs text-yellow-700">Reserved</div>
+        <div className="rounded-2xl border border-amber-100 bg-white p-3 text-center shadow-sm">
+          <div className="text-2xl font-black text-amber-600">{statusCounts.reserved}</div>
+          <div className="text-xs font-semibold text-amber-700">Reserved</div>
         </div>
-        <div className="bg-blue-50 rounded-lg p-3 text-center">
-          <div className="text-2xl font-bold text-blue-600">{statusCounts.cleaning}</div>
-          <div className="text-xs text-blue-700">Cleaning</div>
+        <div className="rounded-2xl border border-blue-100 bg-white p-3 text-center shadow-sm">
+          <div className="text-2xl font-black text-blue-600">{statusCounts.cleaning}</div>
+          <div className="text-xs font-semibold text-blue-700">Cleaning</div>
         </div>
       </div>
 
       {/* Tables by Section */}
       {sections.map((section) => (
         <div key={section}>
-          <h3 className="text-md font-semibold text-gray-700 mb-3 capitalize flex items-center gap-2">
-            <span className="w-2 h-2 bg-primary-500 rounded-full"></span>
+          <h3 className="mb-3 flex items-center gap-2 text-md font-semibold text-slate-800 capitalize">
+            <span className="h-2 w-2 rounded-full bg-gradient-to-r from-orange-500 to-blue-500"></span>
             {section}
           </h3>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
             {tables
               ?.filter(t => (t.section || 'General') === section)
               .map((table, index) => (

@@ -6,19 +6,20 @@ import { useKitchen } from '../hooks/useKitchen';
 import { useWebSocket } from '../hooks/useWebSocket';
 import { useAudio } from '../hooks/useAudio';
 import Loading from '../components/common/Loading';
+import { useAuthStore } from '../store/authStore';
 
 const KitchenPage = () => {
   const location = useLocation();
+  const { user } = useAuthStore();
   const [restaurantId, setRestaurantId] = useState(null);
   const { orders, stats, loading, error, updateOrderStatus, refresh } = useKitchen(restaurantId);
   const { onEvent, socket } = useWebSocket();
   const { playSound } = useAudio();
 
   useEffect(() => {
-    const user = JSON.parse(localStorage.getItem('user')) || {};
-    const id = user.restaurantId || user.restaurant_id || (user.restaurant && user.restaurant.id) || null;
+    const id = user?.restaurantId || user?.restaurant_id || (user?.restaurant && user.restaurant.id) || (user?.staff && user.staff.restaurant_id) || null;
     setRestaurantId(id);
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     if (!socket || !restaurantId) return;
@@ -60,6 +61,9 @@ const KitchenPage = () => {
   }, [socket, restaurantId]);
 
   if (loading) return <Loading />;
+  if (!restaurantId) {
+    return <div className="p-4 text-red-500">Restaurant ID not found for this account. Please sign in again or contact support.</div>;
+  }
   if (error) return <div className="text-red-500 p-4">Error: {error}</div>;
 
   // Determine initial tab from the URL path or query param (e.g. ?tab=completed)

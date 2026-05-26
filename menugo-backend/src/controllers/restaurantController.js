@@ -179,6 +179,10 @@ const getRestaurantById = catchAsync(async (req, res) => {
     ...restaurant.toJSON(),
     cover_image_url: restaurant.cover_image_url || null,
     logo_url: restaurant.logo_url || null,
+    tax_rate: restaurant.tax_rate ?? restaurant.getDataValue?.('tax_rate') ?? 0,
+    taxRate: restaurant.tax_rate ?? restaurant.getDataValue?.('tax_rate') ?? 0,
+    service_charge: restaurant.service_charge ?? restaurant.getDataValue?.('service_charge') ?? 0,
+    serviceCharge: restaurant.service_charge ?? restaurant.getDataValue?.('service_charge') ?? 0,
     total_menu_items: totalMenuItems,
     total_categories: totalCategories,
     total_tables: totalTables,
@@ -335,6 +339,47 @@ const createRestaurant = catchAsync(async (req, res) => {
     });
   }
 
+  // If files were uploaded (business license, logo, banner/coverImage), store them accordingly
+  try {
+    const files = req.files || {};
+    const licenseFile = (files.document && files.document[0]) || (files.businessLicenseDocument && files.businessLicenseDocument[0]) || null;
+    if (licenseFile) {
+      const uploadResult = await uploadToCloudinary(licenseFile.path, 'menugo/documents');
+      if (uploadResult && uploadResult.url) {
+        const settings = restaurant.settings || {};
+        settings.business_license = {
+          url: uploadResult.url,
+          publicId: uploadResult.publicId || null,
+          uploadedAt: new Date(),
+          originalName: licenseFile.originalname,
+        };
+        await restaurant.update({ settings });
+      }
+    }
+
+    const logoFile = (files.logo && files.logo[0]) || null;
+    const bannerFile = (files.banner && files.banner[0]) || (files.coverImage && files.coverImage[0]) || null;
+    const updateFields = {};
+    if (logoFile) {
+      const r = await uploadToCloudinary(logoFile.path, 'menugo/restaurants');
+      if (r && r.url) {
+        updateFields.logo_url = r.url;
+      }
+    }
+    if (bannerFile) {
+      const r2 = await uploadToCloudinary(bannerFile.path, 'menugo/restaurants');
+      if (r2 && r2.url) {
+        updateFields.cover_image_url = r2.url;
+      }
+    }
+    if (Object.keys(updateFields).length) {
+      await restaurant.update(updateFields);
+    }
+  } catch (docErr) {
+    console.error('Failed to upload business license during restaurant creation:', docErr && docErr.message ? docErr.message : docErr);
+    // non-fatal
+  }
+
   res.status(201).json(ApiResponse.success({
     restaurant,
     owner: {
@@ -371,21 +416,51 @@ const updateRestaurant = catchAsync(async (req, res) => {
     throw new ApiError(403, 'You do not have permission to update this restaurant');
   }
 
-  // Handle logo upload if provided
-  if (req.file && req.file.fieldname === 'logo') {
-    const uploadResult = await uploadToCloudinary(req.file.path, 'menugo/restaurants');
-    updates.logo_url = uploadResult.url;
+  // Handle uploaded files (support req.files from upload.fields)
+  try {
+    const files = req.files || {};
+    const logoFile = (files.logo && files.logo[0]) || null;
+    const coverFile = (files.coverImage && files.coverImage[0]) || (files.banner && files.banner[0]) || null;
+    const docFile = (files.document && files.document[0]) || (files.businessLicenseDocument && files.businessLicenseDocument[0]) || null;
+
+    if (logoFile) {
+      const uploadResult = await uploadToCloudinary(logoFile.path, 'menugo/restaurants');
+      if (uploadResult && uploadResult.url) {
+        updates.logo_url = uploadResult.url;
+      }
+    }
+
+    if (coverFile) {
+      const uploadResult = await uploadToCloudinary(coverFile.path, 'menugo/restaurants');
+      if (uploadResult && uploadResult.url) {
+        updates.cover_image_url = uploadResult.url;
+      }
+    }
+
+    if (docFile) {
+      try {
+        const uploadResult = await uploadToCloudinary(docFile.path, 'menugo/documents');
+        if (uploadResult && uploadResult.url) {
+          const settings = restaurant.settings || {};
+          settings.business_license = {
+            url: uploadResult.url,
+            publicId: uploadResult.publicId || null,
+            uploadedAt: new Date(),
+            originalName: docFile.originalname,
+          };
+          updates.settings = settings;
+        }
+      } catch (docErr) {
+        console.error('Failed to upload business license during restaurant update:', docErr && docErr.message ? docErr.message : docErr);
+      }
+    }
+  } catch (e) {
+    // ignore file handling errors (non-fatal)
   }
 
-  // Handle cover image upload if provided
-  if (req.file && req.file.fieldname === 'coverImage') {
-    const uploadResult = await uploadToCloudinary(req.file.path, 'menugo/restaurants');
-    updates.cover_image_url = uploadResult.url;
-  }
+  const updatedRestaurant = await restaurant.update(updates);
 
-  await restaurant.update(updates);
-
-  res.json(ApiResponse.success(restaurant, 'Restaurant updated'));
+  res.json(ApiResponse.success(updatedRestaurant, 'Restaurant updated'));
 });
 
 // Delete restaurant
@@ -596,7 +671,7 @@ const deleteRestaurant = catchAsync(async (req, res) => {
     // so the user can still remove the restaurant from the UI without losing
     // the ability to inspect/clean dependent data.
     const fkConstraintError =
-      err && (err.name === 'SequelizeForeignKeyConstraintError' || (err.original && /foreign key/i.test(err.original.message || '')) || /foreign key constraint/i.test(err.message || ''))
+      err && (err.name === 'SequelizeForeignKeyConstraintError' || (err.original && /foreign key/i.test(err.original.message || '')) || /foreign key constraint/i.test(err.message || ''));
 
     if (req.user.role === 'platform_admin' && fkConstraintError) {
       try {
@@ -626,6 +701,49 @@ const updateRestaurantStatus = catchAsync(async (req, res) => {
   }
 
   await restaurant.update({ is_active });
+
+  // If restaurant is being deactivated, deactivate its owner and active staff users (best-effort)
+  if (is_active === false) {
+    try {
+      // Deactivate owner
+      if (restaurant.owner_id) {
+        const owner = await User.findByPk(restaurant.owner_id);
+        if (owner && owner.is_active) {
+          await owner.update({ is_active: false });
+        }
+      }
+
+      // Deactivate staff users associated with this restaurant
+      const staff = await RestaurantStaff.findAll({ where: { restaurant_id: id }, attributes: ['user_id'] });
+      const userIds = staff.map(s => s.user_id).filter(Boolean);
+      if (userIds.length) {
+        await User.update({ is_active: false }, { where: { id: { [Op.in]: userIds } } });
+      }
+    } catch (e) {
+      console.warn('Failed to cascade deactivate users for restaurant:', e && e.message ? e.message : e);
+    }
+  }
+
+  // If restaurant is being activated, attempt to reactivate its owner and staff (best-effort).
+  // This is a convenience to restore access after a restaurant is re-enabled.
+  if (is_active === true) {
+    try {
+      if (restaurant.owner_id) {
+        const owner = await User.findByPk(restaurant.owner_id);
+        if (owner && !owner.is_active) {
+          await owner.update({ is_active: true });
+        }
+      }
+
+      const staff = await RestaurantStaff.findAll({ where: { restaurant_id: id }, attributes: ['user_id'] });
+      const userIds = staff.map(s => s.user_id).filter(Boolean);
+      if (userIds.length) {
+        await User.update({ is_active: true }, { where: { id: { [Op.in]: userIds } } });
+      }
+    } catch (e) {
+      console.warn('Failed to cascade activate users for restaurant:', e && e.message ? e.message : e);
+    }
+  }
 
   res.json(ApiResponse.success({ is_active: restaurant.is_active }, 'Restaurant status updated'));
 });
@@ -733,7 +851,18 @@ const updateSettings = catchAsync(async (req, res) => {
   }
 
   const updatedSettings = { ...restaurant.settings, ...settings };
-  await restaurant.update({ settings: updatedSettings });
+
+  const topLevelUpdates = {}
+  if (typeof settings?.taxRate !== 'undefined') topLevelUpdates.tax_rate = settings.taxRate === '' || settings.taxRate === null ? null : Number(settings.taxRate)
+  if (typeof settings?.serviceCharge !== 'undefined') topLevelUpdates.service_charge = settings.serviceCharge === '' || settings.serviceCharge === null ? null : Number(settings.serviceCharge)
+  if (typeof settings?.taxInclusive !== 'undefined') topLevelUpdates.tax_inclusive = Boolean(settings.taxInclusive)
+  if (typeof settings?.serviceChargeType !== 'undefined') topLevelUpdates.service_charge_type = String(settings.serviceChargeType)
+  if (typeof settings?.applyTaxToDelivery !== 'undefined') topLevelUpdates.apply_tax_to_delivery = Boolean(settings.applyTaxToDelivery)
+
+  await restaurant.update({
+    settings: updatedSettings,
+    ...topLevelUpdates,
+  });
 
   res.json(ApiResponse.success(restaurant.settings, 'Settings updated'));
 });
@@ -749,13 +878,17 @@ const updateSettingsSection = catchAsync(async (req, res) => {
   if (!restaurantId) {
     // Try to find a restaurant owned by this user
     const owned = await Restaurant.findOne({ where: { owner_id: req.user.id } });
-    if (owned) restaurantId = owned.id;
+    if (owned) {
+      restaurantId = owned.id;
+    }
   }
 
   if (!restaurantId) {
     // Try to find a staff assignment
     const staffRec = await RestaurantStaff.findOne({ where: { user_id: req.user.id, is_active: true } });
-    if (staffRec) restaurantId = staffRec.restaurant_id;
+    if (staffRec) {
+      restaurantId = staffRec.restaurant_id;
+    }
   }
 
   if (!restaurantId) {
@@ -794,7 +927,16 @@ const updateSettingsSection = catchAsync(async (req, res) => {
   const merged = { ...sectionValue, ...incoming };
   existing[section] = merged;
 
-  await restaurant.update({ settings: existing });
+  const topLevelUpdates = {}
+  if (section === 'taxes' || section === 'tax') {
+    if (typeof incoming.taxRate !== 'undefined') topLevelUpdates.tax_rate = incoming.taxRate === '' || incoming.taxRate === null ? null : Number(incoming.taxRate)
+    if (typeof incoming.serviceCharge !== 'undefined') topLevelUpdates.service_charge = incoming.serviceCharge === '' || incoming.serviceCharge === null ? null : Number(incoming.serviceCharge)
+    if (typeof incoming.taxInclusive !== 'undefined') topLevelUpdates.tax_inclusive = Boolean(incoming.taxInclusive)
+    if (typeof incoming.serviceChargeType !== 'undefined') topLevelUpdates.service_charge_type = String(incoming.serviceChargeType)
+    if (typeof incoming.applyTaxToDelivery !== 'undefined') topLevelUpdates.apply_tax_to_delivery = Boolean(incoming.applyTaxToDelivery)
+  }
+
+  await restaurant.update({ settings: existing, ...topLevelUpdates });
 
   res.json(ApiResponse.success(existing[section], 'Settings updated'));
 });
@@ -843,18 +985,18 @@ const createTable = catchAsync(async (req, res) => {
   // Attach or generate a restaurant-level QR for the table (do not create per-table QR codes)
   try {
     // Ensure restaurant has a qr_code_identifier; create restaurant-level QR if missing
-    let qrIdentifier = restaurant.qr_code_identifier
-    let qrCloudinaryUrl = null
-    let qrCodeRecord = null
+    let qrIdentifier = restaurant.qr_code_identifier;
+    let qrCloudinaryUrl = null;
+    let qrCodeRecord = null;
 
     if (!qrIdentifier) {
-      qrIdentifier = `${restaurant.name.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}`
-      const qrUrl = `${process.env.CLIENT_URL || 'http://localhost:3000'}/menu/${qrIdentifier}`
-      const qrImagePath = await generateQRCode(qrUrl, qrIdentifier)
-      const qrBase64 = await generateQRCodeBase64(qrUrl)
+      qrIdentifier = `${restaurant.name.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}`;
+      const qrUrl = `${process.env.CLIENT_URL || 'http://localhost:3000'}/menu/${qrIdentifier}`;
+      const qrImagePath = await generateQRCode(qrUrl, qrIdentifier);
+      const qrBase64 = await generateQRCodeBase64(qrUrl);
       if (qrImagePath) {
-        const uploadResult = await uploadToCloudinary(qrImagePath, 'menugo/qrcodes')
-        qrCloudinaryUrl = uploadResult.url
+        const uploadResult = await uploadToCloudinary(qrImagePath, 'menugo/qrcodes');
+        qrCloudinaryUrl = uploadResult.url;
       }
 
       const [newQr] = await QRCode.upsert({
@@ -863,23 +1005,23 @@ const createTable = catchAsync(async (req, res) => {
         url: qrUrl,
         qr_image_url: qrCloudinaryUrl,
         is_active: true,
-      })
+      });
 
-      qrCodeRecord = newQr
-      await restaurant.update({ qr_code_identifier: qrIdentifier, qr_code_url: qrCloudinaryUrl })
+      qrCodeRecord = newQr;
+      await restaurant.update({ qr_code_identifier: qrIdentifier, qr_code_url: qrCloudinaryUrl });
     } else {
       // Try to find an existing restaurant QR record
-      const existing = await QRCode.findOne({ where: { restaurant_id: id, identifier: qrIdentifier } })
+      const existing = await QRCode.findOne({ where: { restaurant_id: id, identifier: qrIdentifier } });
       if (existing) {
-        qrCodeRecord = existing
-        qrCloudinaryUrl = existing.qr_image_url
+        qrCodeRecord = existing;
+        qrCloudinaryUrl = existing.qr_image_url;
       } else {
-        const qrUrl = `${process.env.CLIENT_URL || 'http://localhost:3000'}/menu/${qrIdentifier}`
-        const qrImagePath = await generateQRCode(qrUrl, qrIdentifier)
-        const qrBase64 = await generateQRCodeBase64(qrUrl)
+        const qrUrl = `${process.env.CLIENT_URL || 'http://localhost:3000'}/menu/${qrIdentifier}`;
+        const qrImagePath = await generateQRCode(qrUrl, qrIdentifier);
+        const qrBase64 = await generateQRCodeBase64(qrUrl);
         if (qrImagePath) {
-          const uploadResult = await uploadToCloudinary(qrImagePath, 'menugo/qrcodes')
-          qrCloudinaryUrl = uploadResult.url
+          const uploadResult = await uploadToCloudinary(qrImagePath, 'menugo/qrcodes');
+          qrCloudinaryUrl = uploadResult.url;
         }
 
         const [newQr] = await QRCode.upsert({
@@ -888,18 +1030,18 @@ const createTable = catchAsync(async (req, res) => {
           url: qrUrl,
           qr_image_url: qrCloudinaryUrl,
           is_active: true,
-        })
+        });
 
-        qrCodeRecord = newQr
-        await restaurant.update({ qr_code_url: qrCloudinaryUrl })
+        qrCodeRecord = newQr;
+        await restaurant.update({ qr_code_url: qrCloudinaryUrl });
       }
     }
 
     if (qrCodeRecord) {
-      await table.update({ qr_code_id: qrCodeRecord.id, qr_code_url: qrCloudinaryUrl })
+      await table.update({ qr_code_id: qrCodeRecord.id, qr_code_url: qrCloudinaryUrl });
     }
   } catch (qrError) {
-    console.error('QR generation error:', qrError)
+    console.error('QR generation error:', qrError);
   }
 
   res.status(201).json(ApiResponse.success(table, 'Table created'));

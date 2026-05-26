@@ -34,10 +34,7 @@ const StaffForm = ({ staff, onSubmit, onCancel, isLoading }) => {
     handleSubmit,
     formState: { errors },
     reset,
-    setValue,
   } = useForm({
-    resolver: yupResolver(schema),
-    context: { isEditing },
     defaultValues: {
       role: 'waiter',
       shiftStart: '09:00',
@@ -86,22 +83,21 @@ const StaffForm = ({ staff, onSubmit, onCancel, isLoading }) => {
     { value: 'admin', label: 'Administrator' },
     { value: 'waiter', label: 'Waiter' },
     { value: 'chef', label: 'Chef' },
-   
   ]
 
   return (
-    <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
-      <div className="grid grid-cols-2 gap-4">
-        <Input label="Full Name" {...register('name')} error={errors.name?.message} required />
-        <Input label="Email" type="email" {...register('email')} error={errors.email?.message} required />
-        <Input label="Phone" {...register('phone')} error={errors.phone?.message} required />
-        <Select label="Role" {...register('role')} error={errors.role?.message} options={roleOptions} required />
-        <Input label="Shift Start" type="time" {...register('shiftStart')} error={errors.shiftStart?.message} required />
-        <Input label="Shift End" type="time" {...register('shiftEnd')} error={errors.shiftEnd?.message} required />
-        <Input label="Hourly Rate ($)" type="number" step="0.01" {...register('hourlyRate')} error={errors.hourlyRate?.message} />
+    <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-5">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <Input label="Full Name" {...register('name')} error={errors.name?.message} required className="rounded-none border-slate-200 focus:border-orange-300 focus:ring-orange-100" />
+        <Input label="Email" type="email" {...register('email')} error={errors.email?.message} required className="rounded-none border-slate-200 focus:border-orange-300 focus:ring-orange-100" />
+        <Input label="Phone" {...register('phone')} error={errors.phone?.message} required className="rounded-none border-slate-200 focus:border-orange-300 focus:ring-orange-100" />
+        <Select label="Role" {...register('role')} error={errors.role?.message} options={roleOptions} required className="rounded-none border-slate-200 focus:border-orange-300 focus:ring-orange-100" />
+        <Input label="Shift Start" type="time" {...register('shiftStart')} error={errors.shiftStart?.message} required className="rounded-none border-slate-200 focus:border-orange-300 focus:ring-orange-100" />
+        <Input label="Shift End" type="time" {...register('shiftEnd')} error={errors.shiftEnd?.message} required className="rounded-none border-slate-200 focus:border-orange-300 focus:ring-orange-100" />
+        <Input label="Hourly Rate ($)" type="number" step="0.01" {...register('hourlyRate')} error={errors.hourlyRate?.message} className="rounded-none border-slate-200 focus:border-orange-300 focus:ring-orange-100" />
         {!isEditing && (
           <>
-            <Input label="Password" type="password" {...register('password')} error={errors.password?.message} required />
+            <Input label="Password" type="password" {...register('password')} error={errors.password?.message} required className="rounded-none border-slate-200 focus:border-orange-300 focus:ring-orange-100" />
           </>
         )}
       </div>
@@ -112,12 +108,12 @@ const StaffForm = ({ staff, onSubmit, onCancel, isLoading }) => {
         accept={{ 'image/*': ['.jpeg', '.png', '.jpg'] }}
       />
       {avatarPreview && (
-        <img src={avatarPreview} alt="Preview" className="w-16 h-16 rounded-full object-cover" />
+        <img src={avatarPreview} alt="Preview" className="h-16 w-16 rounded-none object-cover" />
       )}
 
-      <div className="flex justify-end gap-3 pt-4">
-        <Button type="button" variant="secondary" onClick={onCancel}>Cancel</Button>
-        <Button type="submit" isLoading={isLoading || isUploading}>
+      <div className="flex justify-end gap-3 border-t border-slate-100 pt-4">
+        <Button type="button" variant="secondary" onClick={onCancel} className="rounded-none">Cancel</Button>
+        <Button type="submit" isLoading={isLoading || isUploading} className="rounded-none">
           {isEditing ? 'Update Staff' : 'Add Staff'}
         </Button>
       </div>

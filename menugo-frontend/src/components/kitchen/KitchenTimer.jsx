@@ -22,7 +22,7 @@ const KitchenTimer = ({ elapsedTime, targetTime }) => {
   };
 
   return (
-    <div className={`text-sm font-mono flex items-center gap-2 ${getTimerColor()}`}>
+    <div className={`flex items-center gap-2 text-sm font-semibold ${getTimerColor()}`}>
       <Clock className="w-4 h-4" />
       <span>{formatTime(time)}</span>
     </div>

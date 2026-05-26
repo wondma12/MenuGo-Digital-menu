@@ -123,11 +123,12 @@ export const ENDPOINTS = {
 
   // QR Code
   QR: {
-    GENERATE: (restaurantId) => `/restaurants/${restaurantId}/qrcode`,
-    DOWNLOAD: (restaurantId) => `/restaurants/${restaurantId}/qrcode/download`,
-    REGENERATE: (restaurantId) => `/restaurants/${restaurantId}/qrcode/regenerate`,
-    ANALYTICS: (restaurantId) => `/restaurants/${restaurantId}/qrcode/analytics`,
-    SCAN: '/qrcode/scan',
+    GENERATE: (restaurantId) => `/qr/restaurant/${restaurantId}/generate`,
+    GENERATE_TABLE: (restaurantId, tableId) => `/qr/restaurant/${restaurantId}/table/${tableId}/generate`,
+    LIST: (restaurantId) => `/qr/restaurant/${restaurantId}`,
+    DOWNLOAD: (identifier) => `/qr/download/${identifier}`,
+    ANALYTICS: (restaurantId) => `/qr/restaurant/${restaurantId}/analytics`,
+    SCAN: (identifier) => `/qr/scan/${identifier}`,
   },
 
   // Analytics

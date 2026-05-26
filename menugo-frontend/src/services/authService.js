@@ -1,8 +1,14 @@
 import api from './api'
 
+const normalizeEmail = (email) => String(email || '').trim().toLowerCase()
+
 export const login = async (email, password, rememberMe) => {
   try {
-    const response = await api.post('/auth/login', { email, password, rememberMe })
+    const response = await api.post('/auth/login', {
+      email: normalizeEmail(email),
+      password,
+      rememberMe,
+    })
     console.log('Login API Response:', response.data)
     return response.data
   } catch (error) {
@@ -13,7 +19,12 @@ export const login = async (email, password, rememberMe) => {
 
 export const register = async (userData) => {
   try {
-    const response = await api.post('/auth/register', userData)
+    let response
+    if (userData instanceof FormData) {
+      response = await api.post('/auth/register', userData, { headers: { 'Content-Type': 'multipart/form-data' } })
+    } else {
+      response = await api.post('/auth/register', userData)
+    }
     console.log('Register API Response:', response.data)
     return response.data
   } catch (error) {
@@ -46,7 +57,7 @@ export const refreshToken = async () => {
 
 export const forgotPassword = async (email) => {
   try {
-    const response = await api.post('/auth/forgot-password', { email })
+    const response = await api.post('/auth/forgot-password', { email: normalizeEmail(email) })
     return response.data
   } catch (error) {
     console.error('Forgot Password Error:', error.response?.data || error.message)
@@ -54,9 +65,14 @@ export const forgotPassword = async (email) => {
   }
 }
 
-export const resetPassword = async (token, password) => {
+export const resetPassword = async (token, password, confirmPassword = password) => {
   try {
-    const response = await api.post('/auth/reset-password', { token, password })
+    const response = await api.post('/auth/reset-password', {
+      token,
+      password,
+      newPassword: password,
+      confirmPassword,
+    })
     return response.data
   } catch (error) {
     console.error('Reset Password Error:', error.response?.data || error.message)
@@ -154,3 +170,25 @@ export const getCurrentUser = async () => {
     throw error
   }
 }
+
+// Backwards-compatible aggregate export for callers that import `authService`
+const authService = {
+  login,
+  register,
+  logout,
+  refreshToken,
+  forgotPassword,
+  resetPassword,
+  verifyEmail,
+  resendVerificationEmail,
+  changePassword,
+  updateProfile,
+  setupTwoFactor,
+  verifyTwoFactor,
+  disableTwoFactor,
+  socialLogin,
+  getCurrentUser,
+}
+
+export { authService }
+export default authService

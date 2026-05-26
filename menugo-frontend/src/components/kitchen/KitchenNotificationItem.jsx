@@ -14,11 +14,11 @@ const KitchenNotificationItem = ({ notification }) => {
   }
 
   return (
-    <div className="bg-white rounded-xl p-3 border border-gray-200 hover:shadow transition-shadow">
+    <div className="rounded-xl border border-gray-100 bg-white p-3 shadow-sm transition-shadow hover:shadow-md">
       <div className="flex gap-3 items-start">
         <div className="flex-shrink-0">{getIcon(notification.type)}</div>
         <div className="flex-1">
-          <p className="font-medium text-gray-900">{notification.title}</p>
+          <p className="font-semibold text-gray-900">{notification.title}</p>
           <p className="text-sm text-gray-500 mt-1">{notification.message}</p>
           {notification.time && <p className="text-xs text-gray-400 mt-2">{notification.time}</p>}
         </div>

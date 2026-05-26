@@ -56,29 +56,29 @@ const Modal = ({
             leaveTo="opacity-0 scale-95"
           >
             <div className={`
-              inline-block w-full ${sizes[size]} p-6 my-8 overflow-hidden text-left
-              align-middle transition-all transform bg-white shadow-xl rounded-2xl
+              inline-block w-full ${sizes[size]} my-8 overflow-hidden text-left
+              align-middle transition-all transform bg-white shadow-[0_24px_70px_rgba(15,23,42,0.18)] rounded-none
             `}>
-              <div className="flex justify-between items-center mb-4">
+              <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
                 {title && (
-                  <Dialog.Title as="h3" className="text-lg font-semibold leading-6 text-gray-900">
+                  <Dialog.Title as="h3" className="text-lg font-semibold leading-6 text-slate-900">
                     {title}
                   </Dialog.Title>
                 )}
                 {showCloseButton && (
                   <button
                     onClick={onClose}
-                    className="text-gray-400 hover:text-gray-500 focus:outline-none"
+                    className="text-slate-400 hover:text-orange-600 focus:outline-none"
                   >
                     <XMarkIcon className="w-6 h-6" />
                   </button>
                 )}
               </div>
 
-              <div className="mt-2">{children}</div>
+              <div className="px-6 py-6">{children}</div>
 
               {actions && (
-                <div className="mt-6 flex justify-end gap-3">
+                <div className="flex justify-end gap-3 border-t border-slate-100 px-6 py-4">
                   {actions}
                 </div>
               )}

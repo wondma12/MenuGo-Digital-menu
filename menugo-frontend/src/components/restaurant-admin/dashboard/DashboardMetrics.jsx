@@ -1,5 +1,4 @@
 import React from 'react'
-import { motion } from 'framer-motion'
 import { ArrowTrendingUpIcon, ArrowTrendingDownIcon } from '@heroicons/react/24/outline'
 
 const DashboardMetrics = ({ title, value, change, icon: Icon, color }) => {
@@ -28,28 +27,29 @@ const DashboardMetrics = ({ title, value, change, icon: Icon, color }) => {
   const textColorClass = bgClass.replace('bg-', 'text-') || 'text-blue-500'
 
   return (
-    <div className={`bg-white rounded-xl shadow-sm p-5 border border-gray-100 hover:shadow-md transition-all border-l-4 ${borderClass}`}> 
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm text-gray-500">{title}</p>
-          <p className="text-2xl font-bold text-gray-900 mt-1">{value}</p>
-          {change !== undefined && (
-            <div className="flex items-center gap-1 mt-2">
-              {change > 0 ? (
-                <ArrowTrendingUpIcon className="w-3 h-3 text-green-500" />
-              ) : (
-                <ArrowTrendingDownIcon className="w-3 h-3 text-red-500" />
-              )}
-              <span className={`text-xs ${change > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                {Math.abs(change)}% from yesterday
-              </span>
-            </div>
-          )}
-        </div>
+    <div className={`group relative flex h-24 items-center justify-between overflow-hidden rounded-none border border-orange-100 border-l-4 bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.06)] transition-all hover:-translate-y-0.5 hover:shadow-xl ${borderClass}`}>
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(251,146,60,0.08),transparent_40%)] opacity-0 transition-opacity group-hover:opacity-100" />
+      <div>
+        <p className="text-sm font-semibold text-slate-500">{title}</p>
+        <p className="mt-1 text-xl font-black tracking-tight text-slate-900">{value}</p>
+        {typeof change !== 'undefined' && Number.isFinite(Number(change)) && Number(change) !== 0 && (
+          <div className="flex items-center gap-1 mt-1">
+            {change > 0 ? (
+              <ArrowTrendingUpIcon className="w-3 h-3 text-green-500" />
+            ) : (
+              <ArrowTrendingDownIcon className="w-3 h-3 text-red-500" />
+            )}
+            <span className={`text-xs ${change > 0 ? 'text-green-600' : 'text-red-600'}`}>
+              {Math.abs(change)}% from yesterday
+            </span>
+          </div>
+        )}
+      </div>
+      {Icon && (
         <div className={`p-3 rounded-full ${bgClass} bg-opacity-10`}>
           <Icon className={`w-6 h-6 ${textColorClass}`} />
         </div>
-      </div>
+      )}
     </div>
   )
 }

@@ -32,32 +32,32 @@ const ReviewList = ({ reviews, onRefresh }) => {
 
   return (
     <>
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+      <div className="rounded-3xl border border-orange-100 bg-white/95 shadow-[0_18px_40px_rgba(15,23,42,0.08)] overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50">
+            <thead className="bg-slate-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Customer</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Rating</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Review</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Customer</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Rating</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Review</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Date</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Status</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
+            <tbody className="divide-y divide-slate-200">
               {reviews.map((review, index) => (
                 <motion.tr
                   key={review.id}
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: index * 0.03 }}
-                  className="hover:bg-gray-50"
+                  className="hover:bg-slate-50"
                 >
                   <td className="px-6 py-4">
                     <div>
-                      <p className="font-medium text-gray-900">{review.customerName || 'Anonymous'}</p>
-                      <p className="text-xs text-gray-500">{review.orderId ? `Order #${review.orderId}` : 'Guest'}</p>
+                      <p className="font-medium text-slate-900">{review.customerName || 'Anonymous'}</p>
+                      <p className="text-xs text-slate-500">{review.orderId ? `Order #${review.orderId}` : 'Guest'}</p>
                     </div>
                   </td>
                   <td className="px-6 py-4">
@@ -65,11 +65,11 @@ const ReviewList = ({ reviews, onRefresh }) => {
                   </td>
                   <td className="px-6 py-4">
                     <div className="max-w-xs">
-                      <p className="text-sm text-gray-900 font-medium">{review.title}</p>
-                      <p className="text-sm text-gray-500 line-clamp-2">{review.comment}</p>
+                      <p className="text-sm text-slate-900 font-medium">{review.title}</p>
+                      <p className="text-sm text-slate-500 line-clamp-2">{review.comment}</p>
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-600">
+                  <td className="px-6 py-4 text-sm text-slate-600">
                     {new Date(review.createdAt).toLocaleDateString()}
                   </td>
                   <td className="px-6 py-4">
@@ -79,7 +79,7 @@ const ReviewList = ({ reviews, onRefresh }) => {
                     <div className="flex gap-2">
                       <button
                         onClick={() => setSelectedReview(review)}
-                        className="p-1 text-blue-600 hover:bg-blue-50 rounded"
+                        className="p-1 text-slate-700 hover:bg-slate-50 rounded"
                       >
                         <EyeIcon className="w-4 h-4" />
                       </button>

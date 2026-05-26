@@ -5,12 +5,10 @@ import { motion, AnimatePresence } from 'framer-motion'
 import RestaurantHeader from './RestaurantHeader'
 import CategoryTabs from './CategoryTabs'
 import MenuGridView from './MenuGridView'
-import MenuListView from './MenuListView'
 import SearchBar from './SearchBar'
 import FilterDrawer from './FilterDrawer'
 import MenuItemModal from './MenuItemModal'
 import Loading from '../../common/Loading'
-import RestaurantInfo from './RestaurantInfo'
 import FeedbackModal from '../feedback/FeedbackModal'
 import CallModal from '../calls/CallModal'
 import { useCartStore } from '../../../store/cartStore'
@@ -20,30 +18,23 @@ import { getPublicCoupons } from '../../../services/promotionService'
 
 const MenuDisplay = () => {
   const { restaurantId } = useParams()
-  const [viewMode, setViewMode] = useState('grid')
   const [selectedCategory, setSelectedCategory] = useState('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [filters, setFilters] = useState({
     dietary: [],
-    priceRange: { min: 0, max: 100 },
+    priceRange: { min: 0, max: Infinity },
     spiceLevel: 'all'
   })
   const [selectedItem, setSelectedItem] = useState(null)
   const [isFilterOpen, setIsFilterOpen] = useState(false)
-  const [searchParams] = useSearchParams()
+  const [searchParams, setSearchParams] = useSearchParams()
   const { setTableNumber, tableNumber: currentTable } = useCartStore((s) => ({ setTableNumber: s.setTableNumber, tableNumber: s.tableNumber }))
 
   const { data, isLoading, error } = useQuery(['restaurantMenu', restaurantId], () => getRestaurantMenu(restaurantId))
   const [showReviewModal, setShowReviewModal] = useState(false)
   const [showCallModal, setShowCallModal] = useState(false)
-  const [fabOpen, setFabOpen] = useState(false)
   const { data: promotionsData } = useQuery(['publicCoupons', restaurantId], () => getPublicCoupons(restaurantId), { enabled: !!restaurantId })
   const promotions = promotionsData || []
-  // Scroll to top when changing category
-  useEffect(() => {
-    window.scrollTo(0, 0)
-  }, [selectedCategory])
-
   // Pre-fill table number from QR query (?table=...)
   useEffect(() => {
     const tableParam = searchParams.get('table')
@@ -105,6 +96,23 @@ const MenuDisplay = () => {
     return []
   }, [tableOrdersPayload])
 
+  // Open modals via query params: ?showCall=1 or ?showReview=1
+  useEffect(() => {
+    if (searchParams.get('showCall')) {
+      setShowCallModal(true)
+      const sp = new URLSearchParams(searchParams)
+      sp.delete('showCall')
+      setSearchParams(sp, { replace: true })
+    }
+    if (searchParams.get('showReview')) {
+      setShowReviewModal(true)
+      const sp2 = new URLSearchParams(searchParams)
+      sp2.delete('showReview')
+      setSearchParams(sp2, { replace: true })
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams])
+
   // Build a map of menuItemId -> latest order status for quick lookup
   const itemStatusMap = React.useMemo(() => {
     const map = {}
@@ -154,29 +162,21 @@ const MenuDisplay = () => {
   })
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
+    <div className="min-h-screen bg-white font-['Manrope',system-ui,sans-serif] text-slate-900 pb-24 relative overflow-hidden">
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="absolute -top-28 -right-20 h-72 w-72 rounded-full bg-primary-200/40 blur-3xl" />
+        <div className="absolute top-40 -left-24 h-80 w-80 rounded-full bg-amber-200/30 blur-3xl" />
+        <div className="absolute bottom-0 right-1/4 h-64 w-64 rounded-full bg-emerald-200/25 blur-3xl" />
+      </div>
       <RestaurantHeader restaurant={data?.restaurant} />
 
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
-          <div className="md:col-span-2">
-            <RestaurantInfo restaurant={data?.restaurant} />
-          </div>
-          
-        </div>
-      </div>
-
-      <div className="sticky top-0 z-10 bg-white shadow-sm">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-3">
+      <div className="sticky top-0 z-20 -mt-1 border-b border-white/60 bg-white/70 backdrop-blur-xl shadow-sm">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-2 space-y-2">
           <SearchBar
             value={searchQuery}
             onChange={setSearchQuery}
             onFilterClick={() => setIsFilterOpen(true)}
-            viewMode={viewMode}
-            onViewModeChange={setViewMode}
           />
-        </div>
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <CategoryTabs
             categories={categories}
             selected={selectedCategory}
@@ -185,37 +185,20 @@ const MenuDisplay = () => {
         </div>
       </div>
 
-      <motion.div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.36 }}>
+      <motion.div className="container mx-auto px-4 sm:px-6 lg:px-8 py-5 relative z-10" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.36 }}>
           {promotions.length > 0 && (
-            <div className="mb-4 p-3 bg-green-50 border border-green-100 rounded-lg text-sm text-green-700">
-              <strong className="mr-2">Promotion:</strong>
-              <span className="mr-2">{promotions[0].code}</span>
-              <span className="text-gray-700">{promotions[0].description}</span>
-            </div>
-          )}
-
-          {currentTable && (
-            <div className="mb-4 p-3 bg-primary-50 border border-primary-100 rounded-lg text-sm text-primary-700">
-              You are seated at <strong>Table {currentTable}</strong>. You can change this above.
-            </div>
-          )}
-
-          {/* Expandable FAB for all screen sizes */}
-          <div className="fixed right-4 bottom-6 md:right-6 md:bottom-24 z-50">
-            <div style={{ transform: 'translateX(-6px)' }} className="relative">
-              {fabOpen && (
-                <div className="absolute bottom-16 right-0 flex flex-col items-end gap-2">
-                  <button onClick={() => { setShowReviewModal(true); setFabOpen(false) }} className="w-28 sm:w-32 md:w-36 inline-flex items-center justify-center bg-primary-600 text-white px-3 py-2 rounded-full shadow-lg hover:bg-primary-700 text-sm">Leave a review</button>
-                  <Link to="/login" onClick={() => setFabOpen(false)} className="w-28 sm:w-32 md:w-36 inline-flex items-center justify-center bg-primary-600 text-white px-3 py-2 rounded-full shadow-lg hover:bg-primary-700 text-sm">Staff Login</Link>
-                  <button onClick={() => { setShowCallModal(true); setFabOpen(false) }} className="w-28 sm:w-32 md:w-36 inline-flex items-center justify-center bg-primary-600 text-white px-3 py-2 rounded-full shadow-lg hover:bg-primary-700 text-sm">Call Waiter</button>
+            <div className="mb-5 overflow-hidden rounded-3xl border border-emerald-200 bg-gradient-to-r from-emerald-50 via-white to-emerald-100 p-4 shadow-sm">
+              <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <strong className="block text-emerald-800 text-sm uppercase tracking-[0.2em]">Promotion</strong>
+                  <span className="mt-1 inline-flex items-center rounded-full bg-emerald-600 px-3 py-1 text-sm font-semibold text-white">{promotions[0].code}</span>
                 </div>
-              )}
-
-              <button aria-label="Open actions" onClick={() => setFabOpen(s => !s)} className="w-12 h-12 md:w-14 md:h-14 rounded-full bg-primary-600 text-white shadow-lg flex items-center justify-center">
-                <span className={`text-xl leading-none transform ${fabOpen ? 'rotate-45' : ''}`}>+</span>
-              </button>
+                <span className="text-sm text-slate-700 max-w-2xl">{promotions[0].description}</span>
+              </div>
             </div>
-          </div>
+          )}
+
+          {/* FAB removed - actions moved to footer */}
 
           {/* Table selector removed: table selection is now handled at checkout */}
 
@@ -226,19 +209,15 @@ const MenuDisplay = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="text-center py-12"
+              className="text-center py-16 rounded-3xl border border-dashed border-slate-200 bg-white/70 shadow-sm"
             >
               <img src="/assets/empty-states/no-items.svg" alt="No items" className="w-48 h-48 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900">No items found</h3>
-              <p className="text-gray-500 mt-1">Try adjusting your search or filters</p>
-            </motion.div>
-          ) : viewMode === 'grid' ? (
-            <motion.div key="grid" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}>
-              <MenuGridView items={filteredItems} onItemClick={setSelectedItem} itemStatuses={itemStatusMap} />
+              <h3 className="text-lg font-medium text-slate-900">No items found</h3>
+              <p className="text-slate-600 mt-1">Try adjusting your search or filters</p>
             </motion.div>
           ) : (
-            <motion.div key="list" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}>
-              <MenuListView items={filteredItems} onItemClick={setSelectedItem} itemStatuses={itemStatusMap} />
+            <motion.div key="grid" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}>
+              <MenuGridView items={filteredItems} onItemClick={setSelectedItem} itemStatuses={itemStatusMap} />
             </motion.div>
           )}
         </AnimatePresence>

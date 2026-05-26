@@ -37,7 +37,13 @@ export const getWaiterNotifications = async (params = {}) => {
   // If caller passed a waiterId (string) accidentally, coerce to empty params object.
   const queryParams = typeof params === 'object' && params !== null ? params : {}
   const response = await api.get('/waiters/notifications', { params: queryParams })
-  return response.data
+  // Backend wraps payload in ApiResponse.data
+  return response.data?.data || { notifications: [], total: 0 }
+}
+
+export const getWaiterUnreadCount = async () => {
+  const data = await getWaiterNotifications({ page: 1, limit: 1, is_read: false })
+  return Number(data?.total || 0)
 }
 
 export const markWaiterNotificationAsRead = async (id) => {

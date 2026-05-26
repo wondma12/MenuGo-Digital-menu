@@ -81,8 +81,22 @@ const authValidations = {
   forgotPassword: [commonValidations.email],
   resetPassword: [
     body('token').notEmpty().withMessage('Reset token is required'),
-    commonValidations.password,
-    body('confirmPassword').custom((value, { req }) => value === req.body.password).withMessage('Passwords do not match'),
+    body(['password', 'newPassword']).custom((value, { req }) => {
+      const nextPassword = req.body.newPassword || req.body.password;
+      if (!nextPassword) {
+        throw new Error('New password is required');
+      }
+      if (String(nextPassword).length < 6) {
+        throw new Error('Password must be at least 6 characters long');
+      }
+      if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(String(nextPassword))) {
+        throw new Error('Password must contain at least one uppercase letter, one lowercase letter, and one number');
+      }
+      return true;
+    }),
+    body('confirmPassword')
+      .custom((value, { req }) => value === (req.body.newPassword || req.body.password))
+      .withMessage('Passwords do not match'),
   ],
   changePassword: [
     body('currentPassword').notEmpty().withMessage('Current password is required'),
@@ -153,8 +167,12 @@ const orderValidations = {
   verify: [
     body('verification_code').custom((value, { req }) => {
       // allow manual verification by waiter (method='manual') without a code
-      if (req.body && req.body.method === 'manual') return true;
-      if (value && String(value).trim() !== '') return true;
+      if (req.body && req.body.method === 'manual') {
+        return true;
+      }
+      if (value && String(value).trim() !== '') {
+        return true;
+      }
       throw new Error('Verification code is required');
     }),
   ],
@@ -226,8 +244,8 @@ const reviewValidations = {
     body('rating').isInt({ min: 1, max: 5 }).withMessage('Rating must be between 1 and 5'),
     body('comment').optional().trim(),
     body('title').optional().trim(),
-      body('customer_name').optional().trim(),
-      body('customer_email').optional().isEmail().withMessage('Invalid email'),
+    body('customer_name').optional().trim(),
+    body('customer_email').optional().isEmail().withMessage('Invalid email'),
     body('is_anonymous').optional().isBoolean(),
   ],
   updateStatus: [

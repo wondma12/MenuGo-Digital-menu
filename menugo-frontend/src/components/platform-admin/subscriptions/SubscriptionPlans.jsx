@@ -52,18 +52,22 @@ const SubscriptionPlans = () => {
   if (isLoading) return <Loading />
 
   return (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Subscription Plans</h1>
-          <p className="text-gray-500 mt-1">Manage pricing plans and features</p>
+    <div className="space-y-6 bg-white p-4 font-['Manrope',system-ui,sans-serif] text-slate-900 sm:p-6 lg:p-8">
+      {/* <div className="relative overflow-hidden rounded-none border border-orange-100 bg-white p-6 shadow-sm sm:p-8"> */}
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_rgba(251,146,60,0.12),transparent_45%),radial-gradient(ellipse_at_bottom_left,_rgba(59,130,246,0.08),transparent_55%)]" />
+        <div className="relative flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div className="max-w-2xl">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-orange-600">Subscriptions</p>
+            <h1 className="mt-1.5 text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">Subscription Plans</h1>
+            <p className="mt-2 text-sm leading-6 text-slate-500 sm:text-base">Manage pricing plans and features</p>
+          </div>
+          <Button onClick={() => setShowModal(true)} icon={PlusIcon} className="rounded-none bg-gradient-to-r from-orange-500 to-blue-500 hover:from-orange-600 hover:to-blue-600">
+            Add Plan
+          </Button>
         </div>
-        <Button onClick={() => setShowModal(true)} icon={PlusIcon}>
-          Add Plan
-        </Button>
-      </div>
+      {/* </div> */}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
         {plans?.map((plan, index) => (
           <motion.div
             key={plan.id}

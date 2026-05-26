@@ -39,9 +39,14 @@ const ReviewManagement = () => {
 
   // Use backend-provided aggregates when available (total reviews, average rating, distribution, status counts)
   const totalReviews = data && typeof data.total !== 'undefined' ? data.total : (Array.isArray(reviews) ? reviews.length : 0)
-  const averageRating = data && typeof data.average_rating !== 'undefined'
-    ? parseFloat(data.average_rating).toFixed(1)
-    : (reviews.length ? (reviews.reduce((sum, r) => sum + (r.rating || 0), 0) / reviews.length).toFixed(1) : '0')
+
+  // Prefer a server-provided average only when it's a finite, positive number.
+  // Otherwise compute a sensible fallback average from the returned `reviews` array.
+  const serverAvgRaw = data && data.average_rating != null ? Number(data.average_rating) : null
+  const computedAvg = (Array.isArray(reviews) && reviews.length) ? (reviews.reduce((sum, r) => sum + (r.rating || 0), 0) / reviews.length) : 0
+  const averageRating = (Number.isFinite(serverAvgRaw) && serverAvgRaw > 0)
+    ? serverAvgRaw.toFixed(1)
+    : (computedAvg > 0 ? computedAvg.toFixed(1) : '0')
 
   // Prefer server-sent rating distribution when present, otherwise derive from current page (fallback)
   const ratingDistribution = Array.isArray(data?.rating_distribution) && data.rating_distribution.length > 0
@@ -65,35 +70,40 @@ const ReviewManagement = () => {
 
   function renderReviewsContent(reviewsList) {
     return (
-      <>
+      <div className="space-y-6  bg-white p-4 px-4 py-6 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Customer Reviews</h1>
-            <p className="text-gray-500 mt-1">Manage and respond to customer feedback</p>
+            <h1 className="text-2xl font-black text-slate-900">Customer Reviews</h1>
+            <p className="text-sm text-slate-500 mt-1">Manage and respond to customer feedback</p>
           </div>
           <div className="flex items-center gap-3">
-            <div className="text-sm text-gray-600 py-2 px-3">List view</div>
+            <div className="text-sm text-slate-600 py-2 px-3">List view</div>
             <div className="flex items-center ml-3">
-              <label className="text-sm text-gray-600 mr-2">Show all</label>
-              <input type="checkbox" checked={showAll} onChange={e => setShowAll(e.target.checked)} />
+              <label className="text-sm text-slate-600 mr-2">Show all</label>
+              <input
+                type="checkbox"
+                checked={showAll}
+                onChange={e => setShowAll(e.target.checked)}
+                className="h-4 w-4 rounded border-slate-300 text-orange-600 focus:ring-orange-500"
+              />
             </div>
           </div>
         </div>
 
         {/* Rating Summary */}
-        <div className="bg-gradient-to-r from-primary-500 to-primary-700 rounded-xl p-6 mb-6 text-white">
+        <div className="rounded-3xl border border-orange-100 bg-white/95 p-6 mb-6 text-slate-900 shadow-[0_18px_40px_rgba(15,23,42,0.12)]">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="text-center">
-              <div className="text-5xl font-bold">{averageRating}</div>
+              <div className="text-5xl font-black text-slate-900">{averageRating}</div>
               <RatingStars rating={parseFloat(averageRating)} size="lg" />
-              <p className="text-primary-100 mt-1">Based on {totalReviews} reviews</p>
+              <p className="text-sm text-slate-500 mt-1">Based on {totalReviews} reviews</p>
             </div>
             <div className="flex-1 space-y-2">
               {ratingDistribution.map(({ rating, count }) => (
                 <div key={rating} className="flex items-center gap-3">
                   <span className="text-sm w-12">{rating} stars</span>
-                  <div className="flex-1 h-2 bg-primary-300 rounded-full overflow-hidden">
-                      <div 
+                  <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
+                      <div
                         className="h-full bg-yellow-400 rounded-full"
                         style={{ width: `${totalReviews ? (count / totalReviews) * 100 : 0}%` }}
                       />
@@ -116,13 +126,15 @@ const ReviewManagement = () => {
         ) : (
           <ReviewList reviews={reviewsList} onRefresh={refetch} />
         )}
-      </>
+      </div>
     )
   }
 
   return (
-    <div className="p-6">
-      <Tabs tabs={tabs} onChange={(index, tab) => setFilters(prev => ({ ...prev, status: tab.status }))} />
+    <div className="relative overflow-hidden p-6">
+      <div className="relative mx-auto max-w-7xl">
+        <Tabs tabs={tabs} onChange={(index, tab) => setFilters(prev => ({ ...prev, status: tab.status }))} />
+      </div>
     </div>
   )
 }

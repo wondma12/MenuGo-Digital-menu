@@ -34,7 +34,7 @@ const ResetPassword = () => {
     setIsLoading(true)
     setError(null)
     try {
-      await resetPassword(token, data.password)
+      await resetPassword(token, data.password, data.confirmPassword)
       setSuccess(true)
       setTimeout(() => {
         navigate('/login')

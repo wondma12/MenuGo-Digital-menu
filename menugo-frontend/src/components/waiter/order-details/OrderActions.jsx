@@ -1,7 +1,6 @@
 import React, { useState } from 'react'
 import { useMutation } from 'react-query'
 import Button from '../../common/Button'
-import VerifyOrderModal from '../verification/VerifyOrderModal'
 import RejectOrderModal from '../verification/RejectOrderModal'
 import { updateOrderStatus } from '../../../services/orderService'
 import { verifyOrder } from '../../../services/orderService'
@@ -69,18 +68,13 @@ const OrderActions = ({ orderId, currentStatus, onRefresh, onClose }) => {
     switch (currentStatus) {
       case 'pending':
         return (
-          <div className="flex gap-3">
-            <Button variant="danger" onClick={() => setShowReject(true)}>Reject Order</Button>
-            <Button variant="secondary" onClick={verifyAndSend} isLoading={isVerifying} disabled={isVerifying}>Verify & Send to Kitchen</Button>
-            <Button variant="primary" onClick={() => setShowVerify(true)}>Verify Order</Button>
+          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:justify-end">
+            <Button variant="danger" className="w-full sm:w-auto" onClick={() => setShowReject(true)}>Reject Order</Button>
+            <Button variant="secondary" className="w-full sm:w-auto" onClick={verifyAndSend} isLoading={isVerifying} disabled={isVerifying}>Verify & Send to Kitchen</Button>
           </div>
         )
       case 'verified':
-        return (
-          <Button variant="warning" onClick={() => handleStatusUpdate('preparing')}>
-            Mark as Preparing
-          </Button>
-        )
+        return null
       case 'preparing':
         return (
           <Button variant="success" onClick={() => handleStatusUpdate('ready')}>
@@ -100,20 +94,9 @@ const OrderActions = ({ orderId, currentStatus, onRefresh, onClose }) => {
 
   return (
     <>
-      <div className="flex justify-end pt-4 border-t border-gray-200">
+      <div className="flex justify-end pt-3 border-t border-gray-200">
         {getActions()}
       </div>
-
-      <VerifyOrderModal
-        isOpen={showVerify}
-        onClose={() => setShowVerify(false)}
-        orderId={orderId}
-        onSuccess={() => {
-          setShowVerify(false)
-          onRefresh()
-          onClose()
-        }}
-      />
 
       <RejectOrderModal
         isOpen={showReject}

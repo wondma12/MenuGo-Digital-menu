@@ -2,11 +2,16 @@ const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const { Op } = require('sequelize');
 const { User, UserSession, Restaurant, RestaurantStaff } = require('../models');
+const { uploadToCloudinary } = require('../config/cloudinary');
 const { generateToken, generateRefreshToken } = require('../services/tokenService');
 const { sendWelcomeEmail, sendPasswordResetEmail } = require('../config/email');
 const { ApiResponse } = require('../utils/apiResponse');
 const { ApiError } = require('../utils/apiError');
 const { catchAsync } = require('../utils/catchAsync');
+
+const normalizeEmailInput = (email) => String(email || '').trim().toLowerCase();
+
+const getClientUrl = () => String(process.env.CLIENT_URL || 'http://localhost:5173').replace(/\/$/, '');
 
 // Register new user
 const register = catchAsync(async (req, res) => {
@@ -24,9 +29,10 @@ const register = catchAsync(async (req, res) => {
     restaurant_website,
     restaurant_slogan,
   } = req.body;
+  const normalizedEmail = normalizeEmailInput(email);
 
   // Check if user exists
-  const existingUser = await User.findOne({ where: { email } });
+  const existingUser = await User.findOne({ where: { email: normalizedEmail } });
   if (existingUser) {
     throw new ApiError(400, 'User already exists with this email');
   }
@@ -38,7 +44,7 @@ const register = catchAsync(async (req, res) => {
   // Create user
   const isRestaurantAdmin = role === 'restaurant_admin';
   const user = await User.create({
-    email,
+    email: normalizedEmail,
     password_hash,
     full_name,
     phone,
@@ -53,7 +59,7 @@ const register = catchAsync(async (req, res) => {
     const restaurant = await Restaurant.create({
       owner_id: user.id,
       name: restaurant_name,
-      email: email || null,
+      email: normalizedEmail || null,
       phone: restaurant_phone || phone || null,
       address: restaurant_address || null,
       city: restaurant_city || null,
@@ -73,6 +79,49 @@ const register = catchAsync(async (req, res) => {
       role: 'admin',
       is_active: true,
     });
+
+    // If files were uploaded with the registration, handle them (business license, logo, banner, coverImage)
+    try {
+      const files = req.files || {};
+      // business license may be named businessLicenseDocument or document
+      const licenseFile = (files.businessLicenseDocument && files.businessLicenseDocument[0]) || (files.document && files.document[0]) || null;
+      if (licenseFile) {
+        const uploadResult = await uploadToCloudinary(licenseFile.path, 'menugo/documents');
+        if (uploadResult && uploadResult.url) {
+          const settings = restaurant.settings || {};
+          settings.business_license = {
+            url: uploadResult.url,
+            publicId: uploadResult.publicId || null,
+            uploadedAt: new Date(),
+            originalName: licenseFile.originalname,
+          };
+          await restaurant.update({ settings });
+        }
+      }
+
+      // Optionally handle logo/banner/coverImage and store URLs on restaurant
+      const logoFile = (files.logo && files.logo[0]) || null;
+      const bannerFile = (files.banner && files.banner[0]) || (files.coverImage && files.coverImage[0]) || null;
+      const updates = {};
+      if (logoFile) {
+        const r = await uploadToCloudinary(logoFile.path, 'menugo/restaurants');
+        if (r && r.url) {
+          updates.logo_url = r.url;
+        }
+      }
+      if (bannerFile) {
+        const r2 = await uploadToCloudinary(bannerFile.path, 'menugo/restaurants');
+        if (r2 && r2.url) {
+          updates.cover_image_url = r2.url;
+        }
+      }
+      if (Object.keys(updates).length) {
+        await restaurant.update(updates);
+      }
+    } catch (docErr) {
+      console.error('Failed to upload files during registration:', docErr && docErr.message ? docErr.message : docErr);
+      // non-fatal; proceed with registration
+    }
   }
 
   // Generate verification token
@@ -83,7 +132,7 @@ const register = catchAsync(async (req, res) => {
   });
   // Send welcome email (do not fail registration if email sending errors)
   try {
-    await sendWelcomeEmail(email, full_name);
+    await sendWelcomeEmail(normalizedEmail, full_name);
   } catch (emailErr) {
     console.error('sendWelcomeEmail error (non-fatal):', emailErr && emailErr.message ? emailErr.message : emailErr);
   }
@@ -128,9 +177,10 @@ const register = catchAsync(async (req, res) => {
 // Login user
 const login = catchAsync(async (req, res) => {
   const { email, password } = req.body;
+  const normalizedEmail = normalizeEmailInput(email);
 
   // Find user by email (we'll check active status after verifying password)
-  const user = await User.findOne({ where: { email } });
+  const user = await User.findOne({ where: { email: normalizedEmail } });
   if (!user) {
     throw new ApiError(401, 'Invalid credentials');
   }
@@ -139,6 +189,7 @@ const login = catchAsync(async (req, res) => {
   if (process.env.NODE_ENV === 'development') {
     try {
       console.log('[debug] authController.login — attempt for:', email);
+      console.log('[debug] authController.login — normalized email:', normalizedEmail);
       console.log('[debug] authController.login — userId:', user.id, 'is_active:', user.is_active);
       console.log('[debug] authController.login — stored password_hash length:', (user.password_hash || '').length, 'startsWith $2:', (user.password_hash || '').startsWith('$2'));
     } catch (e) {
@@ -156,7 +207,9 @@ const login = catchAsync(async (req, res) => {
   if (process.env.NODE_ENV === 'development') {
     try {
       console.log('[debug] authController.login — bcrypt.compare result:', isPasswordValid);
-    } catch (e) {}
+    } catch (e) {
+      // don't let logging break the login flow
+    }
   }
   // Compatibility fallback: if stored password isn't a bcrypt hash (e.g., legacy or dev plain text),
   // allow login if the provided password matches the stored value, then re-hash and save it.
@@ -167,7 +220,9 @@ const login = catchAsync(async (req, res) => {
       if (process.env.NODE_ENV === 'development') {
         try {
           console.log('[debug] authController.login — fallback check, stored length:', stored.length, 'looksLikeBcrypt:', looksLikeBcrypt);
-        } catch (e) {}
+        } catch (e) {
+          // don't let logging break the login flow
+        }
       }
       if (!looksLikeBcrypt && password === stored) {
         const salt = await bcrypt.genSalt(10);
@@ -192,24 +247,38 @@ const login = catchAsync(async (req, res) => {
 
   // If this user is a restaurant staff member, ensure their staff record is active
   const staffRecord = await RestaurantStaff.findOne({ where: { user_id: user.id } });
-  if (staffRecord && staffRecord.is_active === false) {
+  // treat any falsy value (false, 0, null, undefined) as inactive
+  if (staffRecord && !staffRecord.is_active) {
     throw new ApiError(403, 'Staff account not active. Await restaurant activation.');
+  }
+  // If staff belongs to a restaurant, ensure the restaurant itself is active
+  if (staffRecord) {
+    const staffRestaurant = await Restaurant.findByPk(staffRecord.restaurant_id);
+    if (staffRestaurant && !staffRestaurant.is_active) {
+      throw new ApiError(403, 'Associated restaurant is not active. Contact platform admin.');
+    }
   }
 
   // Reset login attempts
   await user.update({ login_attempts: 0, last_login: new Date() });
 
-  // Generate tokens
-  const token = generateToken(user.id, user.role);
-  const refreshToken = generateRefreshToken(user.id);
+  // Generate tokens and save session (guard against unexpected errors)
+  let token;
+  let refreshToken;
+  try {
+    token = generateToken(user.id, user.role);
+    refreshToken = generateRefreshToken(user.id);
 
-  // Save session
-  await UserSession.create({
-    user_id: user.id,
-    token,
-    refresh_token: refreshToken,
-    expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-  });
+    await UserSession.create({
+      user_id: user.id,
+      token,
+      refresh_token: refreshToken,
+      expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+    });
+  } catch (sessionErr) {
+    console.error('authController.login - failed to create session or generate tokens:', sessionErr && sessionErr.message ? sessionErr.message : sessionErr);
+    throw new ApiError(500, 'Login failed due to server error');
+  }
 
   // Get restaurant info if admin
   let restaurant = null;
@@ -224,7 +293,9 @@ const login = catchAsync(async (req, res) => {
   let staff = null;
   try {
     const staffRecord = await RestaurantStaff.findOne({ where: { user_id: user.id }, attributes: ['id', 'role', 'restaurant_id', 'permissions', 'is_active'] });
-    if (staffRecord) staff = staffRecord && typeof staffRecord.toJSON === 'function' ? staffRecord.toJSON() : staffRecord;
+    if (staffRecord) {
+      staff = staffRecord && typeof staffRecord.toJSON === 'function' ? staffRecord.toJSON() : staffRecord;
+    }
   } catch (e) {
     staff = null;
   }
@@ -282,7 +353,7 @@ const logout = catchAsync(async (req, res) => {
   if (token) {
     await UserSession.update(
       { revoked_at: new Date() },
-      { where: { token } }
+      { where: { token } },
     );
   }
 
@@ -292,10 +363,11 @@ const logout = catchAsync(async (req, res) => {
 // Forgot password
 const forgotPassword = catchAsync(async (req, res) => {
   const { email } = req.body;
+  const normalizedEmail = normalizeEmailInput(email);
 
-  const user = await User.findOne({ where: { email } });
+  const user = await User.findOne({ where: { email: normalizedEmail } });
   if (!user) {
-    throw new ApiError(404, 'User not found');
+    return res.json(ApiResponse.success(null, 'If an account exists for that email, a reset link has been prepared.'));
   }
 
   const resetToken = crypto.randomBytes(32).toString('hex');
@@ -304,14 +376,32 @@ const forgotPassword = catchAsync(async (req, res) => {
     password_reset_expires: new Date(Date.now() + 1 * 60 * 60 * 1000),
   });
 
-  await sendPasswordResetEmail(email, user.full_name, resetToken);
+  try {
+    await sendPasswordResetEmail(normalizedEmail, user.full_name, resetToken);
+  } catch (emailError) {
+    console.error('forgotPassword email delivery error:', emailError && emailError.message ? emailError.message : emailError);
 
-  res.json(ApiResponse.success(null, 'Password reset email sent'));
+    const resetUrl = `${getClientUrl()}/reset-password/${resetToken}`;
+
+    if (process.env.NODE_ENV !== 'production' || process.env.ALLOW_DEV_EMAIL_FALLBACK === 'true') {
+      return res.json(ApiResponse.success({
+        email_sent: false,
+        reset_url: resetUrl,
+        reset_token: resetToken,
+        delivery_message: 'Email delivery is unavailable in local development. Use the reset link below to continue.',
+      }, 'Email delivery is unavailable in local development. Use the reset link below to continue.'));
+    }
+
+    throw new ApiError(503, 'Password reset is temporarily unavailable. Please try again later.');
+  }
+
+  res.json(ApiResponse.success({ email_sent: true }, 'If an account exists for that email, a reset link has been sent.'));
 });
 
 // Reset password
 const resetPassword = catchAsync(async (req, res) => {
-  const { token, newPassword } = req.body;
+  const { token } = req.body;
+  const nextPassword = req.body.newPassword || req.body.password;
 
   const user = await User.findOne({
     where: {
@@ -325,7 +415,7 @@ const resetPassword = catchAsync(async (req, res) => {
   }
 
   const salt = await bcrypt.genSalt(10);
-  const password_hash = await bcrypt.hash(newPassword, salt);
+  const password_hash = await bcrypt.hash(nextPassword, salt);
 
   await user.update({
     password_hash,
@@ -398,7 +488,9 @@ const getMe = catchAsync(async (req, res) => {
   let staff = null;
   try {
     const staffRecord = await RestaurantStaff.findOne({ where: { user_id: user.id }, attributes: ['id', 'role', 'restaurant_id', 'permissions', 'is_active'] });
-    if (staffRecord) staff = staffRecord && typeof staffRecord.toJSON === 'function' ? staffRecord.toJSON() : staffRecord;
+    if (staffRecord) {
+      staff = staffRecord && typeof staffRecord.toJSON === 'function' ? staffRecord.toJSON() : staffRecord;
+    }
   } catch (e) {
     staff = null;
   }

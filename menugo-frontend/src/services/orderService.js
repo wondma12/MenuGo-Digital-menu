@@ -1,7 +1,15 @@
 import api from './api'
 
 export const getOrders = async (restaurantId, params) => {
-  const response = await api.get(`/orders/restaurant/${restaurantId}`, { params })
+  const normalizedParams = { ...(params || {}) }
+  if (normalizedParams.dateRange && typeof normalizedParams.dateRange === 'object') {
+    normalizedParams.dateRange = JSON.stringify({
+      start: normalizedParams.dateRange.start,
+      end: normalizedParams.dateRange.end,
+    })
+  }
+
+  const response = await api.get(`/orders/restaurant/${restaurantId}`, { params: normalizedParams })
   const payload = response?.data?.data || response?.data
   // Return the raw payload (may be an object with `orders` and metadata or an array)
   return payload || {}

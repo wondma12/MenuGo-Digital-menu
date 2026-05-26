@@ -71,6 +71,52 @@ app.use('/uploads', express.static('uploads'));
 // API routes
 app.use('/api', routes);
 
+// Backwards-compatible alias for OAuth routes: redirect `/auth/*` -> `/api/auth/*`
+// This helps browsers or bookmarks that hit `/auth/google` (without the `/api` prefix).
+app.use((req, res, next) => {
+  try {
+    if (req.path && req.path.startsWith('/auth/')) {
+      // Preserve query string if present
+      const qs = req.originalUrl.includes('?') ? '?' + req.originalUrl.split('?').slice(1).join('?') : '';
+      const target = `/api${req.path}${qs}`;
+      return res.redirect(302, target);
+    }
+  } catch (e) {
+    // ignore and continue to next middleware
+  }
+  next();
+});
+
+// Backwards-compatible alias for common top-level API paths without the /api prefix.
+// This helps older frontends or bookmarks that call e.g. GET /restaurants instead of /api/restaurants.
+try {
+  const apiAliases = [
+    'restaurants', 'users', 'notifications', 'dashboard', 'orders', 'menus', 'templates', 'settings', 'payments', 'reports'
+  ];
+
+  app.use((req, res, next) => {
+    try {
+      if (!req.path) return next();
+      // Do not touch already namespaced paths or static/health/socket routes
+      if (req.path.startsWith('/api') || req.path.startsWith('/uploads') || req.path === '/health' || req.path.startsWith('/socket.io') || req.path === '/favicon.ico') {
+        return next();
+      }
+
+      const firstSegment = req.path.split('/')[1];
+      if (apiAliases.includes(firstSegment)) {
+        const qs = req.originalUrl.includes('?') ? '?' + req.originalUrl.split('?').slice(1).join('?') : '';
+        const target = `/api${req.path}${qs}`;
+        return res.redirect(302, target);
+      }
+    } catch (e) {
+      // ignore
+    }
+    next();
+  });
+} catch (e) {
+  // ignore mounting errors
+}
+
 // Backwards-compatible public alias: some frontends may call /restaurants/:id/calls without the /api prefix.
 // Provide a thin public POST handler that forwards to the same controller used by the /api routes.
 try {

@@ -31,11 +31,11 @@ const OrderTimeline = ({ order }) => {
   const activeIndex = steps.findIndex(s => s.key === activeStep)
 
   return (
-    <div className="bg-gray-50 rounded-lg p-4">
-      <h4 className="font-medium text-gray-900 mb-4">Order Timeline</h4>
+    <div className="rounded-none bg-white p-4 shadow-[0_16px_40px_rgba(15,23,42,0.06)]">
+      <h4 className="mb-4 font-medium text-slate-900">Order Timeline</h4>
       <div className="relative">
         {/* Timeline line */}
-        <div className="absolute left-5 top-8 bottom-8 w-0.5 bg-gray-300" />
+        <div className="absolute left-5 top-8 bottom-8 w-0.5 bg-slate-200" />
         
         <div className="space-y-4 relative">
           {steps.map((step, index) => {
@@ -48,32 +48,32 @@ const OrderTimeline = ({ order }) => {
               <div key={step.key} className="flex items-start gap-3">
                 <div className="relative z-10">
                   {isCompleted ? (
-                    <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
-                      <CheckCircleIcon className="w-5 h-5 text-green-600" />
+                    <div className="flex h-10 w-10 items-center justify-center rounded-none bg-emerald-50">
+                      <CheckCircleIcon className="h-5 w-5 text-emerald-600" />
                     </div>
                   ) : isCurrent ? (
-                    <div className="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center animate-pulse">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-none bg-orange-50 animate-pulse">
                       <span className="text-lg">{step.icon}</span>
                     </div>
                   ) : (
-                    <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
-                      <ClockIcon className="w-5 h-5 text-gray-400" />
+                    <div className="flex h-10 w-10 items-center justify-center rounded-none bg-slate-100">
+                      <ClockIcon className="h-5 w-5 text-slate-400" />
                     </div>
                   )}
                 </div>
                 <div className="flex-1 pt-1">
                   <div className="flex items-center justify-between">
-                    <p className={`font-medium ${isCompleted ? 'text-gray-900' : isCurrent ? 'text-primary-700' : 'text-gray-400'}`}>
+                    <p className={`font-medium ${isCompleted ? 'text-slate-900' : isCurrent ? 'text-orange-700' : 'text-slate-400'}`}>
                       {step.label}
                     </p>
                     {step.time && (
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-slate-500">
                         {new Date(step.time).toLocaleTimeString()}
                       </p>
                     )}
                   </div>
                   {isCurrent && !step.time && (
-                    <p className="text-xs text-primary-600 mt-1">In progress...</p>
+                    <p className="mt-1 text-xs text-orange-600">In progress...</p>
                   )}
                 </div>
               </div>

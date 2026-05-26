@@ -47,7 +47,7 @@ const EmailSettings = ({ settings, onSave }) => {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="bg-white rounded-xl p-6 border border-gray-200 space-y-4">
+    <form onSubmit={handleSubmit} className="bg-white p-6 border border-orange-100 border-l-4 border-l-orange-500 rounded-none shadow-[0_16px_40px_rgba(15,23,42,0.06)] space-y-4">
       <div className="grid grid-cols-2 gap-4">
         <Input
           label="SMTP Host"
@@ -108,8 +108,8 @@ const EmailSettings = ({ settings, onSave }) => {
         />
       </div>
 
-      <div className="border-t border-gray-200 pt-4 mt-4">
-        <h4 className="text-sm font-medium text-gray-900 mb-3">Test Email Configuration</h4>
+      <div className="border-t border-orange-100 pt-4 mt-4">
+        <h4 className="text-sm font-medium text-slate-900 mb-3">Test Email Configuration</h4>
         <div className="flex gap-3">
           <Input
             placeholder="Enter email address to send test"
@@ -117,14 +117,14 @@ const EmailSettings = ({ settings, onSave }) => {
             onChange={(e) => setTestEmail(e.target.value)}
             className="flex-1"
           />
-          <Button type="button" onClick={handleTest} isLoading={testMutation.isLoading}>
+          <Button type="button" onClick={handleTest} isLoading={testMutation.isLoading} className="bg-orange-600 hover:bg-orange-700 text-white rounded-none px-4 py-2.5 shadow-sm">
             Send Test
           </Button>
         </div>
       </div>
 
       <div className="flex justify-end pt-4">
-        <Button type="submit" icon={CheckIcon}>Save Changes</Button>
+        <Button type="submit" icon={CheckIcon} className="bg-orange-600 hover:bg-orange-700 text-white rounded-none px-4 py-2.5 shadow-sm">Save Changes</Button>
       </div>
     </form>
   )

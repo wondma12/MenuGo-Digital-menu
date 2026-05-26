@@ -16,6 +16,7 @@ import DateRangePicker from './DateRangePicker'
 import ExportReport from './ExportReport'
 import Loading from '../../../common/Loading'
 import { getCustomerReport } from '../../../services/analyticsService'
+import { formatPrice } from '../../../utils/currency'
 
 const CustomerReport = () => {
   const [dateRange, setDateRange] = useState({
@@ -126,7 +127,7 @@ const CustomerReport = () => {
                 </div>
                 <div className="text-right">
                   <p className="text-sm font-semibold text-gray-900">{customer.orders} orders</p>
-                  <p className="text-xs text-gray-500">${customer.totalSpent}</p>
+                  <p className="text-xs text-gray-500">{formatPrice(customer.totalSpent)}</p>
                 </div>
               </div>
             ))}
@@ -141,7 +142,7 @@ const CustomerReport = () => {
           <BarChart data={data?.avgOrderByType || []}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="type" />
-            <YAxis tickFormatter={(value) => `$${value}`} />
+            <YAxis tickFormatter={(value) => formatPrice(value)} />
             <Tooltip />
             <Bar dataKey="value" fill="#10b981" radius={[4, 4, 0, 0]} />
           </BarChart>

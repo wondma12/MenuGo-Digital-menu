@@ -1,42 +1,29 @@
 import React from 'react'
-import { MagnifyingGlassIcon, FunnelIcon, Squares2X2Icon, ListBulletIcon } from '@heroicons/react/24/outline'
+import { MagnifyingGlassIcon, FunnelIcon } from '@heroicons/react/24/outline'
 import { motion } from 'framer-motion'
 
-const SearchBar = ({ value, onChange, onFilterClick, viewMode, onViewModeChange }) => {
+const SearchBar = ({ value, onChange, onFilterClick }) => {
   return (
-    <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.36 }} className="flex flex-col sm:flex-row gap-2 items-center">
+    <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.36 }} className="flex flex-col gap-2 sm:flex-row sm:items-center">
       <div className="relative flex-1">
-        <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+        <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
         <input
           type="text"
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder="Search menu..."
-          className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+          className="w-full rounded-xl border border-slate-200 bg-white pl-9 pr-3 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-orange-400 focus:outline-none focus:ring-4 focus:ring-orange-100"
         />
       </div>
-      <div className="flex items-center gap-2 w-full sm:w-auto mt-2 sm:mt-0">
-        <button
-          onClick={onFilterClick}
-          className="flex-0 w-full sm:w-auto p-2 border border-gray-300 rounded-lg bg-white hover:bg-gray-50"
-        >
-          <FunnelIcon className="w-5 h-5 text-gray-600 mx-auto" />
-        </button>
-        <div className="flex border border-gray-300 rounded-lg overflow-hidden">
-          <button
-            onClick={() => onViewModeChange('grid')}
-            className={`p-2 ${viewMode === 'grid' ? 'bg-primary-600 text-white' : 'bg-white text-gray-600'}`}
-          >
-            <Squares2X2Icon className="w-4 h-4" />
-          </button>
-          <button
-            onClick={() => onViewModeChange('list')}
-            className={`p-2 ${viewMode === 'list' ? 'bg-primary-600 text-white' : 'bg-white text-gray-600'}`}
-          >
-            <ListBulletIcon className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
+      <button
+        type="button"
+        onClick={onFilterClick}
+        className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50 sm:w-auto"
+        aria-label="Open filters"
+      >
+        <FunnelIcon className="h-4 w-4" />
+        <span className="sm:hidden">Filter</span>
+      </button>
     </motion.div>
   )
 }

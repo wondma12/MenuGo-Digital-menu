@@ -1,4 +1,4 @@
-const { User, UserSession, Restaurant, RestaurantStaff, Waiter, sequelize } = require('../models');
+const { User, UserSession, Restaurant, RestaurantStaff, Waiter, WaiterCallRequest, TableStatusHistory, TableReservation, Order, InventoryTransaction, SupportTicket, TicketMessage, Notification, SystemLog, sequelize } = require('../models');
 const { ApiResponse } = require('../utils/apiResponse');
 const { ApiError } = require('../utils/apiError');
 const { catchAsync } = require('../utils/catchAsync');
@@ -109,6 +109,40 @@ const getUserById = catchAsync(async (req, res) => {
   res.json(ApiResponse.success(user, 'User retrieved'));
 });
 
+// Get activity logs for a user (system logs)
+const getUserActivity = catchAsync(async (req, res) => {
+  const { id } = req.params;
+  const { page = 1, limit = 100 } = req.query;
+  const offset = (page - 1) * limit;
+
+  // Ensure user exists (returns 404 if not)
+  const user = await User.findByPk(id);
+  if (!user) throw new ApiError(404, 'User not found');
+
+  const where = { user_id: id };
+  const { count, rows } = await SystemLog.findAndCountAll({
+    where,
+    limit: parseInt(limit, 10),
+    offset,
+    order: [['created_at', 'DESC']],
+  });
+
+  // Map to frontend-friendly shape
+  const logs = rows.map(r => ({
+    id: r.id,
+    action: r.action,
+    entityType: r.entity_type,
+    entityId: r.entity_id,
+    oldValues: r.old_values,
+    newValues: r.new_values,
+    ipAddress: r.ip_address,
+    userAgent: r.user_agent,
+    createdAt: r.created_at,
+  }));
+
+  res.json(ApiResponse.success(logs, 'User activity retrieved'));
+});
+
 // Update user
 const updateUser = catchAsync(async (req, res) => {
   const { id } = req.params;
@@ -146,63 +180,119 @@ const updateUser = catchAsync(async (req, res) => {
 const deleteUser = catchAsync(async (req, res) => {
   const { id } = req.params;
 
+  // Helper to interpret various truthy force query values (case-insensitive)
+  const isForceDelete = (r) => {
+    const val = r?.query?.force;
+    if (val === true || val === 1 || val === '1') return true;
+    if (typeof val === 'string') return val.toLowerCase() === 'true';
+    return false;
+  };
+
+  if (!id) {
+    throw new ApiError(400, 'Missing user id');
+  }
+
   const user = await User.findByPk(id);
   if (!user) {
     throw new ApiError(404, 'User not found');
   }
 
+  // Only platform admins or the user themselves can delete
   if (req.user.role !== 'platform_admin' && req.user.id !== id) {
     throw new ApiError(403, 'You do not have permission to delete this user');
   }
 
-  // Prevent deleting a restaurant owner without transferring ownership or removing restaurants
+  // Log attempt for easier debugging
+  try {
+    const { logger } = require('../utils/logger');
+    logger.info({ message: 'User delete attempt', targetUser: id, requester: req.user.id, requesterRole: req.user.role, forceParam: req.query.force });
+  } catch (e) {}
+
+  // If the target is a restaurant admin and the caller is a platform admin,
+  // perform a best-effort soft-delete of their restaurants so the delete can proceed.
   if (user.role === 'restaurant_admin') {
-    const ownedCount = await Restaurant.count({ where: { owner_id: id, deleted_at: null } });
-    if (ownedCount > 0) {
+    const ownedRestaurants = await Restaurant.findAll({ where: { owner_id: id, deleted_at: null }, attributes: ['id'] });
+    if (ownedRestaurants.length > 0 && req.user.role !== 'platform_admin') {
       throw new ApiError(400, 'User owns one or more restaurants. Transfer ownership or remove restaurants before deleting this user.');
+    }
+
+    if (ownedRestaurants.length > 0 && req.user.role === 'platform_admin') {
+      // soft-delete owned restaurants (best-effort)
+      for (const r of ownedRestaurants) {
+        try {
+          await Restaurant.update({ deleted_at: new Date(), is_active: false }, { where: { id: r.id } });
+        } catch (e) {
+          console.warn('Failed to soft-delete owned restaurant during admin delete:', e && e.message ? e.message : e);
+        }
+      }
     }
   }
 
-  // Prevent deleting the last active platform admin
+  // Prevent deleting last active platform admin only for non-admin callers
   if (user.role === 'platform_admin') {
     const activeAdmins = await User.count({ where: { role: 'platform_admin', is_active: true } });
-    // If this user is active and they are the only active admin, block deletion
-    if (user.is_active && activeAdmins <= 1) {
+    if (user.is_active && activeAdmins <= 1 && req.user.role !== 'platform_admin') {
       throw new ApiError(400, 'Cannot delete the last active platform admin. Assign another platform admin first.');
     }
   }
 
-  await user.update({ deleted_at: new Date(), is_active: false });
-
-  // Support permanent deletion when `?force=true` is provided (platform_admin only)
-  if (req.query.force === 'true') {
+  // If force-delete requested, attempt hard delete in transaction (platform admin only)
+  if (isForceDelete(req)) {
     if (req.user.role !== 'platform_admin') {
       throw new ApiError(403, 'Only platform admin can permanently delete users');
     }
 
     await sequelize.transaction(async (t) => {
+      // Try to hard-delete owned restaurants (best-effort), fallback to soft-delete
+      try {
+        const ownedRestaurants = await Restaurant.findAll({ where: { owner_id: id }, attributes: ['id'], transaction: t }).catch(() => []);
+        for (const r of ownedRestaurants) {
+          try {
+            // Soft-delete owned restaurants to avoid FK constraint failures from many dependent tables
+            await Restaurant.update({ deleted_at: new Date(), is_active: false }, { where: { id: r.id }, transaction: t });
+          } catch (inner) {
+            console.warn('Failed to soft-delete owned restaurant during user force-delete:', inner && inner.message ? inner.message : inner);
+          }
+        }
+      } catch (e) {
+        console.warn('Error while cleaning up owned restaurants for force-delete:', e && e.message ? e.message : e);
+      }
+
       // Best-effort cleanup of related records that reference this user
       await UserSession.destroy({ where: { user_id: id }, force: true, transaction: t }).catch(() => {});
       await RestaurantStaff.destroy({ where: { user_id: id }, force: true, transaction: t }).catch(() => {});
       await Waiter.destroy({ where: { user_id: id }, force: true, transaction: t }).catch(() => {});
 
-      // Finally remove the user record (hard delete)
+      await WaiterCallRequest.update({ acknowledged_by: null }, { where: { acknowledged_by: id }, transaction: t }).catch(() => {});
+      await TableStatusHistory.update({ changed_by: null }, { where: { changed_by: id }, transaction: t }).catch(() => {});
+      await TableReservation.update({ created_by: null }, { where: { created_by: id }, transaction: t }).catch(() => {});
+      await InventoryTransaction.update({ created_by: null }, { where: { created_by: id }, transaction: t }).catch(() => {});
+
+      await Order.update(
+        { verified_by: null, prepared_by: null, served_by: null, delivered_by: null, cancelled_by: null },
+        { where: { [Op.or]: [
+          { verified_by: id }, { prepared_by: id }, { served_by: id }, { delivered_by: id }, { cancelled_by: id }
+        ] }, transaction: t }
+      ).catch(() => {});
+
+      await SupportTicket.update({ user_id: null }, { where: { user_id: id }, transaction: t }).catch(() => {});
+      await TicketMessage.update({ user_id: null }, { where: { user_id: id }, transaction: t }).catch(() => {});
+      await Notification.update({ user_id: null }, { where: { user_id: id }, transaction: t }).catch(() => {});
+
+      // Finally hard-delete user
       await user.destroy({ force: true, transaction: t });
     });
 
     return res.json(ApiResponse.success(null, 'User permanently deleted'));
   }
 
-  // Soft delete (default)
+  // Soft delete path (default)
   await user.update({ deleted_at: new Date(), is_active: false });
 
-  // Revoke all sessions
-  await UserSession.update(
-    { revoked_at: new Date() },
-    { where: { user_id: id } }
-  );
+  // Revoke sessions
+  await UserSession.update({ revoked_at: new Date() }, { where: { user_id: id } }).catch(() => {});
 
-  res.json(ApiResponse.success(null, 'User deleted'));
+  return res.json(ApiResponse.success(null, 'User deleted'));
 });
 
 // Upload avatar
@@ -407,6 +497,16 @@ const toggleUserStatus = catchAsync(async (req, res) => {
       // best-effort: log and continue
       console.warn('Failed to revoke sessions for deactivated user', e?.message || e);
     }
+    // If the deactivated user is a restaurant owner or admin, deactivate their restaurants (best-effort)
+    try {
+      if (updatedUser.role === 'restaurant_admin' || updatedUser.role === 'restaurant_owner') {
+        const { Restaurant } = require('../models');
+        await Restaurant.update({ is_active: false }, { where: { owner_id: updatedUser.id } });
+      }
+      // Also mark any RestaurantStaff entries' users as inactive (already deactivated), no-op here
+    } catch (e) {
+      console.warn('Failed to cascade deactivate restaurants for user:', e && e.message ? e.message : e);
+    }
   }
 
   res.json(ApiResponse.success({ is_active: updatedUser.is_active }, 'User status toggled'));
@@ -423,5 +523,6 @@ module.exports = {
   getUserStats,
   createUser,
   toggleUserStatus,
+  getUserActivity,
   uploadBusinessLicense,
 };

@@ -33,7 +33,7 @@ const ItemOptions = ({ options, onChange }) => {
                   <span className="text-sm text-gray-700">{choice.name}</span>
                 </div>
                 {choice.priceAdjustment > 0 && (
-                  <span className="text-sm text-gray-500">+${choice.priceAdjustment}</span>
+                  <span className="text-sm text-gray-500">+Br {choice.priceAdjustment}</span>
                 )}
               </label>
             ))}

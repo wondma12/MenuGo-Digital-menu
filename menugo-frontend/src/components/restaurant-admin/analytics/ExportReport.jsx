@@ -4,7 +4,7 @@ import Dropdown from '../../../common/Dropdown'
 import { exportToCSV, exportToPDF, exportToExcel } from '../../../utils/exportUtils'
 import toast from 'react-hot-toast'
 
-const ExportReport = ({ data, type, dateRange }) => {
+const ExportReport = ({ data, type, dateRange, className = '' }) => {
   const handleExport = async (format) => {
     try {
       const exportData = {
@@ -39,8 +39,10 @@ const ExportReport = ({ data, type, dateRange }) => {
     { label: 'Export as PDF', onClick: () => handleExport('pdf') },
   ]
 
+  const triggerClass = `inline-flex shrink-0 items-center gap-2 rounded-none bg-gradient-to-r from-orange-500 to-blue-500 px-3 py-2 text-xs font-semibold whitespace-nowrap text-white shadow-[0_16px_36px_rgba(59,130,246,0.22)] transition-transform duration-200 hover:-translate-y-0.5 ${className}`.trim()
+
   const trigger = (
-    <button className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 flex items-center gap-2">
+    <button className={triggerClass}>
       <DocumentArrowDownIcon className="w-4 h-4" />
       Export Report
     </button>

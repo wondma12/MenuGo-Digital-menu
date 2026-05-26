@@ -5,24 +5,106 @@ const { ApiError } = require('../utils/apiError');
 const { catchAsync } = require('../utils/catchAsync');
 const { Op } = require('sequelize');
 
+const toStartOfDay = (value) => {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return null
+  date.setHours(0, 0, 0, 0)
+  return date
+}
+
+const toEndOfDay = (value) => {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return null
+  date.setHours(23, 59, 59, 999)
+  return date
+}
+
+const toLocalDay = (value, endOfDay = false) => {
+  if (!value) return null
+
+  if (typeof value === 'string') {
+    const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/)
+    if (match) {
+      const year = Number(match[1])
+      const month = Number(match[2]) - 1
+      const day = Number(match[3])
+      const date = new Date(year, month, day)
+      date.setHours(endOfDay ? 23 : 0, endOfDay ? 59 : 0, endOfDay ? 59 : 0, endOfDay ? 999 : 0)
+      return date
+    }
+  }
+
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return null
+  date.setHours(endOfDay ? 23 : 0, endOfDay ? 59 : 0, endOfDay ? 59 : 0, endOfDay ? 999 : 0)
+  return date
+}
+
+const toLocalDateString = (value) => {
+  const date = value instanceof Date ? value : new Date(value)
+  if (Number.isNaN(date.getTime())) return ''
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
 // Get restaurant sales analytics
 const getSalesAnalytics = catchAsync(async (req, res) => {
   const { restaurantId } = req.params;
   const { start_date, end_date, group_by = 'day' } = req.query;
 
-  const startDate = start_date ? new Date(start_date) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-  const endDate = end_date ? new Date(end_date) : new Date();
+  const startDate = start_date ? toLocalDay(start_date, false) : toLocalDay(new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), false);
+  const endDate = end_date ? toLocalDay(end_date, true) : toLocalDay(new Date(), true);
 
   let salesData;
   
   if (group_by === 'day') {
-    salesData = await DailySalesSummary.findAll({
+    const dailySummaries = await DailySalesSummary.findAll({
       where: {
         restaurant_id: restaurantId,
         date: { [Op.between]: [startDate, endDate] },
       },
       order: [['date', 'ASC']],
     });
+    const summaryMap = new Map((dailySummaries || []).map((row) => {
+      const rowDate = row?.date ? new Date(row.date) : null
+      const key = rowDate && !Number.isNaN(rowDate.getTime()) ? toLocalDateString(rowDate) : String(row?.date || '')
+      return [key, row]
+    }))
+
+    const derived = [];
+    for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+      const thisDay = new Date(d);
+      thisDay.setHours(0, 0, 0, 0);
+      const nextDay = new Date(thisDay);
+      nextDay.setDate(nextDay.getDate() + 1);
+
+      const dayKey = toLocalDateString(thisDay)
+      const existing = summaryMap.get(dayKey)
+
+      let dailyRevenue = Number(existing?.total_revenue ?? 0)
+      let dailyOrders = Number(existing?.total_orders ?? 0)
+
+      if (!existing) {
+        dailyRevenue = await Order.sum('total_amount', {
+          where: { restaurant_id: restaurantId, status: 'completed', created_at: { [Op.between]: [thisDay, nextDay] } },
+        }).catch(() => 0) || 0;
+
+        dailyOrders = await Order.count({
+          where: { restaurant_id: restaurantId, created_at: { [Op.between]: [thisDay, nextDay] } },
+        }).catch(() => 0) || 0;
+      }
+
+      derived.push({
+        date: dayKey,
+        total_revenue: dailyRevenue,
+        total_orders: dailyOrders,
+        average_order_value: Number(existing?.average_order_value ?? (dailyOrders > 0 ? dailyRevenue / dailyOrders : 0)),
+      });
+    }
+
+    salesData = derived;
   } else if (group_by === 'hour') {
     salesData = await HourlyAnalytics.findAll({
       where: {
@@ -32,19 +114,21 @@ const getSalesAnalytics = catchAsync(async (req, res) => {
       order: [['date', 'ASC'], ['hour', 'ASC']],
     });
   } else if (group_by === 'month') {
+    // MySQL: use DATE_FORMAT to group by month
+    const monthFormat = '%Y-%m';
     salesData = await DailySalesSummary.findAll({
       where: {
         restaurant_id: restaurantId,
         date: { [Op.between]: [startDate, endDate] },
       },
       attributes: [
-        [sequelize.fn('DATE_TRUNC', 'month', sequelize.col('date')), 'month'],
+        [sequelize.fn('DATE_FORMAT', sequelize.col('date'), monthFormat), 'month'],
         [sequelize.fn('SUM', sequelize.col('total_orders')), 'total_orders'],
         [sequelize.fn('SUM', sequelize.col('total_revenue')), 'total_revenue'],
         [sequelize.fn('AVG', sequelize.col('average_order_value')), 'average_order_value'],
       ],
-      group: [sequelize.fn('DATE_TRUNC', 'month', sequelize.col('date'))],
-      order: [[sequelize.fn('DATE_TRUNC', 'month', sequelize.col('date')), 'ASC']],
+      group: [sequelize.fn('DATE_FORMAT', sequelize.col('date'), monthFormat)],
+      order: [[sequelize.fn('DATE_FORMAT', sequelize.col('date'), monthFormat), 'ASC']],
     });
   }
 
@@ -63,9 +147,43 @@ const getSalesAnalytics = catchAsync(async (req, res) => {
     ],
   });
 
+  // Fallback summary derived from Orders when no DailySalesSummary exists
+  let finalSummary = summary;
+  if (!summary || !summary.dataValues || Object.values(summary.dataValues).every(v => v === null)) {
+    try {
+      const totalOrders = await Order.count({ where: { restaurant_id: restaurantId, created_at: { [Op.between]: [startDate, endDate] } } }).catch(() => 0) || 0;
+      const totalRevenue = await Order.sum('total_amount', { where: { restaurant_id: restaurantId, status: 'completed', created_at: { [Op.between]: [startDate, endDate] } } }).catch(() => 0) || 0;
+      const totalTax = await Order.sum('tax_amount', { where: { restaurant_id: restaurantId, status: 'completed', created_at: { [Op.between]: [startDate, endDate] } } }).catch(() => 0) || 0;
+      const totalDiscount = await Order.sum('discount_amount', { where: { restaurant_id: restaurantId, status: 'completed', created_at: { [Op.between]: [startDate, endDate] } } }).catch(() => 0) || 0;
+      const avgOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
+
+      finalSummary = { dataValues: { total_orders: totalOrders, total_revenue: totalRevenue, total_tax: totalTax, total_discount: totalDiscount, avg_order_value: avgOrderValue } };
+    } catch (e) {
+      finalSummary = summary;
+    }
+  }
+
   res.json(ApiResponse.success({
-    summary,
+    summary: finalSummary,
     data: salesData,
+    // derive order type distribution directly from orders as a robust fallback
+    order_type_distribution: await (async () => {
+      try {
+        const rawTypes = await Order.findAll({
+          where: { restaurant_id: restaurantId, created_at: { [Op.between]: [startDate, endDate] } },
+          attributes: [
+            [sequelize.fn('COALESCE', sequelize.col('order_type'), 'unknown'), 'type'],
+            [sequelize.fn('COUNT', sequelize.col('id')), 'count'],
+            [sequelize.fn('SUM', sequelize.col('total_amount')), 'revenue'],
+          ],
+          group: [sequelize.fn('COALESCE', sequelize.col('order_type'), 'unknown')],
+        });
+
+        return rawTypes.map(r => ({ name: r.dataValues.type || 'unknown', value: Number(r.dataValues.count || 0), revenue: Number(r.dataValues.revenue || 0) }));
+      } catch (e) {
+        return [];
+      }
+    })(),
     period: { start_date: startDate, end_date: endDate },
   }, 'Sales analytics retrieved'));
 });
@@ -75,8 +193,8 @@ const getMenuPerformance = catchAsync(async (req, res) => {
   const { restaurantId } = req.params;
   const { start_date, end_date, limit = 10 } = req.query;
 
-  const startDate = start_date ? new Date(start_date) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-  const endDate = end_date ? new Date(end_date) : new Date();
+  const startDate = start_date ? toLocalDay(start_date, false) : toLocalDay(new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), false);
+  const endDate = end_date ? toLocalDay(end_date, true) : toLocalDay(new Date(), true);
 
   const topItems = await MenuItemAnalytics.findAll({
     where: {
@@ -91,8 +209,9 @@ const getMenuPerformance = catchAsync(async (req, res) => {
       [sequelize.fn('SUM', sequelize.col('view_count')), 'total_views'],
       [sequelize.fn('SUM', sequelize.col('add_to_cart_count')), 'total_adds'],
     ],
-    include: [{ model: MenuItem, as: 'analytics_item' }],
-    group: ['menu_item_id', 'menu_item.id'],
+    // include minimal MenuItem attributes to avoid grouping errors
+    include: [{ model: MenuItem, as: 'analytics_item', attributes: ['id', 'name'] }],
+    group: ['menu_item_id'],
     order: [[sequelize.literal('total_revenue'), 'DESC']],
     limit: parseInt(limit),
   });
@@ -119,7 +238,7 @@ const getHourlyAnalytics = catchAsync(async (req, res) => {
   const { restaurantId } = req.params;
   const { date } = req.query;
 
-  const targetDate = date ? new Date(date) : new Date();
+  const targetDate = date ? toLocalDay(date, false) : toLocalDay(new Date(), false);
 
   const hourlyData = await HourlyAnalytics.findAll({
     where: {
@@ -128,6 +247,30 @@ const getHourlyAnalytics = catchAsync(async (req, res) => {
     },
     order: [['hour', 'ASC']],
   });
+
+  // Fallback: derive hourly data from Orders if HourlyAnalytics is empty
+  let finalHourly = hourlyData;
+  if ((!hourlyData || hourlyData.length === 0)) {
+    const derived = [];
+    const dayStart = new Date(targetDate);
+    dayStart.setHours(0, 0, 0, 0);
+    const dayEnd = new Date(dayStart);
+    dayEnd.setDate(dayEnd.getDate() + 1);
+
+    for (let h = 0; h < 24; h++) {
+      const hourStart = new Date(dayStart);
+      hourStart.setHours(h, 0, 0, 0);
+      const hourEnd = new Date(hourStart);
+      hourEnd.setHours(h + 1);
+
+      const ordersCount = await Order.count({ where: { restaurant_id: restaurantId, created_at: { [Op.between]: [hourStart, hourEnd] }, status: 'completed' } }).catch(() => 0) || 0;
+      const revenue = await Order.sum('total_amount', { where: { restaurant_id: restaurantId, created_at: { [Op.between]: [hourStart, hourEnd] }, status: 'completed' } }).catch(() => 0) || 0;
+
+      derived.push({ hour: h, orders_count: ordersCount, revenue });
+    }
+
+    finalHourly = derived;
+  }
 
   // Get peak hours
   const peakHours = await HourlyAnalytics.findAll({
@@ -145,9 +288,32 @@ const getHourlyAnalytics = catchAsync(async (req, res) => {
     limit: 5,
   });
 
+  // Fallback: compute peak hours from Orders if HourlyAnalytics has no data
+  let finalPeak = peakHours;
+  if ((!peakHours || peakHours.length === 0)) {
+    try {
+      const startWindow = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+      const raw = await Order.findAll({
+        where: { restaurant_id: restaurantId, created_at: { [Op.between]: [startWindow, new Date()] }, status: 'completed' },
+        attributes: [
+          [sequelize.fn('HOUR', sequelize.col('created_at')), 'hour'],
+          [sequelize.fn('COUNT', sequelize.col('id')), 'orders_count'],
+          [sequelize.fn('SUM', sequelize.col('total_amount')), 'revenue'],
+        ],
+        group: [sequelize.fn('HOUR', sequelize.col('created_at'))],
+        order: [[sequelize.literal('orders_count'), 'DESC']],
+        limit: 5,
+      });
+
+      finalPeak = raw.map(r => ({ hour: r.dataValues.hour, avg_orders: parseInt(r.dataValues.orders_count, 10), avg_revenue: parseFloat(r.dataValues.revenue) }));
+    } catch (e) {
+      finalPeak = peakHours;
+    }
+  }
+
   res.json(ApiResponse.success({
-    hourly_data: hourlyData,
-    peak_hours: peakHours,
+    hourly_data: finalHourly,
+    peak_hours: finalPeak,
   }, 'Hourly analytics retrieved'));
 });
 
@@ -156,8 +322,8 @@ const getCustomerAnalytics = catchAsync(async (req, res) => {
   const { restaurantId } = req.params;
   const { start_date, end_date } = req.query;
 
-  const startDate = start_date ? new Date(start_date) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-  const endDate = end_date ? new Date(end_date) : new Date();
+  const startDate = start_date ? toLocalDay(start_date, false) : toLocalDay(new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), false);
+  const endDate = end_date ? toLocalDay(end_date, true) : toLocalDay(new Date(), true);
 
   // New vs returning customers
   const orders = await Order.findAll({
@@ -247,14 +413,15 @@ const getRevenueAnalytics = catchAsync(async (req, res) => {
       date: dateRange,
     },
     attributes: [
-      [sequelize.fn('DATE_TRUNC', groupBy, sequelize.col('date')), 'period'],
+      // Map grouping to MySQL DATE_FORMAT patterns
+      [sequelize.fn('DATE_FORMAT', sequelize.col('date'), groupBy === 'month' ? '%Y-%m' : '%Y-%m-%d'), 'period'],
       [sequelize.fn('SUM', sequelize.col('total_revenue')), 'revenue'],
       [sequelize.fn('SUM', sequelize.col('dine_in_revenue')), 'dine_in_revenue'],
       [sequelize.fn('SUM', sequelize.col('takeaway_revenue')), 'takeaway_revenue'],
       [sequelize.fn('SUM', sequelize.col('delivery_revenue')), 'delivery_revenue'],
     ],
-    group: [sequelize.fn('DATE_TRUNC', groupBy, sequelize.col('date'))],
-    order: [[sequelize.fn('DATE_TRUNC', groupBy, sequelize.col('date')), 'ASC']],
+    group: [sequelize.fn('DATE_FORMAT', sequelize.col('date'), groupBy === 'month' ? '%Y-%m' : '%Y-%m-%d')],
+    order: [[sequelize.fn('DATE_FORMAT', sequelize.col('date'), groupBy === 'month' ? '%Y-%m' : '%Y-%m-%d'), 'ASC']],
   });
 
   // Calculate growth
@@ -290,8 +457,8 @@ const exportAnalyticsReport = catchAsync(async (req, res) => {
   const { restaurantId } = req.params;
   const { start_date, end_date, format = 'excel' } = req.query;
 
-  const startDate = start_date ? new Date(start_date) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-  const endDate = end_date ? new Date(end_date) : new Date();
+  const startDate = start_date ? toLocalDay(start_date, false) : toLocalDay(new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), false);
+  const endDate = end_date ? toLocalDay(end_date, true) : toLocalDay(new Date(), true);
 
   // Get all data
   const salesData = await DailySalesSummary.findAll({

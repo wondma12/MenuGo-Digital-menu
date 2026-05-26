@@ -4,11 +4,20 @@ import KitchenCompletedOrders from '../components/kitchen/KitchenCompletedOrders
 import Loading from '../components/common/Loading'
 import Pagination from '../components/common/Pagination'
 
+const toLocalDateString = (value) => {
+  const date = value instanceof Date ? value : new Date(value)
+  if (Number.isNaN(date.getTime())) return ''
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
 const KitchenCompletedPage = () => {
   const location = useLocation()
   const [restaurantId, setRestaurantId] = useState(null)
   // default to today so Completed view shows today's orders by default
-  const todayStr = new Date().toISOString().slice(0,10)
+  const todayStr = toLocalDateString(new Date())
   const [dateRange, setDateRange] = useState({ start: todayStr, end: todayStr })
   const [page, setPage] = useState(1)
   const [limit, setLimit] = useState(20)

@@ -1,4 +1,4 @@
-const { UserSession, Order, Restaurant, StaffActivityLog, SystemLog } = require('../models');
+const { UserSession, Order, Restaurant, StaffActivityLog, SystemLog, User, MenuItem } = require('../models');
 const fs = require('fs').promises;
 const path = require('path');
 const { logger } = require('../utils/logger');
@@ -83,22 +83,29 @@ const cleanupDeletedRecords = async () => {
     const ninetyDaysAgo = new Date();
     ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
     
-    // Cleanup soft-deleted users
-    const deletedUsers = await User.destroy({
-      where: {
-        deleted_at: { [Op.lt]: ninetyDaysAgo },
-      },
-      force: true,
-    });
-    
-    // Cleanup soft-deleted restaurants
+    // Soft-deleted users: only permanently delete users who do NOT own any active restaurants
+    const users = await User.findAll({ where: { deleted_at: { [Op.lt]: ninetyDaysAgo } } });
+    let deletedUsers = 0;
+    for (const u of users) {
+      const ownedCount = await Restaurant.count({ where: { owner_id: u.id, deleted_at: null } });
+      if (ownedCount === 0) {
+        await User.destroy({ where: { id: u.id }, force: true }).catch(err => {
+          logger.warn(`Failed to permanently delete user ${u.id}: ${err.message || err}`);
+        });
+        deletedUsers++;
+      } else {
+        logger.info(`Skipping permanent deletion of user ${u.id} because they own ${ownedCount} restaurant(s)`);
+      }
+    }
+
+    // Cleanup soft-deleted restaurants (unchanged)
     const deletedRestaurants = await Restaurant.destroy({
       where: {
         deleted_at: { [Op.lt]: ninetyDaysAgo },
       },
       force: true,
     });
-    
+
     // Cleanup soft-deleted menu items
     const deletedMenuItems = await MenuItem.destroy({
       where: {
@@ -106,7 +113,7 @@ const cleanupDeletedRecords = async () => {
       },
       force: true,
     });
-    
+
     logger.info(`Permanently deleted: ${deletedUsers} users, ${deletedRestaurants} restaurants, ${deletedMenuItems} menu items`);
     return { deletedUsers, deletedRestaurants, deletedMenuItems };
   } catch (error) {

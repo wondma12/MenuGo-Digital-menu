@@ -17,6 +17,15 @@ import {
 } from '../services/authService'
 
 let pendingLoginRequest = null
+const authSessionStorage = typeof window !== 'undefined' ? window.sessionStorage : null
+
+const getAuthValue = (key) => authSessionStorage?.getItem(key) || null
+const setAuthValue = (key, value) => {
+  if (authSessionStorage) authSessionStorage.setItem(key, value)
+}
+const removeAuthValue = (key) => {
+  if (authSessionStorage) authSessionStorage.removeItem(key)
+}
 
 const useAuthStore = create(
   persist(
@@ -89,10 +98,10 @@ const useAuthStore = create(
               userData.restaurant_id = userData.restaurant_id || staffPayload.restaurant_id || (userData.restaurant && userData.restaurant.id)
             }
             
-            // Store in localStorage
-            localStorage.setItem('token', tokenData)
-            if (refreshTokenData) localStorage.setItem('refreshToken', refreshTokenData)
-            localStorage.setItem('user', JSON.stringify(userData))
+            // Store auth in session storage so restart requires login.
+            setAuthValue('token', tokenData)
+            if (refreshTokenData) setAuthValue('refreshToken', refreshTokenData)
+            setAuthValue('user', JSON.stringify(userData))
             
             set({
               user: userData,
@@ -108,7 +117,11 @@ const useAuthStore = create(
             
           } catch (error) {
             console.error('Login error:', error)
-            const errorMessage = error.response?.data?.message || error.message || 'Login failed'
+            const statusCode = error.response?.status
+            let errorMessage = error.response?.data?.message || error.message || 'Login failed'
+            if (statusCode === 401 && /invalid credentials/i.test(String(errorMessage))) {
+              errorMessage = `${errorMessage} — check your email/password or use 'Forgot password' to reset.`
+            }
             set({ 
               isLoading: false, 
               error: errorMessage,
@@ -143,10 +156,10 @@ const useAuthStore = create(
         } catch (error) {
           console.error('Logout error:', error)
         } finally {
-          // Clear localStorage
-          localStorage.removeItem('token')
-          localStorage.removeItem('refreshToken')
-          localStorage.removeItem('user')
+          // Clear auth session data
+          removeAuthValue('token')
+          removeAuthValue('refreshToken')
+          removeAuthValue('user')
           
           set({
             user: null,
@@ -160,7 +173,7 @@ const useAuthStore = create(
       },
 
       checkAuth: async () => {
-        const token = get().token || localStorage.getItem('token')
+        const token = get().token || getAuthValue('token')
         if (!token) return false
 
         set({ isLoading: true })
@@ -198,7 +211,7 @@ const useAuthStore = create(
               isAuthenticated: true, 
               isLoading: false 
             })
-            localStorage.setItem('user', JSON.stringify(userData))
+            setAuthValue('user', JSON.stringify(userData))
             return true
           } else {
             throw new Error('Invalid user data')
@@ -206,9 +219,9 @@ const useAuthStore = create(
         } catch (error) {
           console.error('Check auth error:', error)
           // Clear invalid auth data
-          localStorage.removeItem('token')
-          localStorage.removeItem('refreshToken')
-          localStorage.removeItem('user')
+          removeAuthValue('token')
+          removeAuthValue('refreshToken')
+          removeAuthValue('user')
           
           set({
             user: null,
@@ -236,7 +249,7 @@ const useAuthStore = create(
           }
           
           set({ user: updatedUser, isLoading: false })
-          localStorage.setItem('user', JSON.stringify(updatedUser))
+          setAuthValue('user', JSON.stringify(updatedUser))
           return { success: true, user: updatedUser }
         } catch (error) {
           const errorMessage = error.response?.data?.message || 'Update failed'
@@ -347,8 +360,8 @@ const useAuthStore = create(
               userData.restaurant_id = userData.restaurant_id || staffPayload.restaurant_id || (userData.restaurant && userData.restaurant.id)
             }
 
-            localStorage.setItem('token', tokenData)
-            localStorage.setItem('user', JSON.stringify(userData))
+            setAuthValue('token', tokenData)
+            setAuthValue('user', JSON.stringify(userData))
             
             set({
               user: userData,
@@ -374,7 +387,7 @@ const useAuthStore = create(
           const user = get().user
           const updatedUser = { ...user, twoFactorEnabled: false }
           set({ user: updatedUser, isLoading: false })
-          localStorage.setItem('user', JSON.stringify(updatedUser))
+          setAuthValue('user', JSON.stringify(updatedUser))
           return { success: true }
         } catch (error) {
           const errorMessage = error.response?.data?.message || 'Failed to disable 2FA'
@@ -386,12 +399,12 @@ const useAuthStore = create(
       clearError: () => set({ error: null }),
       
       getAuthHeader: () => {
-        const token = get().token || localStorage.getItem('token')
+        const token = get().token || getAuthValue('token')
         return token ? { Authorization: `Bearer ${token}` } : {}
       },
       
       isTokenExpired: () => {
-        const token = get().token || localStorage.getItem('token')
+        const token = get().token || getAuthValue('token')
         if (!token) return true
         
         try {
@@ -404,7 +417,7 @@ const useAuthStore = create(
     }),
     {
       name: 'auth-storage',
-      storage: createJSONStorage(() => localStorage),
+      storage: createJSONStorage(() => sessionStorage),
       partialize: (state) => ({ 
         token: state.token, 
         refreshToken: state.refreshToken,

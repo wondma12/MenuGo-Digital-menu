@@ -30,13 +30,13 @@ const QuickActions = () => {
   ]
 
   const trigger = (
-    <button className="bg-primary-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary-700 transition-colors flex items-center gap-2">
+    <button className="inline-flex items-center gap-2 rounded-none bg-gradient-to-r from-orange-500 to-blue-500 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-orange-500/20 transition-all hover:-translate-y-0.5 hover:from-orange-600 hover:to-blue-600">
       <PlusIcon className="w-4 h-4" />
       Quick Actions
     </button>
   )
 
-  return <Dropdown trigger={trigger} items={actions} align="right" />
+  return <Dropdown trigger={trigger} items={actions} align="right" className="rounded-none" />
 }
 
 export default QuickActions

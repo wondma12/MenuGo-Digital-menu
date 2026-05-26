@@ -1,6 +1,5 @@
 import React, { useEffect } from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
-import { Toaster } from 'react-hot-toast'
 import { ToastContainer } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 import { QueryClient, QueryClientProvider } from 'react-query'
@@ -33,6 +32,7 @@ import RevenueReport from './components/platform-admin/subscriptions/RevenueRepo
 import PlatformAnalytics from './components/platform-admin/analytics/PlatformAnalytics'
 import RevenueAnalytics from './components/platform-admin/analytics/RevenueAnalytics'
 import UserAnalytics from './components/platform-admin/analytics/UserAnalytics'
+import PlatformProfile from './components/platform-admin/profile/PlatformProfile'
 import TicketList from './components/platform-admin/support/TicketList'
 import TicketDetails from './components/platform-admin/support/TicketDetails'
 import KnowledgeBase from './components/platform-admin/support/KnowledgeBase'
@@ -59,6 +59,7 @@ import MenuPerformance from './components/restaurant-admin/analytics/MenuPerform
 import CustomerReport from './components/restaurant-admin/analytics/CustomerReport'
 import ReviewManagement from './components/restaurant-admin/reviews/ReviewManagement'
 import RestaurantSettings from './components/restaurant-admin/settings/RestaurantSettings'
+import RestaurantProfilePage from './components/restaurant-admin/settings/RestaurantProfilePage'
 import RestaurantQRCodePage from './components/restaurant-admin/qr/RestaurantQRCodePage'
 // Remove duplicate KitchenPage import from restaurant-admin/kitchen
 // import KitchenPage from './components/restaurant-admin/kitchen/KitchenPage'
@@ -103,6 +104,7 @@ import Contact from './components/public/Contact'
 import ProtectedRoute from './components/common/ProtectedRoute'
 import ErrorBoundary from './components/common/ErrorBoundary'
 import Loading from './components/common/Loading'
+import ProfileRedirect from './components/common/ProfileRedirect'
 
 // Create Query Client
 const queryClient = new QueryClient({
@@ -202,31 +204,7 @@ function App() {
             v7_relativeSplatPath: true,
           }}
         >
-          <Toaster
-            position="top-right"
-            toastOptions={{
-              duration: 4000,
-              style: {
-                background: '#363636',
-                color: '#fff',
-                borderRadius: '12px',
-              },
-              success: {
-                duration: 3000,
-                iconTheme: {
-                  primary: '#10b981',
-                  secondary: '#fff',
-                },
-              },
-              error: {
-                duration: 4000,
-                iconTheme: {
-                  primary: '#ef4444',
-                  secondary: '#fff',
-                },
-              },
-            }}
-          />
+          {/* react-toastify handles global toasts via ToastContainer */}
           <ToastContainer
             position="top-right"
             autoClose={4000}
@@ -257,6 +235,7 @@ function App() {
             <Route path="/reset-password/:token" element={<ResetPassword />} />
             <Route path="/verify-email/:token" element={<VerifyEmail />} />
             <Route path="/2fa" element={<TwoFactorAuth />} />
+            <Route path="/profile" element={<ProfileRedirect />} />
             
             {/* Customer Routes - No Auth Required */}
             <Route path="/menu/:restaurantId" element={<CustomerLayout />}>
@@ -285,6 +264,7 @@ function App() {
               <Route path="/platform" element={<AdminLayout />}>
                 <Route index element={<Navigate to="/platform/dashboard" />} />
                 <Route path="dashboard" element={<PlatformDashboard />} />
+                <Route path="profile" element={<PlatformProfile />} />
                 <Route path="restaurants" element={<RestaurantList />} />
                 <Route path="restaurants/new" element={<RestaurantForm />} />
                 <Route path="restaurants/:id" element={<RestaurantDetails />} />
@@ -329,6 +309,7 @@ function App() {
               <Route path="/admin" element={<RestaurantLayout />}>
                 <Route index element={<Navigate to="/admin/dashboard" />} />
                 <Route path="dashboard" element={<RestaurantDashboard />} />
+                <Route path="profile" element={<RestaurantProfilePage />} />
                 <Route path="menu" element={<MenuManagement />} />
                 <Route path="categories" element={<CategoryManager />} />
                 <Route path="orders" element={<OrderManagement />} />

@@ -44,8 +44,8 @@ const MenuFilters = ({ filters, onFiltersChange }) => {
                           (filters.dietary && filters.dietary.length > 0)
 
   return (
-    <div className="bg-white rounded-xl p-5 border border-gray-200">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div className="bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.06)]">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <Select
           label="Category"
           value={filters.category}
@@ -68,7 +68,7 @@ const MenuFilters = ({ filters, onFiltersChange }) => {
       </div>
 
       <div className="mt-4">
-        <label className="block text-sm font-medium text-gray-700 mb-2">Dietary Preferences</label>
+        <label className="mb-2 block text-sm font-medium text-slate-700">Dietary Preferences</label>
         <div className="flex flex-wrap gap-3">
           {dietaryOptions.map((option) => (
             <label key={option.value} className="flex items-center gap-2 cursor-pointer">
@@ -76,19 +76,19 @@ const MenuFilters = ({ filters, onFiltersChange }) => {
                 type="checkbox"
                 checked={filters.dietary?.includes(option.value)}
                 onChange={() => handleDietaryToggle(option.value)}
-                className="w-4 h-4 text-primary-600 rounded"
+                className="h-4 w-4 rounded-none text-orange-600"
               />
-              <span className="text-sm text-gray-700">{option.label}</span>
+              <span className="text-sm text-slate-700">{option.label}</span>
             </label>
           ))}
         </div>
       </div>
 
       {hasActiveFilters && (
-        <div className="flex justify-end mt-4 pt-4 border-t border-gray-100">
+        <div className="mt-4 flex justify-end pt-4">
           <button
             onClick={clearFilters}
-            className="text-sm text-primary-600 hover:text-primary-700"
+            className="text-sm text-orange-600 hover:text-orange-700"
           >
             Clear All Filters
           </button>

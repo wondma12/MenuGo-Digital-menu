@@ -17,6 +17,7 @@ import ExportReport from './ExportReport'
 import ReportFilters from './ReportFilters'
 import Loading from '../../../common/Loading'
 import { getSalesReport } from '../../../services/analyticsService'
+import { formatPrice } from '../../../utils/currency'
 
 const SalesReport = () => {
   const [dateRange, setDateRange] = useState({
@@ -57,9 +58,9 @@ const SalesReport = () => {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white rounded-xl p-4 border border-gray-200">
+          <div className="bg-white rounded-xl p-4 border border-gray-200">
           <p className="text-sm text-gray-500">Total Sales</p>
-          <p className="text-2xl font-bold text-gray-900">${totalSales.toLocaleString()}</p>
+          <p className="text-2xl font-bold text-gray-900">{formatPrice(totalSales)}</p>
         </div>
         <div className="bg-white rounded-xl p-4 border border-gray-200">
           <p className="text-sm text-gray-500">Total Orders</p>
@@ -67,7 +68,7 @@ const SalesReport = () => {
         </div>
         <div className="bg-white rounded-xl p-4 border border-gray-200">
           <p className="text-sm text-gray-500">Average Order Value</p>
-          <p className="text-2xl font-bold text-gray-900">${averageOrderValue.toFixed(2)}</p>
+          <p className="text-2xl font-bold text-gray-900">{formatPrice(averageOrderValue)}</p>
         </div>
       </div>
 
@@ -78,7 +79,7 @@ const SalesReport = () => {
           <BarChart data={data?.salesData || []}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="period" />
-            <YAxis yAxisId="left" tickFormatter={(value) => `$${value}`} />
+            <YAxis yAxisId="left" tickFormatter={(value) => formatPrice(value)} />
             <YAxis yAxisId="right" orientation="right" />
             <Tooltip />
             <Legend />
@@ -115,8 +116,8 @@ const SalesReport = () => {
                 >
                   <td className="px-6 py-4 text-sm text-gray-900">{day.date}</td>
                   <td className="px-6 py-4 text-sm text-gray-600">{day.orders}</td>
-                  <td className="px-6 py-4 text-sm font-medium text-gray-900">${day.revenue}</td>
-                  <td className="px-6 py-4 text-sm text-gray-600">${day.avgOrderValue}</td>
+                  <td className="px-6 py-4 text-sm font-medium text-gray-900">{formatPrice(day.revenue)}</td>
+                  <td className="px-6 py-4 text-sm text-gray-600">{formatPrice(day.avgOrderValue)}</td>
                   <td className="px-6 py-4 text-sm text-gray-600">{day.topItem || '-'}</td>
                 </motion.tr>
               ))}

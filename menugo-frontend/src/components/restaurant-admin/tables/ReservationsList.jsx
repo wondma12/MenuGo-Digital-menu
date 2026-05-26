@@ -52,23 +52,23 @@ const ReservationsList = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-xl font-semibold text-gray-900">Reservations</h2>
-          <p className="text-sm text-gray-500">Manage table reservations</p>
+      <div className="flex items-center justify-between gap-4 rounded-none border border-slate-200 bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.06)]">
+        <div className="space-y-1">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-orange-600">Reservations</p>
+          <h2 className="text-xl font-black tracking-tight text-slate-900">Manage table reservations</h2>
+          <p className="text-sm text-slate-500">Track guests, seating status, and calendar availability.</p>
         </div>
         <div className="flex gap-3">
-          <div className="flex border border-gray-300 rounded-lg overflow-hidden">
+          <div className="flex overflow-hidden rounded-none border border-slate-200 bg-white shadow-sm">
             <button
               onClick={() => setViewMode('list')}
-              className={`px-3 py-1.5 text-sm ${viewMode === 'list' ? 'bg-primary-600 text-white' : 'bg-white text-gray-700'}`}
+              className={`px-3 py-2 text-sm ${viewMode === 'list' ? 'bg-gradient-to-r from-orange-500 to-blue-500 text-white' : 'bg-white text-slate-600 hover:bg-orange-50'}`}
             >
               List
             </button>
             <button
               onClick={() => setViewMode('calendar')}
-              className={`px-3 py-1.5 text-sm ${viewMode === 'calendar' ? 'bg-primary-600 text-white' : 'bg-white text-gray-700'}`}
+              className={`px-3 py-2 text-sm ${viewMode === 'calendar' ? 'bg-gradient-to-r from-orange-500 to-blue-500 text-white' : 'bg-white text-slate-600 hover:bg-orange-50'}`}
             >
               Calendar
             </button>
@@ -81,34 +81,34 @@ const ReservationsList = () => {
 
       {/* Content */}
       {viewMode === 'list' ? (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className="overflow-hidden rounded-none border border-slate-200 bg-white shadow-[0_16px_40px_rgba(15,23,42,0.06)]">
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gray-50">
+              <thead className="bg-slate-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Customer</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Table</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date & Time</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Party Size</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Customer</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Table</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Date & Time</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Party Size</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Status</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200">
+              <tbody className="divide-y divide-slate-100">
                 {reservations?.map((reservation) => (
-                  <motion.tr key={reservation.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="hover:bg-gray-50">
+                  <motion.tr key={reservation.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="hover:bg-orange-50/40">
                     <td className="px-6 py-4">
                       <div>
-                        <p className="font-medium text-gray-900">{reservation.customerName}</p>
-                        <p className="text-sm text-gray-500">{reservation.customerPhone}</p>
+                        <p className="font-medium text-slate-900">{reservation.customerName}</p>
+                        <p className="text-sm text-slate-500">{reservation.customerPhone}</p>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-600">Table {reservation.tableNumber}</td>
+                    <td className="px-6 py-4 text-sm text-slate-600">Table {reservation.tableNumber}</td>
                     <td className="px-6 py-4">
-                      <p className="text-sm text-gray-900">{new Date(reservation.reservationDate).toLocaleDateString()}</p>
-                      <p className="text-xs text-gray-500">{reservation.reservationTime}</p>
+                      <p className="text-sm text-slate-900">{new Date(reservation.reservationDate).toLocaleDateString()}</p>
+                      <p className="text-xs text-slate-500">{reservation.reservationTime}</p>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-600">{reservation.partySize} guests</td>
+                    <td className="px-6 py-4 text-sm text-slate-600">{reservation.partySize} guests</td>
                     <td className="px-6 py-4">
                       <Badge variant={getStatusColor(reservation.status)} size="sm">{reservation.status}</Badge>
                     </td>

@@ -26,7 +26,7 @@ const SecuritySettings = ({ settings, onSave }) => {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="bg-white rounded-xl p-6 border border-gray-200 space-y-4">
+      <form onSubmit={handleSubmit} className="bg-white p-6 border border-orange-100 border-l-4 border-l-orange-500 rounded-none shadow-[0_16px_40px_rgba(15,23,42,0.06)] space-y-4">
       <div className="grid grid-cols-2 gap-4">
         <Input
           label="Session Timeout (minutes)"
@@ -74,9 +74,9 @@ const SecuritySettings = ({ settings, onSave }) => {
         placeholder="https://example.com, https://app.example.com"
       />
 
-      <div className="flex justify-end pt-4">
-        <Button type="submit" icon={CheckIcon}>Save Changes</Button>
-      </div>
+        <div className="flex justify-end pt-4">
+          <Button type="submit" icon={CheckIcon} className="bg-orange-600 hover:bg-orange-700 text-white rounded-none px-4 py-2.5 shadow-sm">Save Changes</Button>
+        </div>
     </form>
   )
 }

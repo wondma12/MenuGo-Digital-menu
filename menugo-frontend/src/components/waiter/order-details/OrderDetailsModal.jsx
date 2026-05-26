@@ -67,9 +67,9 @@ const OrderDetailsModal = ({ order, displayNumber, onClose, onRefresh }) => {
   const titleNumber = displayNumber ?? normalized.orderNumber
 
   return (
-    <Modal isOpen={true} onClose={onClose} title={`Order Details - #${titleNumber || ''}`} size="lg">
-      <div className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <Modal isOpen={true} onClose={onClose} title={`Order Details - #${titleNumber || ''}`} size="sm">
+      <div className="mx-auto flex w-full max-w-md flex-col space-y-3.5 sm:space-y-4">
+        <div className="grid grid-cols-1 gap-3">
           <CustomerInfo customer={normalized.customer} />
           <TableInfo table={normalized.table} />
         </div>

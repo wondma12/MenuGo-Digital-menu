@@ -11,54 +11,56 @@ const KitchenOrderDetails = ({ order, displayNumber, onClose, onUpdateStatus }) 
   const titleNumber = displayNumber ?? order.orderNumber;
 
   return (
-    <Modal isOpen={true} onClose={onClose} title={`Order #${titleNumber}`} size="large">
-      <div className="space-y-6">
-        <div className="grid grid-cols-2 gap-4 pb-4 border-b">
-          <div>
-            <div className="text-sm text-gray-500">Table</div>
-            <div className="font-medium text-lg">{order.tableNumber}</div>
+    <Modal isOpen={true} onClose={onClose} title={`Order #${titleNumber}`} size="sm">
+      <div className="mx-auto flex w-full max-w-md flex-col space-y-3.5 sm:space-y-4">
+        <div className="grid grid-cols-1 gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-3.5 shadow-sm sm:grid-cols-2">
+          <div className="rounded-xl bg-white p-3 shadow-sm ring-1 ring-slate-100">
+            <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Table</div>
+            <div className="mt-1 text-base font-bold text-slate-900">{order.tableNumber}</div>
           </div>
-          <div>
-            <div className="text-sm text-gray-500">Status</div>
-            <KitchenStatusBadge status={order.status} />
+          <div className="rounded-xl bg-white p-3 shadow-sm ring-1 ring-slate-100">
+            <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Status</div>
+            <div className="mt-1">
+              <KitchenStatusBadge status={order.status} />
+            </div>
           </div>
-          <div>
-            <div className="text-sm text-gray-500">Order Time</div>
-            <div className="font-medium">{new Date(order.createdAt).toLocaleString()}</div>
+          <div className="rounded-xl bg-white p-3 shadow-sm ring-1 ring-slate-100">
+            <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Order Time</div>
+            <div className="mt-1 text-sm font-medium text-slate-900">{new Date(order.createdAt).toLocaleString()}</div>
           </div>
-          <div>
-            <div className="text-sm text-gray-500">Est. Preparation Time</div>
-            <div className="font-medium">{totalPrepTime} minutes</div>
+          <div className="rounded-xl bg-white p-3 shadow-sm ring-1 ring-slate-100">
+            <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Est. Prep Time</div>
+            <div className="mt-1 text-sm font-medium text-slate-900">{totalPrepTime} minutes</div>
           </div>
           {order.waiterName && (
-            <div>
-              <div className="text-sm text-gray-500">Waiter</div>
-              <div className="font-medium">{order.waiterName}</div>
+            <div className="rounded-xl bg-white p-3 shadow-sm ring-1 ring-slate-100 sm:col-span-2">
+              <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Waiter</div>
+              <div className="mt-1 text-sm font-medium text-slate-900">{order.waiterName}</div>
             </div>
           )}
         </div>
 
         <div>
-          <h3 className="font-medium text-gray-900 mb-3">Order Items</h3>
-          <div className="space-y-3 max-h-96 overflow-y-auto">
+          <h3 className="mb-2.5 text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">Order Items</h3>
+          <div className="max-h-80 space-y-2.5 overflow-y-auto pr-1">
             {order.items.map((item, idx) => (
-              <div key={idx} className="bg-gray-50 rounded-lg p-3">
-                <div className="flex justify-between">
-                  <div className="font-medium">
+              <div key={idx} className="rounded-2xl border border-slate-200 bg-slate-50 p-3 shadow-sm">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0 font-medium text-slate-900">
                     {item.quantity}x {item.name}
                   </div>
-                  <div className="text-sm text-gray-500">
+                  <div className="shrink-0 rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-500 ring-1 ring-slate-200">
                     Est: {item.preparationTime || 5} min
                   </div>
                 </div>
                 {item.specialInstructions && (
-                  <div className="mt-2 text-sm text-orange-600 bg-orange-50 p-2 rounded">
-                    📝 Special: {item.specialInstructions}
+                  <div className="mt-2 rounded-xl border border-amber-200 bg-amber-50 px-2.5 py-2 text-xs leading-5 text-amber-700">
+                    <span className="font-semibold">Special:</span> {item.specialInstructions}
                   </div>
                 )}
                 {item.modifiers?.length > 0 && (
-                  <div className="mt-2 text-sm text-gray-600">
-                    Modifiers: {item.modifiers.map(m => m.name).join(', ')}
+                  <div className="mt-2 text-xs leading-5 text-slate-600">
+                    <span className="font-semibold text-slate-700">Modifiers:</span> {item.modifiers.map(m => m.name).join(', ')}
                   </div>
                 )}
               </div>
@@ -66,8 +68,8 @@ const KitchenOrderDetails = ({ order, displayNumber, onClose, onUpdateStatus }) 
           </div>
         </div>
 
-        <div className="flex justify-end space-x-3 pt-4 border-t">
-          <button onClick={onClose} className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200">
+        <div className="flex flex-col gap-2.5 border-t border-slate-200 pt-3 sm:flex-row sm:justify-end">
+          <button onClick={onClose} className="rounded-full bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-200">
             Close
           </button>
           {order.status === 'pending' && (
@@ -76,7 +78,7 @@ const KitchenOrderDetails = ({ order, displayNumber, onClose, onUpdateStatus }) 
                 onUpdateStatus(order.id, 'preparing');
                 onClose();
               }}
-              className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+              className="rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700"
             >
               Start Preparation
             </button>
@@ -87,7 +89,7 @@ const KitchenOrderDetails = ({ order, displayNumber, onClose, onUpdateStatus }) 
                 onUpdateStatus(order.id, 'ready');
                 onClose();
               }}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              className="rounded-full bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
             >
               Mark as Ready
             </button>
@@ -98,7 +100,7 @@ const KitchenOrderDetails = ({ order, displayNumber, onClose, onUpdateStatus }) 
                 onUpdateStatus(order.id, 'completed');
                 onClose();
               }}
-              className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+              className="rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700"
             >
               Mark Complete
             </button>

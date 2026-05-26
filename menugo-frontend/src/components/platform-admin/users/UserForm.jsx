@@ -220,17 +220,21 @@ const UserForm = () => {
   if (isEditing && isLoadingUser) return <Loading />
 
   return (
-    <div className="max-w-2xl mx-auto p-6">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">
+    <div className="mx-auto max-w-2xl space-y-6 bg-white p-4 font-['Manrope',system-ui,sans-serif] text-slate-900 sm:p-6 lg:p-8">
+      <div className="relative overflow-hidden rounded-none border border-orange-100 bg-white p-5 shadow-sm sm:p-6">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_rgba(251,146,60,0.12),transparent_45%),radial-gradient(ellipse_at_bottom_left,_rgba(59,130,246,0.08),transparent_55%)]" />
+        <div className="relative">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-orange-600">Users</p>
+        <h1 className="mt-1.5 text-2xl font-black tracking-tight text-slate-900">
           {isEditing ? 'Edit User' : 'Create New User'}
         </h1>
-        <p className="text-gray-500 mt-1">
+        <p className="mt-1 text-slate-500">
           {isEditing ? 'Update user information' : 'Add a new user to the platform'}
         </p>
+        </div>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="bg-white rounded-xl p-6 border border-gray-200 space-y-4">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 rounded-none border border-orange-100 bg-white p-6 shadow-sm">
         <Input label="Full Name" {...register('fullName')} error={errors.fullName?.message} required />
         <Input label="Email" type="email" {...register('email')} error={errors.email?.message} required />
         <Input label="Phone" {...register('phoneNumber')} error={errors.phoneNumber?.message} />
@@ -264,12 +268,12 @@ const UserForm = () => {
             <Input label="TIN Number" {...register('tinNumber')} error={errors.tinNumber?.message} required />
             <Input label="Slogan" {...register('slogan')} error={errors.slogan?.message} />
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Business License Document</label>
+              <label className="mb-2 block text-sm font-semibold text-slate-700">Business License Document</label>
               <input
                 type="file"
                 accept="image/*,application/pdf"
                 onChange={(e) => setLicenseFile(e.target.files[0])}
-                className="block w-full text-sm text-gray-700"
+                className="block w-full text-sm text-slate-700"
               />
             </div>
           </div>
@@ -283,10 +287,10 @@ const UserForm = () => {
         )}
 
         <div className="flex justify-end gap-3 pt-4">
-          <Button type="button" variant="secondary" onClick={() => navigate('/platform/users')}>
+          <Button type="button" variant="secondary" onClick={() => navigate('/platform/users')} className="rounded-none">
             Cancel
           </Button>
-          <Button type="submit" isLoading={createMutation.isLoading || updateMutation.isLoading}>
+          <Button type="submit" isLoading={createMutation.isLoading || updateMutation.isLoading} className="rounded-none bg-gradient-to-r from-orange-500 to-blue-500 hover:from-orange-600 hover:to-blue-600">
             {isEditing ? 'Update User' : 'Create User'}
           </Button>
         </div>

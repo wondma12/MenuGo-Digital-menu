@@ -54,6 +54,29 @@ const createCallRequest = catchAsync(async (req, res) => {
     created_at: call.created_at,
   });
 
+  // Also create waiter notifications so waiters see the call in their notification list
+  try {
+    const { Waiter } = require('../models');
+    const notificationService = require('../services/notificationService');
+
+    // If table has assigned current_waiter, notify that waiter specifically
+    const assignedWaiter = await Waiter.findOne({ where: { id: tableRecord.current_waiter_id } }).catch(() => null);
+    if (assignedWaiter) {
+      await notificationService.sendCustomerCallNotification(assignedWaiter.id, restaurant.id, table_number, call_type, call.id);
+    } else {
+      // Notify all active waiters in the restaurant
+      const waiters = await Waiter.findAll({ where: { restaurant_id: restaurant.id } }).catch(() => []);
+      for (const w of waiters) {
+        await notificationService.sendCustomerCallNotification(w.id, restaurant.id, table_number, call_type, call.id).catch(() => null);
+      }
+    }
+  } catch (e) {
+    // swallow notification errors to avoid failing the public API
+    // but log for diagnostics
+    const { logger } = require('../utils/logger');
+    logger.warn('Failed to create waiter notifications for call request', e && e.message);
+  }
+
   res.status(201).json(ApiResponse.success(call, 'Call request created'));
 });
 

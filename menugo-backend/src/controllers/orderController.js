@@ -9,6 +9,43 @@ const { Op } = require('sequelize');
 const KitchenService = require('../services/kitchenService');
 const { logger } = require('../utils/logger');
 
+const normalizeTableNumber = (value) => String(value ?? '').trim();
+
+const stripTableNumber = (value) => normalizeTableNumber(value).replace(/[^0-9a-zA-Z]/g, '').toLowerCase();
+
+const resolveTableByNumber = async (restaurantId, tableNumber) => {
+  const normalized = normalizeTableNumber(tableNumber);
+  if (!normalized) return null;
+
+  const numericValue = Number(normalized);
+  const compactValue = stripTableNumber(normalized);
+  const tables = await Table.findAll({
+    where: { restaurant_id: restaurantId },
+  });
+
+  return tables.find((table) => {
+    const candidates = [
+      table?.table_number,
+      table?.tableNumber,
+      table?.number,
+      table?.tableNo,
+      table?.table_no,
+    ]
+      .filter((candidate) => candidate !== null && candidate !== undefined)
+      .map((candidate) => String(candidate).trim());
+
+    if (candidates.includes(normalized)) return true;
+
+    if (candidates.some((candidate) => stripTableNumber(candidate) === compactValue)) return true;
+
+    if (Number.isFinite(numericValue)) {
+      return candidates.some((candidate) => Number(candidate) === numericValue);
+    }
+
+    return false;
+  }) || null;
+};
+
 // Create order
 const createOrder = catchAsync(async (req, res) => {
   const {
@@ -204,10 +241,17 @@ const createOrder = catchAsync(async (req, res) => {
   // If table provided, associate table record to this order so waiters see it
   if (table_number) {
     try {
-      const table = await Table.findOne({ where: { restaurant_id: restaurant.id, table_number } });
+      const table = await resolveTableByNumber(restaurant.id, table_number);
       if (table) {
-        await table.update({ status: 'occupied', current_order_id: order.id, current_customer_name: order.customer_name, occupied_since: new Date() });
+        // Do not mutate the table `status` here. Table status is managed by restaurant admin.
+        // Only attach current order info so UIs can surface the linked order.
+        await table.update({ current_order_id: order.id, current_customer_name: order.customer_name });
         await order.update({ table_id: table.id });
+      } else {
+        logger.warn('createOrder: no matching table found for order', {
+          restaurantId: restaurant.id,
+          tableNumber: table_number,
+        });
       }
     } catch (err) {
       console.error('Failed to attach table to public order', err);
@@ -448,10 +492,17 @@ const createOrderByWaiter = catchAsync(async (req, res) => {
   // If table provided, associate table and mark occupied
   if (table_number) {
     try {
-      const table = await Table.findOne({ where: { restaurant_id: restaurant.id, table_number } });
+      const table = await resolveTableByNumber(restaurant.id, table_number);
       if (table) {
-        await table.update({ status: 'occupied', current_order_id: order.id, current_waiter_id: waiter.id, current_customer_name: order.customer_name, occupied_since: new Date() });
+        // Do not mutate the table `status` here. Table status is managed by restaurant admin.
+        // Only attach current order/waiter info so UIs can surface the linked order.
+        await table.update({ current_order_id: order.id, current_waiter_id: waiter.id, current_customer_name: order.customer_name });
         await order.update({ table_id: table.id });
+      } else {
+        logger.warn('createOrderByWaiter: no matching table found for order', {
+          restaurantId: restaurant.id,
+          tableNumber: table_number,
+        });
       }
     } catch (err) {
       // non-fatal
@@ -813,8 +864,10 @@ const updateOrderStatus = catchAsync(async (req, res) => {
 
   // If order is completed, update table status
   if (status === 'completed') {
+    // When an order completes, clear any current_order references on the table
+    // but do NOT change the table `status` value — admin should manage status manually.
     await Table.update(
-      { status: 'available', current_order_id: null, current_customer_name: null, occupied_since: null },
+      { current_order_id: null, current_customer_name: null, occupied_since: null },
       { where: { current_order_id: order.id } }
     );
   }
@@ -903,9 +956,9 @@ const verifyOrder = catchAsync(async (req, res) => {
     notes: 'Order verified by waiter',
   });
 
-  // Update table status
+  // Attach the current order to the matching table without mutating admin-controlled `status`.
   await Table.update(
-    { status: 'occupied', current_order_id: order.id, current_waiter_id: waiter.id },
+    { current_order_id: order.id, current_waiter_id: waiter.id },
     { where: { table_number: order.table_number, restaurant_id: order.restaurant_id } }
   );
 

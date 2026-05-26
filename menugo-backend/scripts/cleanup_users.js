@@ -9,7 +9,7 @@ const db = require('../src/models');
 const { sequelize, User, RestaurantStaff, Waiter, UserSession } = db;
 
 const BACKUP_DIR = path.resolve(__dirname, '..', 'backups');
-if (!fs.existsSync(BACKUP_DIR)) fs.mkdirSync(BACKUP_DIR, { recursive: true });
+if (!fs.existsSync(BACKUP_DIR)) {fs.mkdirSync(BACKUP_DIR, { recursive: true });}
 
 const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
 const dumpFile = path.join(BACKUP_DIR, `menugo_db_backup_${timestamp}.sql`);
@@ -19,11 +19,11 @@ const runBackup = () => new Promise((resolve, reject) => {
   const user = process.env.DB_USER;
   const pass = process.env.DB_PASSWORD;
   const name = process.env.DB_NAME;
-  if (!user || !name) return reject(new Error('DB_USER or DB_NAME not set in environment'));
+  if (!user || !name) {return reject(new Error('DB_USER or DB_NAME not set in environment'));}
   // Note: on some platforms passing password on the command line may be insecure; this is a dev convenience.
   const cmd = `mysqldump -u ${user} -p"${pass || ''}" ${name} > "${dumpFile}"`;
   exec(cmd, { shell: true }, (err, stdout, stderr) => {
-    if (err) return reject(err);
+    if (err) {return reject(err);}
     resolve();
   });
 });
@@ -148,8 +148,9 @@ const cleanup = async () => {
     }
 
     // Update platform admin
-    const newEmail = 'haymanotwondmagegn3@gmail.com';
-    const newPassword = 'Admin@123';
+    // Read desired platform admin credentials from environment for safety.
+    const newEmail = process.env.PLATFORM_ADMIN_EMAIL || 'haymanotwondmagegn23@gmail.com';
+    const newPassword = process.env.PLATFORM_ADMIN_PASSWORD || 'Admin@123';
 
     // Try to find the canonical platform admin by existing admin email
     let platformAdmin = await User.findOne({ where: { email: 'admin@menugo.com', role: 'platform_admin' }, transaction: t });

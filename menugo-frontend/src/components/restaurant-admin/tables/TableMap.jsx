@@ -34,19 +34,19 @@ const TableMap = ({ tables, onEdit, onRefresh }) => {
 
   return (
     <div className="space-y-4">
-      <div className="bg-gray-100 rounded-xl p-4">
+      <div className="rounded-none border border-slate-200 bg-white p-4 shadow-[0_16px_40px_rgba(15,23,42,0.06)]">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">Floor Layout</h3>
+          <h3 className="text-lg font-black tracking-tight text-slate-900">Floor Layout</h3>
           <div className="flex gap-2 text-xs">
-            <div className="flex items-center gap-1"><div className="w-3 h-3 bg-green-500 rounded"></div><span>Available</span></div>
-            <div className="flex items-center gap-1"><div className="w-3 h-3 bg-red-500 rounded"></div><span>Occupied</span></div>
-            <div className="flex items-center gap-1"><div className="w-3 h-3 bg-yellow-500 rounded"></div><span>Reserved</span></div>
-            <div className="flex items-center gap-1"><div className="w-3 h-3 bg-blue-500 rounded"></div><span>Cleaning</span></div>
+            <div className="flex items-center gap-1"><div className="h-3 w-3 rounded-none bg-orange-500"></div><span className="text-slate-600">Available</span></div>
+            <div className="flex items-center gap-1"><div className="h-3 w-3 rounded-none bg-blue-500"></div><span className="text-slate-600">Occupied</span></div>
+            <div className="flex items-center gap-1"><div className="h-3 w-3 rounded-none bg-amber-400"></div><span className="text-slate-600">Reserved</span></div>
+            <div className="flex items-center gap-1"><div className="h-3 w-3 rounded-none bg-slate-500"></div><span className="text-slate-600">Cleaning</span></div>
           </div>
         </div>
         
         <div 
-          className="relative bg-white rounded-lg border-2 border-gray-300"
+          className="relative rounded-none border-2 border-slate-200 bg-slate-50"
           style={{ width: canvasWidth, height: canvasHeight, margin: '0 auto' }}
         >
           {/* Background grid */}
@@ -67,15 +67,15 @@ const TableMap = ({ tables, onEdit, onRefresh }) => {
               initial={{ x: table.xPosition || 100, y: table.yPosition || 100 }}
               animate={{ x: table.xPosition || 100, y: table.yPosition || 100 }}
               whileHover={{ scale: 1.05 }}
-              className={`absolute cursor-move p-2 rounded-lg shadow-md border-2 ${getStatusColor(table.status)} transition-all`}
+              className={`absolute cursor-move rounded-none border-2 p-2 shadow-sm transition-all ${getStatusColor(table.status)}`}
               style={{ width: table.width || 80, height: table.height || 80 }}
               onDoubleClick={() => onEdit(table)}
             >
               <div className="flex flex-col items-center justify-center h-full text-center">
-                <span className="text-lg font-bold">{table.tableNumber}</span>
-                <span className="text-xs">{table.capacity} seats</span>
+                <span className="text-lg font-black text-slate-900">{table.tableNumber}</span>
+                <span className="text-xs text-slate-600">{table.capacity} seats</span>
                 {table.currentCustomerName && (
-                  <span className="text-xs truncate max-w-full">{table.currentCustomerName}</span>
+                  <span className="max-w-full truncate text-xs text-slate-700">{table.currentCustomerName}</span>
                 )}
               </div>
             </motion.div>
@@ -84,7 +84,7 @@ const TableMap = ({ tables, onEdit, onRefresh }) => {
           {/* Add table button */}
           <button
             onClick={() => setSelectedTable({ x: 200, y: 200 })}
-            className="absolute bottom-4 right-4 p-2 bg-primary-600 text-white rounded-full shadow-lg hover:bg-primary-700"
+            className="absolute bottom-4 right-4 rounded-none bg-gradient-to-r from-orange-500 to-blue-500 p-2 text-white shadow-lg hover:from-orange-600 hover:to-blue-600"
           >
             <PlusIcon className="w-5 h-5" />
           </button>

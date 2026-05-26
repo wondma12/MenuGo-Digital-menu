@@ -1,13 +1,35 @@
 import { io } from 'socket.io-client'
+import api from '../services/api'
 
 let socket = null
 let listeners = new Map()
-const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:5000'
+
+// Build a sensible default WS URL:
+// 1) Prefer explicit `VITE_WS_URL` if provided
+// 2) Otherwise derive from the API base URL (same host/port) and use the configured socket path
+const buildWsUrl = () => {
+  const envUrl = import.meta.env.VITE_WS_URL
+  if (envUrl) return envUrl.replace(/\/$/, '')
+
+  const apiBase = (api && api.defaults && api.defaults.baseURL) ? api.defaults.baseURL : (import.meta.env.VITE_API_URL || 'http://localhost:5000')
+  // strip possible trailing /api
+  let url = apiBase.replace(/\/api\/?$/, '')
+  // socket.io client accepts http/https URLs (not ws://), so ensure http(s) scheme
+  if (!/^https?:\/\//.test(url)) {
+    url = url.replace(/^ws:\/\//, 'http://').replace(/^wss:\/\//, 'https://')
+  }
+
+  return url
+}
 
 export const connectSocket = (token) => {
   if (socket?.connected) return socket
 
-  socket = io(WS_URL, {
+  const wsPath = import.meta.env.VITE_SOCKET_PATH || '/socket.io'
+  const wsUrl = buildWsUrl()
+
+  socket = io(wsUrl, {
+    path: wsPath,
     auth: { token },
     transports: ['websocket'],
     reconnection: true,

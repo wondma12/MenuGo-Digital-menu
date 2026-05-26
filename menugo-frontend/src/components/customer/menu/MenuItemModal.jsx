@@ -74,7 +74,7 @@ const MenuItemModal = ({ item, onClose, restaurantId }) => {
           </div>
           <div className="text-right mt-3 sm:mt-0">
             <p className="text-sm text-gray-500">Total</p>
-            <p className="text-xl font-bold text-gray-900">${totalPrice.toFixed(2)}</p>
+              <p className="text-xl font-bold text-gray-900">Br {totalPrice.toFixed(2)}</p>
           </div>
         </div>
 

@@ -112,7 +112,7 @@ const CustomerLayout = () => {
         onClose={() => setIsCartOpen(false)}
         restaurantId={restaurantId}
       />
-      <Footer onOpenCart={() => setIsCartOpen(true)} restaurantId={restaurantId} />
+      <Footer onOpenCart={() => setIsCartOpen(true)} restaurantId={restaurantId} restaurant={restaurant} />
     </div>
   )
 }

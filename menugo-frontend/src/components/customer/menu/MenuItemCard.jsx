@@ -37,32 +37,40 @@ const MenuItemCard = ({ item, onClick, statusInfo }) => {
     <motion.div
       whileHover={{ y: -4 }}
       onClick={() => onClick && onClick(item)}
-      className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden cursor-pointer hover:shadow-md transition-all"
+      className="group flex h-full flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm cursor-pointer transition-all hover:-translate-y-1 hover:shadow-2xl"
     >
-      <div className="relative">
+      <div className="relative shrink-0">
         {item.image ? (
           <Link to={`/menu/${restaurantId}/item/${item.id}`} onClick={(e) => e.stopPropagation()}>
-            <img src={item.image} alt={item.name} className="w-full h-36 sm:h-40 md:h-48 lg:h-56 object-cover" />
+            <img src={item.image} alt={item.name} className="w-full h-40 sm:h-44 md:h-48 lg:h-56 object-cover transition-transform duration-500 group-hover:scale-[1.03]" />
           </Link>
         ) : (
-          <div className="w-full h-36 sm:h-40 md:h-48 lg:h-56 bg-gray-100 flex items-center justify-center">
-            <svg className="w-12 h-12 text-gray-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M3 12h18M3 6h18M3 18h18" /></svg>
+          <div className="w-full h-40 sm:h-44 md:h-48 lg:h-56 bg-gradient-to-br from-slate-50 to-white flex items-center justify-center">
+            <svg className="w-12 h-12 text-slate-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M3 12h18M3 6h18M3 18h18" /></svg>
           </div>
         )}
+
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/45 via-transparent to-transparent" />
+
+        <div className="absolute bottom-3 right-3">
+          <span className="inline-flex items-center rounded-full bg-white/95 px-3 py-1.5 text-sm font-extrabold text-slate-900 shadow-lg backdrop-blur">
+            Br {item.discountPrice ? formattedDiscount : formattedPrice}
+          </span>
+        </div>
 
         {/* Top-left badges */}
         <div className="absolute top-3 left-3 flex flex-col gap-2">
           {item.discountPrice && (
-            <span className="text-xs px-2 py-1 bg-red-600 text-white rounded-full font-semibold">Sale ${formattedDiscount}</span>
+            <span className="text-xs px-2.5 py-1 bg-rose-600 text-white rounded-full font-semibold shadow">Sale</span>
           )}
           {item.isPopular && (
-            <span className="text-xs px-2 py-1 bg-yellow-400 text-gray-900 rounded-full font-semibold">Popular</span>
+            <span className="text-xs px-2.5 py-1 bg-amber-300 text-slate-900 rounded-full font-semibold shadow">Popular</span>
           )}
           {item.isNew && (
-            <span className="text-xs px-2 py-1 bg-green-500 text-white rounded-full font-semibold">New</span>
+            <span className="text-xs px-2.5 py-1 bg-emerald-500 text-white rounded-full font-semibold shadow">New</span>
           )}
           {statusInfo && statusInfo.status && (
-            <span className="text-xs px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full font-semibold">{(statusInfo.status || '').toUpperCase()}</span>
+            <span className="text-xs px-2.5 py-1 bg-white/90 text-slate-700 rounded-full font-semibold shadow backdrop-blur">{(statusInfo.status || '').toUpperCase()}</span>
           )}
         </div>
 
@@ -71,7 +79,7 @@ const MenuItemCard = ({ item, onClick, statusInfo }) => {
           <button
             onClick={toggleFav}
             aria-label={isFav ? 'Remove favorite' : 'Add favorite'}
-            className={`p-2 rounded-full transition-colors ${isFav ? 'bg-red-50 text-red-600' : 'bg-white text-gray-600'}`}
+            className={`p-2 rounded-full transition-colors ${isFav ? 'bg-red-50 text-red-600' : 'bg-white text-slate-600'}`}
           >
             <HeartIcon className="w-4 h-4" />
           </button>
@@ -79,7 +87,7 @@ const MenuItemCard = ({ item, onClick, statusInfo }) => {
             <button
               onClick={quickAdd}
               aria-label={`Quick add ${item.name}`}
-              className="p-2 rounded-full bg-primary-600 text-white hover:bg-primary-700"
+              className="p-2 rounded-full bg-orange-600 text-white hover:bg-orange-700"
             >
               <ShoppingBagIcon className="w-4 h-4" />
             </button>
@@ -89,28 +97,28 @@ const MenuItemCard = ({ item, onClick, statusInfo }) => {
         {!item.isAvailable && <AvailabilityBadge status="unavailable" />}
       </div>
 
-      <div className="p-4">
-        <div className="flex justify-between items-start mb-2">
-          <h3 className="font-semibold text-gray-900">
+      <div className="flex flex-1 flex-col p-4">
+        <div className="mb-3 flex items-start justify-between gap-3">
+          <h3 className="min-w-0 flex-1 font-semibold text-slate-900 text-base sm:text-lg leading-snug line-clamp-2">
             <Link to={`/menu/${restaurantId}/item/${item.id}`} onClick={(e) => e.stopPropagation()} className="hover:underline">
               {item.name}
             </Link>
           </h3>
-          <div className="text-right">
+          <div className="shrink-0 text-right">
             {item.discountPrice ? (
-              <div className="flex flex-col items-end">
-                <span className="text-sm text-gray-400 line-through">${formattedPrice}</span>
-                <span className="font-bold text-primary-600">${formattedDiscount}</span>
+              <div className="flex flex-col items-end rounded-2xl bg-rose-50 px-3 py-2">
+                <span className="text-xs font-medium text-slate-400 line-through">Br {formattedPrice}</span>
+                <span className="text-lg font-black text-rose-700">Br {formattedDiscount}</span>
               </div>
             ) : (
-              <span className="font-bold text-primary-600">${formattedPrice}</span>
+              <span className="inline-flex rounded-2xl bg-orange-50 px-3 py-2 text-lg font-black text-orange-700">Br {formattedPrice}</span>
             )}
           </div>
         </div>
-        <p className="text-sm text-gray-500 line-clamp-2 mb-3">{item.description}</p>
+        <p className="mb-4 min-h-[3rem] text-sm text-slate-600 line-clamp-2">{item.description || ' '}</p>
         
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
+        <div className="mt-auto flex items-center justify-between gap-3">
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
             <DietaryIcons
               isVegetarian={item.isVegetarian}
               isVegan={item.isVegan}
@@ -121,8 +129,9 @@ const MenuItemCard = ({ item, onClick, statusInfo }) => {
 
           {/* Primary action (open details) */}
           {item.isAvailable && (
-            <Link to={`/menu/${restaurantId}/item/${item.id}`} onClick={(e) => e.stopPropagation()} className="px-3 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors inline-flex items-center">
-              View
+            <Link to={`/menu/${restaurantId}/item/${item.id}`} onClick={(e) => e.stopPropagation()} className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-orange-500 to-blue-500 px-4 py-2 text-sm font-semibold text-white transition-all hover:opacity-95 hover:shadow-lg">
+              Details
+              <span aria-hidden="true">→</span>
             </Link>
           )}
         </div>

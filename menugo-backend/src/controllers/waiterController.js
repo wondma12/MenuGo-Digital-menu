@@ -327,16 +327,30 @@ const markNotificationRead = catchAsync(async (req, res) => {
 
 const getCallRequests = catchAsync(async (req, res) => {
   const waiter = await getCurrentWaiter(req);
-
   const calls = await WaiterCallRequest.findAll({
     where: {
       restaurant_id: waiter.restaurant_id,
       [Op.or]: [{ waiter_id: null }, { waiter_id: waiter.id }],
     },
+    include: [{ model: Table, as: 'table', attributes: ['id', 'table_number', 'section'] }],
     order: [['created_at', 'DESC']],
   });
 
-  res.json(ApiResponse.success(calls, 'Call requests retrieved'));
+  // Map DB (snake_case) to frontend-friendly camelCase fields
+  const payload = calls.map((c) => ({
+    id: c.id,
+    tableId: c.table_id,
+    tableNumber: c.table ? c.table.table_number : null,
+    callType: c.call_type,
+    notes: c.notes,
+    createdAt: c.created_at,
+    status: c.status,
+    customerName: c.customer_name,
+    section: c.table ? c.table.section : null,
+    waiterId: c.waiter_id,
+  }));
+
+  res.json(ApiResponse.success(payload, 'Call requests retrieved'));
 });
 
 const getTodayReservations = catchAsync(async (req, res) => {

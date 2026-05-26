@@ -32,41 +32,52 @@ const MenuItemCard = ({ item, isSelected, onSelect, onEdit, onRefresh }) => {
 
   return (
     <>
-      <div className={`bg-white rounded-2xl shadow-lg overflow-hidden transition-transform transform hover:-translate-y-1 ${isSelected ? 'ring-2 ring-offset-2 ring-primary-500' : 'border border-gray-100'}`}>
+      <div className={`overflow-hidden rounded-none bg-white shadow-[0_16px_40px_rgba(15,23,42,0.06)] transition-transform hover:-translate-y-1 ${isSelected ? 'ring-2 ring-orange-300' : ''}`}>
         <div className="relative w-full">
           <input
             type="checkbox"
             checked={isSelected}
             onChange={onSelect}
-            className="absolute top-2 left-2 z-10 w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+            className="absolute left-2 top-2 z-10 h-4 w-4 rounded-none border-slate-300 text-orange-600 focus:ring-orange-100"
           />
           {item.image ? (
             <img src={item.image} alt={item.name} className="w-full h-56 md:h-64 object-cover" />
           ) : (
-            <div className="w-full h-56 md:h-64 bg-gradient-to-r from-gray-100 to-gray-50 flex flex-col items-center justify-center text-gray-400">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-14 w-14 mb-2 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div className="flex h-56 w-full flex-col items-center justify-center bg-gradient-to-r from-orange-50 to-blue-50 text-slate-400 md:h-64">
+              <svg xmlns="http://www.w3.org/2000/svg" className="mb-2 h-14 w-14 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 7a4 4 0 014-4h10a4 4 0 014 4v10a4 4 0 01-4 4H7a4 4 0 01-4-4V7z" />
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 14l2-2 2 2 4-4 4 4" />
               </svg>
               <div className="text-sm">No image</div>
             </div>
           )}
-          <div className="absolute top-2 right-2 flex gap-1">
+            <div className="absolute right-2 top-2 flex gap-1">
+            <button
+              onClick={handleAvailabilityToggle}
+                className="rounded-none bg-white p-1.5 shadow-sm hover:bg-orange-50"
+              title={item.isAvailable ? 'Set inactive' : 'Set active'}
+            >
+              {item.isAvailable ? (
+                  <XCircleIcon className="h-4 w-4 text-emerald-600" />
+              ) : (
+                  <CheckCircleIcon className="h-4 w-4 text-slate-400" />
+              )}
+            </button>
             <button
               onClick={onEdit}
-              className="p-1.5 bg-white rounded-lg shadow-sm hover:bg-gray-50"
+                className="rounded-none bg-white p-1.5 shadow-sm hover:bg-orange-50"
             >
-              <PencilIcon className="w-4 h-4 text-gray-600" />
+              <PencilIcon className="h-4 w-4 text-slate-600" />
             </button>
             <button
               onClick={() => setShowDeleteDialog(true)}
-              className="p-1.5 bg-white rounded-lg shadow-sm hover:bg-red-50"
+                className="rounded-none bg-white p-1.5 shadow-sm hover:bg-rose-50"
             >
-              <TrashIcon className="w-4 h-4 text-red-600" />
+              <TrashIcon className="h-4 w-4 text-rose-600" />
             </button>
           </div>
           {!item.isAvailable && (
-            <div className="absolute inset-0 bg-black bg-opacity-50 rounded-t-xl flex items-center justify-center">
+            <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50">
               <Badge variant="danger" size="md">Unavailable</Badge>
             </div>
           )}
@@ -74,10 +85,10 @@ const MenuItemCard = ({ item, isSelected, onSelect, onEdit, onRefresh }) => {
 
         <div className="p-5">
           <div className="flex justify-between items-start mb-2">
-            <h3 className="font-semibold text-gray-900 text-lg md:text-xl">{item.name}</h3>
-            <span className="font-extrabold text-primary-600 text-lg">${item.price}</span>
+            <h3 className="text-lg font-semibold text-slate-900 md:text-xl">{item.name}</h3>
+            <span className="text-lg font-extrabold text-orange-600">{item.price}</span>
           </div>
-          <p className="text-sm text-gray-500 line-clamp-2 mb-3">{item.description}</p>
+          <p className="mb-3 line-clamp-2 text-sm text-slate-500">{item.description}</p>
           
           <div className="flex flex-wrap gap-1 mb-3">
             {item.isVegetarian && <Badge variant="success" size="sm">Veg</Badge>}
@@ -88,19 +99,16 @@ const MenuItemCard = ({ item, isSelected, onSelect, onEdit, onRefresh }) => {
             )}
           </div>
 
-          <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+          <div className="flex items-center justify-between pt-3">
             <Badge variant="default" size="sm">{item.category && typeof item.category === 'object' ? (item.category.name || item.category.title || item.categoryId) : (item.category || item.categoryId || 'Uncategorized')}</Badge>
-            <button
-              onClick={handleAvailabilityToggle}
-              className={`text-sm flex items-center gap-1 ${item.isAvailable ? 'text-green-600' : 'text-gray-400'}`}
-            >
+            <div className={`flex items-center gap-1 text-sm ${item.isAvailable ? 'text-emerald-600' : 'text-slate-400'}`}>
               {item.isAvailable ? (
                 <CheckCircleIcon className="w-4 h-4" />
               ) : (
                 <XCircleIcon className="w-4 h-4" />
               )}
-              {item.isAvailable ? 'Available' : 'Unavailable'}
-            </button>
+              <span>{item.isAvailable ? 'Available' : 'Unavailable'}</span>
+            </div>
           </div>
         </div>
       </div>

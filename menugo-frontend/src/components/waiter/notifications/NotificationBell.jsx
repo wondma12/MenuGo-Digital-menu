@@ -3,7 +3,7 @@ import { Bell } from 'lucide-react'
 import { useQuery } from 'react-query'
 import { motion, AnimatePresence } from 'framer-motion'
 import WaiterNotificationList from './WaiterNotificationList'
-import { getUnreadNotificationCount } from '../../../services/notificationService'
+import { getWaiterUnreadCount } from '../../../services/notificationService'
 import { useAuthStore } from '../../../store/authStore'
 
 const NotificationBell = () => {
@@ -13,7 +13,7 @@ const NotificationBell = () => {
 
   const { data: unreadCount = 0, refetch } = useQuery(
     ['unreadNotificationCount', userId],
-    () => getUnreadNotificationCount(),
+    () => getWaiterUnreadCount(),
     {
       enabled: !!userId,
       refetchInterval: 30000,

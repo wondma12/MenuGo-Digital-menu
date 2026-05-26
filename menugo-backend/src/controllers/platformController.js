@@ -8,7 +8,7 @@ const {
   SystemLog, 
   Order, 
   Subscription,
-  sequelize 
+  sequelize, 
 } = require('../models');
 const { ApiResponse } = require('../utils/apiResponse');
 const { ApiError } = require('../utils/apiError');
@@ -147,36 +147,46 @@ const getPlatformAnalytics = catchAsync(async (req, res) => {
     
     try {
       newRestaurants = await Restaurant.count({ 
-        where: { created_at: { [Op.gte]: startDate }, deleted_at: null } 
+        where: { created_at: { [Op.gte]: startDate }, deleted_at: null }, 
       }) || 0;
-    } catch (err) { console.error('Restaurant count error:', err); }
+    } catch (err) {
+      console.error('Restaurant count error:', err); 
+    }
     
     try {
       newUsers = await User.count({ 
-        where: { created_at: { [Op.gte]: startDate }, deleted_at: null } 
+        where: { created_at: { [Op.gte]: startDate }, deleted_at: null }, 
       }) || 0;
-    } catch (err) { console.error('User count error:', err); }
+    } catch (err) {
+      console.error('User count error:', err); 
+    }
     
     try {
       activeRestaurants = await Restaurant.count({ 
-        where: { is_active: true, deleted_at: null } 
+        where: { is_active: true, deleted_at: null }, 
       }) || 0;
-    } catch (err) { console.error('Active restaurants error:', err); }
+    } catch (err) {
+      console.error('Active restaurants error:', err); 
+    }
     
     try {
       totalRevenue = await Order.sum('total_amount', { 
         where: { 
           status: 'completed', 
-          created_at: { [Op.gte]: startDate } 
-        } 
+          created_at: { [Op.gte]: startDate }, 
+        }, 
       }) || 0;
-    } catch (err) { console.error('Revenue sum error:', err); }
+    } catch (err) {
+      console.error('Revenue sum error:', err); 
+    }
     
     try {
       subscriptionRevenue = await Subscription.sum('amount', { 
-        where: { status: 'active' } 
+        where: { status: 'active' }, 
       }) || 0;
-    } catch (err) { console.error('Subscription revenue error:', err); }
+    } catch (err) {
+      console.error('Subscription revenue error:', err); 
+    }
     
     const platformRevenue = totalRevenue * 0.1;
     
@@ -233,8 +243,9 @@ const getPlatformDashboard = catchAsync(async (req, res) => {
       pendingVerification = await Restaurant.count({ where: { is_verified: false, is_active: true, deleted_at: null } }) || 0;
       totalUsers = await User.count({ where: { deleted_at: null } }) || 0;
       activeUsers = await User.count({ where: { is_active: true, deleted_at: null } }) || 0;
-      totalOrders = await Order.count() || 0;
-      todayOrders = await Order.count({ where: { created_at: { [Op.gte]: todayStart } } }) || 0;
+      // Only consider completed orders for totals to match revenue calculations
+      totalOrders = await Order.count({ where: { status: 'completed' } }) || 0;
+      todayOrders = await Order.count({ where: { status: 'completed', created_at: { [Op.gte]: todayStart } } }) || 0;
       totalRevenue = await Order.sum('total_amount', { where: { status: 'completed' } }) || 0;
       todayRevenue = await Order.sum('total_amount', { where: { status: 'completed', created_at: { [Op.gte]: todayStart } } }) || 0;
       openTickets = await SupportTicket.count({ where: { status: 'open' } }) || 0;
@@ -285,39 +296,87 @@ const getPlatformDashboard = catchAsync(async (req, res) => {
       { tier: 'enterprise', count: enterpriseCount },
     ];
     
-    // Generate last 7 days revenue data
+    // Build revenue data honoring optional startDate/endDate query params.
+    // If the requested range is long (> 60 days) aggregate by month, otherwise by day.
     const revenueData = [];
-    for (let i = 6; i >= 0; i--) {
-      const date = new Date();
-      date.setDate(date.getDate() - i);
-      date.setHours(0, 0, 0, 0);
-      
-      const nextDate = new Date(date);
-      nextDate.setDate(nextDate.getDate() + 1);
-      
-      let dailyRevenue = 0;
-      let dailyOrders = 0;
-      
-      try {
-        dailyRevenue = await Order.sum('total_amount', {
-          where: {
-            status: 'completed',
-            created_at: { [Op.between]: [date, nextDate] },
-          },
-        }) || 0;
-        
-        dailyOrders = await Order.count({
-          where: { created_at: { [Op.between]: [date, nextDate] } },
-        }) || 0;
-      } catch (err) {
-        console.error(`Daily data error:`, err);
+    const queryStart = req.query.startDate ? new Date(req.query.startDate) : null;
+    const queryEnd = req.query.endDate ? new Date(req.query.endDate) : null;
+
+    const start = queryStart ? new Date(queryStart) : new Date(Date.now() - 6 * 24 * 60 * 60 * 1000);
+    const end = queryEnd ? new Date(queryEnd) : new Date();
+    // normalize to midnight
+    start.setHours(0, 0, 0, 0);
+    end.setHours(0, 0, 0, 0);
+
+    const msPerDay = 24 * 60 * 60 * 1000;
+    const dayRange = Math.ceil((end - start) / msPerDay) + 1;
+    const monthsBetween = (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth());
+
+    // Use monthly aggregation when the range spans 3 or more months
+    if (monthsBetween >= 3) {
+      // Aggregate by month
+      let cur = new Date(start.getFullYear(), start.getMonth(), 1, 0, 0, 0, 0);
+      const last = new Date(end.getFullYear(), end.getMonth(), 1, 0, 0, 0, 0);
+
+      while (cur <= last) {
+        const monthStart = new Date(cur.getFullYear(), cur.getMonth(), 1, 0, 0, 0, 0);
+        const nextMonth = new Date(cur.getFullYear(), cur.getMonth() + 1, 1, 0, 0, 0, 0);
+
+        let monthlyRevenue = 0;
+        let monthlyOrders = 0;
+        try {
+          monthlyRevenue = await Order.sum('total_amount', {
+            where: {
+              status: 'completed',
+              created_at: { [Op.between]: [monthStart, nextMonth] },
+            },
+          }) || 0;
+
+          // Count only completed orders to keep counts consistent with revenue
+          monthlyOrders = await Order.count({
+            where: { status: 'completed', created_at: { [Op.between]: [monthStart, nextMonth] } },
+          }) || 0;
+        } catch (err) {
+          console.error('Monthly aggregation error:', err);
+        }
+
+        revenueData.push({
+          // provide both a machine date and a friendly month label
+          date: monthStart.toISOString().split('T')[0],
+          month: monthStart.toLocaleString('default', { month: 'short', year: 'numeric' }),
+          revenue: monthlyRevenue,
+          orders: monthlyOrders,
+        });
+
+        cur.setMonth(cur.getMonth() + 1);
       }
-      
-      revenueData.push({
-        date: date.toISOString().split('T')[0],
-        revenue: dailyRevenue,
-        orders: dailyOrders,
-      });
+    } else {
+      // Aggregate by day across the requested range
+      for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+        const dayStart = new Date(d);
+        dayStart.setHours(0, 0, 0, 0);
+        const nextDay = new Date(dayStart);
+        nextDay.setDate(nextDay.getDate() + 1);
+
+        let dailyRevenue = 0;
+        let dailyOrders = 0;
+        try {
+          dailyRevenue = await Order.sum('total_amount', {
+            where: { status: 'completed', created_at: { [Op.between]: [dayStart, nextDay] } },
+          }) || 0;
+
+          // Count only completed orders
+          dailyOrders = await Order.count({ where: { status: 'completed', created_at: { [Op.between]: [dayStart, nextDay] } } }) || 0;
+        } catch (err) {
+          console.error('Daily aggregation error:', err);
+        }
+
+        revenueData.push({
+          date: dayStart.toISOString().split('T')[0],
+          revenue: dailyRevenue,
+          orders: dailyOrders,
+        });
+      }
     }
     
     const stats = {
@@ -389,8 +448,12 @@ const getSupportTickets = catchAsync(async (req, res) => {
     const offset = (page - 1) * limit;
 
     const where = {};
-    if (status && status !== 'all') where.status = status;
-    if (priority && priority !== 'all') where.priority = priority;
+    if (status && status !== 'all') {
+      where.status = status;
+    }
+    if (priority && priority !== 'all') {
+      where.priority = priority;
+    }
 
     const { count, rows } = await SupportTicket.findAndCountAll({
       where,
@@ -494,7 +557,9 @@ const getSystemLogs = catchAsync(async (req, res) => {
   const offset = (page - 1) * limit;
 
   const where = {};
-  if (level) where.level = level;
+  if (level) {
+    where.level = level;
+  }
   if (start_date && end_date) {
     where.created_at = { [Op.between]: [new Date(start_date), new Date(end_date)] };
   }

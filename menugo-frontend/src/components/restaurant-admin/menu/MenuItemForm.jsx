@@ -147,7 +147,7 @@ const MenuItemForm = ({ item, onSuccess, onCancel }) => {
       <Textarea label="Description" {...register('description')} error={errors.description?.message} rows={3} />
       
       <div className="grid grid-cols-2 gap-4">
-        <Input label="Price ($)" type="number" step="0.01" {...register('price')} error={errors.price?.message} required />
+        <Input label="Price (ETB)" type="number" step="0.01" {...register('price')} error={errors.price?.message} required />
         <Select
           label="Category"
           {...register('categoryId')}

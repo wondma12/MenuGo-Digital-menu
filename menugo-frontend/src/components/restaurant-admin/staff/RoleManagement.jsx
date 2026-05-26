@@ -65,12 +65,12 @@ const RoleManagement = () => {
           key={role.id}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className={`rounded-xl border p-5 ${roleColors[role.name] || 'bg-gray-100 border-gray-200'}`}
+          className={`rounded-none border p-5 shadow-[0_16px_40px_rgba(15,23,42,0.06)] ${roleColors[role.name] || 'bg-slate-100 border-slate-200'}`}
         >
           <div className="flex justify-between items-center mb-4">
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 capitalize">{role.name}</h3>
-              <p className="text-sm text-gray-600">{role.description}</p>
+              <h3 className="text-lg font-black tracking-tight text-slate-900 capitalize">{role.name}</h3>
+              <p className="text-sm text-slate-500">{role.description}</p>
             </div>
             {editingRole?.id === role.id ? (
               <div className="flex gap-2">
@@ -86,7 +86,7 @@ const RoleManagement = () => {
             <div className="space-y-4">
               {Object.entries(permissionGroups).map(([groupName, permissions]) => (
                 <div key={groupName}>
-                  <h4 className="font-medium text-gray-800 mb-2">{groupName}</h4>
+                  <h4 className="mb-2 font-semibold text-slate-700">{groupName}</h4>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                     {permissions.map((permission) => (
                       <label key={permission} className="flex items-center gap-2 cursor-pointer">
@@ -94,9 +94,9 @@ const RoleManagement = () => {
                           type="checkbox"
                           checked={editedPermissions.includes(permission)}
                           onChange={() => handlePermissionToggle(permission)}
-                          className="w-4 h-4 text-primary-600 rounded"
+                          className="h-4 w-4 rounded-none text-orange-600 focus:ring-orange-500"
                         />
-                        <span className="text-sm text-gray-700 capitalize">{permission.replace(/_/g, ' ')}</span>
+                        <span className="text-sm text-slate-600 capitalize">{permission.replace(/_/g, ' ')}</span>
                       </label>
                     ))}
                   </div>
@@ -106,12 +106,12 @@ const RoleManagement = () => {
           ) : (
             <div className="flex flex-wrap gap-2">
               {role.permissions?.slice(0, 10).map((perm) => (
-                <span key={perm} className="px-2 py-1 bg-white rounded-md text-xs text-gray-600">
+                <span key={perm} className="rounded-none bg-white px-2 py-1 text-xs text-slate-600">
                   {perm.replace(/_/g, ' ')}
                 </span>
               ))}
               {role.permissions?.length > 10 && (
-                <span className="px-2 py-1 bg-white rounded-md text-xs text-gray-600">
+                <span className="rounded-none bg-white px-2 py-1 text-xs text-slate-600">
                   +{role.permissions.length - 10} more
                 </span>
               )}

@@ -1,71 +1,66 @@
 import React from 'react'
-
-const formatCurrency = (value) => {
-  const v = Number(value || 0)
-  return "$" + v.toFixed(2)
-}
+import { formatCurrency } from '../../../utils/formatters'
 
 const OrderItemsList = ({ items = [], order = {} }) => {
   return (
-    <div>
-      <h4 className="font-medium text-gray-900 mb-3">Order Items</h4>
+    <div className="rounded-none bg-white p-3 shadow-[0_16px_40px_rgba(15,23,42,0.06)]">
+      <h4 className="mb-2 text-sm font-semibold text-slate-900">Order Items</h4>
 
       <div className="space-y-2">
         {items.map((item, index) => {
+          const lineTotal = (item.quantity || 0) * (item.unitPrice || 0)
           return (
-            <div key={index} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-              <div className="flex-1 flex items-center gap-3">
+            <div key={index} className="flex items-start gap-3 rounded-none border border-slate-100 p-2">
+              {/* Image / placeholder */}
+              <div className="flex-shrink-0">
                 {item.image ? (
-                  <img src={item.image} alt={item.name} className="w-12 h-12 object-cover rounded" />
+                  <img src={item.image} alt={item.name} className="h-10 w-10 rounded-none object-cover" />
                 ) : (
-                  <div className="w-12 h-12 bg-gray-100 rounded flex items-center justify-center text-xs text-gray-400">No Image</div>
+                  <div className="flex h-10 w-10 items-center justify-center rounded-none bg-slate-100 text-xs text-slate-400">No Image</div>
                 )}
-
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium text-gray-900">{item.quantity}x</span>
-                    <span className="text-gray-700">{item.name}</span>
-                  </div>
-
-                  {item.options && item.options.length > 0 && (
-                    <div className="text-xs text-gray-500 mt-1 ml-6">
-                      {item.options.map(opt => `${opt.name}: ${opt.choice}`).join(', ')}
-                    </div>
-                  )}
-
-                  {item.modifiers && item.modifiers.length > 0 && (
-                    <div className="text-xs text-gray-500 mt-1 ml-6">+ {item.modifiers.map(m => m.name).join(', ')}</div>
-                  )}
-
-                  {item.specialInstructions && (
-                    <div className="text-xs text-yellow-600 mt-1 ml-6">Note: {item.specialInstructions}</div>
-                  )}
-                </div>
               </div>
 
-              <div className="text-right">
-                <p className="font-medium text-gray-900">{formatCurrency(item.quantity * item.unitPrice)}</p>
-                <p className="text-xs text-gray-500">{formatCurrency(item.unitPrice)} each</p>
+              {/* Name, options, modifiers */}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between">
+                  <div className="truncate">
+                    <p className="truncate text-sm font-medium text-slate-900">{item.name}</p>
+                    {item.options && item.options.length > 0 && (
+                      <p className="mt-1 truncate text-[11px] text-slate-500">{item.options.map(opt => `${opt.name}: ${opt.choice}`).join(', ')}</p>
+                    )}
+                    {item.modifiers && item.modifiers.length > 0 && (
+                      <p className="mt-1 text-[11px] text-slate-500">+ {item.modifiers.map(m => m.name).join(', ')}</p>
+                    )}
+                    {item.specialInstructions && (
+                      <p className="mt-1 text-[11px] text-orange-700">Note: {item.specialInstructions}</p>
+                    )}
+                  </div>
+
+                  <div className="text-right ml-4">
+                    <p className="text-sm font-medium text-slate-900">{formatCurrency(lineTotal)}</p>
+                    <p className="text-[11px] text-slate-500">{item.quantity} x {formatCurrency(item.unitPrice)}</p>
+                  </div>
+                </div>
               </div>
             </div>
           )
         })}
       </div>
 
-      <div className="mt-4 pt-3 border-t border-gray-200">
+      <div className="mt-3 border-t border-slate-100 pt-3">
         <div className="flex justify-between text-sm">
-          <span className="text-gray-500">Subtotal</span>
-          <span className="text-gray-900">{formatCurrency(order.subtotal)}</span>
+          <span className="text-slate-700">Subtotal</span>
+          <span className="text-slate-900">{formatCurrency(order.subtotal)}</span>
         </div>
 
-        <div className="flex justify-between text-sm mt-1">
-          <span className="text-gray-500">Tax</span>
-          <span className="text-gray-900">{formatCurrency(order.taxAmount)}</span>
+        <div className="flex justify-between text-sm mt-2">
+          <span className="text-slate-700">Tax</span>
+          <span className="text-slate-900">{formatCurrency(order.taxAmount)}</span>
         </div>
 
-        <div className="flex justify-between text-lg font-bold mt-2 pt-2 border-t border-gray-200">
-          <span>Total</span>
-          <span className="text-primary-600">{formatCurrency(order.totalAmount)}</span>
+        <div className="mt-3 flex justify-between border-t border-slate-100 pt-3 text-lg font-extrabold">
+          <span className="text-slate-900">Total</span>
+          <span className="text-slate-900">{formatCurrency(order.totalAmount)}</span>
         </div>
       </div>
     </div>

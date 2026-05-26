@@ -1,6 +1,7 @@
 import React from 'react'
 import { motion } from 'framer-motion'
 import { ChartBarIcon, TagIcon, CurrencyDollarIcon, UsersIcon } from '@heroicons/react/24/outline'
+import { formatPrice } from '../../../utils/currency'
 
 const CouponAnalytics = ({ coupons }) => {
   const totalCoupons = coupons.length
@@ -17,7 +18,7 @@ const CouponAnalytics = ({ coupons }) => {
     { label: 'Total Coupons', value: totalCoupons, icon: TagIcon, color: 'blue' },
     { label: 'Active Coupons', value: activeCoupons, icon: ChartBarIcon, color: 'green' },
     { label: 'Total Redemptions', value: totalUsage, icon: UsersIcon, color: 'purple' },
-    { label: 'Est. Discount Given', value: `$${totalDiscountGiven.toFixed(2)}`, icon: CurrencyDollarIcon, color: 'orange' },
+    { label: 'Est. Discount Given', value: formatPrice(totalDiscountGiven.toFixed(2)), icon: CurrencyDollarIcon, color: 'orange' },
   ]
 
   const borderColors = {
@@ -61,7 +62,7 @@ const CouponAnalytics = ({ coupons }) => {
               <p className="text-xl font-bold">
                 {mostUsedCoupon.discountType === 'percentage' 
                   ? `${mostUsedCoupon.discountValue}% OFF` 
-                  : `$${mostUsedCoupon.discountValue} OFF`}
+                  : `${formatPrice(mostUsedCoupon.discountValue)} OFF`}
               </p>
             </div>
           </div>
@@ -76,7 +77,7 @@ const CouponAnalytics = ({ coupons }) => {
               <div>
                 <p className="font-mono font-medium text-gray-900">{coupon.code}</p>
                 <p className="text-xs text-gray-500">
-                  {coupon.discountType === 'percentage' ? `${coupon.discountValue}% OFF` : `$${coupon.discountValue} OFF`}
+                  {coupon.discountType === 'percentage' ? `${coupon.discountValue}% OFF` : `${formatPrice(coupon.discountValue)} OFF`}
                 </p>
               </div>
               <div className="text-right">

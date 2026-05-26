@@ -78,7 +78,7 @@ const CategoryForm = ({ category, onSubmit, onCancel, isLoading }) => {
   }
 
   return (
-    <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
+    <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-5 rounded-none bg-white">
       <Input
         label="Category Name"
         {...register('name')}
@@ -109,16 +109,16 @@ const CategoryForm = ({ category, onSubmit, onCancel, isLoading }) => {
       
       {iconPreview && (
         <div className="mt-2">
-          <p className="text-sm text-gray-500 mb-1">Preview:</p>
-          <img src={iconPreview} alt="Icon preview" className="w-16 h-16 object-cover rounded-lg border border-gray-200" />
+          <p className="mb-1 text-sm text-slate-500">Preview:</p>
+          <img src={iconPreview} alt="Icon preview" className="h-16 w-16 rounded-none border border-slate-200 object-cover" />
         </div>
       )}
 
       <div className="flex justify-end gap-3 pt-4">
-        <Button type="button" variant="secondary" onClick={onCancel}>
+        <Button type="button" variant="secondary" onClick={onCancel} className="rounded-none">
           Cancel
         </Button>
-        <Button type="submit" isLoading={isLoading || isUploading}>
+        <Button type="submit" isLoading={isLoading || isUploading} className="rounded-none bg-gradient-to-r from-orange-500 to-blue-500 text-white hover:from-orange-600 hover:to-blue-600">
           {isEditing ? 'Update Category' : 'Create Category'}
         </Button>
       </div>

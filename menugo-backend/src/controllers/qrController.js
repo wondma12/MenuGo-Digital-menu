@@ -48,14 +48,31 @@ const generateRestaurantQR = catchAsync(async (req, res) => {
   if (!qrIdentifier) {
     // create a URL-friendly identifier
     qrIdentifier = `${restaurant.name ? restaurant.name.toLowerCase().replace(/[^a-z0-9]+/g, '-') : 'restaurant'}-${Date.now()}`
-    const qrUrl = makeQrUrl(qrIdentifier)
+  }
 
+  // Try to find an existing record (may be null)
+  const existing = await QRCode.findOne({ where: { restaurant_id: restaurantId, identifier: qrIdentifier } })
+  if (existing) {
+    qrCodeRecord = existing
+    qrCloudinaryUrl = existing.qr_image_url
+  }
+
+  // Always (re)generate the QR image and base64 so the response contains
+  // a usable image payload for preview/download. If upload fails, keep
+  // any existing DB record and still return the base64 when available.
+  try {
+    const qrUrl = makeQrUrl(qrIdentifier)
     const qrImagePath = await generateQRCode(qrUrl, qrIdentifier)
     qrBase64 = await generateQRCodeBase64(qrUrl)
 
     if (qrImagePath && fs.existsSync(qrImagePath)) {
-      const uploadResult = await uploadToCloudinary(qrImagePath, 'menugo/qrcodes')
-      qrCloudinaryUrl = uploadResult.url
+      try {
+        const uploadResult = await uploadToCloudinary(qrImagePath, 'menugo/qrcodes')
+        qrCloudinaryUrl = uploadResult.url
+      } catch (uploadErr) {
+        // Upload failed; warn but continue returning base64/local file
+        console.warn('QR upload failed:', uploadErr && uploadErr.message)
+      }
     }
 
     const [newQr] = await QRCode.upsert({
@@ -67,32 +84,13 @@ const generateRestaurantQR = catchAsync(async (req, res) => {
     })
 
     qrCodeRecord = newQr
+    // Update the restaurant record with latest cloud URL (if any)
     await restaurant.update({ qr_code_identifier: qrIdentifier, qr_code_url: qrCloudinaryUrl })
-  } else {
-    // If identifier exists, try to find an existing record
-    const existing = await QRCode.findOne({ where: { restaurant_id: restaurantId, identifier: qrIdentifier } })
-    if (existing) {
-      qrCodeRecord = existing
-      qrCloudinaryUrl = existing.qr_image_url
-    } else {
-      const qrUrl = makeQrUrl(qrIdentifier)
-      const qrImagePath = await generateQRCode(qrUrl, qrIdentifier)
-      qrBase64 = await generateQRCodeBase64(qrUrl)
-      if (qrImagePath && fs.existsSync(qrImagePath)) {
-        const uploadResult = await uploadToCloudinary(qrImagePath, 'menugo/qrcodes')
-        qrCloudinaryUrl = uploadResult.url
-      }
-
-      const [newQr] = await QRCode.upsert({
-        restaurant_id: restaurantId,
-        identifier: qrIdentifier,
-        url: qrUrl,
-        qr_image_url: qrCloudinaryUrl,
-        is_active: true,
-      })
-
-      qrCodeRecord = newQr
-      await restaurant.update({ qr_code_url: qrCloudinaryUrl })
+  } catch (genErr) {
+    console.warn('QR generation failed:', genErr && genErr.message)
+    // If generation failed and we have an existing record, keep it.
+    if (!qrCodeRecord) {
+      throw genErr
     }
   }
 
@@ -128,36 +126,53 @@ const generateTableQR = catchAsync(async (req, res) => {
     // Create a new restaurant qr identifier and QR
     qrIdentifier = `${restaurant.name.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}`
     const qrUrl = `${getBaseUrl()}/menu/${qrIdentifier}`
-    const qrImagePath = await generateQRCode(qrUrl, qrIdentifier)
-    qrBase64 = await generateQRCodeBase64(qrUrl)
-    if (qrImagePath && fs.existsSync(qrImagePath)) {
-      const uploadResult = await uploadToCloudinary(qrImagePath, 'menugo/qrcodes')
-      qrCloudinaryUrl = uploadResult.url
+
+    // Try to generate and upload; if upload fails we'll still return base64/local file
+    try {
+      const qrImagePath = await generateQRCode(qrUrl, qrIdentifier)
+      qrBase64 = await generateQRCodeBase64(qrUrl)
+      if (qrImagePath && fs.existsSync(qrImagePath)) {
+        try {
+          const uploadResult = await uploadToCloudinary(qrImagePath, 'menugo/qrcodes')
+          qrCloudinaryUrl = uploadResult.url
+        } catch (uploadErr) {
+          console.warn('QR upload failed:', uploadErr && uploadErr.message)
+        }
+      }
+
+      const [newQr] = await QRCode.upsert({
+        restaurant_id: restaurantId,
+        identifier: qrIdentifier,
+        url: qrUrl,
+        qr_image_url: qrCloudinaryUrl,
+        is_active: true,
+      })
+
+      qrCodeRecord = newQr
+      await restaurant.update({ qr_code_identifier: qrIdentifier, qr_code_url: qrCloudinaryUrl })
+    } catch (err) {
+      console.warn('Table QR generation failed:', err && err.message)
     }
-
-    const [newQr] = await QRCode.upsert({
-      restaurant_id: restaurantId,
-      identifier: qrIdentifier,
-      url: qrUrl,
-      qr_image_url: qrCloudinaryUrl,
-      is_active: true,
-    })
-
-    qrCodeRecord = newQr
-    await restaurant.update({ qr_code_identifier: qrIdentifier, qr_code_url: qrCloudinaryUrl })
   } else {
     // Try to find existing restaurant-level QR
     const existing = await QRCode.findOne({ where: { restaurant_id: restaurantId, identifier: qrIdentifier } })
     if (existing) {
       qrCodeRecord = existing
       qrCloudinaryUrl = existing.qr_image_url
-    } else {
+    }
+
+    // Always regenerate the image and base64 for table QR as well so the UI gets usable data
+    try {
       const qrUrl = `${getBaseUrl()}/menu/${qrIdentifier}`
       const qrImagePath = await generateQRCode(qrUrl, qrIdentifier)
       qrBase64 = await generateQRCodeBase64(qrUrl)
       if (qrImagePath && fs.existsSync(qrImagePath)) {
-        const uploadResult = await uploadToCloudinary(qrImagePath, 'menugo/qrcodes')
-        qrCloudinaryUrl = uploadResult.url
+        try {
+          const uploadResult = await uploadToCloudinary(qrImagePath, 'menugo/qrcodes')
+          qrCloudinaryUrl = uploadResult.url
+        } catch (uploadErr) {
+          console.warn('QR upload failed:', uploadErr && uploadErr.message)
+        }
       }
 
       const [newQr] = await QRCode.upsert({
@@ -170,6 +185,8 @@ const generateTableQR = catchAsync(async (req, res) => {
 
       qrCodeRecord = newQr
       await restaurant.update({ qr_code_url: qrCloudinaryUrl })
+    } catch (err) {
+      console.warn('Table QR regeneration failed:', err && err.message)
     }
   }
 
@@ -195,11 +212,34 @@ const downloadQR = catchAsync(async (req, res) => {
   }
 
   const filePath = `uploads/qrcodes/${identifier}.png`;
-  if (!fs.existsSync(filePath)) {
-    throw new ApiError(404, 'QR code file not found');
+
+  // If a local file exists, serve it directly
+  if (fs.existsSync(filePath)) {
+    return res.download(filePath, `${identifier}.png`);
   }
 
-  res.download(filePath, `${identifier}.png`);
+  // If Cloudinary/remote URL is available, redirect so the client can fetch it
+  if (qrCode.qr_image_url && String(qrCode.qr_image_url).trim()) {
+    const remote = String(qrCode.qr_image_url).trim()
+    // Prefer redirect so browsers/clients fetch directly from the CDN
+    return res.redirect(remote)
+  }
+
+  // If base64 is stored on the record (fallback), stream it as an attachment
+  if (qrCode.qr_base64 && String(qrCode.qr_base64).trim()) {
+    const dataUrl = String(qrCode.qr_base64).trim()
+    const match = dataUrl.match(/^data:(image\/[a-zA-Z+]+);base64,(.*)$/)
+    if (match) {
+      const mime = match[1]
+      const b64 = match[2]
+      const buffer = Buffer.from(b64, 'base64')
+      res.setHeader('Content-Type', mime)
+      res.setHeader('Content-Disposition', `attachment; filename="${identifier}.png"`)
+      return res.send(buffer)
+    }
+  }
+
+  throw new ApiError(404, 'QR code file not found');
 });
 
 // Record QR scan
@@ -286,7 +326,17 @@ const getRestaurantQRCodes = catchAsync(async (req, res) => {
     order: [['created_at', 'DESC']],
   });
 
-  res.json(ApiResponse.success(qrCodes, 'QR codes retrieved'));
+  // Map to plain objects and include a download_url helper so clients
+  // can fetch the image consistently via the download endpoint.
+  const out = (qrCodes || []).map((q) => {
+    const plain = (typeof q.toJSON === 'function') ? q.toJSON() : q
+    return {
+      ...plain,
+      download_url: `/api/qr/download/${plain.identifier}`,
+    }
+  })
+
+  res.json(ApiResponse.success(out, 'QR codes retrieved'));
 });
 
 // Deactivate QR code
