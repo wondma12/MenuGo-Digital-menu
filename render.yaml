@@ -1,0 +1,15 @@
+services:
+  - type: static
+    name: menugo-frontend
+    env: static
+    branch: master
+    buildCommand: "cd menugo-frontend && npm ci && npm run build"
+    staticPublishPath: menugo-frontend/dist
+
+  - type: web_service
+    name: menugo-backends
+    env: node
+    branch: master
+    plan: free
+    buildCommand: "cd menugo-backends && npm ci"
+    startCommand: "cd menugo-backends && npm start"
