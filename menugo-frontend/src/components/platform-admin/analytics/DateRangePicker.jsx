@@ -27,7 +27,7 @@ const DateRangePicker = ({ value, onChange, className = '' }) => {
   }, [])
 
   const applyPreset = (preset) => {
-    const end = new Date()
+    let end = new Date()
     let start = new Date()
 
     if (preset.days !== undefined) {
