@@ -1,15 +1,18 @@
 services:
-  - type: static
+  - type: web
     name: menugo-frontend
-    env: static
+    runtime: static
     branch: master
-    buildCommand: "cd menugo-frontend && npm ci && npm run build"
-    staticPublishPath: menugo-frontend/dist
+    rootDir: menugo-frontend
+    buildCommand: npm ci && npm run build
+    staticPublishPath: dist
 
-  - type: web_service
+  - type: web
     name: menugo-backends
-    env: node
+    runtime: node
     branch: master
     plan: free
-    buildCommand: "cd menugo-backends && npm ci"
-    startCommand: "cd menugo-backends && npm start"
+    rootDir: menugo-backends
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /health
