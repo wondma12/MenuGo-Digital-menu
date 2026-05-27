@@ -3,6 +3,7 @@ services:
     name: menugo-frontend
     runtime: static
     branch: master
+    autoDeployTrigger: commit
     rootDir: menugo-frontend
     buildCommand: npm ci && npm run build
     staticPublishPath: dist
@@ -12,6 +13,7 @@ services:
     runtime: node
     branch: master
     plan: free
+    autoDeployTrigger: commit
     rootDir: menugo-backends
     buildCommand: npm ci
     startCommand: npm start
