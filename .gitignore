@@ -1,0 +1,20 @@
+# Node
+node_modules/
+
+# Ignore backend env files
+menugo-backends/.env
+menugo-backends/.env.local
+menugo-backends/.env.production
+
+# Ignore frontend env files
+menugo-frontend/.env
+menugo-frontend/.env.local
+
+# Generic
+.env
+.env.*.local
+.env.backup
+
+# Logs
+logs/
+*.log
