@@ -2,13 +2,10 @@ import axios from 'axios'
 import { useAuthStore } from '../store/authStore'
 
 // Default API base URL.
-// In development, prefer a relative `/api` so Vite's dev server proxy handles forwarding
-// to the backend (avoids cross-port connection attempts and long fallback timeouts).
-// In production or when `VITE_API_URL` is explicitly provided, use the configured value.
-// During development prefer the Vite dev server proxy (`/api`) so requests
-// are forwarded to the backend defined in `vite.config.js`. This avoids
-// cross-port requests and makes local fallback probing unnecessary.
-const API_URL = import.meta.env.DEV ? '/api' : (import.meta.env.VITE_API_URL || 'http://localhost:5000/api')
+// Use the explicit backend URL when provided, otherwise fall back to the local
+// backend port used by this project. Using an absolute URL avoids Vite proxy
+// dependencies and prevents ECONNREFUSED noise when the proxy backend is absent.
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5003/api'
 
 // Ensure the configured API_URL always includes the `/api` suffix so
 // requests like `api.get('/dashboard/platform')` resolve to
