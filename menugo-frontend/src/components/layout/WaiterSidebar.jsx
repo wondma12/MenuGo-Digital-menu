@@ -3,27 +3,40 @@ import { NavLink } from 'react-router-dom'
 import Avatar from '../common/Avatar'
 import { LogOut } from 'lucide-react'
 
-const WaiterSidebar = ({ menuItems = [], user, onLogout }) => {
+const WaiterSidebar = ({ menuItems = [], user, onLogout, restaurantBrand }) => {
+  const restaurantName = restaurantBrand?.name || user?.restaurant?.name || user?.staff?.restaurant_name || 'Restaurant'
+  const restaurantLogo = restaurantBrand?.logo || user?.restaurant?.logo_url || user?.restaurant?.logo || null
+
   return (
-    <div className="flex flex-col h-full justify-between">
-      {/* Logo */}
-      <div className="p-5 border-b border-gray-200">
-        <div className="flex items-center gap-2">
-          <img src="/logo.svg" alt="MenuGo" className="w-8 h-8" />
-          <span className="text-xl font-bold text-primary-600">MenuGo</span>
+    <div className="flex h-full flex-col bg-white/95 text-slate-900">
+      {/* Restaurant Branding */}
+      <div className="border-b border-slate-200 p-5">
+        <div className="flex items-center gap-3">
+          {restaurantLogo ? (
+            <img src={restaurantLogo} alt={restaurantName} className="h-9 w-9 rounded-lg object-cover ring-1 ring-slate-200" />
+          ) : (
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-orange-100 text-sm font-bold text-orange-700 ring-1 ring-orange-200">
+              {String(restaurantName).charAt(0).toUpperCase() || 'R'}
+            </div>
+          )}
+          <div className="min-w-0">
+            <p className="truncate text-lg font-bold text-slate-900">{restaurantName}</p>
+          </div>
         </div>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 py-4 overflow-y-auto">
-        <div className="px-3 space-y-1 pb-6">
+      <nav className="flex-1 overflow-y-auto py-4">
+        <div className="space-y-1 px-3">
           {menuItems.map((item, index) => (
             <NavLink
               key={index}
               to={item.path}
               className={({ isActive }) =>
-                `flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 ${
-                  isActive ? 'bg-primary-50 text-primary-700' : 'text-gray-700 hover:bg-gray-100'
+                `flex items-center gap-3 rounded-xl border-l-4 px-3 py-2.5 transition-all duration-200 ${
+                  isActive
+                    ? 'border-orange-500 bg-gradient-to-r from-orange-50 to-blue-50 text-slate-900 shadow-[0_8px_24px_rgba(15,23,42,0.05)]'
+                    : 'border-transparent text-slate-600 hover:border-orange-200 hover:bg-slate-50 hover:text-slate-900'
                 }`
               }
             >
@@ -35,17 +48,17 @@ const WaiterSidebar = ({ menuItems = [], user, onLogout }) => {
       </nav>
 
       {/* User Section (pinned to bottom-left) */}
-      <div className="p-4 border-t border-gray-200 flex flex-col items-start">
-        <div className="flex items-center gap-3 mb-2">
+      <div className="border-t border-slate-200 p-4">
+        <div className="mb-3 flex items-center gap-3">
           <Avatar name={user?.fullName} size="md" />
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-gray-900 truncate">{user?.fullName}</p>
-            <p className="text-xs text-gray-500 truncate">{user?.email}</p>
+            <p className="truncate text-sm font-medium text-slate-900">{user?.fullName}</p>
+            <p className="truncate text-xs text-slate-500">{user?.email}</p>
           </div>
         </div>
         <button
           onClick={onLogout}
-          className="inline-flex items-center gap-2 px-2 py-1 text-sm text-red-600 hover:bg-red-50 rounded transition-colors"
+          className="w-full rounded-lg px-3 py-2 text-sm text-rose-600 transition-colors hover:bg-rose-50"
         >
           <LogOut className="w-4 h-4" />
           <span>Logout</span>

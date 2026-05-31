@@ -37,15 +37,7 @@ exports.googleCallback = (req, res, next) => {
         expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
       });
 
-      const userPayload = {
-        id: user.id,
-        email: user.email,
-        full_name: user.full_name,
-        role: user.role,
-        avatar_url: user.avatar_url || null,
-      };
-
-      const redirectUrl = `${frontendUrl}/login?token=${encodeURIComponent(token)}&user=${encodeURIComponent(JSON.stringify(userPayload))}`;
+      const redirectUrl = `${frontendUrl}/login?token=${encodeURIComponent(token)}`;
       return res.redirect(redirectUrl);
     } catch (e) {
       return next(new ApiError(500, 'OAuth processing failed'));
@@ -83,15 +75,7 @@ exports.facebookCallback = (req, res, next) => {
         expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
       });
 
-      const userPayload = {
-        id: user.id,
-        email: user.email,
-        full_name: user.full_name,
-        role: user.role,
-        avatar_url: user.avatar_url || null,
-      };
-
-      const redirectUrl = `${frontendUrl}/login?token=${encodeURIComponent(token)}&user=${encodeURIComponent(JSON.stringify(userPayload))}`;
+      const redirectUrl = `${frontendUrl}/login?token=${encodeURIComponent(token)}`;
       return res.redirect(redirectUrl);
     } catch (e) {
       return next(new ApiError(500, 'OAuth processing failed'));

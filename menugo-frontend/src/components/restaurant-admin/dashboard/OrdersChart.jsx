@@ -33,7 +33,7 @@ const normalize = (data) => (Array.isArray(data) ? data : []).map(d => ({
   dateKey: (() => {
     const raw = d.date || d.period || d.period_start || d.label || d.name || ''
     const parsed = typeof raw === 'string' ? (isValid(parseISO(raw)) ? parseISO(raw) : new Date(raw)) : new Date(raw)
-    if (isValid(parsed)) return parsed.toISOString().slice(0,10)
+    if (isValid(parsed)) return format(parsed, 'yyyy-MM-dd')
     return String(raw)
   })(),
   label: (() => {
@@ -47,6 +47,16 @@ const normalize = (data) => (Array.isArray(data) ? data : []).map(d => ({
 
 const OrdersChart = ({ data }) => {
   const series = normalize(data)
+  // Compute tick positions: every even day and always include last day of month
+  const allKeys = series.map(s => s.dateKey)
+  let ticks = allKeys.filter((key) => shouldShowTickLabel(key))
+  // Ensure the last day is included
+  if (allKeys.length > 0) {
+    const last = allKeys[allKeys.length - 1]
+    if (!ticks.includes(last)) ticks.push(last)
+  }
+  // Dedupe and sort ticks chronologically
+  ticks = Array.from(new Set(ticks)).sort((a, b) => new Date(a) - new Date(b))
 
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
@@ -84,13 +94,13 @@ const OrdersChart = ({ data }) => {
             stroke="#475569"
             tick={{ fill: '#475569', fontSize: 12 }}
             tickLine={false}
-            interval={0}
-            tickFormatter={(value) => shouldShowTickLabel(value) ? formatChartLabel(value) : ''}
+            ticks={ticks}
+            tickFormatter={(value) => formatChartLabel(value)}
           />
-          <YAxis stroke="#475569" tick={{ fill: '#475569', fontSize: 12 }} />
+            <YAxis stroke="#475569" tick={{ fill: '#475569', fontSize: 12 }} tickFormatter={(v) => (Number(v) || 0).toLocaleString()} />
           <Tooltip content={<CustomTooltip />} />
           <Bar dataKey="orders" fill="url(#ordersBarGradient)" radius={[10, 10, 0, 0]}>
-            <LabelList dataKey="orders" position="top" formatter={(v) => Number(v).toLocaleString()} />
+            <LabelList dataKey="orders" position="top" formatter={(v) => (Number(v) > 0 ? Number(v).toLocaleString() : '')} />
           </Bar>
         </BarChart>
       </ResponsiveContainer>

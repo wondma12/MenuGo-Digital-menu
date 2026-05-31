@@ -71,7 +71,7 @@ const PlatformDashboard = () => {
   ]
 
   return (
-    <div className="space-y-6 bg-white p-4 sm:p-6 lg:p-8 font-['Manrope',system-ui,sans-serif] text-slate-900">
+    <div className="relative space-y-6 overflow-visible bg-white p-4 sm:px-6 lg:px-8 font-['Manrope',system-ui,sans-serif] text-slate-900">
       {/* <div className="relative z-30 overflow-visible rounded-none border border-orange-100 bg-white p-5 pb-10 shadow-sm sm:p-6 sm:pb-12 lg:p-7 lg:pb-12"> */}
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_rgba(251,146,60,0.12),transparent_45%),radial-gradient(ellipse_at_bottom_left,_rgba(59,130,246,0.08),transparent_55%)]" />
         <div className="relative z-40 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">

@@ -10,6 +10,7 @@ const { ApiError } = require('../utils/apiError');
 const { catchAsync } = require('../utils/catchAsync');
 
 const normalizeEmailInput = (email) => String(email || '').trim().toLowerCase();
+const isAuthLoginDebugEnabled = String(process.env.AUTH_LOGIN_DEBUG || '').toLowerCase() === 'true';
 
 const getClientUrl = () => String(process.env.CLIENT_URL || 'http://localhost:5173').replace(/\/$/, '');
 
@@ -49,9 +50,8 @@ const register = catchAsync(async (req, res) => {
     full_name,
     phone,
     role: role || 'customer',
-    is_verified: isRestaurantAdmin ? false : true,
-    // Restaurant admins should not be active until platform admin verifies
-    is_active: isRestaurantAdmin ? false : true,
+    is_verified: true,
+    is_active: true,
   });
 
   // If registering as restaurant admin, create restaurant
@@ -66,7 +66,7 @@ const register = catchAsync(async (req, res) => {
       country: restaurant_country || null,
       website: restaurant_website || null,
       slogan: restaurant_slogan || null,
-      is_verified: false,
+      is_verified: true,
       subscription_status: 'trial',
       subscription_start_date: new Date(),
       subscription_end_date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
@@ -146,8 +146,7 @@ const register = catchAsync(async (req, res) => {
         full_name: user.full_name,
         role: user.role,
       },
-      message: 'Registration submitted. Await platform verification by the platform admin.',
-    }, 'Registration submitted'));
+    }, 'Registration successful'));
   }
 
   // Generate tokens for other user roles
@@ -186,7 +185,7 @@ const login = catchAsync(async (req, res) => {
   }
 
   // Development debug logging to help diagnose login failures (safe in non-production)
-  if (process.env.NODE_ENV === 'development') {
+  if (isAuthLoginDebugEnabled) {
     try {
       console.log('[debug] authController.login — attempt for:', email);
       console.log('[debug] authController.login — normalized email:', normalizedEmail);
@@ -204,7 +203,7 @@ const login = catchAsync(async (req, res) => {
   // Check password
   let isPasswordValid = await bcrypt.compare(password, user.password_hash);
 
-  if (process.env.NODE_ENV === 'development') {
+  if (isAuthLoginDebugEnabled) {
     try {
       console.log('[debug] authController.login — bcrypt.compare result:', isPasswordValid);
     } catch (e) {
@@ -217,7 +216,7 @@ const login = catchAsync(async (req, res) => {
     try {
       const stored = user.password_hash || '';
       const looksLikeBcrypt = typeof stored === 'string' && stored.startsWith('$2');
-      if (process.env.NODE_ENV === 'development') {
+      if (isAuthLoginDebugEnabled) {
         try {
           console.log('[debug] authController.login — fallback check, stored length:', stored.length, 'looksLikeBcrypt:', looksLikeBcrypt);
         } catch (e) {
@@ -238,6 +237,21 @@ const login = catchAsync(async (req, res) => {
   if (!isPasswordValid) {
     await user.increment('login_attempts');
     throw new ApiError(401, 'Invalid credentials');
+  }
+
+  // Restaurant admins should be able to log in directly now that the payment gate is removed.
+  if (user.role === 'restaurant_admin' && (!user.is_active || !user.is_verified)) {
+    await user.update({ is_active: true, is_verified: true });
+    user.is_active = true;
+    user.is_verified = true;
+
+    const staffRecord = await RestaurantStaff.findOne({ where: { user_id: user.id } });
+    if (staffRecord) {
+      const staffRestaurant = await Restaurant.findByPk(staffRecord.restaurant_id);
+      if (staffRestaurant) {
+        await staffRestaurant.update({ is_active: true, is_verified: true });
+      }
+    }
   }
 
   // If account is not active (e.g., restaurant_admin awaiting platform verification), return informative error
@@ -307,6 +321,8 @@ const login = catchAsync(async (req, res) => {
       full_name: user.full_name,
       role: user.role,
       avatar_url: user.avatar_url,
+      is_active: user.is_active,
+      is_verified: user.is_verified,
     },
     restaurant,
     staff,

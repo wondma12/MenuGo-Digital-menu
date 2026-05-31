@@ -173,7 +173,7 @@ const calculateGrowth = (data) => {
 // Get popular items
 const getPopularItems = async (restaurantId, limit = 10) => {
   try {
-    const popularItems = await MenuItemAnalytics.findAll({
+    const aggregated = await MenuItemAnalytics.findAll({
       where: { restaurant_id: restaurantId },
       attributes: [
         'menu_item_id',
@@ -181,13 +181,27 @@ const getPopularItems = async (restaurantId, limit = 10) => {
         [sequelize.fn('SUM', sequelize.col('revenue')), 'total_revenue'],
         [sequelize.fn('SUM', sequelize.col('order_count')), 'total_orders'],
       ],
-      include: [{ model: MenuItem, as: 'analytics_item' }],
-      group: ['menu_item_id', 'menu_item.id'],
+      group: ['menu_item_id'],
       order: [[sequelize.literal('total_quantity'), 'DESC']],
       limit,
     });
 
-    return popularItems;
+    const menuItemIds = aggregated.map((row) => row.menu_item_id).filter(Boolean);
+    if (menuItemIds.length === 0) return aggregated;
+
+    const menuItems = await MenuItem.findAll({
+      where: { id: menuItemIds },
+    });
+
+    const menuItemMap = new Map(menuItems.map((item) => [String(item.id), item]));
+
+    return aggregated.map((row) => {
+      const plainRow = row.toJSON ? row.toJSON() : row;
+      return {
+        ...plainRow,
+        analytics_item: menuItemMap.get(String(plainRow.menu_item_id)) || null,
+      };
+    });
   } catch (error) {
     logger.error('Get popular items error:', error);
     throw error;

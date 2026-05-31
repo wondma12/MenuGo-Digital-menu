@@ -31,8 +31,6 @@ const MultiStepRegistration = () => {
     password: "",
     confirmPassword: "",
     restaurantName: "",
-    businessEmail: "",
-    businessPhone: "",
     country: "",
     city: "",
     subCity: "",
@@ -81,9 +79,6 @@ const MultiStepRegistration = () => {
 
       case 2:
         if (!formData.restaurantName.trim()) newErrors.restaurantName = "Restaurant name is required";
-        if (!formData.businessEmail.trim()) newErrors.businessEmail = "Business email is required";
-        else if (!/\S+@\S+\.\S+/.test(formData.businessEmail)) newErrors.businessEmail = "Invalid email format";
-        if (!formData.businessPhone.trim()) newErrors.businessPhone = "Business phone is required";
         break;
 
       case 3:
@@ -148,7 +143,6 @@ const MultiStepRegistration = () => {
           fd.append('restaurant_address', formData.streetAddress);
           fd.append('restaurant_city', formData.city);
           fd.append('restaurant_country', formData.country);
-          fd.append('restaurant_phone', formData.businessPhone);
           fd.append('restaurant_website', formData.googleMapsLink);
           fd.append('restaurant_slogan', formData.description);
           if (formData.logo) fd.append('logo', formData.logo);
@@ -166,15 +160,14 @@ const MultiStepRegistration = () => {
             restaurant_address: formData.streetAddress,
             restaurant_city: formData.city,
             restaurant_country: formData.country,
-            restaurant_phone: formData.businessPhone,
             restaurant_website: formData.googleMapsLink,
             restaurant_slogan: formData.description,
           };
         }
 
-        await registerUser(payload);
-        toast.success('Registration submitted. Await platform verification.');
-        navigate('/login');
+        const response = await registerUser(payload);
+        toast.success(response?.message || 'Registration successful. Sign in to continue.');
+        navigate('/login', { replace: true });
       } catch (err) {
         console.error('Registration error', err);
         toast.error(err?.response?.data?.message || 'Registration failed');
@@ -295,36 +288,6 @@ const MultiStepRegistration = () => {
                     />
                   </div>
                   {errors.restaurantName && <p className="mt-1 text-xs text-red-600">{errors.restaurantName}</p>}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-slate-700">Business Email *</label>
-                  <div className="relative mt-1">
-                    <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                    <Input
-                      type="email"
-                      placeholder="Enter business email"
-                      value={formData.businessEmail}
-                      onChange={(e) => handleChange("businessEmail", e.target.value)}
-                      className="pl-9 rounded-xl border-slate-200 focus:border-orange-400 focus:ring-orange-400"
-                    />
-                  </div>
-                  {errors.businessEmail && <p className="mt-1 text-xs text-red-600">{errors.businessEmail}</p>}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-slate-700">Business Phone *</label>
-                  <div className="relative mt-1">
-                    <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                    <Input
-                      type="tel"
-                      placeholder="Enter business phone"
-                      value={formData.businessPhone}
-                      onChange={(e) => handleChange("businessPhone", e.target.value)}
-                      className="pl-9 rounded-xl border-slate-200 focus:border-orange-400 focus:ring-orange-400"
-                    />
-                  </div>
-                  {errors.businessPhone && <p className="mt-1 text-xs text-red-600">{errors.businessPhone}</p>}
                 </div>
 
                 <div>
@@ -559,8 +522,6 @@ const MultiStepRegistration = () => {
                   <h3 className="text-sm font-semibold text-slate-900">Restaurant Details</h3>
                   <div className="mt-2 space-y-1 text-sm text-slate-600">
                     <p><span className="font-medium">Name:</span> {formData.restaurantName}</p>
-                    <p><span className="font-medium">Email:</span> {formData.businessEmail}</p>
-                    <p><span className="font-medium">Phone:</span> {formData.businessPhone}</p>
                   </div>
                 </div>
                 <div>

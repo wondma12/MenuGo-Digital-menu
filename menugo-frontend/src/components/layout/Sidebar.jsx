@@ -30,8 +30,17 @@ const Sidebar = ({ menuItems, onLogout, user }) => {
       {/* Logo */}
       <div className="border-b border-slate-200 p-5">
         <div className="flex items-center gap-2">
-          <img src="/logo.svg" alt="MenuGo" className="w-8 h-8" />
-          <span className="text-xl font-bold text-orange-600">MenuGo</span>
+          {(() => {
+            // Prefer restaurant logo & name from user payload when available
+            const logo = user?.restaurant?.logo_url || user?.restaurant?.logoUrl || user?.restaurant?.logo || '/logo.svg'
+            const name = user?.restaurant?.name || user?.restaurant?.restaurant_name || 'MenuGo'
+            return (
+              <>
+                <img src={logo} alt={name} className="w-8 h-8 object-contain rounded" onError={(e) => { e.currentTarget.src = '/logo.svg' }} />
+                <span className="text-xl font-bold text-orange-600 truncate">{name}</span>
+              </>
+            )
+          })()}
         </div>
       </div>
 

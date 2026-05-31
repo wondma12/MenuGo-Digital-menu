@@ -12,8 +12,8 @@ const MetricCard = ({ title, value, change, icon: Icon, color }) => {
   return (
     <div className="rounded-2xl border border-slate-100 bg-gradient-to-br from-white to-slate-50/70 p-4 shadow-sm">
       <div className="flex items-center justify-between mb-2">
-        <div className={`rounded-xl bg-gradient-to-r ${color} p-2 text-white shadow-sm`}>
-          <Icon className="w-4 h-4 text-white" />
+        <div className={`rounded-xl bg-gradient-to-r ${color} p-1.5 text-white shadow-sm`}>
+          <Icon className="w-3.5 h-3.5 text-white" />
         </div>
         {change && (
           <div className={`flex items-center gap-1 text-xs font-semibold ${change > 0 ? 'text-emerald-600' : 'text-rose-600'}`}>

@@ -1,6 +1,5 @@
 import React from 'react'
 import { useQuery } from 'react-query'
-import { motion } from 'framer-motion'
 import WaiterStats from './WaiterStats'
 import TodayMetrics from './TodayMetrics'
 import PerformanceChart from './PerformanceChart'
@@ -17,22 +16,23 @@ const WaiterDashboard = () => {
   if (isLoading) return <Loading />
 
   return (
-    <>
-      <div className="space-y-6 pb-2">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="relative overflow-hidden rounded-3xl border border-orange-100 bg-white px-4 py-5 shadow-sm sm:px-5 sm:py-6"
-        >
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_rgba(251,146,60,0.12),transparent_45%),_radial-gradient(ellipse_at_bottom_left,_rgba(59,130,246,0.08),transparent_55%)]" />
-          <div className="relative">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-orange-600">Service overview</p>
-          <h1 className="mt-1.5 text-xl font-black tracking-tight text-slate-900 sm:text-2xl">Waiter Dashboard</h1>
-          <p className="mt-1.5 max-w-2xl text-xs leading-5 text-slate-500 sm:text-sm">
-            Welcome back, {data?.waiterName}! Keep orders moving and watch live performance from here.
-          </p>
+    <div className="relative space-y-6 overflow-visible bg-white p-4 sm:px-6 lg:px-8">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(251,146,60,0.18),transparent_32%),radial-gradient(circle_at_bottom_left,_rgba(59,130,246,0.12),transparent_32%)]" />
+      <div className="pointer-events-none absolute -left-24 top-24 h-72 w-72 rounded-full bg-orange-300/20 blur-3xl" />
+      <div className="pointer-events-none absolute -right-20 top-1/2 h-80 w-80 rounded-full bg-blue-300/20 blur-3xl" />
+
+      <div className="relative z-10 mx-auto max-w-7xl space-y-6 overflow-visible">
+        <div className="relative z-20 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="max-w-2xl space-y-2">
+            <h1 className="text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">Waiter Dashboard</h1>
+            <p className="max-w-2xl text-sm text-slate-500 sm:text-base">
+              Welcome back, {data?.waiterName}! Track service progress, orders, tips, and customer feedback from one polished workspace.
+            </p>
           </div>
-        </motion.div>
+          <div className="relative z-50 inline-flex items-center rounded-full bg-orange-50 px-3 py-1 text-xs font-semibold text-orange-700 ring-1 ring-orange-100">
+            Live service overview
+          </div>
+        </div>
 
         <WaiterStats stats={data?.stats} />
 
@@ -44,7 +44,7 @@ const WaiterDashboard = () => {
           <WaiterOrderList />
         </div>
       </div>
-    </>
+    </div>
   )
 }
 

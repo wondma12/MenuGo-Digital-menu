@@ -4,6 +4,7 @@ const router = express.Router();
 const { protect } = require('../middleware/authMiddleware');
 const { restrictTo } = require('../middleware/roleMiddleware');
 const {
+  getPublicPlatformSummary,
   getPlatformAnalytics,
   getPlatformUserAnalytics,
   getPlatformDashboard,
@@ -29,7 +30,10 @@ const {
   getSubscriptionRevenue,
 } = require('../controllers/subscriptionController');
 
-// All platform routes require authentication and platform admin role
+// Public homepage summary
+router.get('/public-summary', getPublicPlatformSummary);
+
+// All other platform routes require authentication and platform admin role
 router.use(protect);
 router.use(restrictTo('platform_admin'));
 

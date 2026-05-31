@@ -233,6 +233,32 @@ const RestaurantAnalytics = () => {
     'orders'
   )
 
+  // Compute ticks for revenue and orders charts: every even day + last day of month
+  const computeTicks = (series) => {
+    const keys = (Array.isArray(series) ? series : []).map(s => s.dateKey || s.date)
+    let ticks = keys.filter((value) => {
+      try {
+        const parsed = typeof value === 'string' ? (isValid(parseISO(value)) ? parseISO(value) : new Date(value)) : new Date(value)
+        if (!isValid(parsed)) return true
+        const day = parsed.getDate()
+        const lastDayOfMonth = new Date(parsed.getFullYear(), parsed.getMonth() + 1, 0).getDate()
+        return day % 2 === 0 || day === lastDayOfMonth
+      } catch (e) {
+        return true
+      }
+    })
+    if (keys.length > 0) {
+      const last = keys[keys.length - 1]
+      if (!ticks.includes(last)) ticks.push(last)
+    }
+    // dedupe and sort ticks
+    ticks = Array.from(new Set(ticks)).sort((a, b) => new Date(a) - new Date(b))
+    return ticks
+  }
+
+  const revenueTicks = computeTicks(chartRevenueData)
+  const ordersTicks = computeTicks(chartOrdersData)
+
   // Normalize peak hours data and provide fallback so Peak Hours chart renders
   let chartPeakHoursData = (data?.peakHours || data?.hourlyData || []).map(h => ({
     hour: typeof h.hour === 'number' ? String(h.hour).padStart(2, '0') + ':00' : (h.hour || h.label || h.time || ''),
@@ -285,10 +311,10 @@ const RestaurantAnalytics = () => {
   ]
 
   const borderColors = {
-    blue: 'border-l-orange-500',
+    blue: 'border-l-blue-500',
     green: 'border-l-orange-500',
     purple: 'border-l-orange-500',
-    yellow: 'border-l-orange-500',
+    yellow: 'border-l-yellow-500',
     red: 'border-l-orange-500',
     orange: 'border-l-orange-500',
   }
@@ -321,7 +347,7 @@ const RestaurantAnalytics = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
-            className={`relative flex h-24 items-center justify-between overflow-hidden rounded-none border border-orange-100 border-l-4 bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.06)] ${borderColors[metric.color] || 'border-l-orange-500'}`}
+            className={`relative flex h-24 items-center justify-between overflow-hidden rounded-2xl border border-orange-100 border-l-4 bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.06)] ${borderColors[metric.color] || 'border-l-orange-500'}`}
           >
             <div>
               <p className="text-sm text-slate-500">{metric.title}</p>
@@ -348,7 +374,7 @@ const RestaurantAnalytics = () => {
                 </linearGradient>
               </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                <XAxis dataKey="date" stroke="#475569" tick={{ fill: '#475569', fontSize: 12 }} tickLine={false} />
+                <XAxis dataKey="dateKey" stroke="#475569" tick={{ fill: '#475569', fontSize: 12 }} tickLine={false} ticks={revenueTicks} tickFormatter={(v) => { try { const p = isValid(parseISO(v)) ? parseISO(v) : new Date(v); return isValid(p) ? format(p, 'MMM d') : String(v) } catch(e) { return String(v) } }} />
                 <YAxis stroke="#475569" tick={{ fill: '#475569', fontSize: 12 }} tickFormatter={formatCurrencyTick} />
                 <Tooltip content={<RevenueTooltip />} />
                 <Area type="monotone" dataKey="revenue" stroke="#f97316" strokeWidth={2} fill="url(#revenueGradient)" />
@@ -367,7 +393,7 @@ const RestaurantAnalytics = () => {
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-              <XAxis dataKey="date" stroke="#475569" tick={{ fill: '#475569', fontSize: 12 }} tickLine={false} interval={0} />
+              <XAxis dataKey="dateKey" stroke="#475569" tick={{ fill: '#475569', fontSize: 12 }} tickLine={false} ticks={ordersTicks} tickFormatter={(v) => { try { const p = isValid(parseISO(v)) ? parseISO(v) : new Date(v); return isValid(p) ? format(p, 'MMM d') : String(v) } catch(e) { return String(v) } }} />
               <YAxis stroke="#475569" tick={{ fill: '#475569', fontSize: 12 }} />
               <Tooltip content={<OrdersTooltip />} />
               <Bar dataKey="orders" fill="url(#ordersBarGradient)" radius={[10, 10, 0, 0]} />

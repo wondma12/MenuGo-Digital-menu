@@ -135,6 +135,9 @@ function App() {
     if (!isAuthenticated) {
       return <Navigate to="/home" replace />
     }
+    if (user?.role === 'restaurant_admin' && (!user?.is_active || !user?.is_verified)) {
+      return <Navigate to="/login" replace />
+    }
     if (user?.role === 'platform_admin') return <Navigate to="/platform/dashboard" replace />
     if (user?.role === 'restaurant_admin') return <Navigate to="/admin/dashboard" replace />
     if (user?.role === 'chef' || user?.staff?.role === 'chef') return <Navigate to="/chef/kitchen" replace />
@@ -306,6 +309,8 @@ function App() {
             
             {/* Restaurant Admin Routes */}
             <Route element={<ProtectedRoute allowedRoles={['restaurant_admin']} />}>
+              <Route path="/restaurant" element={<Navigate to="/admin" replace />} />
+              <Route path="/restaurant/dashboard" element={<Navigate to="/admin/dashboard" replace />} />
               <Route path="/admin" element={<RestaurantLayout />}>
                 <Route index element={<Navigate to="/admin/dashboard" />} />
                 <Route path="dashboard" element={<RestaurantDashboard />} />

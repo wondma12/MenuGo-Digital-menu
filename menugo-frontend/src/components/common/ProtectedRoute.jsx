@@ -14,6 +14,10 @@ const ProtectedRoute = ({ allowedRoles = [] }) => {
     return <Navigate to="/login" replace />
   }
 
+  if (user?.role === 'restaurant_admin' && (!user?.is_active || !user?.is_verified)) {
+    return <Navigate to="/login" replace />
+  }
+
   if (allowedRoles.length > 0) {
     const hasRole = allowedRoles.includes(user?.role) || allowedRoles.includes(user?.staff?.role)
     if (!hasRole) {

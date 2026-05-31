@@ -1,20 +1,17 @@
 import React, { useState } from 'react'
 import { useQuery } from 'react-query'
 import { motion, AnimatePresence } from 'framer-motion'
-import { MagnifyingGlassIcon, PlusIcon, FunnelIcon } from '@heroicons/react/24/outline'
+import { MagnifyingGlassIcon, FunnelIcon } from '@heroicons/react/24/outline'
 import RestaurantCard from './RestaurantCard'
 import RestaurantFilters from './RestaurantFilters'
 import Loading from '../../../common/Loading'
 import EmptyState from '../../../common/EmptyState'
 import Pagination from '../../../common/Pagination'
 import { getRestaurants } from '../../../services/restaurantService'
-import { useNavigate } from 'react-router-dom';
 
 
 
 const RestaurantList = () => {
-  const navigate = useNavigate();
-
   const [searchTerm, setSearchTerm] = useState('')
   const [filters, setFilters] = useState({
     status: 'all',
@@ -34,16 +31,14 @@ const RestaurantList = () => {
   if (isLoading) return <Loading />
 
   return (
-    <div className="space-y-6 bg-white p-4 font-['Manrope',system-ui,sans-serif] text-slate-900 sm:p-6 lg:p-8">
-       {/* <div className="relative overflow-hidden rounded-3xl border border-orange-100 bg-white p-5 shadow-sm sm:p-6 lg:p-7"> */}
-         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_rgba(251,146,60,0.12),transparent_45%),radial-gradient(ellipse_at_bottom_left,_rgba(59,130,246,0.08),transparent_55%)]" />
-          <div className="relative flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+    <div className="relative space-y-6 overflow-visible bg-white p-4 text-slate-900 sm:p-6 lg:p-8 font-['Manrope',system-ui,sans-serif]">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_rgba(251,146,60,0.12),transparent_45%),radial-gradient(ellipse_at_bottom_left,_rgba(59,130,246,0.08),transparent_55%)]" />
+      <div className="relative flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-2xl">
             <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-orange-600">Platform restaurants</p>
             <h1 className="mt-1.5 text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">Restaurant Management</h1>
             <p className="mt-2 text-sm leading-6 text-slate-500 sm:text-base">Manage all restaurants on the platform</p>
           </div>
-      {/* </div> */}
       </div>
       {/* Search and Filter Bar */}
       <div className="flex flex-col gap-4 sm:flex-row">
@@ -85,30 +80,26 @@ const RestaurantList = () => {
 
       {/* Stats Summary */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-4">
-        <div className="flex h-24 items-center justify-between rounded-none border border-slate-100 bg-white p-5 shadow-sm">
-          <div>
-            <p className="text-sm font-semibold text-slate-500">Total Restaurants</p>
-            <p className="text-2xl font-black text-slate-900">{data?.total || 0}</p>
-          </div>
-        </div>
-        <div className="flex h-24 items-center justify-between rounded-none border border-slate-100 bg-white p-5 shadow-sm">
-          <div>
-            <p className="text-sm font-semibold text-slate-500">Active</p>
-            <p className="text-2xl font-black text-emerald-600">{data?.active || 0}</p>
-          </div>
-        </div>
-        <div className="flex h-24 items-center justify-between rounded-none border border-slate-100 bg-white p-5 shadow-sm">
-          <div>
-            <p className="text-sm font-semibold text-slate-500">Pending Verification</p>
-            <p className="text-2xl font-black text-amber-600">{data?.pending || 0}</p>
-          </div>
-        </div>
-        <div className="flex h-24 items-center justify-between rounded-none border border-slate-100 bg-white p-5 shadow-sm">
-          <div>
-            <p className="text-sm font-semibold text-slate-500">Premium</p>
-            <p className="text-2xl font-black text-violet-600">{data?.premium || 0}</p>
-          </div>
-        </div>
+        {[
+          { label: 'Total Restaurants', value: data?.total || 0, textClass: 'text-slate-900', borderClass: 'border-l-blue-500' },
+          { label: 'Active', value: data?.active || 0, textClass: 'text-emerald-600', borderClass: 'border-l-emerald-500' },
+          { label: 'Pending Verification', value: data?.pending || 0, textClass: 'text-amber-600', borderClass: 'border-l-amber-500' },
+          { label: 'Premium', value: data?.premium || 0, textClass: 'text-violet-600', borderClass: 'border-l-violet-500' },
+        ].map((stat, index) => (
+          <motion.div
+            key={stat.label}
+            initial={{ opacity: 0, y: 18, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ delay: index * 0.08, duration: 0.35, ease: 'easeOut' }}
+            whileHover={{ y: -3 }}
+            className={`flex h-24 items-center justify-between rounded-2xl border border-slate-100 border-l-4 bg-white p-5 shadow-sm transition-shadow hover:shadow-md ${stat.borderClass}`}
+          >
+            <div>
+              <p className="text-sm font-semibold text-slate-500">{stat.label}</p>
+              <p className={`text-2xl font-black ${stat.textClass}`}>{stat.value}</p>
+            </div>
+          </motion.div>
+        ))}
       </div>
 
       {/* Restaurant Grid */}
@@ -120,17 +111,28 @@ const RestaurantList = () => {
         />
       ) : (
         <>
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3">
+          <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+            <div className="hidden grid-cols-[minmax(0,2.2fr)_minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,0.9fr)_auto] gap-4 border-b border-slate-200 bg-slate-50 px-5 py-3 text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500 lg:grid">
+              <div>Restaurant</div>
+              <div>Contact</div>
+              <div>Stats</div>
+              <div>Status</div>
+              <div className="text-right">Actions</div>
+            </div>
+
+            <div className="divide-y divide-slate-100">
             {data?.restaurants?.map((restaurant, index) => (
               <motion.div
                 key={restaurant.id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.05 }}
+                className="bg-white"
               >
-                <RestaurantCard restaurant={restaurant} onUpdate={refetch} />
+                <RestaurantCard restaurant={restaurant} onUpdate={refetch} variant="list" />
               </motion.div>
             ))}
+            </div>
           </div>
 
           {/* Pagination */}

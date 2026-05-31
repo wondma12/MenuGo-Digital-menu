@@ -66,7 +66,13 @@ export const getRestaurantAnalytics = async (restaurantId, dateRange) => {
       if (derived.length) revenueData.push(...derived)
     }
 
-    let totalOrders = Number(sales?.summary?.dataValues?.total_orders ?? sales?.summary?.total_orders ?? 0)
+    let totalOrders = Number(
+      sales?.summary?.dataValues?.completed_orders
+      ?? sales?.summary?.completed_orders
+      ?? sales?.summary?.dataValues?.total_orders
+      ?? sales?.summary?.total_orders
+      ?? 0
+    )
     let ordersData = (sales.data || []).map(s => ({ date: s.date || s.period, orders: Number(s.total_orders ?? s.orders ?? 0) }))
     // Derive totalOrders from ordersData when summary is null
     if ((!totalOrders || totalOrders === 0) && ordersData.length) {
@@ -149,8 +155,8 @@ export const getRestaurantAnalytics = async (restaurantId, dateRange) => {
           revenueData = revAll.revenue_data.map(d => ({ date: d.date || d.period, revenue: Number(d.revenue || d.total_revenue || 0) }))
         }
 
-        if ((!totalOrders || totalOrders === 0) && (salesAll.summary?.dataValues?.total_orders || salesAll.summary?.total_orders)) {
-          totalOrders = Number(salesAll.summary?.dataValues?.total_orders ?? salesAll.summary?.total_orders ?? 0)
+        if ((!totalOrders || totalOrders === 0) && (salesAll.summary?.dataValues?.completed_orders || salesAll.summary?.completed_orders || salesAll.summary?.dataValues?.total_orders || salesAll.summary?.total_orders)) {
+          totalOrders = Number(salesAll.summary?.dataValues?.completed_orders ?? salesAll.summary?.completed_orders ?? salesAll.summary?.dataValues?.total_orders ?? salesAll.summary?.total_orders ?? 0)
         }
 
         if ((!ordersData || ordersData.length === 0) && Array.isArray(salesAll.data) && salesAll.data.length > 0) {
@@ -411,6 +417,16 @@ export const getUserAnalytics = async (dateRange) => {
   }
 };
 
+export const getPublicPlatformSummary = async () => {
+  try {
+    const response = await api.get('/platform/public-summary');
+    return response?.data?.data || response?.data || {};
+  } catch (error) {
+    console.error('Error fetching public platform summary:', error);
+    return {};
+  }
+};
+
 // MAIN DASHBOARD API - FIXED VERSION
 export const getPlatformDashboardData = async (dateRange) => {
   try {
@@ -454,7 +470,9 @@ export const getPlatformDashboardData = async (dateRange) => {
         activeUsers: adminActiveUsers !== null ? adminActiveUsers : (stats.active_users || 0),
         usersGrowth: stats.users_growth || 0,
         totalOrders: stats.total_orders || 0,
+        completedOrders: stats.completed_orders || 0,
         todayOrders: stats.today_orders || 0,
+        todayCompletedOrders: stats.today_completed_orders || 0,
         ordersGrowth: stats.orders_growth || 0,
         totalRevenue: stats.total_revenue || 0,
         todayRevenue: stats.today_revenue || 0,

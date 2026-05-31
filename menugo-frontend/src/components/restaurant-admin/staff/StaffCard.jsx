@@ -62,7 +62,6 @@ const StaffCard = ({ staff, onEdit, onRefresh }) => {
               <Avatar src={staff.avatar} name={staff.name} size="xl" />
               <div>
                 <h3 className="font-black tracking-tight text-slate-900">{staff.name}</h3>
-                <p className="text-xs text-slate-500">ID: {staff.employeeId}</p>
               </div>
             </div>
             <div className="flex gap-1">

@@ -55,7 +55,9 @@ const attemptFallback = async (originalRequest) => {
   // Only attempt automatic fallback for idempotent requests to avoid
   // re-sending large uploads or mutating POSTs to unknown hosts.
   const method = (originalRequest && originalRequest.method) ? originalRequest.method.toLowerCase() : 'get'
-  if (!['get', 'head'].includes(method)) {
+  const requestUrl = String(originalRequest?.url || '')
+  const allowMutationFallback = Boolean(originalRequest && originalRequest._allowBaseFallback)
+  if (!['get', 'head'].includes(method) && !allowMutationFallback) {
     return Promise.reject(originalRequest._originalError || new Error('Network error: non-idempotent request; not attempting fallback'))
   }
 

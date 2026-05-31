@@ -177,11 +177,20 @@ const getPlatformDashboard = catchAsync(async (req, res) => {
     // 3. Get Order Stats
     let totalOrders = 0;
     let todayOrders = 0;
+    let totalCompletedOrders = 0;
+    let todayCompletedOrders = 0;
     
     try {
       totalOrders = await Order.count();
       todayOrders = await Order.count({ 
         where: { created_at: { [Op.gte]: todayStart } } 
+      });
+      totalCompletedOrders = await Order.count({ where: { status: 'completed' } });
+      todayCompletedOrders = await Order.count({
+        where: {
+          status: 'completed',
+          created_at: { [Op.gte]: todayStart }
+        }
       });
     } catch (err) {
       console.error('Order count error:', err);
@@ -337,7 +346,9 @@ const getPlatformDashboard = catchAsync(async (req, res) => {
       active_users: activeUsers || 0,
       users_growth: 5.2,
       total_orders: totalOrders || 0,
+      completed_orders: totalCompletedOrders || 0,
       today_orders: todayOrders || 0,
+      today_completed_orders: todayCompletedOrders || 0,
       orders_growth: 8.5,
       total_revenue: totalRevenue || 0,
       today_revenue: todayRevenue || 0,
@@ -503,6 +514,7 @@ const getRestaurantDashboard = catchAsync(async (req, res) => {
         dailyOrders = await Order.count({
           where: {
             restaurant_id: restaurantId,
+            status: 'completed',
             created_at: { [Op.between]: [dayStart, next] },
           },
         }) || 0;

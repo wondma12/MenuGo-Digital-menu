@@ -71,11 +71,11 @@ const CategoryManager = () => {
         </div>
 
            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <div className="rounded-none bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.06)]">
+          <div className="rounded-2xl border border-slate-100 border-l-4 border-l-blue-500 bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.06)]">
             <p className="text-sm font-semibold text-slate-500">Total categories</p>
             <p className="mt-1 text-2xl font-black tracking-tight text-slate-900">{categoriesWithCounts.length}</p>
           </div>
-          <div className="rounded-none bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.06)]">
+          <div className="rounded-2xl border border-slate-100 border-l-4 border-l-emerald-500 bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.06)]">
             <p className="text-sm font-semibold text-slate-500">Total menu items</p>
             <p className="mt-1 text-2xl font-black tracking-tight text-slate-900">{totalItems}</p>
           </div>

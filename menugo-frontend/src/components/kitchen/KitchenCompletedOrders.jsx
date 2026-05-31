@@ -209,8 +209,8 @@ const KitchenCompletedOrders = ({
           </thead>
           <tbody className="divide-y divide-gray-100 bg-white">
             {orders.map((order, idx) => {
-              // compute display number taking pagination into account
-              const base = ((pagination.page || 1) - 1) * (pagination.limit || currentLimit);
+              // compute display number taking pagination into account (use controlled values when provided)
+              const base = ((currentPage || 1) - 1) * (currentLimit || 1);
               const displayNumber = base + idx + 1;
               // Support backend API snake_case and frontend camelCase shapes
               const orderNumber = order.order_number || order.orderNumber || order.id;

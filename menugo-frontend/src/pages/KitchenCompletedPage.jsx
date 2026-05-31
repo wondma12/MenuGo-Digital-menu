@@ -20,7 +20,7 @@ const KitchenCompletedPage = () => {
   const todayStr = toLocalDateString(new Date())
   const [dateRange, setDateRange] = useState({ start: todayStr, end: todayStr })
   const [page, setPage] = useState(1)
-  const [limit, setLimit] = useState(20)
+  const [limit, setLimit] = useState(10)
   const [paginationMeta, setPaginationMeta] = useState({ page: 1, limit: 20, total: 0, pages: 0 })
 
   useEffect(() => {

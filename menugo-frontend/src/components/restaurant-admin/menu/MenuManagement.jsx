@@ -2,7 +2,6 @@ import React, { useState } from 'react'
 import { useQuery } from 'react-query'
 import { motion } from 'framer-motion'
 import { PlusIcon, FunnelIcon } from '@heroicons/react/24/outline'
-import MenuGrid from './MenuGrid'
 import MenuList from './MenuList'
 import MenuFilters from './MenuFilters'
 import MenuSearch from './MenuSearch'
@@ -15,12 +14,11 @@ import { getMenuItems } from '../../../services/menuService'
 import { useAuthStore } from '../../../store/authStore'
 
 const MenuManagement = () => {
-  const [viewMode, setViewMode] = useState('grid')
+  const [viewMode, setViewMode] = useState('list')
   const [searchTerm, setSearchTerm] = useState('')
   const [filters, setFilters] = useState({
     category: 'all',
     availability: 'all',
-    dietary: [],
   })
   const [selectedItems, setSelectedItems] = useState([])
   const [showFilters, setShowFilters] = useState(false)
@@ -68,11 +66,11 @@ const MenuManagement = () => {
         </div>
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <div className="rounded-none bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.06)]">
+          <div className="rounded-2xl border border-slate-100 border-l-4 border-l-blue-500 bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.06)]">
             <p className="text-sm font-semibold text-slate-500">Total items</p>
             <p className="mt-1 text-2xl font-black tracking-tight text-slate-900">{totalItems}</p>
           </div>
-          <div className="rounded-none bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.06)]">
+          <div className="rounded-2xl border border-slate-100 border-l-4 border-l-emerald-500 bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.06)]">
             <p className="text-sm font-semibold text-slate-500">Available</p>
             <p className="mt-1 text-2xl font-black tracking-tight text-slate-900">{availableItems}</p>
           </div>
@@ -91,20 +89,6 @@ const MenuManagement = () => {
               <FunnelIcon className="h-5 w-5 text-orange-500" />
               Filters
             </button>
-
-            <button
-              onClick={() => setViewMode('grid')}
-              className={`ml-2 flex h-10 w-36 items-center justify-center border border-slate-200 text-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-orange-100 ${viewMode === 'grid' ? 'bg-orange-50 font-semibold text-orange-700' : 'bg-white text-slate-700 hover:border-orange-200 hover:bg-orange-50'}`}
-            >
-              Grid
-            </button>
-            <button
-              onClick={() => setViewMode('list')}
-              className={`ml-2 flex h-10 w-36 items-center justify-center border border-slate-200 text-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-orange-100 ${viewMode === 'list' ? 'bg-orange-50 font-semibold text-orange-700' : 'bg-white text-slate-700 hover:border-orange-200 hover:bg-orange-50'}`}
-            >
-              List
-            </button>
-
 
           </div>
         </div>
@@ -138,21 +122,6 @@ const MenuManagement = () => {
           description="Add your first menu item to get started"
           actionText="Add Menu Item"
           onAction={() => setShowItemModal(true)}
-        />
-      ) : viewMode === 'grid' ? (
-        <MenuGrid
-          items={data?.items || []}
-          selectedItems={selectedItems}
-          onSelectItem={(id) => {
-            setSelectedItems(prev =>
-              prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
-            )
-          }}
-          onEdit={(item) => {
-            setEditingItem(item)
-            setShowItemModal(true)
-          }}
-          onRefresh={refetch}
         />
       ) : (
         <MenuList

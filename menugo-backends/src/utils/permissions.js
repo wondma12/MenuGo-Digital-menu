@@ -144,14 +144,20 @@ const ROLE_PERMISSIONS = {
 
 // Check if user has permission
 const hasPermission = (userRole, userPermissions, requiredPermission) => {
-  if (userRole === 'platform_admin') return true;
+  if (userRole === 'platform_admin') {
+    return true;
+  }
   
   // Check role-based permissions
   const rolePerms = ROLE_PERMISSIONS[userRole] || [];
-  if (rolePerms.includes(requiredPermission)) return true;
+  if (rolePerms.includes(requiredPermission)) {
+    return true;
+  }
   
   // Check custom permissions
-  if (userPermissions && userPermissions[requiredPermission]) return true;
+  if (userPermissions && userPermissions[requiredPermission]) {
+    return true;
+  }
   
   return false;
 };

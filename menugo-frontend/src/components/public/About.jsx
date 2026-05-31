@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   staggerContainer,
@@ -29,8 +29,40 @@ import {
 } from '@heroicons/react/24/outline';
 import PublicHeader from './PublicHeader';
 import PublicFooter from './PublicFooter';
+import { getPublicPlatformSummary } from '../../services/analyticsService';
+
+const compactNumber = (value) => {
+  const numericValue = Number(value);
+  if (!Number.isFinite(numericValue)) return '0';
+  return new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 }).format(numericValue);
+}
 
 const About = () => {
+  const [platformSummary, setPlatformSummary] = useState({
+    restaurants_live: 500,
+    team_members_enabled: 2300,
+  });
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadSummary = async () => {
+      const summary = await getPublicPlatformSummary();
+      if (!cancelled && summary && typeof summary === 'object') {
+        setPlatformSummary((current) => ({
+          ...current,
+          ...summary,
+        }));
+      }
+    };
+
+    loadSummary();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const values = [
     { icon: HeartIcon, title: 'Customer First', description: 'We design every screen around the real needs of restaurant teams and guests.' },
     { icon: LightBulbIcon, title: 'Innovation', description: 'We keep the platform practical, modern, and easy to adopt in busy environments.' },
@@ -45,8 +77,8 @@ const About = () => {
   ]
 
   const metrics = [
-    { value: '500+', label: 'Active Restaurants' },
-    { value: '2.3K+', label: 'Team Members Enabled' },
+    { value: `${compactNumber(platformSummary.restaurants_live)}+`, label: 'Active Restaurants' },
+    { value: `${compactNumber(platformSummary.team_members_enabled)}+`, label: 'Team Members Enabled' },
     { value: '99.99%', label: 'Platform Uptime' },
     { value: '24/7', label: 'Priority Support' },
   ]

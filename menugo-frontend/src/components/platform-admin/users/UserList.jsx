@@ -1,14 +1,29 @@
-import React, { useState } from 'react'
+import React, { useMemo, useState } from 'react'
 import { useQuery } from 'react-query'
 import { motion } from 'framer-motion'
-import { MagnifyingGlassIcon, FunnelIcon, UserPlusIcon } from '@heroicons/react/24/outline'
+import {
+  MagnifyingGlassIcon,
+  FunnelIcon,
+  UserPlusIcon,
+  EllipsisVerticalIcon,
+  EyeIcon,
+  PencilIcon,
+  TrashIcon,
+  CheckCircleIcon,
+  XCircleIcon,
+} from '@heroicons/react/24/outline'
 import { useNavigate } from 'react-router-dom'
-import UserCard from './UserCard'
 import UserFilters from './UserFilters'
 import Loading from '../../../common/Loading'
 import EmptyState from '../../../common/EmptyState'
 import Pagination from '../../../common/Pagination'
 import Button from '../../../common/Button'
+import Badge from '../../../common/Badge'
+import Dropdown from '../../../common/Dropdown'
+import Avatar from '../../../common/Avatar'
+import { updateUserStatus, deleteUser } from '../../../services/userService'
+import { useAuthStore } from '../../../store/authStore'
+import toast from 'react-hot-toast'
 import { getUsers } from '../../../services/userService'
 
 const UserList = () => {
@@ -24,6 +39,14 @@ const UserList = () => {
   const [currentPage, setCurrentPage] = useState(1)
   const [showFilters, setShowFilters] = useState(false)
 
+  const roleColors = useMemo(() => ({
+    platform_admin: 'from-violet-500 to-violet-400',
+    restaurant_admin: 'from-blue-500 to-blue-400',
+    waiter: 'from-emerald-500 to-emerald-400',
+    customer: 'from-slate-500 to-slate-400',
+    support_agent: 'from-orange-500 to-amber-400',
+  }), [])
+
   const { data, isLoading, refetch } = useQuery(
     ['users', currentPage, searchTerm, filters],
     () => getUsers({ page: currentPage, search: searchTerm, ...filters }),
@@ -37,10 +60,92 @@ const UserList = () => {
     { staleTime: 5 * 60 * 1000 }
   )
 
+  const formatDate = (value) => {
+    if (!value) return 'Unknown'
+    const date = new Date(value)
+    return Number.isNaN(date.getTime()) ? 'Unknown' : date.toLocaleDateString()
+  }
+
+  const formatDateTime = (value) => {
+    if (!value) return 'Never'
+    const date = new Date(value)
+    return Number.isNaN(date.getTime()) ? 'Never' : date.toLocaleString()
+  }
+
+  const formatRoleLabel = (role) => role?.replace('_', ' ')
+
+  const handleStatusChange = async (user, status) => {
+    try {
+      await updateUserStatus(user.id, { isActive: status })
+      toast.success(`User ${status ? 'activated' : 'deactivated'} successfully`)
+      refetch()
+    } catch (error) {
+      toast.error('Failed to update status')
+    }
+  }
+
+  const handleDelete = async (user) => {
+    try {
+      const currentUser = useAuthStore.getState().user
+      const force = currentUser?.role === 'platform_admin'
+      await deleteUser(user.id, { force })
+      toast.success('User deleted successfully')
+      refetch()
+    } catch (error) {
+      toast.error('Failed to delete user')
+    }
+  }
+
+  const buildMenuItems = (user) => [
+    {
+      label: 'View Details',
+      icon: EyeIcon,
+      onClick: () => navigate(`/platform/users/${user.id}`),
+    },
+    {
+      label: 'Edit User',
+      icon: PencilIcon,
+      onClick: () => navigate(`/platform/users/${user.id}/edit`),
+    },
+    {
+      label: user.isActive ? 'Deactivate' : 'Activate',
+      icon: user.isActive ? XCircleIcon : CheckCircleIcon,
+      onClick: () => handleStatusChange(user, !user.isActive),
+    },
+    {
+      label: 'Delete',
+      icon: TrashIcon,
+      onClick: () => handleDelete(user),
+      danger: true,
+    },
+  ]
+
+  const renderStatusBadge = (user) => (
+    <div className="flex flex-wrap gap-2">
+      <Badge
+        variant="primary"
+        size="sm"
+        className={`rounded-none bg-gradient-to-r ${roleColors[user.role] || roleColors.customer} text-white ring-1 ring-slate-100`}
+      >
+        {user.role?.replace('_', ' ')}
+      </Badge>
+      <Badge
+        variant={user.isActive ? 'success' : 'danger'}
+        size="sm"
+        className={user.isActive ? 'rounded-none bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100' : 'rounded-none bg-rose-50 text-rose-700 ring-1 ring-rose-100'}
+      >
+        {user.isActive ? 'Active' : 'Inactive'}
+      </Badge>
+      {user.emailVerified && (
+        <Badge variant="success" size="sm" className="rounded-none bg-blue-50 text-blue-700 ring-1 ring-blue-100">Verified</Badge>
+      )}
+    </div>
+  )
+
   if (isLoading) return <Loading />
 
   return (
-    <div className="space-y-6 bg-white p-4 font-['Manrope',system-ui,sans-serif] text-slate-900 sm:p-6 lg:p-8">
+    <div className="relative space-y-6 overflow-visible bg-white p-4 sm:px-6 lg:px-8 font-['Manrope',system-ui,sans-serif] text-slate-900 sm:p-6 lg:p-8">
       {/* <div className="relative overflow-hidden rounded-none border border-orange-100 bg-white p-5 shadow-sm sm:p-6 lg:p-7"> */}
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_rgba(251,146,60,0.12),transparent_45%),radial-gradient(ellipse_at_bottom_left,_rgba(59,130,246,0.08),transparent_55%)]" />
         <div className="relative flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
@@ -89,33 +194,29 @@ const UserList = () => {
 
       {/* Stats Summary */}
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-        <div className="flex h-24 items-center justify-between rounded-none border border-slate-100 border-l-4 border-l-orange-500 bg-white p-5 shadow-sm">
-          <div>
-            <p className="text-sm font-semibold text-slate-500">Total Admins</p>
-            <p className="text-2xl font-black text-slate-900">{adminData?.total ?? 0}</p>
-          </div>
-        </div>
-        <div className="flex h-24 items-center justify-between rounded-none border border-slate-100 border-l-4 border-l-emerald-500 bg-white p-5 shadow-sm">
-          <div>
-            <p className="text-sm font-semibold text-slate-500">Active Admins</p>
-            <p className="text-2xl font-black text-emerald-600">{adminData?.active ?? 0}</p>
-          </div>
-        </div>
-        <div className="flex h-24 items-center justify-between rounded-none border border-slate-100 border-l-4 border-l-amber-500 bg-white p-5 shadow-sm">
-          <div>
-            <p className="text-sm font-semibold text-slate-500">Pending Verification</p>
-            <p className="text-2xl font-black text-amber-600">{adminData?.pendingVerification ?? 0}</p>
-          </div>
-        </div>
-        <div className="flex h-24 items-center justify-between rounded-none border border-slate-100 border-l-4 border-l-blue-500 bg-white p-5 shadow-sm">
-          <div>
-            <p className="text-sm font-semibold text-slate-500">New This Month</p>
-            <p className="text-2xl font-black text-blue-600">{adminData?.newThisMonth ?? 0}</p>
-          </div>
-        </div>
+        {[
+          { label: 'Total Admins', value: adminData?.total ?? 0, textClass: 'text-slate-900', borderClass: 'border-l-blue-500' },
+          { label: 'Active Admins', value: adminData?.active ?? 0, textClass: 'text-emerald-600', borderClass: 'border-l-emerald-500' },
+          { label: 'Pending Verification', value: adminData?.pendingVerification ?? 0, textClass: 'text-amber-600', borderClass: 'border-l-amber-500' },
+          { label: 'New This Month', value: adminData?.newThisMonth ?? 0, textClass: 'text-blue-600', borderClass: 'border-l-blue-500' },
+        ].map((stat, index) => (
+          <motion.div
+            key={stat.label}
+            initial={{ opacity: 0, y: 18, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ delay: index * 0.08, duration: 0.35, ease: 'easeOut' }}
+            whileHover={{ y: -3 }}
+            className={`flex h-24 items-center justify-between rounded-2xl border border-slate-100 border-l-4 bg-white p-5 shadow-sm transition-shadow hover:shadow-md ${stat.borderClass}`}
+          >
+            <div>
+              <p className="text-sm font-semibold text-slate-500">{stat.label}</p>
+              <p className={`text-2xl font-black ${stat.textClass}`}>{stat.value}</p>
+            </div>
+          </motion.div>
+        ))}
       </div>
 
-      {/* User Grid */}
+      {/* User List */}
       {data?.users?.length === 0 ? (
         <EmptyState
           title="No users found"
@@ -124,17 +225,107 @@ const UserList = () => {
         />
       ) : (
         <>
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-2">
-            {data?.users?.map((user, index) => (
-              <motion.div
-                key={user.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.05 }}
-              >
-                <UserCard user={user} onUpdate={refetch} />
-              </motion.div>
-            ))}
+          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <div className="hidden grid-cols-[2.4fr_1.6fr_1fr_0.9fr_1.1fr_72px] gap-4 border-b border-slate-200 bg-slate-50 px-2 py-4 text-xs font-bold uppercase tracking-[0.18em] text-slate-500 lg:grid">
+              <div>User</div>
+              <div>Contact</div>
+              <div>Role</div>
+              <div>Status</div>
+              <div>Joined</div>
+              <div className="text-right">Actions</div>
+            </div>
+
+            <div className="divide-y divide-slate-100">
+              {data?.users?.map((user, index) => (
+                <motion.div
+                  key={user.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.03 }}
+                  className="grid gap-4 px-2 py-4 lg:grid-cols-[2.4fr_1.6fr_1fr_0.9fr_1.1fr_72px] lg:items-center lg:px-2"
+                >
+                  <div className="flex items-start gap-3">
+                    <Avatar src={user.avatar} name={user.fullName} size="md" />
+                    <div className="min-w-0">
+                      <button
+                        type="button"
+                        onClick={() => navigate(`/platform/users/${user.id}`)}
+                        className="text-left text-base font-black tracking-tight text-slate-900 hover:text-orange-600"
+                      >
+                        {user.fullName}
+                      </button>
+                      <div className="mt-2 lg:hidden">
+                        <div
+                          className={`text-sm ${user.role === 'restaurant_admin' ? 'text-blue-600' : 'text-slate-600'}`}
+                          style={user.role === 'platform_admin' ? { color: 'rgb(107 33 168 / var(--tw-text-opacity, 1))' } : undefined}
+                        >
+                          {formatRoleLabel(user.role)}
+                        </div>
+                        <div
+                          className={`text-sm ${user.isActive ? 'text-emerald-600' : 'text-slate-600'}`}
+                          style={!user.isActive ? { color: 'rgb(217 119 6 / var(--tw-text-opacity, 1))' } : undefined}
+                        >
+                          {user.isActive ? 'Active' : 'Inactive'}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1 text-sm text-slate-600">
+                    <div className="truncate">{user.email}</div>
+                  </div>
+
+                  <div
+                    className={`text-sm hidden lg:block ${user.role === 'restaurant_admin' ? 'text-blue-600' : 'text-slate-600'}`}
+                    style={user.role === 'platform_admin' ? { color: 'rgb(107 33 168 / var(--tw-text-opacity, 1))' } : undefined}
+                  >
+                    {formatRoleLabel(user.role)}
+                  </div>
+
+                  <div
+                    className={`text-sm ${user.isActive ? 'text-emerald-600' : 'text-slate-600'}`}
+                    style={!user.isActive ? { color: 'rgb(217 119 6 / var(--tw-text-opacity, 1))' } : undefined}
+                  >
+                    {user.isActive ? 'Active' : 'Inactive'}
+                  </div>
+
+                  <div className="text-sm text-slate-600">{formatDate(user.createdAt)}</div>
+
+
+
+                  <div className="flex justify-end items-center space-x-1 pr-0">
+                    <button
+                      onClick={() => navigate(`/platform/users/${user.id}`)}
+                      title="View"
+                      className="rounded-none p-1 text-slate-500 hover:text-orange-600"
+                    >
+                      <EyeIcon className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => navigate(`/platform/users/${user.id}/edit`)}
+                      title="Edit"
+                      className="rounded-none p-1 text-slate-500 hover:text-orange-600"
+                    >
+                      <PencilIcon className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => handleStatusChange(user, !user.isActive)}
+                      title={user.isActive ? 'Deactivate' : 'Activate'}
+                      className={`rounded-none p-1 ${user.isActive ? 'text-rose-600 hover:bg-rose-50' : 'text-emerald-600 hover:bg-emerald-50'}`}
+                    >
+                      {user.isActive ? <XCircleIcon className="w-4 h-4" /> : <CheckCircleIcon className="w-4 h-4" />}
+                    </button>
+                    <button
+                      onClick={() => handleDelete(user)}
+                      title="Delete"
+                      className="rounded-none p-1 text-slate-500 hover:text-rose-600"
+                    >
+                      <TrashIcon className="w-4 h-4" />
+                    </button>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
           </div>
 
           {data?.totalPages > 1 && (

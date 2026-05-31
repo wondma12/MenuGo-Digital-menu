@@ -21,6 +21,7 @@ import LowStockAlert from './LowStockAlert'
 import CustomerInsights from './CustomerInsights'
 import Loading from '../../common/Loading'
 import Alert from '../../common/Alert'
+import DateRangePicker from '../analytics/DateRangePicker'
 import { getRestaurantDashboardData } from '../../../services/restaurantService'
 import { formatPrice } from '../../../utils/currency'
 
@@ -63,23 +64,24 @@ const RestaurantDashboard = () => {
   }
 
   const metrics = [
+    // Use aggregated values for the selected date range so metrics reflect picker
     {
-      title: 'Today\'s Orders',
-      value: data?.todayOrders || 0,
+      title: 'Orders',
+      value: (data?.ordersData || []).reduce((s, p) => s + Number(p.orders || 0), 0) || (data?.todayOrders || 0),
       change: data?.ordersChange || 0,
       color: 'blue',
     },
     {
-      title: 'Completed Today',
-      value: data?.completedToday || data?.completed_today || 0,
+      title: 'Completed',
+      value: data?.completedTotal || data?.completedToday || 0,
       change: 0,
       color: 'teal',
     },
     {
-      title: 'Today\'s Revenue',
-      value: formatPrice(data?.todayRevenue || 0),
+      title: 'Revenue',
+      value: formatPrice((data?.revenueData || []).reduce((s, p) => s + Number(p.revenue || 0), 0) || (data?.todayRevenue || 0)),
       change: data?.revenueChange || 0,
-      color: 'green',
+      color: 'orange',
     },
     {
       title: 'Avg Rating',
@@ -102,7 +104,8 @@ const RestaurantDashboard = () => {
             <h1 className="text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">Restaurant Dashboard</h1>
             <p className="text-sm leading-6 text-slate-500 sm:text-base">Welcome back, {user?.full_name?.split(' ')?.[0] || ''}! Here&apos;s your business overview.</p>
           </div>
-          <div className="relative z-50">
+          <div className="relative z-50 flex items-center gap-2">
+            <DateRangePicker value={dateRange} onChange={setDateRange} />
             <QuickActions restaurantId={restaurantId} />
           </div>
         </div>

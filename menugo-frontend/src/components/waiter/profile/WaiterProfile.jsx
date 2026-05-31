@@ -5,7 +5,6 @@ import { User, Star } from 'lucide-react'
 import ProfileForm from './ProfileForm'
 import ChangePassword from './ChangePassword'
 import AvailabilitySchedule from './AvailabilitySchedule'
-import PerformanceStats from './PerformanceStats'
 import Tabs from '../../common/Tabs'
 import Avatar from '../../common/Avatar'
 import Loading from '../../common/Loading'
@@ -20,7 +19,6 @@ const WaiterProfile = () => {
     { label: 'Profile', content: <ProfileForm profile={profile} /> },
     { label: 'Security', content: <ChangePassword /> },
     { label: 'Availability', content: <AvailabilitySchedule /> },
-    { label: 'Performance', content: <PerformanceStats stats={profile?.performance} /> }
   ]
 
   return (

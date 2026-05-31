@@ -58,7 +58,7 @@ const RestaurantLayout = () => {
   const visibleMenuItems = menuItems
 
   return (
-    <div className={`min-h-screen bg-slate-50 text-slate-900 overflow-x-hidden`}>
+    <div className={`flex h-screen flex-col bg-slate-50 text-slate-900 overflow-hidden`}>
       {/* Sidebar */}
       <AnimatePresence mode="wait">
         {sidebarOpen && (
@@ -75,7 +75,7 @@ const RestaurantLayout = () => {
       </AnimatePresence>
 
       {/* Main Content */}
-      <div className={`transition-all duration-300 ${sidebarOpen ? 'pl-64' : 'pl-0'}`}>
+      <div className={`flex min-h-0 flex-1 flex-col transition-all duration-300 ${sidebarOpen ? 'pl-64' : 'pl-0'}`}>
         <Header
           title="Restaurant Dashboard"
           user={user}
@@ -83,7 +83,7 @@ const RestaurantLayout = () => {
           onMobileMenuClick={() => setMobileMenuOpen(true)}
           onLogout={handleLogout}
         />
-        <main className={`p-6 text-slate-900 min-w-0 overflow-x-hidden`}>
+        <main className={`min-h-0 flex-1 overflow-y-auto p-6 text-slate-900 min-w-0 overflow-x-hidden`}>
           <Outlet />
         </main>
       </div>

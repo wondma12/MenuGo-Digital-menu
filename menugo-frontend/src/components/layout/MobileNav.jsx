@@ -5,8 +5,10 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { XMarkIcon, ChevronDownIcon, ChevronRightIcon } from '@heroicons/react/24/outline'
 import { BarChart2, Store, Users, CreditCard, TrendingUp, HelpCircle, Settings, Clipboard, QrCode, Database, LogOut } from 'lucide-react'
 
-const MobileNav = ({ isOpen, onClose, menuItems, user, onLogout }) => {
+const MobileNav = ({ isOpen, onClose, menuItems, user, onLogout, brand }) => {
   const [expandedMenus, setExpandedMenus] = useState({})
+  const brandName = brand?.name || 'MenuGo'
+  const brandLogo = brand?.logo || '/logo.svg'
 
   const toggleSubmenu = (path) => {
     setExpandedMenus(prev => ({
@@ -62,8 +64,8 @@ const MobileNav = ({ isOpen, onClose, menuItems, user, onLogout }) => {
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-gray-200">
               <div className="flex items-center gap-2">
-                <img src="/logo.svg" alt="MenuGo" className="h-8 w-auto" />
-                <span className="text-xl font-bold text-gray-900">MenuGo</span>
+                <img src={brandLogo} alt={brandName} className="h-8 w-8 rounded-md object-cover" />
+                <span className="text-xl font-bold text-gray-900 truncate">{brandName}</span>
               </div>
               <button
                 onClick={onClose}

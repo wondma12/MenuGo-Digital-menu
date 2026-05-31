@@ -237,13 +237,27 @@ const getPopularItems = async (restaurantId, startDate, endDate, limit = 10) => 
         [sequelize.fn('SUM', sequelize.col('revenue')), 'total_revenue'],
         [sequelize.fn('SUM', sequelize.col('order_count')), 'total_orders'],
       ],
-      include: [{ model: MenuItem, as: 'analytics_item' }],
-      group: ['menu_item_id', 'menu_item.id'],
+      group: ['menu_item_id'],
       order: [[sequelize.literal('total_quantity'), 'DESC']],
       limit,
     });
 
-    return analytics;
+    const menuItemIds = analytics.map((row) => row.menu_item_id).filter(Boolean);
+    if (menuItemIds.length === 0) return analytics;
+
+    const menuItems = await MenuItem.findAll({
+      where: { id: menuItemIds },
+    });
+
+    const menuItemMap = new Map(menuItems.map((item) => [String(item.id), item]));
+
+    return analytics.map((row) => {
+      const plainRow = row.toJSON ? row.toJSON() : row;
+      return {
+        ...plainRow,
+        analytics_item: menuItemMap.get(String(plainRow.menu_item_id)) || null,
+      };
+    });
   } catch (error) {
     logger.error('Error getting popular items:', error);
     throw error;

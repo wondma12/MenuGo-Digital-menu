@@ -81,7 +81,8 @@ const Login = () => {
       }
     } catch (err) {
       setShowError(true);
-      toast.error(err?.response?.data?.message || 'Login failed');
+      const message = err?.response?.data?.message || 'Login failed';
+      toast.error(message);
     } finally {
       submitLockRef.current = false;
     }

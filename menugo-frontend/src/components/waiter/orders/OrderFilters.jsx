@@ -31,24 +31,27 @@ const OrderFilters = ({ filters, onFiltersChange }) => {
   ]
 
   return (
-    <div className="flex flex-wrap gap-3 rounded-3xl border border-orange-100 bg-gradient-to-r from-white to-orange-50/40 p-3 shadow-sm">
+    <div className="flex flex-nowrap items-center gap-3 rounded-3xl border-orange-100 bg-gradient-to-r from-white to-orange-50/40 p-3 shadow-sm">
       <Select
         value={filters.status}
         onChange={(e) => handleChange('status', e.target.value)}
         options={statusOptions}
-        className="w-40"
+        containerClassName="mb-0"
+        className="!w-auto w-36 text-sm py-1.5 px-3 rounded-lg"
       />
       <Select
         value={filters.priority}
         onChange={(e) => handleChange('priority', e.target.value)}
         options={priorityOptions}
-        className="w-40"
+        containerClassName="mb-0"
+        className="!w-auto w-36 text-sm py-1.5 px-3 rounded-lg"
       />
       <Select
         value={filters.range || 'all'}
         onChange={(e) => handleChange('range', e.target.value)}
         options={rangeOptions}
-        className="w-44"
+        containerClassName="mb-0"
+        className="!w-auto w-40 text-sm py-1.5 px-3 rounded-lg"
       />
     </div>
   )

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
@@ -25,6 +25,7 @@ import {
 } from '@heroicons/react/24/outline';
 import PublicHeader from './PublicHeader';
 import PublicFooter from './PublicFooter';
+import { getPublicPlatformSummary } from '../../services/analyticsService';
 
 // Custom motion variants
 const containerVariants = {
@@ -53,7 +54,38 @@ const heroImage = {
   show: { opacity: 1, x: 0, transition: { duration: 0.7, ease: [0.25, 0.46, 0.45, 0.94] } },
 };
 
+const compactNumber = (value) => {
+  const numericValue = Number(value);
+  if (!Number.isFinite(numericValue)) return '0';
+  return new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 }).format(numericValue);
+};
+
 const Home = () => {
+  const [platformSummary, setPlatformSummary] = useState({
+    restaurants_live: 500,
+    orders_processed: 1200000,
+  });
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadSummary = async () => {
+      const summary = await getPublicPlatformSummary();
+      if (!cancelled && summary && typeof summary === 'object') {
+        setPlatformSummary((current) => ({
+          ...current,
+          ...summary,
+        }));
+      }
+    };
+
+    loadSummary();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const features = [
     {
       icon: DevicePhoneMobileIcon,
@@ -111,8 +143,8 @@ const Home = () => {
   ];
 
   const stats = [
-    { value: '500+', label: 'Restaurants Live', suffix: '' },
-    { value: '1.2M+', label: 'Orders Processed', suffix: '' },
+    { value: compactNumber(platformSummary.restaurants_live), label: 'Restaurants Live', suffix: '' },
+    { value: compactNumber(platformSummary.orders_processed), label: 'Orders Processed', suffix: '' },
     { value: '98%', label: 'Customer Retention', suffix: '' },
     { value: '24/7', label: 'Priority Support', suffix: '' },
   ];

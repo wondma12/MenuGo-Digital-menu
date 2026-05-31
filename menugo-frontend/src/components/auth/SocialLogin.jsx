@@ -1,31 +1,53 @@
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import Button from '../common/Button'
+import { API_CONFIG } from '../../config/api.config'
+import { authService } from '../../services/authService'
 import { useAuthStore } from '../../store/authStore'
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
-
-const normalizeApiUrl = (url) => {
+const normalizeApiBase = (url) => {
   if (!url) return url
-  let normalized = url.replace(/\/$/, '')
-  if (!/\/api(\/)?$/.test(normalized)) normalized = `${normalized}/api`
-  return normalized
+  return url.replace(/\/api\/?$/, '').replace(/\/$/, '')
 }
 
-const NORMALIZED_API_URL = normalizeApiUrl(API_URL)
+const OAUTH_BASE_URL = normalizeApiBase(API_CONFIG.baseURL)
+
+const roleToRoute = (role) => {
+  if (role === 'platform_admin') return '/platform/dashboard'
+  if (role === 'restaurant_admin') return '/admin/dashboard'
+  if (role === 'waiter') return '/waiter/dashboard'
+  if (role === 'chef') return '/chef/kitchen'
+  return '/'
+}
 
 const SocialLogin = () => {
   const navigate = useNavigate()
+  const callbackHandledRef = React.useRef(false)
   // We'll update the store directly for social callback handling
-  const setAuthDirect = (user, token) => {
+  const setAuthDirect = (user, token, refreshToken = null) => {
     try {
       useAuthStore.setState({
         user,
         token,
+        refreshToken,
         isAuthenticated: true,
       })
+
+      // The app reads auth from sessionStorage for API auth headers.
+      try {
+        sessionStorage.setItem('token', token)
+        if (refreshToken) sessionStorage.setItem('refreshToken', refreshToken)
+        if (user) sessionStorage.setItem('user', JSON.stringify(user))
+      } catch (storageError) {
+        console.warn('Failed to persist OAuth auth in session storage:', storageError)
+      }
+
+      // Keep localStorage in sync for legacy parts that still read it.
       localStorage.setItem('token', token)
-      localStorage.setItem('user', JSON.stringify(user))
+      if (refreshToken) localStorage.setItem('refreshToken', refreshToken)
+      if (user) {
+        localStorage.setItem('user', JSON.stringify(user))
+      }
     } catch (e) {
       console.error('Failed to set auth state directly:', e)
     }
@@ -34,7 +56,7 @@ const SocialLogin = () => {
   const handleSocialLogin = async (provider) => {
     try {
       // Redirect to OAuth provider (ensure /api is present)
-      window.location.href = `${NORMALIZED_API_URL}/auth/${provider}`
+      window.location.href = `${OAUTH_BASE_URL}/api/auth/${provider}`
     } catch (error) {
       console.error('Social login failed:', error)
     }
@@ -43,30 +65,61 @@ const SocialLogin = () => {
   // Handle OAuth callback on mount
   React.useEffect(() => {
     const handleCallback = async () => {
+      // React StrictMode runs effects twice in development.
+      if (callbackHandledRef.current) return
+      callbackHandledRef.current = true
+
       const urlParams = new URLSearchParams(window.location.search)
       const token = urlParams.get('token')
-      const user = urlParams.get('user')
-      
-      if (token && user) {
-        const parsed = JSON.parse(decodeURIComponent(user))
-        setAuthDirect(parsed, token)
-        const role = parsed.role
-        if (role === 'platform_admin') {
-          navigate('/platform/dashboard')
-        } else if (role === 'restaurant_admin') {
-          navigate('/admin/dashboard')
-        } else if (role === 'waiter') {
-          navigate('/waiter/dashboard')
+      const refreshToken = urlParams.get('refreshToken')
+      const userParam = urlParams.get('user')
 
-        }
-        else if (role === 'chef') {
-          navigate('/chef/kitchen')
-        }
-        
-        else {
-          navigate('/')
+      if (!token) {
+        return
+      }
+
+      // Persist token immediately so subsequent /auth/me call includes Authorization header.
+      setAuthDirect(null, token, refreshToken)
+
+      let parsedUser = null
+      if (userParam) {
+        try {
+          parsedUser = JSON.parse(userParam)
+        } catch (parseError) {
+          try {
+            parsedUser = JSON.parse(decodeURIComponent(userParam))
+          } catch (decodeError) {
+            console.warn('Ignoring malformed OAuth user payload:', decodeError)
+          }
         }
       }
+
+      if (!parsedUser) {
+        try {
+          const response = await authService.getCurrentUser()
+          parsedUser = response?.data?.user || response?.data || response?.user || response
+        } catch (error) {
+          console.error('OAuth user lookup failed:', error)
+          navigate('/login?error=oauth', { replace: true })
+          return
+        }
+      }
+
+      if (!parsedUser) {
+        navigate('/login?error=oauth', { replace: true })
+        return
+      }
+
+      setAuthDirect(parsedUser, token, refreshToken)
+
+      // Remove sensitive callback params from URL before navigating.
+      try {
+        window.history.replaceState({}, document.title, window.location.pathname)
+      } catch (historyError) {
+        // ignore history errors
+      }
+
+      navigate(roleToRoute(parsedUser.role), { replace: true })
     }
     handleCallback()
   }, [navigate])

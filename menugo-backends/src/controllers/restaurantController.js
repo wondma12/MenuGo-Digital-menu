@@ -83,6 +83,37 @@ const getAllRestaurants = catchAsync(async (req, res) => {
     order: [['created_at', 'DESC']],
   });
 
+  // Attach menu item counts to each restaurant so the platform list can show
+  // real values instead of defaulting to 0.
+  const restaurantIds = rows.map((restaurant) => restaurant.id).filter(Boolean);
+  let menuCountMap = new Map();
+  if (restaurantIds.length > 0) {
+    const menuCounts = await MenuItem.findAll({
+      attributes: [
+        'restaurant_id',
+        [sequelize.fn('COUNT', sequelize.col('id')), 'total_menu_items'],
+      ],
+      where: {
+        restaurant_id: { [Op.in]: restaurantIds },
+        deleted_at: null,
+      },
+      group: ['restaurant_id'],
+      raw: true,
+    }).catch(() => []);
+
+    menuCountMap = new Map(
+      menuCounts.map((item) => [String(item.restaurant_id), Number(item.total_menu_items || 0)])
+    );
+  }
+
+  const restaurantsWithCounts = rows.map((restaurant) => {
+    const plainRestaurant = restaurant.toJSON ? restaurant.toJSON() : restaurant;
+    return {
+      ...plainRestaurant,
+      total_menu_items: menuCountMap.get(String(plainRestaurant.id)) || 0,
+    };
+  });
+
   // Calculate additional stats
   const activeCount = await Restaurant.count({ 
     where: { is_active: true, is_verified: true, deleted_at: null } ,
@@ -95,7 +126,7 @@ const getAllRestaurants = catchAsync(async (req, res) => {
   });
 
   res.json(ApiResponse.success({
-    restaurants: rows,
+    restaurants: restaurantsWithCounts,
     total: count,
     active: activeCount,
     pending: pendingCount,

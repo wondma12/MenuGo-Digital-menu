@@ -113,27 +113,62 @@ const UserCard = ({ user, onUpdate }) => {
                   </h3>
                 </Link>
                 <div className="flex items-center gap-2 mt-1">
-                  <Badge variant="primary" size="sm" className={`rounded-none bg-gradient-to-r ${roleColors[user.role] || roleColors.customer} text-white ring-1 ring-slate-100`}>
+                  <div
+                    className={`${user.role === 'restaurant_admin' ? 'text-blue-600' : 'text-slate-900'} font-semibold text-sm`}
+                    style={user.role === 'platform_admin' ? { color: 'rgb(107 33 168 / var(--tw-text-opacity, 1))' } : undefined}
+                  >
                     {user.role?.replace('_', ' ')}
-                  </Badge>
-                  <Badge variant={user.isActive ? 'success' : 'danger'} size="sm" className={user.isActive ? 'rounded-none bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100' : 'rounded-none bg-rose-50 text-rose-700 ring-1 ring-rose-100'}>
+                  </div>
+                  <span
+                    className={`rounded-none px-2 py-0.5 text-sm font-semibold ${user.isActive ? 'text-emerald-600' : 'text-slate-600'}`}
+                    style={!user.isActive ? { color: 'rgb(217 119 6 / var(--tw-text-opacity, 1))' } : undefined}
+                  >
                     {user.isActive ? 'Active' : 'Inactive'}
-                  </Badge>
+                  </span>
                   {user.emailVerified && (
                     <Badge variant="success" size="sm" className="rounded-none bg-blue-50 text-blue-700 ring-1 ring-blue-100">Verified</Badge>
                   )}
                 </div>
               </div>
             </div>
-            <Dropdown
-              trigger={
-                <button className="rounded-none p-2 hover:bg-orange-50">
-                  <EllipsisVerticalIcon className="w-4 h-4 text-slate-600" />
-                </button>
-              }
-              items={menuItems}
-              align="right"
-            />
+            <div className="flex items-center gap-1 pr-1">
+              <button
+                onClick={() => (window.location.href = `/platform/users/${user.id}`)}
+                title="View"
+                className="rounded-none p-1 text-slate-500 hover:text-orange-600"
+              >
+                <EyeIcon className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => (window.location.href = `/platform/users/${user.id}/edit`)}
+                title="Edit"
+                className="rounded-none p-1 text-slate-500 hover:text-orange-600"
+              >
+                <PencilIcon className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => handleStatusChange(!user.isActive)}
+                title={user.isActive ? 'Deactivate' : 'Activate'}
+                className={`rounded-none p-1 ${user.isActive ? 'text-rose-600 hover:bg-rose-50' : 'text-emerald-600 hover:bg-emerald-50'}`}
+              >
+                {user.isActive ? <XCircleIcon className="w-4 h-4" /> : <CheckCircleIcon className="w-4 h-4" />}
+              </button>
+              <button
+                onClick={() => handleRoleChange('platform_admin')}
+                title="Make Admin"
+                disabled={user.role === 'platform_admin'}
+                className="rounded-none p-1 text-slate-500 hover:text-orange-600 disabled:opacity-40"
+              >
+                <ShieldCheckIcon className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setShowDeleteDialog(true)}
+                title="Delete"
+                className="rounded-none p-1 text-slate-500 hover:text-rose-600"
+              >
+                <TrashIcon className="w-4 h-4" />
+              </button>
+            </div>
           </div>
 
           <div className="mt-4 space-y-3">

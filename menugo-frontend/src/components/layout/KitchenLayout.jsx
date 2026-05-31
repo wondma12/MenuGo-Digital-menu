@@ -6,7 +6,8 @@ import { toast } from 'react-toastify';
 import { SUCCESS_MESSAGES } from '../../utils/constants';
 import { useWebSocket } from '../../hooks/useWebSocket';
 import KitchenSoundNotification from '../kitchen/KitchenSoundNotification';
-import { Activity, Check, User, Coffee, Settings, LogOut } from 'lucide-react'
+import { Settings, LogOut } from 'lucide-react'
+import { getRestaurantDetails } from '../../services/restaurantService';
 
 const KitchenLayout = () => {
   const { user, logout } = useAuth();
@@ -14,6 +15,8 @@ const KitchenLayout = () => {
   const location = useLocation();
   const { socket, isConnected } = useWebSocket();
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [restaurantBrand, setRestaurantBrand] = useState(null);
+  const [brandLoading, setBrandLoading] = useState(true);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -29,6 +32,44 @@ const KitchenLayout = () => {
     }
   }, [socket, user]);
 
+  useEffect(() => {
+    let mounted = true;
+
+    const loadRestaurantBrand = async () => {
+      setBrandLoading(true)
+      const fallbackName = user?.restaurant?.name || user?.staff?.restaurant_name || 'Restaurant';
+      const fallbackLogo = user?.restaurant?.logo_url || user?.restaurant?.logo || user?.restaurant?.logoUrl || user?.logo || null;
+      const restaurantId = user?.restaurant_id || user?.restaurantId || user?.restaurant?.id || user?.staff?.restaurant_id;
+
+      if (!restaurantId) {
+        if (mounted) {
+          setRestaurantBrand({ name: fallbackName, logo: fallbackLogo });
+        }
+        return;
+      }
+
+      try {
+        const details = await getRestaurantDetails(restaurantId);
+        if (!mounted) return;
+        setRestaurantBrand({
+          name: details?.name || fallbackName,
+          logo: details?.logoUrl || details?.logo_url || details?.logo || fallbackLogo,
+        });
+        setBrandLoading(false)
+      } catch (error) {
+        if (!mounted) return;
+        setRestaurantBrand({ name: fallbackName, logo: fallbackLogo });
+        setBrandLoading(false)
+      }
+    };
+
+    loadRestaurantBrand();
+
+    return () => {
+      mounted = false;
+    };
+  }, [user]);
+
   const handleLogout = async () => {
     await logout();
     // Show a friendly toast notification on logout so kitchen users see feedback
@@ -40,8 +81,9 @@ const KitchenLayout = () => {
     navigate('/login');
   };
 
-  const logoSrc = user?.restaurant?.logo || user?.restaurant?.logoUrl || user?.logo || null;
+  const logoSrc = restaurantBrand?.logo || user?.restaurant?.logo || user?.restaurant?.logoUrl || user?.logo || null;
   const bannerSrc = user?.restaurant?.banner || user?.restaurant?.image || null;
+  const restaurantName = restaurantBrand?.name || user?.restaurant?.name || user?.staff?.restaurant_name || 'Restaurant';
 
   const menuItems = [
     // { path: '/chef/kitchen', label: 'Active Orders', icon: <Activity className="w-5 h-5" /> },
@@ -67,19 +109,27 @@ const KitchenLayout = () => {
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-4">
-              {/* Restaurant logo (if available) */}
-              {logoSrc ? (
-                <img src={logoSrc} alt="Restaurant logo" className="w-10 h-10 rounded-md object-cover" />
-              ) : (
-                <div className="w-10 h-10 rounded-md bg-orange-600 flex items-center justify-center text-white font-bold"><Coffee className="w-6 h-6" /></div>
-              )}
-
-              <div className="flex items-center space-x-2">
-                <div className="rounded-full bg-gradient-to-r from-orange-500 to-blue-500 p-1.5 text-white shadow-sm">
-                  <User className="w-4 h-4" />
+              {/* Restaurant logo (if available) - show skeleton while loading */}
+              {brandLoading ? (
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 rounded-md bg-gray-200 animate-pulse" />
+                  <div className="h-5 w-36 rounded bg-gray-200 animate-pulse" />
                 </div>
-                <span className="font-extrabold text-xl tracking-tight">Kitchen Display</span>
-              </div>
+              ) : (
+                <>
+                  {logoSrc ? (
+                    <img src={logoSrc} alt="Restaurant logo" className="w-10 h-10 rounded-md object-cover" />
+                  ) : (
+                    <div className="w-10 h-10 rounded-md bg-orange-600 flex items-center justify-center text-white font-bold">
+                      {restaurantName.charAt(0).toUpperCase()}
+                    </div>
+                  )}
+
+                  <div className="flex items-center">
+                    <span className="font-extrabold text-xl tracking-tight">{restaurantName}</span>
+                  </div>
+                </>
+              )}
 
               <div className="hidden md:flex space-x-4">
                 {menuItems.map((item) => (
@@ -147,12 +197,7 @@ const KitchenLayout = () => {
           </div>
         </div>
 
-        {/* Optional banner image below nav */}
-        {bannerSrc && (
-          <div className="w-full bg-white">
-            <img src={bannerSrc} alt="Restaurant banner" className="w-full h-36 object-cover" />
-          </div>
-        )}
+        {/* Banner intentionally removed for a cleaner kitchen header */}
       </nav>
       
       {/* Main Content */}

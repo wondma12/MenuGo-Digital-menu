@@ -52,7 +52,7 @@ const SubscriptionPlans = () => {
   if (isLoading) return <Loading />
 
   return (
-    <div className="space-y-6 bg-white p-4 font-['Manrope',system-ui,sans-serif] text-slate-900 sm:p-6 lg:p-8">
+    <div className="relative space-y-6 overflow-visible bg-white p-4 sm:px-6 lg:px-8 font-['Manrope',system-ui,sans-serif] text-slate-900 sm:p-6 lg:p-8">
       {/* <div className="relative overflow-hidden rounded-none border border-orange-100 bg-white p-6 shadow-sm sm:p-8"> */}
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_rgba(251,146,60,0.12),transparent_45%),radial-gradient(ellipse_at_bottom_left,_rgba(59,130,246,0.08),transparent_55%)]" />
         <div className="relative flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">

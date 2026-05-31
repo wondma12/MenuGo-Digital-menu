@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { useQuery } from 'react-query'
+import { motion } from 'framer-motion'
 import { format, differenceInCalendarDays, isValid, parseISO, startOfMonth, endOfMonth, eachDayOfInterval } from 'date-fns'
 import {
   LineChart,
@@ -169,16 +170,16 @@ const PlatformAnalytics = () => {
   const growthSeries = normalizeChartSeries(data?.growthData || data?.restaurantGrowth || [], dateRange)
   const subscriptionSeries = normalizeChartSeries(data?.subscriptionDistribution || data?.subscriptionBreakdown || [], dateRange)
 
-  return (          
-    <div className="relative overflow-hidden space-y-6 bg-white p-4 sm:px-6 lg:px-8">
+  return (
+    <div className="relative space-y-6 overflow-visible bg-white p-4 sm:px-6 lg:px-8">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(251,146,60,0.18),transparent_32%),radial-gradient(circle_at_bottom_left,_rgba(59,130,246,0.12),transparent_32%)]" />
       <div className="pointer-events-none absolute -left-24 top-24 h-72 w-72 rounded-full bg-orange-300/20 blur-3xl" />
       <div className="pointer-events-none absolute -right-20 top-1/2 h-80 w-80 rounded-full bg-blue-300/20 blur-3xl" />
 
-      <div className="relative mx-auto max-w-7xl space-y-6">
+      <div className="relative z-10 mx-auto max-w-7xl space-y-6 overflow-visible">
         {/* <div className="relative z-30 rounded-3xl border border-orange-100 bg-white/95 p-6 pb-12 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur sm:p-8 sm:pb-14"> */}
           {/* <div className="relative z-40 space-y-3"> */}
-            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div className="relative z-20 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
               <div className="max-w-2xl space-y-2">
                 {/* <span className="inline-flex rounded-full bg-gradient-to-r from-orange-100 to-blue-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-slate-700">
                   Platform Analytics
@@ -186,7 +187,7 @@ const PlatformAnalytics = () => {
                 <h1 className="text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">Platform analytics</h1>
               </div>
 
-              <div className="relative z-50 flex flex-nowrap items-center gap-2 overflow-x-auto lg:justify-end">
+              <div className="relative z-50 flex flex-nowrap items-center gap-2 overflow-visible lg:justify-end">
                 <DateRangePicker value={dateRange} onChange={setDateRange} />
                 <ExportReport data={data} dateRange={dateRange} type="platform" />
               </div>
@@ -199,10 +200,22 @@ const PlatformAnalytics = () => {
         {/* </div> */}
 
         <div className="relative z-10 -mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4 sm:-mt-6">
-          <MetricCard title="Total Revenue" value={formatPrice(data?.totalRevenue || 0)} change={data?.revenueGrowth} />
-          <MetricCard title="Active Restaurants" value={data?.activeRestaurants || 0} change={data?.restaurantsGrowth} />
-          <MetricCard title="Active Users" value={(data?.activeUsers || 0).toLocaleString()} change={data?.usersGrowth} />
-          <MetricCard title="Total Orders" value={(data?.totalOrders || 0).toLocaleString()} change={data?.ordersGrowth} />
+          {[
+            { title: 'Total Revenue', value: formatPrice(data?.totalRevenue || 0) },
+            { title: 'Active Restaurants', value: data?.activeRestaurants || 0 },
+            { title: 'Active Users', value: (data?.activeUsers || 0).toLocaleString() },
+            { title: 'Total Orders', value: (data?.completedOrders || 0).toLocaleString() },
+          ].map((stat, index) => (
+            <motion.div
+              key={stat.title}
+              initial={{ opacity: 0, y: 18, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ delay: index * 0.08, duration: 0.35, ease: 'easeOut' }}
+              whileHover={{ y: -3 }}
+            >
+              <MetricCard title={stat.title} value={stat.value} />
+            </motion.div>
+          ))}
         </div>
 
         {/* <div className="grid gap-6 xl:grid-cols-2"> */}
@@ -359,7 +372,7 @@ const PlatformAnalytics = () => {
   )
 }
 
-const MetricCard = ({ title, value, change }) => {
+const MetricCard = ({ title, value }) => {
   const key = (title || '').toLowerCase()
   let accentClass = 'from-blue-500 to-cyan-400'
   if (key.includes('revenue')) accentClass = 'from-orange-500 to-amber-400'
@@ -369,17 +382,10 @@ const MetricCard = ({ title, value, change }) => {
   else if (key.includes('orders')) accentClass = 'from-orange-500 to-blue-500'
 
   return (
-    <div className={`relative overflow-hidden rounded-none border border-orange-100 border-l-4 bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.06)] ${accentClass.includes('orange') ? 'border-l-orange-500' : accentClass.includes('emerald') ? 'border-l-emerald-500' : 'border-l-blue-500'}`}>
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-sm font-medium text-slate-500">{title}</p>
-          <p className="mt-2 text-2xl font-black tracking-tight text-slate-900">{value}</p>
-        </div>
-        {change !== undefined && (
-          <div className={`rounded-none px-2.5 py-1 text-xs font-semibold ${change >= 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}`}>
-            {change >= 0 ? '↑' : '↓'} {Math.abs(change)}%
-          </div>
-        )}
+    <div className={`relative overflow-hidden rounded-2xl border border-orange-100 border-l-4 bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.06)] ${accentClass.includes('orange') ? 'border-l-orange-500' : accentClass.includes('emerald') ? 'border-l-emerald-500' : 'border-l-blue-500'}`}>
+      <div>
+        <p className="text-sm font-medium text-slate-500">{title}</p>
+        <p className="mt-2 text-xl font-black tracking-tight text-slate-900 sm:text-2xl">{value}</p>
       </div>
     </div>
   )

@@ -79,7 +79,6 @@ const StaffList = ({ staff, onEdit, onRefresh }) => {
                       <Avatar src={member.avatar} name={member.name} size="sm" />
                       <div>
                         <p className="font-medium text-slate-900">{member.name}</p>
-                        <p className="text-xs text-slate-500">ID: {member.employeeId}</p>
                       </div>
                     </div>
                   </td>

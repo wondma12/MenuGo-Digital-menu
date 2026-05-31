@@ -8,9 +8,18 @@ export const getRestaurants = async (params) => {
   // Unwrap the response to match what the component expects
   const payload = response?.data?.data || response?.data || {}
   
+  // Normalize restaurants: ensure `total_menu_items` is populated when possible
+  const restaurants = (payload.restaurants || []).map((r) => {
+    const totalMenu = r.total_menu_items ?? r.totalMenuItems ?? (Array.isArray(r.menu_items) ? r.menu_items.length : undefined) ?? r.menu_count ?? r.menuCount ?? 0
+    return {
+      ...r,
+      total_menu_items: totalMenu,
+    }
+  })
+
   // Return the data in the format expected by RestaurantList component
   return {
-    restaurants: payload.restaurants || [],
+    restaurants,
     total: payload.total || 0,
     active: payload.active || 0,
     pending: payload.pending || 0,
@@ -546,7 +555,7 @@ export const getRestaurantDashboardData = async ({ restaurantId, startDate, endD
         return {
           ...point,
           revenue: Number(stats.today_revenue ?? payload.today_revenue ?? point.revenue ?? 0),
-          orders: Number(stats.today_orders ?? payload.today_orders ?? point.orders ?? 0),
+          orders: Number(stats.completed_today ?? payload.completed_today ?? stats.today_orders ?? payload.today_orders ?? point.orders ?? 0),
         }
       }
       return point
@@ -556,7 +565,7 @@ export const getRestaurantDashboardData = async ({ restaurantId, startDate, endD
       if (point.date === todayKey) {
         return {
           ...point,
-          orders: Number(stats.today_orders ?? payload.today_orders ?? point.orders ?? 0),
+          orders: Number(stats.completed_today ?? payload.completed_today ?? stats.today_orders ?? payload.today_orders ?? point.orders ?? 0),
           revenue: Number(stats.today_revenue ?? payload.today_revenue ?? point.revenue ?? 0),
         }
       }

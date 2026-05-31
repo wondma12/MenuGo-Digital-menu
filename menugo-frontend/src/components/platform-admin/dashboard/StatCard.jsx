@@ -48,7 +48,7 @@ const StatCard = ({ title, value, icon: Icon, trend, trendValue, color }) => {
   const isPositiveTrend = trend > 0
 
   return (
-    <div className={`group relative flex h-28 items-center justify-between overflow-hidden rounded-none border border-slate-100 border-l-4 bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-xl ${borderClass}`}>
+    <div className={`group relative flex h-28 items-center justify-between overflow-hidden rounded-2xl border border-slate-100 border-l-4 bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-xl ${borderClass}`}>
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(251,146,60,0.08),transparent_40%)] opacity-0 transition-opacity group-hover:opacity-100" />
       <div>
         <p className="text-sm font-semibold text-slate-500">{title}</p>
@@ -63,8 +63,8 @@ const StatCard = ({ title, value, icon: Icon, trend, trendValue, color }) => {
           </div>
         )}
       </div>
-      <div className={`rounded-none bg-gradient-to-r ${colors[color]} p-3 text-white shadow-sm`}>
-        <Icon className="w-6 h-6" />
+      <div className={`rounded-xl bg-gradient-to-r ${colors[color]} p-2.5 text-white shadow-sm`}>
+        <Icon className="w-5 h-5" />
       </div>
     </div>
   )

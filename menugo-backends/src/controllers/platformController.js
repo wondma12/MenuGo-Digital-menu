@@ -15,6 +15,35 @@ const { ApiError } = require('../utils/apiError');
 const { catchAsync } = require('../utils/catchAsync');
 const { Op } = require('sequelize');
 
+// Public homepage summary for marketing pages
+const getPublicPlatformSummary = catchAsync(async (req, res) => {
+  try {
+    const [totalRestaurants, activeRestaurants, activeUsers, totalOrders] = await Promise.all([
+      Restaurant.count({ where: { deleted_at: null } }).catch(() => 0),
+      Restaurant.count({ where: { is_active: true, deleted_at: null } }).catch(() => 0),
+      User.count({ where: { is_active: true, deleted_at: null } }).catch(() => 0),
+      Order.count({ where: { status: 'completed' } }).catch(() => 0),
+    ]);
+
+    res.json(ApiResponse.success({
+      restaurants_live: activeRestaurants || 0,
+      total_restaurants: totalRestaurants || 0,
+      team_members_enabled: activeUsers || 0,
+      orders_processed: totalOrders || 0,
+      completed_orders: totalOrders || 0,
+    }, 'Platform summary retrieved'));
+  } catch (error) {
+    console.error('Public platform summary error:', error);
+    res.status(200).json(ApiResponse.success({
+      restaurants_live: 0,
+      total_restaurants: 0,
+      team_members_enabled: 0,
+      orders_processed: 0,
+      completed_orders: 0,
+    }, 'Platform summary retrieved (fallback)'));
+  }
+});
+
 // Get platform user analytics (only admin roles)
 const getPlatformUserAnalytics = catchAsync(async (req, res) => {
   try {
@@ -672,6 +701,7 @@ const deletePlan = catchAsync(async (req, res) => {
 });
 
 module.exports = {
+  getPublicPlatformSummary,
   getPlatformUserAnalytics,
   getPlatformAnalytics,
   getPlatformDashboard,

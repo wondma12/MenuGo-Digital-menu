@@ -22,9 +22,11 @@ const KitchenOrderCard = ({ order, displayNumber, type, onUpdateStatus }) => {
 
   const getPriorityClass = () => {
     const waitTime = (Date.now() - new Date(order.createdAt).getTime()) / 60000;
-    if (waitTime > 20) return 'border-red-500 bg-red-50';
-    if (waitTime > 10) return 'border-yellow-500 bg-yellow-50';
-    return 'border-gray-200 bg-white';
+    if (waitTime > 20) return 'border-l-red-500';
+    if (waitTime > 10) return 'border-l-amber-500';
+    if (order.status === 'preparing') return 'border-l-blue-500';
+    if (order.status === 'ready') return 'border-l-emerald-500';
+    return 'border-l-orange-500';
   };
 
   const totalPrepMinutes = order.items.reduce((sum, it) => {
@@ -34,20 +36,20 @@ const KitchenOrderCard = ({ order, displayNumber, type, onUpdateStatus }) => {
 
   return (
     <>
-      <div className={`relative mb-4 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-xl ${getPriorityClass()}`}>
-        <div className="absolute left-0 top-4 h-12 w-1 rounded-r bg-gradient-to-b from-orange-500 to-blue-500" />
+      <div className={`relative mb-4 overflow-hidden rounded-2xl border border-orange-100 border-l-4 bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.06)] transition-all hover:-translate-y-0.5 hover:shadow-[0_20px_55px_rgba(15,23,42,0.10)] ${getPriorityClass()}`}>
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(251,146,60,0.08),transparent_40%)]" />
 
-        <div className="flex justify-between items-start mb-3">
+        <div className="relative flex items-start justify-between gap-4 mb-3">
           <div className="flex-1 pr-4">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-3">
               <div className="flex items-center space-x-3">
                 <div className="flex flex-col">
                   <span className="text-xs font-semibold uppercase tracking-wide text-gray-500">Order</span>
-                  <h3 className="text-xl font-extrabold tracking-tight text-gray-900">#{displayNumber ?? order.orderNumber}</h3>
+                  <h3 className="text-xl font-black tracking-tight text-slate-900">#{displayNumber ?? order.orderNumber}</h3>
                 </div>
                 <KitchenStatusBadge status={order.status} />
               </div>
-              <div className="text-sm text-gray-500 text-left sm:text-right">
+              <div className="text-sm text-slate-500 text-left sm:text-right">
                 <div>{new Date(order.createdAt).toLocaleTimeString()}</div>
                 {type === 'preparing' && <KitchenTimer elapsedTime={elapsedTime} />}
                 {type === 'pending' && (
@@ -56,47 +58,47 @@ const KitchenOrderCard = ({ order, displayNumber, type, onUpdateStatus }) => {
               </div>
             </div>
 
-            <div className="text-sm text-gray-600 mt-2">Table {order.tableNumber} • {order.customerName || 'Guest'}</div>
+            <div className="mt-2 text-sm text-slate-600">Table {order.tableNumber} • {order.customerName || 'Guest'}</div>
           </div>
 
           <div className="flex flex-col items-end ml-3">
-            <div className="inline-flex items-center rounded-full bg-orange-50 px-3 py-1 text-sm font-semibold text-orange-700">
+            <div className="inline-flex items-center rounded-full bg-orange-50 px-3 py-1 text-sm font-semibold text-orange-700 ring-1 ring-orange-100">
               <Clock className="w-4 h-4 mr-1" /> {totalPrepMinutes}m
             </div>
-            <div className="mt-3 text-xs font-medium text-gray-500">Items: {order.items.length}</div>
+            <div className="mt-3 text-xs font-medium text-slate-500">Items: {order.items.length}</div>
           </div>
         </div>
 
-          <div className="space-y-3 mb-4 max-h-40 overflow-y-auto pr-2">
+          <div className="mb-4 max-h-40 space-y-3 overflow-y-auto pr-2">
           {order.items.map((item, idx) => (
             <div key={idx} className="flex flex-col gap-2 text-sm sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-3">
                 {item.image ? (
-                  <img src={item.image} alt={item.name} className="h-12 w-12 rounded-xl object-cover ring-1 ring-gray-100" />
+                  <img src={item.image} alt={item.name} className="h-12 w-12 rounded-xl object-cover ring-1 ring-slate-100" />
                 ) : (
-                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gray-100 text-xs text-gray-400">No Img</div>
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-100 text-xs text-slate-400">No Img</div>
                 )}
 
                 <div>
-                  <div className="font-semibold text-gray-800">{item.quantity}x {item.name}</div>
-                  <div className="mt-1 text-xs text-gray-500">
+                  <div className="font-semibold text-slate-800">{item.quantity}x {item.name}</div>
+                  <div className="mt-1 text-xs text-slate-500">
                     {item.modifiers?.length > 0 ? `+ ${item.modifiers.map(m => m.name).join(', ')}` : ''}
                   </div>
                 </div>
               </div>
 
               {type === 'preparing' && item.preparationTime && (
-                <div className="text-xs text-gray-500">~{item.preparationTime}m</div>
+                <div className="text-xs text-slate-500">~{item.preparationTime}m</div>
               )}
             </div>
           ))}
         </div>
 
-          <div className="flex flex-col sm:flex-row justify-between items-center gap-3">
+          <div className="flex flex-col items-center justify-between gap-3 sm:flex-row">
           <div className="w-full sm:w-auto">
             <button
               onClick={() => setShowDetails(true)}
-              className="w-full rounded-xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 sm:w-auto"
+              className="w-full rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 sm:w-auto"
             >
               View Details
             </button>

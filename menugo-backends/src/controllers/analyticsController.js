@@ -92,7 +92,7 @@ const getSalesAnalytics = catchAsync(async (req, res) => {
         }).catch(() => 0) || 0;
 
         dailyOrders = await Order.count({
-          where: { restaurant_id: restaurantId, created_at: { [Op.between]: [thisDay, nextDay] } },
+          where: { restaurant_id: restaurantId, status: 'completed', created_at: { [Op.between]: [thisDay, nextDay] } },
         }).catch(() => 0) || 0;
       }
 
@@ -151,16 +151,35 @@ const getSalesAnalytics = catchAsync(async (req, res) => {
   let finalSummary = summary;
   if (!summary || !summary.dataValues || Object.values(summary.dataValues).every(v => v === null)) {
     try {
-      const totalOrders = await Order.count({ where: { restaurant_id: restaurantId, created_at: { [Op.between]: [startDate, endDate] } } }).catch(() => 0) || 0;
+      const totalOrders = await Order.count({ where: { restaurant_id: restaurantId, status: 'completed', created_at: { [Op.between]: [startDate, endDate] } } }).catch(() => 0) || 0;
       const totalRevenue = await Order.sum('total_amount', { where: { restaurant_id: restaurantId, status: 'completed', created_at: { [Op.between]: [startDate, endDate] } } }).catch(() => 0) || 0;
       const totalTax = await Order.sum('tax_amount', { where: { restaurant_id: restaurantId, status: 'completed', created_at: { [Op.between]: [startDate, endDate] } } }).catch(() => 0) || 0;
       const totalDiscount = await Order.sum('discount_amount', { where: { restaurant_id: restaurantId, status: 'completed', created_at: { [Op.between]: [startDate, endDate] } } }).catch(() => 0) || 0;
       const avgOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
 
-      finalSummary = { dataValues: { total_orders: totalOrders, total_revenue: totalRevenue, total_tax: totalTax, total_discount: totalDiscount, avg_order_value: avgOrderValue } };
+      finalSummary = { dataValues: { total_orders: totalOrders, completed_orders: totalOrders, total_revenue: totalRevenue, total_tax: totalTax, total_discount: totalDiscount, avg_order_value: avgOrderValue } };
     } catch (e) {
       finalSummary = summary;
     }
+  }
+
+  // Always provide completed_orders so frontend can exclude rejected/cancelled reliably.
+  try {
+    const completedOrders = await Order.count({
+      where: {
+        restaurant_id: restaurantId,
+        status: 'completed',
+        created_at: { [Op.between]: [startDate, endDate] },
+      },
+    }).catch(() => 0) || 0;
+
+    if (!finalSummary) {
+      finalSummary = { dataValues: { completed_orders: completedOrders, total_orders: completedOrders } };
+    } else if (finalSummary.dataValues) {
+      finalSummary.dataValues.completed_orders = completedOrders;
+    }
+  } catch (e) {
+    // ignore completed_orders augmentation errors
   }
 
   res.json(ApiResponse.success({
