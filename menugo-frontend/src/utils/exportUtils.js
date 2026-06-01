@@ -1,5 +1,4 @@
 import { saveAs } from 'file-saver'
-import * as XLSX from 'xlsx'
 import jsPDF from 'jspdf'
 
 export const exportToCSV = (data, filename) => {
@@ -24,10 +23,12 @@ export const exportToExcel = (data, filename) => {
     return
   }
 
-  const worksheet = XLSX.utils.json_to_sheet(data)
-  const workbook = XLSX.utils.book_new()
-  XLSX.utils.book_append_sheet(workbook, worksheet, 'Sheet1')
-  XLSX.writeFile(workbook, `${filename}.xlsx`)
+  // Previously used the `xlsx` library which has an unresolved vulnerability
+  // (prototype pollution / ReDoS). To avoid shipping a vulnerable dependency
+  // for client-side exports, fall back to CSV which is Excel-compatible.
+  // If a true .xlsx binary is required, consider a server-side export with
+  // a vetted library or a commercial SheetJS Pro build.
+  exportToCSV(data, filename)
 }
 
 export const exportToPDF = (data, filename, title = 'Report') => {

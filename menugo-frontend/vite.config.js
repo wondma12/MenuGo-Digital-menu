@@ -90,7 +90,5 @@ export default defineConfig({
       localsConvention: 'camelCase',
     },
   },
-  esbuild: {
-    logOverride: { 'this-is-undefined-in-esm': 'silent' },
-  },
+  // Note: avoid setting deprecated `esbuild` options here to reduce warnings
 })
