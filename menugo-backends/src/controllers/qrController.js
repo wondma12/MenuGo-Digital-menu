@@ -4,6 +4,7 @@ const { ApiError } = require('../utils/apiError');
 const { catchAsync } = require('../utils/catchAsync');
 const { generateQRCode, generateQRCodeBase64 } = require('../utils/generateQR');
 const { uploadToCloudinary } = require('../config/cloudinary');
+const { slugify } = require('../utils/helpers');
 const fs = require('fs');
 
 // Generate QR code for restaurant
@@ -45,9 +46,14 @@ const generateRestaurantQR = catchAsync(async (req, res) => {
     return `${base}/menu/${identifier}`
   }
 
-  if (!qrIdentifier) {
-    // create a URL-friendly identifier
-    qrIdentifier = `${restaurant.name ? restaurant.name.toLowerCase().replace(/[^a-z0-9]+/g, '-') : 'restaurant'}-${Date.now()}`
+  const restaurantSlug = slugify(restaurant.name || 'restaurant') || 'restaurant'
+  if (!qrIdentifier || qrIdentifier !== restaurantSlug) {
+    qrIdentifier = restaurantSlug
+  }
+
+  const identifierInUse = await Restaurant.findOne({ where: { qr_code_identifier: qrIdentifier } })
+  if (identifierInUse && identifierInUse.id !== restaurant.id) {
+    qrIdentifier = `${restaurantSlug}-${String(restaurant.id).slice(0, 8)}`
   }
 
   // Try to find an existing record (may be null)
@@ -124,7 +130,7 @@ const generateTableQR = catchAsync(async (req, res) => {
 
   if (!qrIdentifier) {
     // Create a new restaurant qr identifier and QR
-    qrIdentifier = `${restaurant.name.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}`
+    qrIdentifier = slugify(restaurant.name || 'restaurant') || 'restaurant'
     const qrUrl = `${getBaseUrl()}/menu/${qrIdentifier}`
 
     // Try to generate and upload; if upload fails we'll still return base64/local file

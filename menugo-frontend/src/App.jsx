@@ -288,9 +288,9 @@ function App() {
                 <Route path="support" element={<TicketList />} />
                 <Route path="support/:id" element={<TicketDetails />} />
                 <Route path="knowledge-base" element={<KnowledgeBase />} />
-                <Route path="settings" element={<SystemSettings />} />
+                <Route path="settings" element={<PlatformProfile />} />
                 {/* Backwards-compatible system route aliases */}
-                <Route path="system" element={<Navigate to="settings" replace />} />
+                <Route path="system" element={<Navigate to="system/settings" replace />} />
                 {/* Support legacy URLs under /platform/system/... */}
                 <Route path="system/settings" element={<SystemSettings />} />
                 <Route path="system/health" element={<SystemHealth />} />
@@ -299,8 +299,8 @@ function App() {
                 <Route path="settings/health" element={<SystemHealth />} />
                 <Route path="settings/audit-logs" element={<AuditLogs />} />
                 <Route path="settings/backups" element={<BackupManager />} />
-                <Route path="settings/email" element={<EmailSettings />} />
-                <Route path="settings/security" element={<SecuritySettings />} />
+                <Route path="settings/email" element={<Navigate to="/platform/system/settings" replace />} />
+                <Route path="settings/security" element={<Navigate to="/platform/system/settings" replace />} />
                 <Route path="audit-logs" element={<AuditLogs />} />
                 <Route path="health" element={<SystemHealth />} />
                 <Route path="backups" element={<BackupManager />} />

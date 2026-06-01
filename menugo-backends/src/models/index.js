@@ -406,4 +406,21 @@ const db = {
   SystemLog,
 };
 
+// Compatibility shims for older Sequelize versions that use `findById`
+// Newer code expects `findByPk`. If running an older Sequelize where
+// `findByPk` is missing but `findById` exists, add an alias so the
+// rest of the codebase works without upgrading Sequelize immediately.
+Object.keys(db).forEach((key) => {
+  const candidate = db[key];
+  if (candidate && typeof candidate === 'object') {
+    if (typeof candidate.findByPk !== 'function' && typeof candidate.findById === 'function') {
+      candidate.findByPk = candidate.findById.bind(candidate);
+    }
+    // Also ensure `findByPk` on the prototype for instance where models are functions
+    if (typeof candidate.prototype === 'object' && typeof candidate.prototype.findByPk !== 'function' && typeof candidate.prototype.findById === 'function') {
+      candidate.prototype.findByPk = candidate.prototype.findById;
+    }
+  }
+});
+
 module.exports = db;

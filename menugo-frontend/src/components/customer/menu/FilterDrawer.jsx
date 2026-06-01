@@ -2,14 +2,19 @@ import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { XMarkIcon } from '@heroicons/react/24/outline'
 
-const FilterDrawer = ({ isOpen, onClose, filters, onApply }) => {
+const FilterDrawer = ({ isOpen, onClose, filters, onApply, categories = [] }) => {
   const [localFilters, setLocalFilters] = useState(filters)
 
-  const dietaryOptions = [
-    { value: 'isVegetarian', label: 'Vegetarian' },
-    { value: 'isVegan', label: 'Vegan' },
-    { value: 'isGlutenFree', label: 'Gluten Free' }
-  ]
+  React.useEffect(() => {
+    setLocalFilters(filters)
+  }, [filters, isOpen])
+
+  const categoryOptions = Array.isArray(categories)
+    ? categories.map((category) => ({
+        value: String(category.id),
+        label: category.name || 'Unnamed category'
+      }))
+    : []
 
   const spiceOptions = [
     { value: 'all', label: 'All' },
@@ -28,7 +33,7 @@ const FilterDrawer = ({ isOpen, onClose, filters, onApply }) => {
 
   const handleReset = () => {
     setLocalFilters({
-      dietary: [],
+      categories: [],
       priceRange: { min: 0, max: 100 },
       spiceLevel: 'all'
     })
@@ -56,23 +61,23 @@ const FilterDrawer = ({ isOpen, onClose, filters, onApply }) => {
 
               <div className="flex-1 overflow-y-auto p-4 space-y-6">
                 <div>
-                  <h3 className="font-medium text-slate-900 mb-3">Dietary Preferences</h3>
+                  <h3 className="font-medium text-slate-900 mb-3">Categories</h3>
                   <div className="space-y-2">
-                    {dietaryOptions.map((option) => (
+                    {categoryOptions.length > 0 ? categoryOptions.map((option) => (
                       <label key={option.value} className="flex items-center gap-2 cursor-pointer">
                         <input
                           type="checkbox"
-                          checked={localFilters.dietary.includes(option.value)}
+                          checked={localFilters.categories.includes(option.value)}
                           onChange={(e) => {
                             if (e.target.checked) {
                               setLocalFilters({
                                 ...localFilters,
-                                dietary: [...localFilters.dietary, option.value]
+                                categories: [...localFilters.categories, option.value]
                               })
                             } else {
                               setLocalFilters({
                                 ...localFilters,
-                                dietary: localFilters.dietary.filter(d => d !== option.value)
+                                categories: localFilters.categories.filter(categoryId => categoryId !== option.value)
                               })
                             }
                           }}
@@ -80,7 +85,7 @@ const FilterDrawer = ({ isOpen, onClose, filters, onApply }) => {
                         />
                         <span className="text-sm text-slate-700">{option.label}</span>
                       </label>
-                    ))}
+                    )) : <p className="text-sm text-slate-500">No categories available</p>}
                   </div>
                 </div>
 

@@ -18,14 +18,14 @@ const QRScanner = () => {
     scanner.render(
       (decodedText) => {
         // Try to extract /menu/:identifier and preserve any trailing path/query (e.g. /cart or ?table=)
-        const menuMatch = decodedText.match(/\/menu\/([a-f0-9-]+)([^\s]*)?/i)
+        const menuMatch = decodedText.match(/\/menu\/([^/?#\s]+)([^\s]*)?/i)
         if (menuMatch && menuMatch[1]) {
           const id = menuMatch[1]
           const suffix = menuMatch[2] || ''
           navigate(`/menu/${id}${suffix}`)
         } else {
           // Fallback: look for ?restaurant=identifier in querystring
-          const rootMatch = decodedText.match(/[?&]restaurant=([a-f0-9-]+)/i)
+          const rootMatch = decodedText.match(/[?&]restaurant=([^&#\s]+)/i)
           if (rootMatch && rootMatch[1]) {
             navigate(`/menu/${rootMatch[1]}`)
           } else {

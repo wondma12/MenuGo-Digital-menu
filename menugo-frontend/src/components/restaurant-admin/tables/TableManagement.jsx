@@ -1,8 +1,6 @@
 import React, { useState } from 'react'
 import { useQuery } from 'react-query'
-import { motion } from 'framer-motion'
-import { PlusIcon, Squares2X2Icon, TableCellsIcon } from '@heroicons/react/24/outline'
-import TableGrid from './TableGrid'
+import { PlusIcon } from '@heroicons/react/24/outline'
 import TableList from './TableList'
 import TableModal from './TableModal'
 import ReservationsList from './ReservationsList'
@@ -13,7 +11,6 @@ import { getTables } from '../../../services/tableService'
 import { useAuthStore } from '../../../store/authStore'
 
 const TableManagement = () => {
-  const [viewMode, setViewMode] = useState('grid')
   const [showModal, setShowModal] = useState(false)
   const [editingTable, setEditingTable] = useState(null)
 
@@ -45,22 +42,6 @@ const TableManagement = () => {
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-              <div className="inline-flex overflow-hidden rounded-none border border-slate-200 bg-white shadow-sm">
-                <button
-                  onClick={() => setViewMode('grid')}
-                  className={`inline-flex items-center gap-2 px-3 py-2 text-sm font-medium transition-colors ${viewMode === 'grid' ? 'bg-gradient-to-r from-orange-500 to-blue-500 text-white' : 'bg-white text-slate-600 hover:bg-orange-50'}`}
-                >
-                  <Squares2X2Icon className="w-4 h-4" />
-                  Grid
-                </button>
-                <button
-                  onClick={() => setViewMode('list')}
-                  className={`inline-flex items-center gap-2 px-3 py-2 text-sm font-medium transition-colors ${viewMode === 'list' ? 'bg-gradient-to-r from-orange-500 to-blue-500 text-white' : 'bg-white text-slate-600 hover:bg-orange-50'}`}
-                >
-                  <TableCellsIcon className="w-4 h-4" />
-                  List
-                </button>
-              </div>
               <Button onClick={() => setShowModal(true)} icon={PlusIcon}>
                 Add Table
               </Button>
@@ -69,8 +50,7 @@ const TableManagement = () => {
         </div>
 
         {/* Tables Display */}
-          {viewMode === 'grid' && <TableGrid tables={tables || []} onEdit={setEditingTable} onRefresh={refetch} />}
-          {viewMode === 'list' && <TableList tables={tables || []} onEdit={setEditingTable} onRefresh={refetch} />}
+          <TableList tables={tables || []} onEdit={setEditingTable} onRefresh={refetch} />
       </>
     )
   }

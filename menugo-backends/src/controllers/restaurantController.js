@@ -186,6 +186,18 @@ const getRestaurantById = catchAsync(async (req, res) => {
   } else {
     // Fallback: allow lookup by qr_code_identifier (slug) for customer-facing identifiers
     restaurant = await Restaurant.findOne({ where: { qr_code_identifier: paramId, deleted_at: null }, include: includes });
+    // If not found, attempt a more forgiving match: normalize name -> slug and compare
+    if (!restaurant) {
+      const candidates = await Restaurant.findAll({ where: { deleted_at: null }, include: includes });
+      const normalize = (s) => (s || '').toString().trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9\-]/g, '');
+      restaurant = candidates.find(r => {
+        try {
+          const slug = normalize(r.qr_code_identifier) || normalize(r.name);
+          return slug === normalize(paramId) || normalize(r.name) === normalize(paramId);
+        } catch (e) { return false; }
+      }) || null;
+      if (restaurant && restaurant.toJSON) restaurant = Restaurant.build(restaurant.toJSON(), { isNewRecord: false });
+    }
   }
 
   if (!restaurant) {

@@ -21,7 +21,7 @@ const MenuDisplay = () => {
   const [selectedCategory, setSelectedCategory] = useState('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [filters, setFilters] = useState({
-    dietary: [],
+    categories: [],
     priceRange: { min: 0, max: Infinity },
     spiceLevel: 'all'
   })
@@ -148,17 +148,17 @@ const MenuDisplay = () => {
 
   const filteredItems = menuItems.filter(item => {
     const matchesCategory = selectedCategory === 'all' || item.categoryId === selectedCategory
+    const matchesFilterCategories = filters.categories.length === 0 || filters.categories.includes(String(item.categoryId)) || filters.categories.includes(item.categoryId)
     const name = (item.name || '').toString()
     const desc = (item.description || '').toString()
     const q = (searchQuery || '').toLowerCase()
     const matchesSearch = name.toLowerCase().includes(q) || desc.toLowerCase().includes(q)
-    const matchesDietary = filters.dietary.length === 0 || filters.dietary.every(diet => !!item[diet])
     const priceValue = typeof item.price === 'number' ? item.price : Number(item.price) || 0
     const matchesPrice = priceValue >= (filters.priceRange.min || 0) && priceValue <= (filters.priceRange.max || Infinity)
     const spiceVal = Number.isFinite(Number(item.spiceLevel)) ? Number(item.spiceLevel) : 0
     const matchesSpice = filters.spiceLevel === 'all' || spiceVal === parseInt(filters.spiceLevel)
 
-    return matchesCategory && matchesSearch && matchesDietary && matchesPrice && matchesSpice
+    return matchesCategory && matchesFilterCategories && matchesSearch && matchesPrice && matchesSpice
   })
 
   return (
@@ -228,6 +228,7 @@ const MenuDisplay = () => {
         onClose={() => setIsFilterOpen(false)}
         filters={filters}
         onApply={setFilters}
+        categories={categories}
       />
 
       {selectedItem && (

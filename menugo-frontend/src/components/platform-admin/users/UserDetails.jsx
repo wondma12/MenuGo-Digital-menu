@@ -8,7 +8,7 @@ import Avatar from '../../../common/Avatar'
 import Tabs from '../../../common/Tabs'
 import ConfirmationDialog from '../../../common/ConfirmationDialog'
 import toast from 'react-hot-toast'
-import { getUserDetails, deleteUser, updateUserStatus } from '../../../services/userService'
+import { getUserDetails, deleteUser, updateUserStatus, getUserActivityLogs } from '../../../services/userService'
 
 const UserDetails = () => {
   const { id } = useParams()
@@ -188,21 +188,73 @@ const OverviewTab = ({ user }) => (
 )
 
 const ActivityLogTab = ({ userId }) => {
-  const { data: logs } = useQuery(['userActivity', userId], () => getUserActivityLogs(userId))
+  const { data: logs, isLoading } = useQuery(['userActivity', userId], () => getUserActivityLogs(userId))
+
+  const formatTimestamp = (value) => {
+    if (!value) return 'Unknown'
+    const date = new Date(value)
+    return Number.isNaN(date.getTime()) ? 'Unknown' : date.toLocaleString()
+  }
+
+  const formatStatus = (value) => {
+    if (!value) return 'Unknown'
+    return String(value)
+      .replace(/[_-]+/g, ' ')
+      .replace(/\b\w/g, (char) => char.toUpperCase())
+  }
+
+  const getStatusVariant = (value) => {
+    const normalized = String(value || '').toLowerCase()
+    if (normalized === 'active') return 'success'
+    if (normalized === 'expired') return 'warning'
+    if (normalized === 'revoked') return 'danger'
+    return 'info'
+  }
+
   return (
     <div className="rounded-none border border-orange-100 bg-white p-6 shadow-sm">
-      <div className="space-y-3">
-        {logs?.map((log, index) => (
-          <div key={index} className="flex items-start gap-3 rounded-none bg-orange-50/40 p-3">
-            <div className="w-2 h-2 bg-primary-500 rounded-full mt-2" />
-            <div className="flex-1">
-              <p className="text-sm text-gray-900">{log.action}</p>
-              <p className="text-xs text-gray-500">{new Date(log.createdAt).toLocaleString()}</p>
-            </div>
-            <Badge variant="info" size="sm">{log.entityType}</Badge>
-          </div>
-        ))}
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <div>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-orange-600">Activity log</p>
+          <h3 className="mt-1 text-lg font-black text-slate-900">User activity history</h3>
+        </div>
+        <div className="text-sm text-slate-500">{Array.isArray(logs) ? logs.length : 0} records</div>
       </div>
+
+      {isLoading ? (
+        <div className="py-10 text-center text-sm text-slate-500">Loading activity log...</div>
+      ) : Array.isArray(logs) && logs.length > 0 ? (
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-slate-100">
+            <thead className="bg-slate-50">
+              <tr>
+                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">User</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Timestamp</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Status</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">IP Address</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 bg-white">
+              {logs.map((log, index) => (
+                <tr key={log.id || index} className="hover:bg-orange-50/30">
+                  <td className="px-4 py-3 text-sm font-medium text-slate-900">{log.userName || userId}</td>
+                  <td className="px-4 py-3 text-sm text-slate-700">{formatTimestamp(log.timestamp || log.createdAt || log.created_at)}</td>
+                  <td className="px-4 py-3 text-sm text-slate-700">
+                    <Badge variant={getStatusVariant(log.status)} size="sm" className="rounded-none">
+                      {formatStatus(log.status)}
+                    </Badge>
+                  </td>
+                  <td className="px-4 py-3 text-sm text-slate-700">{log.ipAddress || log.ip_address || 'Unknown'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <div className="rounded-none border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
+          No activity log records found for this user.
+        </div>
+      )}
     </div>
   )
 }

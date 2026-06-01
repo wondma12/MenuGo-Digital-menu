@@ -1,24 +1,37 @@
 const { spawn } = require('child_process')
+const path = require('path')
 
 const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm'
 
-const backendDir = `${process.cwd()}\\menugo-backends`
-const frontendDir = `${process.cwd()}\\menugo-frontend`
-const backendHealthUrl = 'http://127.0.0.1:5003/health'
+const backendDir = path.resolve(process.cwd(), 'menugo-backends')
+const frontendDir = path.resolve(process.cwd(), 'menugo-frontend')
+const defaultBackendPort = 5003
+const backendHealthUrl = (port) => `http://127.0.0.1:${port}/health`
 
-const backend = spawn(npmCommand, ['run', 'dev'], {
-  cwd: backendDir,
+const spawnOptions = (cwd) => ({
+  cwd,
   stdio: 'inherit',
+  shell: process.platform === 'win32',
 })
 
-const frontend = { process: null }
+const backend = spawn(npmCommand, ['run', 'dev'], spawnOptions(backendDir))
 
-const startFrontend = () => {
-  if (frontend.process) return
+const frontend = { process: null }
+let detectedBackendPort = null
+let frontendStarted = false
+
+const startFrontend = (port = defaultBackendPort) => {
+  if (frontend.process || frontendStarted) return
+
+  frontendStarted = true
+  const frontendEnv = {
+    ...process.env,
+    VITE_API_URL: `http://localhost:${port}/api`,
+  }
 
   frontend.process = spawn(npmCommand, ['run', 'dev'], {
-    cwd: frontendDir,
-    stdio: 'inherit',
+    ...spawnOptions(frontendDir),
+    env: frontendEnv,
   })
 
   frontend.process.on('exit', (code) => {
@@ -29,12 +42,26 @@ const startFrontend = () => {
   })
 }
 
+const detectPortFromOutput = (chunk) => {
+  const text = String(chunk || '')
+  const match = text.match(/Server running on port (\d+)/)
+  if (match) {
+    detectedBackendPort = Number(match[1])
+    if (!Number.isNaN(detectedBackendPort)) {
+      startFrontend(detectedBackendPort)
+    }
+  }
+}
+
+backend.stdout?.on('data', detectPortFromOutput)
+backend.stderr?.on('data', detectPortFromOutput)
+
 const waitForBackend = async (timeoutMs = 30000) => {
   const started = Date.now()
 
   while (Date.now() - started < timeoutMs) {
     try {
-      const response = await fetch(backendHealthUrl)
+      const response = await fetch(backendHealthUrl(detectedBackendPort || defaultBackendPort))
       if (response.ok) return true
     } catch (error) {
       // backend not ready yet
@@ -54,10 +81,10 @@ backend.on('exit', (code) => {
 })
 
 waitForBackend().then((ready) => {
-  if (!ready) {
+  if (!ready && !frontendStarted) {
     console.warn('Backend health check timed out; starting frontend anyway.')
+    startFrontend(detectedBackendPort || defaultBackendPort)
   }
-  startFrontend()
 })
 
 const shutdown = () => {

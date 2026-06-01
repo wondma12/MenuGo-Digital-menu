@@ -18,7 +18,7 @@ const SearchBar = ({ value, onChange, onFilterClick }) => {
       <button
         type="button"
         onClick={onFilterClick}
-        className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50 sm:w-auto"
+        className="inline-flex min-w-[140px] items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50 sm:w-auto"
         aria-label="Open filters"
       >
         <FunnelIcon className="h-4 w-4" />

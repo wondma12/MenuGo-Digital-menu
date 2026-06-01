@@ -516,17 +516,52 @@ const getMe = catchAsync(async (req, res) => {
 
 // Update profile
 const updateProfile = catchAsync(async (req, res) => {
-  const { full_name, phone, avatar_url } = req.body;
+  const { full_name, phone, avatar_url, email, preferences, cover_image_url, coverImageUrl } = req.body;
 
-  await req.user.update({ full_name, phone, avatar_url });
+  const nextEmail = email ? normalizeEmailInput(email) : null;
+  if (nextEmail && nextEmail !== req.user.email) {
+    const existingUser = await User.findOne({ where: { email: nextEmail } });
+    if (existingUser && existingUser.id !== req.user.id) {
+      throw new ApiError(409, 'Email address is already in use');
+    }
+  }
+
+  const currentPreferences = req.user.preferences || {};
+  const nextPreferences = {
+    ...currentPreferences,
+    ...(preferences || {}),
+  };
+
+  const resolvedCoverImageUrl = coverImageUrl || cover_image_url || preferences?.coverImageUrl || preferences?.cover_image_url || nextPreferences.coverImageUrl || nextPreferences.cover_image_url || null;
+  if (resolvedCoverImageUrl) {
+    nextPreferences.coverImageUrl = resolvedCoverImageUrl;
+  }
+
+  await req.user.update({
+    full_name: full_name || req.user.full_name,
+    phone: phone || req.user.phone,
+    avatar_url: avatar_url || req.user.avatar_url,
+    email: nextEmail || req.user.email,
+    preferences: nextPreferences,
+  });
+
+  const updatedUser = await User.findByPk(req.user.id, { attributes: { exclude: ['password_hash'] } });
 
   res.json(ApiResponse.success({
-    id: req.user.id,
-    email: req.user.email,
-    full_name: req.user.full_name,
-    phone: req.user.phone,
-    avatar_url: req.user.avatar_url,
-    role: req.user.role,
+    user: {
+      id: updatedUser.id,
+      email: updatedUser.email,
+      full_name: updatedUser.full_name,
+      phone: updatedUser.phone,
+      avatar_url: updatedUser.avatar_url,
+      preferences: updatedUser.preferences,
+      role: updatedUser.role,
+      is_active: updatedUser.is_active,
+      is_verified: updatedUser.is_verified,
+      email_verified: updatedUser.email_verified,
+      last_login: updatedUser.last_login,
+      login_attempts: updatedUser.login_attempts,
+    },
   }, 'Profile updated'));
 });
 

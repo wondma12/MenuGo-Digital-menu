@@ -40,6 +40,7 @@ const ChangePassword = () => {
       mutation.mutate({
         currentPassword: formData.currentPassword,
         newPassword: formData.newPassword,
+        confirmPassword: formData.confirmPassword,
       })
     }
   }

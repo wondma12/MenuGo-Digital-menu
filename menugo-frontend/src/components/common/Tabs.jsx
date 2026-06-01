@@ -9,6 +9,16 @@ const Tabs = ({ tabs, defaultTab = 0, onChange, className = '' }) => {
     if (onChange) {
       onChange(index, tabs[index])
     }
+    // Ensure the main scrolling container resets to top when switching tabs
+    try {
+      const main = document.querySelector('main')
+      if (main && typeof main.scrollTo === 'function') {
+        // small timeout to wait for content change animation
+        setTimeout(() => main.scrollTo({ top: 0, behavior: 'smooth' }), 80)
+      }
+    } catch (e) {
+      // ignore
+    }
   }
 
   return (

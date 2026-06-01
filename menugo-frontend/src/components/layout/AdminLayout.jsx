@@ -44,7 +44,7 @@ const AdminLayout = () => {
     { path: '/platform/subscriptions', label: 'Subscriptions', icon: <CreditCard className="w-5 h-5" /> },
     { path: '/platform/analytics', label: 'Analytics', icon: <TrendingUp className="w-5 h-5" /> },
     // { path: '/platform/support', label: 'Support', icon: <HelpCircle className="w-5 h-5" /> },
-    // { path: '/platform/system', label: 'System', icon: <Settings className="w-5 h-5" /> },
+    { path: '/platform/profile', label: 'System', icon: <Settings className="w-5 h-5" /> },
   ]
 
   return (

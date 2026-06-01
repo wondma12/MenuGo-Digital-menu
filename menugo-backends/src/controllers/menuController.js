@@ -290,14 +290,24 @@ const getCustomerMenu = catchAsync(async (req, res) => {
   const { restaurantId } = req.params;
 
   // Support both slug-style `qr_code_identifier` and UUID primary key values.
-  let restaurant = await Restaurant.findOne({
-    where: { qr_code_identifier: restaurantId, is_active: true },
-  });
+  let restaurant = await Restaurant.findOne({ where: { qr_code_identifier: restaurantId, is_active: true } });
 
   if (!restaurant) {
     // Fallback: try by primary key (UUID)
     restaurant = await Restaurant.findByPk(restaurantId);
     if (restaurant && !restaurant.is_active) restaurant = null;
+  }
+
+  // If still not found, attempt a forgiving slug/name lookup
+  if (!restaurant) {
+    const candidates = await Restaurant.findAll({ where: { is_active: true } }).catch(() => []);
+    const normalize = (s) => (s || '').toString().trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9\-]/g, '');
+    restaurant = candidates.find(r => {
+      try {
+        const slug = normalize(r.qr_code_identifier) || normalize(r.name);
+        return slug === normalize(restaurantId) || normalize(r.name) === normalize(restaurantId);
+      } catch (e) { return false; }
+    }) || null;
   }
 
   if (!restaurant) {

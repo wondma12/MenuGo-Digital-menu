@@ -1,11 +1,19 @@
 import React, { useEffect, useState } from 'react'
 import { NavLink, Link } from 'react-router-dom'
-import { motion } from 'framer-motion'
 import Avatar from '../common/Avatar'
 import { getPendingVerifications } from '../../services/restaurantService'
+import { getSystemSettings } from '../../services/systemService'
 
-const Sidebar = ({ menuItems, onLogout, user }) => {
+const Sidebar = ({ menuItems = [], onLogout = () => {}, user }) => {
   const [pendingCount, setPendingCount] = useState(0)
+  const [platformLogo, setPlatformLogo] = useState(null)
+  const isPlatformAdmin = user?.role === 'platform_admin'
+  const logoSrc = isPlatformAdmin
+    ? (platformLogo || '/logo.svg')
+    : (user?.restaurant?.logo_url || user?.restaurant?.logoUrl || user?.restaurant?.logo || '/logo.svg')
+  const brandName = isPlatformAdmin
+    ? 'MenuGo Platform'
+    : (user?.restaurant?.name || user?.restaurant?.restaurant_name || 'MenuGo')
 
   useEffect(() => {
     let mounted = true
@@ -25,29 +33,43 @@ const Sidebar = ({ menuItems, onLogout, user }) => {
     const id = setInterval(load, 30000)
     return () => { mounted = false; clearInterval(id) }
   }, [user])
+
+  useEffect(() => {
+    let mounted = true
+    const loadSettings = async () => {
+      try {
+        if (!isPlatformAdmin) return
+        const settings = await getSystemSettings()
+        const logo = settings?.platform_logo || settings?.logo || settings?.logo_url || settings?.logoUrl || settings?.branding?.logo || settings?.branding?.logo_url || settings?.preferences?.logo
+        if (mounted && logo) setPlatformLogo(logo)
+      } catch (e) {
+        // ignore
+      }
+    }
+
+    loadSettings()
+    return () => { mounted = false }
+  }, [isPlatformAdmin])
   return (
     <div className="flex h-full flex-col bg-white/95 text-slate-900">
       {/* Logo */}
       <div className="border-b border-slate-200 p-5">
         <div className="flex items-center gap-2">
-          {(() => {
-            // Prefer restaurant logo & name from user payload when available
-            const logo = user?.restaurant?.logo_url || user?.restaurant?.logoUrl || user?.restaurant?.logo || '/logo.svg'
-            const name = user?.restaurant?.name || user?.restaurant?.restaurant_name || 'MenuGo'
-            return (
-              <>
-                <img src={logo} alt={name} className="w-8 h-8 object-contain rounded" onError={(e) => { e.currentTarget.src = '/logo.svg' }} />
-                <span className="text-xl font-bold text-orange-600 truncate">{name}</span>
-              </>
-            )
-          })()}
+          {isPlatformAdmin ? (
+            <Link to="/platform/profile" aria-label="Platform profile">
+              <Avatar src={platformLogo || user?.avatar || user?.avatar_url} name={brandName} size="sm" className="rounded object-contain" />
+            </Link>
+          ) : (
+            <img src={logoSrc} alt={brandName} className="h-8 w-8 rounded object-contain" onError={(e) => { e.currentTarget.src = '/logo.svg' }} />
+          )}
+          <span className="truncate text-xl font-bold text-orange-600">{brandName}</span>
         </div>
       </div>
 
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto py-4">
         <div className="px-3 space-y-1">
-          {menuItems.map((item, index) => (
+          {menuItems?.map((item, index) => (
 
 
 

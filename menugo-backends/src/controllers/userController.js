@@ -109,36 +109,43 @@ const getUserById = catchAsync(async (req, res) => {
   res.json(ApiResponse.success(user, 'User retrieved'));
 });
 
-// Get activity logs for a user (system logs)
+// Get activity history for a user (sessions)
 const getUserActivity = catchAsync(async (req, res) => {
   const { id } = req.params;
-  const { page = 1, limit = 100 } = req.query;
-  const offset = (page - 1) * limit;
 
   // Ensure user exists (returns 404 if not)
-  const user = await User.findByPk(id);
+  const user = await User.findByPk(id, {
+    attributes: ['id', 'full_name', 'email'],
+  });
   if (!user) throw new ApiError(404, 'User not found');
 
-  const where = { user_id: id };
-  const { count, rows } = await SystemLog.findAndCountAll({
-    where,
-    limit: parseInt(limit, 10),
-    offset,
+  const sessions = await UserSession.findAll({
+    where: { user_id: id },
+    attributes: ['id', 'device_info', 'ip_address', 'created_at', 'expires_at', 'revoked_at'],
     order: [['created_at', 'DESC']],
   });
 
-  // Map to frontend-friendly shape
-  const logs = rows.map(r => ({
-    id: r.id,
-    action: r.action,
-    entityType: r.entity_type,
-    entityId: r.entity_id,
-    oldValues: r.old_values,
-    newValues: r.new_values,
-    ipAddress: r.ip_address,
-    userAgent: r.user_agent,
-    createdAt: r.created_at,
-  }));
+  const logs = sessions.map((session) => {
+    const now = new Date();
+    const expiresAt = session.expires_at ? new Date(session.expires_at) : null;
+    const status = session.revoked_at
+      ? 'Revoked'
+      : expiresAt && expiresAt < now
+        ? 'Expired'
+        : 'Active';
+
+    return {
+      id: session.id,
+      userId: user.id,
+      userName: user.full_name,
+      timestamp: session.created_at,
+      status,
+      ipAddress: session.ip_address,
+      expiresAt: session.expires_at,
+      revokedAt: session.revoked_at,
+      deviceInfo: session.device_info,
+    };
+  });
 
   res.json(ApiResponse.success(logs, 'User activity retrieved'));
 });

@@ -7,6 +7,26 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
+const createCloudinaryUpload = (filePath, folder, timeoutMs) => {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      reject(new Error('Cloudinary upload timed out'));
+    }, timeoutMs);
+
+    cloudinary.uploader.upload(
+      filePath,
+      { folder, resource_type: 'auto' },
+      (error, result) => {
+        clearTimeout(timer);
+        if (error) {
+          return reject(error);
+        }
+        return resolve(result);
+      }
+    );
+  });
+};
+
 const uploadToCloudinary = async (filePath, folder = 'menugo') => {
   const fs = require('fs');
   const path = require('path');
@@ -47,38 +67,7 @@ const uploadToCloudinary = async (filePath, folder = 'menugo') => {
 
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
       try {
-        // Use streaming upload to avoid buffering entire file and allow cancelling on timeout
-        const result = await new Promise((resolve, reject) => {
-          const readStream = fs.createReadStream(filePath);
-          let timedOut = false;
-
-          const timer = setTimeout(() => {
-            timedOut = true;
-            try {
-              readStream.destroy(new Error('Read stream aborted due to upload timeout')); 
-            } catch (e) {}
-            reject(new Error('Cloudinary upload timed out'));
-          }, timeoutMs);
-
-          const uploadStream = cloudinary.uploader.upload_stream({ folder, resource_type: 'auto' }, (error, res) => {
-            clearTimeout(timer);
-            if (timedOut) {
-              return;
-            }
-            if (error) {
-              return reject(error);
-            }
-            return resolve(res);
-          });
-
-          readStream.on('error', (e) => {
-            clearTimeout(timer);
-            reject(e);
-          });
-
-          // Pipe file stream to Cloudinary
-          readStream.pipe(uploadStream);
-        });
+        const result = await createCloudinaryUpload(filePath, folder, timeoutMs);
 
         // success
         return { url: result.secure_url, publicId: result.public_id };
@@ -86,7 +75,7 @@ const uploadToCloudinary = async (filePath, folder = 'menugo') => {
         // Classify transient errors for retry
         const msg = err && err.message ? err.message : String(err);
         const code = err && err.code ? err.code : null;
-        logger.error(`Cloudinary upload attempt ${attempt} failed: ${msg}`);
+        logger.warn(`Cloudinary upload attempt ${attempt} failed: ${msg}`);
 
         const isTransient = code === 'ECONNRESET' || msg.includes('ECONNRESET') || msg.includes('timed out') || msg.includes('timeout') || msg.includes('ENOTFOUND') || msg.includes('EAI_AGAIN');
 
@@ -200,35 +189,7 @@ const uploadToCloudinaryBackground = async (filePath, folder = 'menugo') => {
 
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
-      const result = await new Promise((resolve, reject) => {
-        const readStream = fs.createReadStream(filePath);
-        let timedOut = false;
-        const timer = setTimeout(() => {
-          timedOut = true;
-          try {
-            readStream.destroy(new Error('Read stream aborted due to upload timeout')); 
-          } catch (e) {}
-          reject(new Error('Cloudinary upload timed out'));
-        }, timeoutMs);
-
-        const uploadStream = cloudinary.uploader.upload_stream({ folder, resource_type: 'auto' }, (error, res) => {
-          clearTimeout(timer);
-          if (timedOut) {
-            return;
-          }
-          if (error) {
-            return reject(error);
-          }
-          return resolve(res);
-        });
-
-        readStream.on('error', (e) => {
-          clearTimeout(timer);
-          reject(e);
-        });
-
-        readStream.pipe(uploadStream);
-      });
+      const result = await createCloudinaryUpload(filePath, folder, timeoutMs);
 
       return { url: result.secure_url, publicId: result.public_id };
     } catch (err) {

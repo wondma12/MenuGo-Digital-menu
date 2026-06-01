@@ -84,7 +84,9 @@ class KitchenOrder {
     try {
       const dashboardDate = date ? new Date(date) : new Date();
       const dateStr = format(dashboardDate, 'yyyy-MM-dd');
+      const dialect = (db && db.sequelize && typeof db.sequelize.getDialect === 'function') ? db.sequelize.getDialect() : 'mysql';
 
+      // Pending orders (same SQL works on both dialects)
       const [pending] = await db.execute(
         `SELECT k.*, COALESCE((SELECT COUNT(*) FROM kitchen_order_items WHERE kitchen_order_id = k.id), 0) as item_count
          FROM kitchen_orders k
@@ -94,15 +96,25 @@ class KitchenOrder {
         [restaurantId]
       );
 
-      const [preparing] = await db.execute(
-        `SELECT k.*, TIMESTAMPDIFF(MINUTE, k.started_at, NOW()) as elapsed_minutes,
+      // Preparing orders - compute elapsed minutes differently for sqlite vs mysql
+      let preparingSql;
+      if (dialect === 'sqlite') {
+        preparingSql = `SELECT k.*, (CAST(strftime('%s','now') AS INTEGER) - CAST(strftime('%s', k.started_at) AS INTEGER)) / 60.0 as elapsed_minutes,
           COALESCE((SELECT COUNT(*) FROM kitchen_order_items WHERE kitchen_order_id = k.id), 0) as item_count
          FROM kitchen_orders k
          WHERE k.restaurant_id = ? AND k.status = 'preparing'
          ORDER BY k.started_at ASC
-         LIMIT 50`,
-        [restaurantId]
-      );
+         LIMIT 50`;
+      } else {
+        preparingSql = `SELECT k.*, TIMESTAMPDIFF(MINUTE, k.started_at, NOW()) as elapsed_minutes,
+          COALESCE((SELECT COUNT(*) FROM kitchen_order_items WHERE kitchen_order_id = k.id), 0) as item_count
+         FROM kitchen_orders k
+         WHERE k.restaurant_id = ? AND k.status = 'preparing'
+         ORDER BY k.started_at ASC
+         LIMIT 50`;
+      }
+
+      const [preparing] = await db.execute(preparingSql, [restaurantId]);
 
       const [ready] = await db.execute(
         `SELECT k.*, COALESCE((SELECT COUNT(*) FROM kitchen_order_items WHERE kitchen_order_id = k.id), 0) as item_count
@@ -115,19 +127,20 @@ class KitchenOrder {
 
       // Count completed orders from the main orders table so kitchen totals
       // match other dashboards and business reporting.
-      const [completedToday] = await db.execute(
-        `SELECT COUNT(*) as count
+      let completedTodaySql = `SELECT COUNT(*) as count
          FROM orders
          WHERE restaurant_id = ?
            AND status = 'completed'
-           AND DATE(COALESCE(served_at, updated_at, created_at)) = ?`,
-        [restaurantId, dateStr]
-      );
+           AND DATE(COALESCE(served_at, updated_at, created_at)) = ?`;
+      const [completedToday] = await db.execute(completedTodaySql, [restaurantId, dateStr]);
 
-      const [avgPrepTime] = await db.execute(
-        `SELECT AVG(TIMESTAMPDIFF(MINUTE, started_at, ready_at)) as avg_time FROM kitchen_orders WHERE restaurant_id = ? AND status = 'completed' AND DATE(completed_at) = ? AND started_at IS NOT NULL AND ready_at IS NOT NULL`,
-        [restaurantId, dateStr]
-      );
+      let avgPrepSql;
+      if (dialect === 'sqlite') {
+        avgPrepSql = `SELECT AVG((CAST(strftime('%s', ready_at) AS INTEGER) - CAST(strftime('%s', started_at) AS INTEGER)) / 60.0) as avg_time FROM kitchen_orders WHERE restaurant_id = ? AND status = 'completed' AND DATE(completed_at) = ? AND started_at IS NOT NULL AND ready_at IS NOT NULL`;
+      } else {
+        avgPrepSql = `SELECT AVG(TIMESTAMPDIFF(MINUTE, started_at, ready_at)) as avg_time FROM kitchen_orders WHERE restaurant_id = ? AND status = 'completed' AND DATE(completed_at) = ? AND started_at IS NOT NULL AND ready_at IS NOT NULL`;
+      }
+      const [avgPrepTime] = await db.execute(avgPrepSql, [restaurantId, dateStr]);
 
       const stats = {
         pending: pending.length,

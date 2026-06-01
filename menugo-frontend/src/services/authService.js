@@ -100,9 +100,33 @@ export const resendVerificationEmail = async (email) => {
   }
 }
 
-export const changePassword = async (currentPassword, newPassword) => {
+export const changePassword = async (currentPasswordOrPayload, maybeNewPassword, maybeConfirm = null) => {
   try {
-    const response = await api.post('/auth/change-password', { currentPassword, newPassword })
+    // Support two call styles:
+    // 1) changePassword(currentPassword, newPassword, confirmPassword?)
+    // 2) changePassword({ currentPassword, newPassword, confirmPassword }) - used by react-query mutate
+    let payload
+    if (typeof currentPasswordOrPayload === 'object' && currentPasswordOrPayload !== null) {
+      const { currentPassword, newPassword, confirmPassword } = currentPasswordOrPayload
+      payload = {
+        currentPassword,
+        newPassword,
+        password: newPassword,
+        confirmPassword: confirmPassword || newPassword,
+      }
+    } else {
+      const currentPassword = currentPasswordOrPayload
+      const newPassword = maybeNewPassword
+      const confirmPassword = maybeConfirm
+      payload = {
+        currentPassword,
+        newPassword,
+        password: newPassword,
+        confirmPassword: confirmPassword || newPassword,
+      }
+    }
+
+    const response = await api.post('/auth/change-password', payload)
     return response.data
   } catch (error) {
     console.error('Change Password Error:', error.response?.data || error.message)

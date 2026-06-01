@@ -24,6 +24,16 @@ const errorMiddleware = (err, req, res, next) => {
     error = new ApiError(400, message);
   }
 
+  // Database connection errors (e.g., auth plugin mismatch)
+  if (err.name === 'SequelizeConnectionError' || (err.original && err.original.code)) {
+    const code = err.original && err.original.code ? err.original.code : err.name;
+    if (code === 'ER_NOT_SUPPORTED_AUTH_MODE' || code === 'ER_NOT_SUPPORTED_AUTH_MODE') {
+      error = new ApiError(503, 'Database authentication error: unsupported auth plugin. Configure your MySQL user to use `mysql_native_password` or update the DB client.');
+    } else {
+      error = new ApiError(503, `Database connection error: ${code}`);
+    }
+  }
+
   // Sequelize unique constraint error
   if (err.name === 'SequelizeUniqueConstraintError') {
     const field = err.errors[0].path;

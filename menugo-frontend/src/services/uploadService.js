@@ -7,6 +7,7 @@ export const uploadFile = async (file, folder) => {
 
   const response = await api.post('/upload', formData, {
     // Remove any default JSON Content-Type so the browser sets the correct multipart boundary.
+    _allowBaseFallback: true,
     transformRequest: [(data, headers) => {
       try { delete headers['Content-Type'] } catch (e) {}
       return data
@@ -14,7 +15,11 @@ export const uploadFile = async (file, folder) => {
   })
   // Backend wraps result in ApiResponse: { success, message, data }
   // Return the inner data payload when present for caller convenience.
-  return response.data?.data ?? response.data
+  const payload = response.data?.data ?? response.data
+  return {
+    ...payload,
+    source: 'backend',
+  }
 }
 
 export const uploadMultipleFiles = async (files, folder) => {
@@ -23,6 +28,7 @@ export const uploadMultipleFiles = async (files, folder) => {
   if (folder) formData.append('folder', folder)
 
   const response = await api.post('/upload/multiple', formData, {
+    _allowBaseFallback: true,
     transformRequest: [(data, headers) => {
       try { delete headers['Content-Type'] } catch (e) {}
       return data

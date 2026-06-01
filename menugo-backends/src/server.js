@@ -73,134 +73,276 @@ server.on('error', (err) => {
 // Database connection
 const startServer = async () => {
   try {
-    // Test database connection
-    await sequelize.authenticate();
-    logger.info('Database connected successfully');
+    // Test database connection. If it fails we log a warning and continue
+    // starting the server to make local development easier when DB isn't
+    // available or uses incompatible auth. Feature flags or env vars can
+    // re-enable strict behavior in CI/prod.
+    let dbConnected = false
+    try {
+      await sequelize.authenticate();
+      dbConnected = true
+      logger.info('Database connected successfully');
+    } catch (dbErr) {
+      logger.warn('Database connection failed on startup (continuing without DB):', dbErr && dbErr.message ? dbErr.message : dbErr)
+    }
 
     // Ensure kitchen-related tables exist to avoid runtime errors when migrations
     // haven't been applied. These are non-destructive CREATE TABLE IF NOT EXISTS
     // statements and intentionally avoid strict FOREIGN KEY constraints so they
     // can be created even if referenced tables are not present in some dev setups.
-    try {
-      const db = require('./config/database');
+    if (dbConnected) {
+      try {
+        const db = require('./config/database');
+        const dialect = (db && db.sequelize && typeof db.sequelize.getDialect === 'function') ? db.sequelize.getDialect() : null;
 
-      // Split the CREATE statements and execute them individually. Some MySQL
-      // client pools do not enable multipleStatements by default which causes
-      // multi-statement batches to be parsed as a syntax error by the server.
-      const creates = [
-        `CREATE TABLE IF NOT EXISTS kitchen_orders (
-          id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-          order_id CHAR(36) NOT NULL,
-          restaurant_id CHAR(36) NOT NULL,
-          order_number VARCHAR(50) NOT NULL,
-          table_number VARCHAR(20) DEFAULT NULL,
-          customer_name VARCHAR(100) DEFAULT 'Guest',
-          waiter_id CHAR(36) NULL,
-          waiter_name VARCHAR(100) NULL,
-          status ENUM('pending','preparing','ready','completed','cancelled') DEFAULT 'pending',
-          station VARCHAR(50) DEFAULT 'all',
-          priority ENUM('low','normal','high','urgent') DEFAULT 'normal',
-          started_at DATETIME NULL,
-          ready_at DATETIME NULL,
-          completed_at DATETIME NULL,
-          estimated_time INT DEFAULT 0,
-          notes TEXT NULL,
-          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-        )`,
+        // Provide DB-specific CREATE statements. MySQL-compatible statements
+        // are used by default; when running SQLite (dev fallback) use a
+        // compatible variant to avoid syntax errors like AUTOINCREMENT/ENUM.
+        const creates = [];
+        if (dialect === 'sqlite') {
+          creates.push(
+            `CREATE TABLE IF NOT EXISTS kitchen_orders (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              order_id TEXT NOT NULL,
+              restaurant_id TEXT NOT NULL,
+              order_number TEXT NOT NULL,
+              table_number TEXT DEFAULT NULL,
+              customer_name TEXT DEFAULT 'Guest',
+              waiter_id TEXT NULL,
+              waiter_name TEXT NULL,
+              status TEXT DEFAULT 'pending',
+              station TEXT DEFAULT 'all',
+              priority TEXT DEFAULT 'normal',
+              started_at DATETIME NULL,
+              ready_at DATETIME NULL,
+              completed_at DATETIME NULL,
+              estimated_time INTEGER DEFAULT 0,
+              notes TEXT NULL,
+              created_at DATETIME DEFAULT (CURRENT_TIMESTAMP),
+              updated_at DATETIME DEFAULT (CURRENT_TIMESTAMP)
+            )`
+          );
 
-        `CREATE TABLE IF NOT EXISTS kitchen_order_items (
-          id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-          kitchen_order_id INT NOT NULL,
-          item_id CHAR(36) NOT NULL,
-          item_name VARCHAR(200) NOT NULL,
-          quantity INT NOT NULL DEFAULT 1,
-          preparation_time INT DEFAULT 5,
-          special_instructions TEXT NULL,
-          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        )`,
+          creates.push(
+            `CREATE TABLE IF NOT EXISTS kitchen_order_items (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              kitchen_order_id INTEGER NOT NULL,
+              item_id TEXT NOT NULL,
+              item_name TEXT NOT NULL,
+              quantity INTEGER NOT NULL DEFAULT 1,
+              preparation_time INTEGER DEFAULT 5,
+              special_instructions TEXT NULL,
+              created_at DATETIME DEFAULT (CURRENT_TIMESTAMP)
+            )`
+          );
 
-        `CREATE TABLE IF NOT EXISTS kitchen_order_item_modifiers (
-          id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-          kitchen_order_item_id INT NOT NULL,
-          modifier_name VARCHAR(100) NOT NULL,
-          modifier_price DECIMAL(10,2) DEFAULT 0,
-          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        )`,
+          creates.push(
+            `CREATE TABLE IF NOT EXISTS kitchen_order_item_modifiers (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              kitchen_order_item_id INTEGER NOT NULL,
+              modifier_name TEXT NOT NULL,
+              modifier_price REAL DEFAULT 0,
+              created_at DATETIME DEFAULT (CURRENT_TIMESTAMP)
+            )`
+          );
 
-        `CREATE TABLE IF NOT EXISTS kitchen_stations (
-          id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-          restaurant_id CHAR(36) NOT NULL,
-          name VARCHAR(100) NOT NULL,
-          station_type ENUM('grill','pizza','salad','dessert','prep','expo','all') NOT NULL,
-          chef_id CHAR(36) NULL,
-          is_active BOOLEAN DEFAULT TRUE,
-          display_order INT DEFAULT 0,
-          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        )`,
+          creates.push(
+            `CREATE TABLE IF NOT EXISTS kitchen_stations (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              restaurant_id TEXT NOT NULL,
+              name TEXT NOT NULL,
+              station_type TEXT NOT NULL,
+              chef_id TEXT NULL,
+              is_active INTEGER DEFAULT 1,
+              display_order INTEGER DEFAULT 0,
+              created_at DATETIME DEFAULT (CURRENT_TIMESTAMP)
+            )`
+          );
 
-        `CREATE TABLE IF NOT EXISTS kitchen_station_assignments (
-          id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-          station_id INT NOT NULL,
-          kitchen_order_id INT NOT NULL,
-          started_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-          completed_at DATETIME NULL
-        )`,
+          creates.push(
+            `CREATE TABLE IF NOT EXISTS kitchen_station_assignments (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              station_id INTEGER NOT NULL,
+              kitchen_order_id INTEGER NOT NULL,
+              started_at DATETIME DEFAULT (CURRENT_TIMESTAMP),
+              completed_at DATETIME NULL
+            )`
+          );
 
-        `CREATE TABLE IF NOT EXISTS kitchen_activity_logs (
-          id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-          restaurant_id CHAR(36) NOT NULL,
-          kitchen_order_id INT NULL,
-          chef_id CHAR(36) NULL,
-          action VARCHAR(50) NOT NULL,
-          old_status VARCHAR(50) NULL,
-          new_status VARCHAR(50) NULL,
-          notes TEXT NULL,
-          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        )`,
+          creates.push(
+            `CREATE TABLE IF NOT EXISTS kitchen_activity_logs (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              restaurant_id TEXT NOT NULL,
+              kitchen_order_id INTEGER NULL,
+              chef_id TEXT NULL,
+              action TEXT NOT NULL,
+              old_status TEXT NULL,
+              new_status TEXT NULL,
+              notes TEXT NULL,
+              created_at DATETIME DEFAULT (CURRENT_TIMESTAMP)
+            )`
+          );
 
-        `CREATE TABLE IF NOT EXISTS kitchen_performance_metrics (
-          id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-          restaurant_id CHAR(36) NOT NULL,
-          date DATE NOT NULL,
-          total_orders_completed INT DEFAULT 0,
-          average_prep_time_minutes DECIMAL(10,2) DEFAULT 0,
-          average_wait_time_minutes DECIMAL(10,2) DEFAULT 0,
-          peak_hour_orders INT DEFAULT 0,
-          cancelled_orders INT DEFAULT 0,
-          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        )`,
+          creates.push(
+            `CREATE TABLE IF NOT EXISTS kitchen_performance_metrics (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              restaurant_id TEXT NOT NULL,
+              date DATE NOT NULL,
+              total_orders_completed INTEGER DEFAULT 0,
+              average_prep_time_minutes REAL DEFAULT 0,
+              average_wait_time_minutes REAL DEFAULT 0,
+              peak_hour_orders INTEGER DEFAULT 0,
+              cancelled_orders INTEGER DEFAULT 0,
+              created_at DATETIME DEFAULT (CURRENT_TIMESTAMP)
+            )`
+          );
 
-        `CREATE TABLE IF NOT EXISTS kitchen_inventory_alerts (
-          id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-          restaurant_id CHAR(36) NOT NULL,
-          item_id CHAR(36) NOT NULL,
-          item_name VARCHAR(200) NOT NULL,
-          current_stock DECIMAL(10,2) NOT NULL,
-          threshold_level DECIMAL(10,2) NOT NULL,
-          status ENUM('low','critical','out_of_stock') DEFAULT 'low',
-          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-          resolved_at DATETIME NULL
-        )`,
-      ];
+          creates.push(
+            `CREATE TABLE IF NOT EXISTS kitchen_inventory_alerts (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              restaurant_id TEXT NOT NULL,
+              item_id TEXT NOT NULL,
+              item_name TEXT NOT NULL,
+              current_stock REAL NOT NULL,
+              threshold_level REAL NOT NULL,
+              status TEXT DEFAULT 'low',
+              created_at DATETIME DEFAULT (CURRENT_TIMESTAMP),
+              resolved_at DATETIME NULL
+            )`
+          );
+        } else {
+          // MySQL-compatible statements (existing behavior)
+          creates.push(
+            `CREATE TABLE IF NOT EXISTS kitchen_orders (
+              id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+              order_id CHAR(36) NOT NULL,
+              restaurant_id CHAR(36) NOT NULL,
+              order_number VARCHAR(50) NOT NULL,
+              table_number VARCHAR(20) DEFAULT NULL,
+              customer_name VARCHAR(100) DEFAULT 'Guest',
+              waiter_id CHAR(36) NULL,
+              waiter_name VARCHAR(100) NULL,
+              status ENUM('pending','preparing','ready','completed','cancelled') DEFAULT 'pending',
+              station VARCHAR(50) DEFAULT 'all',
+              priority ENUM('low','normal','high','urgent') DEFAULT 'normal',
+              started_at DATETIME NULL,
+              ready_at DATETIME NULL,
+              completed_at DATETIME NULL,
+              estimated_time INT DEFAULT 0,
+              notes TEXT NULL,
+              created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+              updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+            )`
+          );
 
-      for (const stmt of creates) {
-        try {
-          await db.execute(stmt);
-        } catch (errStmt) {
-          // Log individual statement errors but continue; some dev DBs
-          // might not support certain types or enums. We'll warn with detail.
-          logger.warn('Could not run ensure-statement for kitchen table:', errStmt && errStmt.message ? errStmt.message : errStmt);
+          creates.push(
+            `CREATE TABLE IF NOT EXISTS kitchen_order_items (
+              id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+              kitchen_order_id INT NOT NULL,
+              item_id CHAR(36) NOT NULL,
+              item_name VARCHAR(200) NOT NULL,
+              quantity INT NOT NULL DEFAULT 1,
+              preparation_time INT DEFAULT 5,
+              special_instructions TEXT NULL,
+              created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )`
+          );
+
+          creates.push(
+            `CREATE TABLE IF NOT EXISTS kitchen_order_item_modifiers (
+              id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+              kitchen_order_item_id INT NOT NULL,
+              modifier_name VARCHAR(100) NOT NULL,
+              modifier_price DECIMAL(10,2) DEFAULT 0,
+              created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )`
+          );
+
+          creates.push(
+            `CREATE TABLE IF NOT EXISTS kitchen_stations (
+              id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+              restaurant_id CHAR(36) NOT NULL,
+              name VARCHAR(100) NOT NULL,
+              station_type ENUM('grill','pizza','salad','dessert','prep','expo','all') NOT NULL,
+              chef_id CHAR(36) NULL,
+              is_active BOOLEAN DEFAULT TRUE,
+              display_order INT DEFAULT 0,
+              created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )`
+          );
+
+          creates.push(
+            `CREATE TABLE IF NOT EXISTS kitchen_station_assignments (
+              id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+              station_id INT NOT NULL,
+              kitchen_order_id INT NOT NULL,
+              started_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+              completed_at DATETIME NULL
+            )`
+          );
+
+          creates.push(
+            `CREATE TABLE IF NOT EXISTS kitchen_activity_logs (
+              id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+              restaurant_id CHAR(36) NOT NULL,
+              kitchen_order_id INT NULL,
+              chef_id CHAR(36) NULL,
+              action VARCHAR(50) NOT NULL,
+              old_status VARCHAR(50) NULL,
+              new_status VARCHAR(50) NULL,
+              notes TEXT NULL,
+              created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )`
+          );
+
+          creates.push(
+            `CREATE TABLE IF NOT EXISTS kitchen_performance_metrics (
+              id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+              restaurant_id CHAR(36) NOT NULL,
+              date DATE NOT NULL,
+              total_orders_completed INT DEFAULT 0,
+              average_prep_time_minutes DECIMAL(10,2) DEFAULT 0,
+              average_wait_time_minutes DECIMAL(10,2) DEFAULT 0,
+              peak_hour_orders INT DEFAULT 0,
+              cancelled_orders INT DEFAULT 0,
+              created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )`
+          );
+
+          creates.push(
+            `CREATE TABLE IF NOT EXISTS kitchen_inventory_alerts (
+              id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+              restaurant_id CHAR(36) NOT NULL,
+              item_id CHAR(36) NOT NULL,
+              item_name VARCHAR(200) NOT NULL,
+              current_stock DECIMAL(10,2) NOT NULL,
+              threshold_level DECIMAL(10,2) NOT NULL,
+              status ENUM('low','critical','out_of_stock') DEFAULT 'low',
+              created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+              resolved_at DATETIME NULL
+            )`
+          );
         }
-      }
 
-      logger.info('Ensured kitchen-related tables exist (CREATE TABLE IF NOT EXISTS individual statements).');
-    } catch (ensureError) {
-      logger.warn('Could not ensure kitchen tables on startup:', ensureError && ensureError.message ? ensureError.message : ensureError);
+        for (const stmt of creates) {
+          try {
+            await db.execute(stmt);
+          } catch (errStmt) {
+            // Log individual statement errors but continue; some dev DBs
+            // might not support certain types or enums. We'll warn with detail.
+            logger.warn('Could not run ensure-statement for kitchen table:', errStmt && errStmt.message ? errStmt.message : errStmt);
+          }
+        }
+        logger.info('Ensured kitchen-related tables exist (CREATE TABLE IF NOT EXISTS individual statements).');
+      } catch (ensureError) {
+        logger.warn('Could not ensure kitchen tables on startup:', ensureError && ensureError.message ? ensureError.message : ensureError);
+      }
+    } else {
+      logger.info('Skipping DB table ensures because database is not connected');
     }
 
     // Keep destructive schema alteration opt-in to avoid long dev boots and port collisions.
-    if (shouldAlterSchema) {
+    if (shouldAlterSchema && dbConnected) {
       await sequelize.sync({ alter: true });
       logger.info('Database synced');
     } else {

@@ -8,6 +8,22 @@ import toast from 'react-hot-toast'
 
 const TableList = ({ tables = [], onEdit, onRefresh }) => {
   const safeTables = Array.isArray(tables) ? tables.filter(Boolean) : []
+  const sortedTables = [...safeTables].sort((leftTable, rightTable) => {
+    const leftValue = leftTable.tableNumber ?? leftTable.table_number ?? leftTable.number ?? leftTable.tableNo ?? leftTable.table_no ?? ''
+    const rightValue = rightTable.tableNumber ?? rightTable.table_number ?? rightTable.number ?? rightTable.tableNo ?? rightTable.table_no ?? ''
+
+    const leftNumber = Number(leftValue)
+    const rightNumber = Number(rightValue)
+
+    const leftIsNumber = Number.isFinite(leftNumber)
+    const rightIsNumber = Number.isFinite(rightNumber)
+
+    if (leftIsNumber && rightIsNumber) {
+      return leftNumber - rightNumber
+    }
+
+    return String(leftValue).localeCompare(String(rightValue), undefined, { numeric: true, sensitivity: 'base' })
+  })
   const [deleteTarget, setDeleteTarget] = useState(null)
 
   const getStatusConfig = () => ({ label: 'Available', color: 'success' })
@@ -48,7 +64,7 @@ const TableList = ({ tables = [], onEdit, onRefresh }) => {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 bg-white">
-            {safeTables.map((table, index) => {
+            {sortedTables.map((table, index) => {
               const tableNumber = table.tableNumber ?? table.table_number ?? table.number ?? table.tableNo ?? table.table_no ?? '—'
               const statusConfig = getStatusConfig(table.status)
               return (
@@ -81,19 +97,19 @@ const TableList = ({ tables = [], onEdit, onRefresh }) => {
                     <div className="flex justify-end gap-2">
                       <button
                         onClick={() => onEdit(table)}
-                        className="inline-flex items-center gap-1 rounded-none px-3 py-2 text-sm font-medium text-slate-600 hover:bg-orange-50 hover:text-slate-900"
+                        className="inline-flex items-center justify-center rounded-none px-3 py-2 text-slate-600 hover:bg-orange-50 hover:text-slate-900"
+                        title="Edit table"
+                        aria-label="Edit table"
                       >
                         <PencilIcon className="w-4 h-4" />
-                        Edit
                       </button>
                       <button
                         onClick={() => setDeleteTarget(table)}
-                        className="inline-flex items-center gap-1 rounded-none px-3 py-2 text-sm font-medium text-slate-600 hover:bg-orange-50 hover:text-orange-700"
+                        className="inline-flex items-center justify-center rounded-none px-3 py-2 text-slate-600 hover:bg-orange-50 hover:text-orange-700"
                         title="Delete table"
                         aria-label="Delete table"
                       >
                         <TrashIcon className="w-4 h-4" />
-                        Delete
                       </button>
                     </div>
                   </td>

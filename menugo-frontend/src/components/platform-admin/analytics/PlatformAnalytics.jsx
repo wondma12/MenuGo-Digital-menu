@@ -289,7 +289,7 @@ const PlatformAnalytics = () => {
           </ChartSection>
         {/* </div> */}
 
-        <div className="grid gap-6 xl:grid-cols-2">
+        {/* <div className="grid gap-6 xl:grid-cols-2"> */}
           <ChartSection title="Restaurant Growth" description="New restaurants compared with the cumulative total.">
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={growthSeries}>
@@ -348,7 +348,7 @@ const PlatformAnalytics = () => {
               )}
             </div>
           </ChartSection>
-        </div>
+        {/* </div> */}
 
         <ChartSection title="Subscription Distribution" description="Subscription tier mix for platform customers.">
           <ResponsiveContainer width="100%" height={300}>

@@ -89,7 +89,7 @@ const seedUsers = async () => {
   const seedUsersData = [
     {
       id: uuidv4(),
-      email: 'admin@menugo.com',
+      email: 'haymanotwondmagegn3@gmail.com',
       full_name: 'Platform Admin',
       phone: '+1234567890',
       role: USER_ROLES.PLATFORM_ADMIN,
@@ -138,7 +138,7 @@ const seedUsers = async () => {
 const seedUserSessions = async (users) => {
   console.log('Seeding user sessions...');
   
-  const admin = users.find(u => u.email === 'admin@menugo.com');
+  const admin = users.find(u => u.email === 'haymanotwondmagegn3@gmail.com');
   
   if (!admin) return;
 
