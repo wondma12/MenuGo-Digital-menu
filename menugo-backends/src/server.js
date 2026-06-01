@@ -20,9 +20,14 @@ const server = http.createServer(app);
 let isShuttingDown = false;
 
 // Socket.io setup
+// Allow dev origins (Vite on 5173 and CRA on 3000) when CORS_ORIGIN isn't set.
+const defaultOrigins = process.env.NODE_ENV === 'development'
+  ? ['http://localhost:3000', 'http://localhost:5173']
+  : 'http://localhost:3000';
+const corsOrigins = process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : defaultOrigins;
 const io = new Server(server, {
   cors: {
-    origin: process.env.CORS_ORIGIN?.split(',') || 'http://localhost:3000',
+    origin: corsOrigins,
     credentials: true,
     methods: ['GET', 'POST']
   },
