@@ -4,6 +4,7 @@ import Button from '../common/Button'
 import { API_CONFIG } from '../../config/api.config'
 import { authService } from '../../services/authService'
 import { useAuthStore } from '../../store/authStore'
+import { setUser } from '../../utils/localStorage'
 
 const normalizeApiBase = (url) => {
   if (!url) return url
@@ -33,21 +34,17 @@ const SocialLogin = () => {
         isAuthenticated: true,
       })
 
-      // The app reads auth from sessionStorage for API auth headers.
+      // The app reads auth from sessionStorage for API auth headers. Keep token only.
       try {
         sessionStorage.setItem('token', token)
         if (refreshToken) sessionStorage.setItem('refreshToken', refreshToken)
-        if (user) sessionStorage.setItem('user', JSON.stringify(user))
       } catch (storageError) {
         console.warn('Failed to persist OAuth auth in session storage:', storageError)
       }
 
-      // Keep localStorage in sync for legacy parts that still read it.
-      localStorage.setItem('token', token)
-      if (refreshToken) localStorage.setItem('refreshToken', refreshToken)
-      if (user) {
-        localStorage.setItem('user', JSON.stringify(user))
-      }
+      // Keep localStorage in sync for legacy parts that still read it, but persist
+      // only a minimal user payload to avoid quota issues.
+      if (user) setUser(user)
     } catch (e) {
       console.error('Failed to set auth state directly:', e)
     }

@@ -53,6 +53,7 @@ const Invoice = require('./Invoice');
 const SupportTicket = require('./SupportTicket');
 const TicketMessage = require('./TicketMessage');
 const SystemLog = require('./SystemLog');
+const ContactMessage = require('./ContactMessage');
 
 // Define associations with unique aliases
 const defineAssociations = () => {
@@ -295,6 +296,10 @@ const defineAssociations = () => {
   // ==================== SUPPORT TICKET ASSOCIATIONS ====================
   SupportTicket.hasMany(TicketMessage, { foreignKey: 'ticket_id', as: 'ticket_messages' });
   TicketMessage.belongsTo(SupportTicket, { foreignKey: 'ticket_id', as: 'message_ticket' });
+  
+  // Contact messages (public contact form)
+  // No associations required — stored for platform admin review
+  
 };
 
 // Call the function to define associations
@@ -404,6 +409,7 @@ const db = {
   SupportTicket,
   TicketMessage,
   SystemLog,
+  ContactMessage,
 };
 
 // Compatibility shims for older Sequelize versions that use `findById`

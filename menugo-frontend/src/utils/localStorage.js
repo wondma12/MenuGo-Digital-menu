@@ -61,7 +61,19 @@ export const getUser = () => {
 }
 
 export const setUser = (user) => {
-  return setItem('user', user)
+  try {
+    if (!user) return removeUser()
+    const minimal = {
+      id: user.id ?? user._id ?? null,
+      email: user.email ?? null,
+      role: user.role ?? null,
+      restaurant_id: user.restaurant_id ?? (user.restaurant && (user.restaurant.id || user.restaurant._id)) ?? null,
+    }
+    return setItem('user', minimal)
+  } catch (e) {
+    console.error('Error setting user in localStorage:', e)
+    return false
+  }
 }
 
 export const removeUser = () => {

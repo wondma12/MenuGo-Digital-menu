@@ -5,37 +5,33 @@ import Loading from './Loading'
 
 const ProtectedRoute = ({ allowedRoles = [] }) => {
   const { isAuthenticated, user, isLoading } = useAuthStore()
+  if (isLoading) return <Loading fullScreen />
 
-  if (isLoading) {
-    return <Loading fullScreen />
-  }
-
+  // If not authenticated, allow a short restoration window when sessionStorage
+  // contains tokens we expect the app to restore from (prevents flash-logout).
   if (!isAuthenticated) {
+    try {
+      const sessionToken = window?.sessionStorage?.getItem('token')
+      const persisted = window?.sessionStorage?.getItem('auth-storage')
+      if (sessionToken) return <Loading fullScreen />
+      if (persisted) {
+        const parsed = JSON.parse(persisted)
+        if (parsed && (parsed.token || parsed.isAuthenticated)) return <Loading fullScreen />
+      }
+    } catch (e) {
+      // ignore parse/storage errors and fall through to redirect
+    }
+
     return <Navigate to="/login" replace />
   }
 
-  if (user?.role === 'restaurant_admin' && (!user?.is_active || !user?.is_verified)) {
-    return <Navigate to="/login" replace />
-  }
-
-  if (allowedRoles.length > 0) {
-    const hasRole = allowedRoles.includes(user?.role) || allowedRoles.includes(user?.staff?.role)
-    if (!hasRole) {
-      // Prefer staff role for redirects when available
-      const effectiveRole = user?.staff?.role || user?.role
-
-      if (effectiveRole === 'restaurant_admin' || user?.role === 'restaurant_admin') {
-        return <Navigate to="/admin/dashboard" replace />
-      }
-      if (effectiveRole === 'waiter' || user?.role === 'waiter') {
-        return <Navigate to="/waiter/dashboard" replace />
-      }
-      if (user?.role === 'platform_admin') {
-        return <Navigate to="/platform/dashboard" replace />
-      }
-      if (effectiveRole === 'chef') {
-        return <Navigate to="/chef/kitchen" replace />
-      }
+  // If allowedRoles provided, ensure the current user's role matches.
+  if (Array.isArray(allowedRoles) && allowedRoles.length > 0) {
+    if (!user || !allowedRoles.includes(user.role)) {
+      console.warn('ProtectedRoute: access denied for user role, redirecting to root', {
+        userRole: user?.role,
+        allowedRoles,
+      })
       return <Navigate to="/" replace />
     }
   }

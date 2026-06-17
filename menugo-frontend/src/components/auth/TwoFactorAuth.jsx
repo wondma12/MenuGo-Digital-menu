@@ -5,6 +5,7 @@ import Button from '../common/Button'
 import Alert from '../common/Alert'
 import { verifyTwoFactor } from '../../services/authService'
 import { useAuthStore } from '../../store/authStore'
+import { setUser } from '../../utils/localStorage'
 
 const TwoFactorAuth = () => {
   const navigate = useNavigate()
@@ -13,8 +14,7 @@ const TwoFactorAuth = () => {
   const setAuth = (user, token) => {
     try {
       useAuthStore.setState({ user, token, isAuthenticated: true })
-      localStorage.setItem('token', token)
-      localStorage.setItem('user', JSON.stringify(user))
+      setUser(user)
     } catch (e) {
       console.error('Failed to set auth state:', e)
     }

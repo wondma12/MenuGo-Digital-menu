@@ -2,7 +2,6 @@
 Simple E2E kitchen flow tester.
 Usage:
   TEST_API_URL=http://localhost:5008 TEST_TOKEN=ey... TEST_RESTAURANT_ID=<id> TEST_ORDER_ID=<orderId> node scripts/test_kitchen_flow.js
-
 If TEST_API_URL is not provided, the script will probe localhost ports 5003..5010 to find a responsive API health endpoint.
 The script requires a valid bearer token with a role authorized to access kitchen routes (chef/admin/kitchen/restaurant_admin).
 */
@@ -12,17 +11,21 @@ const axios = require('axios');
 const portsToProbe = [5003,5004,5005,5006,5007,5008,5009,5010];
 
 async function findApiUrl() {
-  if (process.env.TEST_API_URL) return process.env.TEST_API_URL.replace(/\/$/, '');
+  if (process.env.TEST_API_URL) {
+    return process.env.TEST_API_URL.replace(/\/$/, '');
+  }
   for (const p of portsToProbe) {
     const url = `http://localhost:${p}`;
     try {
-      const r = await axios.get(url + '/api/health', { timeout: 2000 });
-      if (r && r.data && r.data.status === 'success') return url;
+      const r = await axios.get(`${url  }/api/health`, { timeout: 2000 });
+      if (r && r.data && r.data.status === 'success') {
+        return url;
+      }
     } catch (e) {
       // ignore
     }
   }
-  throw new Error('Could not find running API on localhost ports ' + portsToProbe.join(','));
+  throw new Error(`Could not find running API on localhost ports ${  portsToProbe.join(',')}`);
 }
 
 function authHeaders(token) {
@@ -48,7 +51,7 @@ async function run() {
 
     const orderId = process.env.TEST_ORDER_ID; // optional
 
-    const client = axios.create({ baseURL: apiUrl + '/api/kitchen', headers: { ...authHeaders(token) }, timeout: 5000 });
+    const client = axios.create({ baseURL: `${apiUrl  }/api/kitchen`, headers: { ...authHeaders(token) }, timeout: 5000 });
 
     console.log('\n1) GET /dashboard/:restaurantId');
     let r = await client.get(`/dashboard/${restaurantId}`);

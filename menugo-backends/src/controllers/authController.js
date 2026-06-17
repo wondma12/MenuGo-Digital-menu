@@ -239,24 +239,21 @@ const login = catchAsync(async (req, res) => {
     throw new ApiError(401, 'Invalid credentials');
   }
 
-  // Restaurant admins should be able to log in directly now that the payment gate is removed.
-  if (user.role === 'restaurant_admin' && (!user.is_active || !user.is_verified)) {
-    await user.update({ is_active: true, is_verified: true });
-    user.is_active = true;
-    user.is_verified = true;
+  // Prevent re-activating restaurant admins who were deactivated by a platform admin.
+  // Deactivated users must remain blocked until explicitly reactivated.
+  if (!user.is_active) {
+    throw new ApiError(403, 'Account not active. Await platform verification.');
+  }
 
+  // If this user is a restaurant admin, verify their restaurant is still active.
+  if (user.role === 'restaurant_admin') {
     const staffRecord = await RestaurantStaff.findOne({ where: { user_id: user.id } });
     if (staffRecord) {
       const staffRestaurant = await Restaurant.findByPk(staffRecord.restaurant_id);
-      if (staffRestaurant) {
-        await staffRestaurant.update({ is_active: true, is_verified: true });
+      if (staffRestaurant && !staffRestaurant.is_active) {
+        throw new ApiError(403, 'Associated restaurant is not active. Contact platform admin.');
       }
     }
-  }
-
-  // If account is not active (e.g., restaurant_admin awaiting platform verification), return informative error
-  if (!user.is_active) {
-    throw new ApiError(403, 'Account not active. Await platform verification.');
   }
 
   // If this user is a restaurant staff member, ensure their staff record is active
@@ -517,6 +514,23 @@ const getMe = catchAsync(async (req, res) => {
 // Update profile
 const updateProfile = catchAsync(async (req, res) => {
   const { full_name, phone, avatar_url, email, preferences, cover_image_url, coverImageUrl } = req.body;
+
+  // If clients embed large base64 images in JSON (data URLs), reject early and
+  // instruct them to upload via multipart/form-data or the dedicated upload API.
+  const isLargeDataUrl = (val) => typeof val === 'string' && val.startsWith('data:') && val.length > 200000; // ~200KB
+  if (isLargeDataUrl(avatar_url)) {
+    throw new ApiError(400, 'Please upload images using multipart/form-data or the /api/upload endpoint instead of embedding large base64 data in JSON.');
+  }
+  if (preferences) {
+    try {
+      const p = typeof preferences === 'string' ? JSON.parse(preferences) : preferences;
+      if (p && typeof p.coverImageUrl === 'string' && p.coverImageUrl.startsWith('data:') && p.coverImageUrl.length > 200000) {
+        throw new ApiError(400, 'Please upload cover images using multipart/form-data or the /api/upload endpoint instead of embedding large base64 data in JSON.');
+      }
+    } catch (e) {
+      // ignore parse errors here; validation will catch malformed preferences later
+    }
+  }
 
   const nextEmail = email ? normalizeEmailInput(email) : null;
   if (nextEmail && nextEmail !== req.user.email) {

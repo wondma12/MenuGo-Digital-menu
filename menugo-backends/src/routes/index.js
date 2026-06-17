@@ -22,6 +22,7 @@ const reportRoutes = require('./reportRoutes');
 const dashboardRoutes = require('./dashboardRoutes');
 const platformRoutes = require('./platformRoutes');
 const supportRoutes = require('./supportRoutes');
+const contactRoutes = require('./contactRoutes');
 const systemRoutes = require('./systemRoutes');
 const uploadRoutes = require('./uploadRoutes');
 const kitchenRoutes = require('./kitchenRoutes');  // Make sure this line exists
@@ -46,6 +47,7 @@ router.use('/reports', reportRoutes);
 router.use('/dashboard', dashboardRoutes);
 router.use('/platform', platformRoutes);  // Make sure this line exists
 router.use('/support', supportRoutes);  // Make sure this line exists
+router.use('/public/contact', contactRoutes);
 router.use('/system', systemRoutes);  // Make sure this line exists
 router.use('/upload', uploadRoutes);
 // Health check

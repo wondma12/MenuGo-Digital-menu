@@ -17,14 +17,59 @@ import {
 } from '../services/authService'
 
 let pendingLoginRequest = null
-const authSessionStorage = typeof window !== 'undefined' ? window.sessionStorage : null
 
-const getAuthValue = (key) => authSessionStorage?.getItem(key) || null
+// Safe sessionStorage wrapper with in-memory fallback.
+const createSafeSessionStorage = () => {
+  const memory = Object.create(null)
+  try {
+    const s = window.sessionStorage
+    return {
+      getItem: (k) => {
+        try { return s.getItem(k) } catch (e) { return memory[k] ?? null }
+      },
+      setItem: (k, v) => {
+        try { s.setItem(k, v) } catch (e) {
+          // Quota exceeded or storage unavailable; fallback to in-memory
+          console.warn('sessionStorage.setItem failed, using in-memory fallback:', e && e.message)
+          memory[k] = String(v)
+        }
+      },
+      removeItem: (k) => {
+        try { s.removeItem(k) } catch (e) { delete memory[k] }
+      }
+    }
+  } catch (e) {
+    // sessionStorage not available (SSR or strict privacy settings)
+    return {
+      getItem: (k) => memory[k] ?? null,
+      setItem: (k, v) => { memory[k] = String(v) },
+      removeItem: (k) => { delete memory[k] }
+    }
+  }
+}
+
+const safeSession = typeof window !== 'undefined' ? createSafeSessionStorage() : null
+
+import { setUser } from '../utils/localStorage'
+
+const getAuthValue = (key) => safeSession?.getItem(key) || null
 const setAuthValue = (key, value) => {
-  if (authSessionStorage) authSessionStorage.setItem(key, value)
+  try {
+    if (!safeSession) return
+    // Only use session for tokens; avoid writing full user to sessionStorage
+    if (key === 'token' || key === 'refreshToken') {
+      safeSession.setItem(key, value)
+    }
+  } catch (e) {
+    console.warn('setAuthValue failed:', e && e.message)
+  }
 }
 const removeAuthValue = (key) => {
-  if (authSessionStorage) authSessionStorage.removeItem(key)
+  try {
+    if (safeSession) safeSession.removeItem(key)
+  } catch (e) {
+    console.warn('removeAuthValue failed:', e && e.message)
+  }
 }
 
 const useAuthStore = create(
@@ -98,10 +143,10 @@ const useAuthStore = create(
               userData.restaurant_id = userData.restaurant_id || staffPayload.restaurant_id || (userData.restaurant && userData.restaurant.id)
             }
             
-            // Store auth in session storage so restart requires login.
+            // Store tokens in session storage so restart requires login.
             setAuthValue('token', tokenData)
             if (refreshTokenData) setAuthValue('refreshToken', refreshTokenData)
-            setAuthValue('user', JSON.stringify(userData))
+            setUser(userData)
             
             set({
               user: userData,
@@ -150,17 +195,32 @@ const useAuthStore = create(
         }
       },
 
-      logout: async () => {
+      logout: async (options = { remote: true }) => {
+        const { remote } = options
         try {
-          await apiLogout()
-        } catch (error) {
-          console.error('Logout error:', error)
+          // Only call remote logout endpoint when we have a token and remote is enabled.
+          const token = get().token || getAuthValue('token')
+          if (remote && token) {
+            try {
+              await apiLogout()
+            } catch (err) {
+              // Ignore remote logout failures (token may already be invalid/expired)
+              if (import.meta.env.DEV) console.warn('Remote logout failed:', err && err.message)
+            }
+          }
         } finally {
-          // Clear auth session data
+          // Clear auth session data locally
           removeAuthValue('token')
           removeAuthValue('refreshToken')
           removeAuthValue('user')
-          
+          try {
+            window.localStorage.removeItem('auth_token')
+            window.localStorage.removeItem('refreshToken')
+            window.localStorage.removeItem('user')
+          } catch (e) {
+            // ignore errors when localStorage is unavailable
+          }
+
           set({
             user: null,
             token: null,
@@ -211,25 +271,53 @@ const useAuthStore = create(
               isAuthenticated: true, 
               isLoading: false 
             })
-            setAuthValue('user', JSON.stringify(userData))
+            setUser(userData)
             return true
           } else {
             throw new Error('Invalid user data')
           }
         } catch (error) {
           console.error('Check auth error:', error)
-          // Clear invalid auth data
-          removeAuthValue('token')
-          removeAuthValue('refreshToken')
-          removeAuthValue('user')
-          
-          set({
-            user: null,
-            token: null,
-            refreshToken: null,
-            isAuthenticated: false,
-            isLoading: false,
-          })
+
+          // If server explicitly rejected the token (401/403), clear auth.
+          const status = error?.response?.status
+          if (status === 401 || status === 403) {
+            removeAuthValue('token')
+            removeAuthValue('refreshToken')
+            removeAuthValue('user')
+            try {
+              window.localStorage.removeItem('auth_token')
+              window.localStorage.removeItem('refreshToken')
+              window.localStorage.removeItem('user')
+            } catch (e) {
+              // ignore errors when localStorage is unavailable
+            }
+
+            set({
+              user: null,
+              token: null,
+              refreshToken: null,
+              isAuthenticated: false,
+              isLoading: false,
+            })
+            return false
+          }
+
+          // For transient/network errors, keep the token to avoid logging the
+          // user out on refresh. Clear loading and schedule one retry.
+          set({ isLoading: false })
+          // Schedule a single retry in 2s
+          try {
+            setTimeout(() => {
+              // only retry if a token still exists
+              const stillToken = get().token || getAuthValue('token')
+              if (stillToken) {
+                get().checkAuth()
+              }
+            }, 2000)
+          } catch (e) {
+            // ignore
+          }
           return false
         }
       },
@@ -249,7 +337,7 @@ const useAuthStore = create(
           }
           
           set({ user: updatedUser, isLoading: false })
-          setAuthValue('user', JSON.stringify(updatedUser))
+          setUser(updatedUser)
           return { success: true, user: updatedUser }
         } catch (error) {
           const errorMessage = error.response?.data?.message || 'Update failed'
@@ -361,7 +449,7 @@ const useAuthStore = create(
             }
 
             setAuthValue('token', tokenData)
-            setAuthValue('user', JSON.stringify(userData))
+            setUser(userData)
             
             set({
               user: userData,
@@ -387,7 +475,7 @@ const useAuthStore = create(
           const user = get().user
           const updatedUser = { ...user, twoFactorEnabled: false }
           set({ user: updatedUser, isLoading: false })
-          setAuthValue('user', JSON.stringify(updatedUser))
+          setUser(updatedUser)
           return { success: true }
         } catch (error) {
           const errorMessage = error.response?.data?.message || 'Failed to disable 2FA'
@@ -417,11 +505,18 @@ const useAuthStore = create(
     }),
     {
       name: 'auth-storage',
-      storage: createJSONStorage(() => sessionStorage),
+      // Use safe session wrapper to avoid uncaught QuotaExceededError
+      storage: createJSONStorage(() => safeSession || sessionStorage),
       partialize: (state) => ({ 
         token: state.token, 
         refreshToken: state.refreshToken,
-        user: state.user, 
+        // Persist only a minimal user payload to avoid large serialized state
+        user: state.user ? {
+          id: state.user.id ?? state.user._id ?? null,
+          email: state.user.email ?? null,
+          restaurant_id: state.user.restaurant_id ?? null,
+          role: state.user.role ?? null,
+        } : null,
         isAuthenticated: state.isAuthenticated 
       }),
     }

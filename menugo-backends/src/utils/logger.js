@@ -73,7 +73,7 @@ const requestLogger = (req, res, next) => {
     logger.info({
       type: 'request',
       method: req.method,
-      url: req.originalUrl,
+      url: req.sanitizedUrl || req.originalUrl,
       status: res.statusCode,
       duration: `${duration}ms`,
       ip: req.ip,
@@ -86,14 +86,25 @@ const requestLogger = (req, res, next) => {
 
 // Error logger
 const errorLogger = (err, req, res, next) => {
-  logger.error({
+  // Avoid noisy stack traces for expected client errors like 401/403.
+  const metadata = {
     type: 'error',
     message: err.message,
-    stack: err.stack,
-    url: req.originalUrl,
+    url: req?.sanitizedUrl || req?.originalUrl,
     method: req.method,
     ip: req.ip,
-  });
+  };
+
+  if (err && err.statusCode === 401) {
+    // Unauthorized errors are expected when tokens are missing/expired — log at warn level without stack.
+    logger.warn({ ...metadata, statusCode: 401 })
+  } else if (err && err.statusCode && err.statusCode < 500) {
+    // Other client errors (4xx) — log as info to avoid treating them as server failures.
+    logger.info({ ...metadata, statusCode: err.statusCode })
+  } else {
+    // Server errors: include stack and log at error level.
+    logger.error({ ...metadata, stack: err.stack, statusCode: err.statusCode || 500 })
+  }
   next(err);
 };
 

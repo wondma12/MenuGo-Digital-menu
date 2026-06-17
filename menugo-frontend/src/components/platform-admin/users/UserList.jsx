@@ -43,9 +43,22 @@ const UserList = () => {
     platform_admin: 'from-violet-500 to-violet-400',
     restaurant_admin: 'from-blue-500 to-blue-400',
     waiter: 'from-emerald-500 to-emerald-400',
+    chef: 'from-cyan-500 to-cyan-400',
+    manager: 'from-sky-500 to-sky-400',
+    admin: 'from-slate-600 to-slate-500',
+    cashier: 'from-amber-500 to-amber-400',
+    delivery: 'from-lime-500 to-lime-400',
     customer: 'from-slate-500 to-slate-400',
     support_agent: 'from-orange-500 to-amber-400',
   }), [])
+
+  const getDisplayRole = (user) => {
+    if (user.displayRole) return user.displayRole
+    if (Array.isArray(user.staff_assignments) && user.staff_assignments.length > 0) {
+      return user.staff_assignments[0].role
+    }
+    return user.role
+  }
 
   const { data, isLoading, refetch } = useQuery(
     ['users', currentPage, searchTerm, filters],
@@ -72,7 +85,8 @@ const UserList = () => {
     return Number.isNaN(date.getTime()) ? 'Never' : date.toLocaleString()
   }
 
-  const formatRoleLabel = (role) => role?.replace('_', ' ')
+  const formatRoleLabel = (role) => role?.replace(/_/g, ' ')
+  const getDisplayRoleLabel = (user) => formatRoleLabel(getDisplayRole(user))
 
   const handleStatusChange = async (user, status) => {
     try {
@@ -125,9 +139,9 @@ const UserList = () => {
       <Badge
         variant="primary"
         size="sm"
-        className={`rounded-none bg-gradient-to-r ${roleColors[user.role] || roleColors.customer} text-white ring-1 ring-slate-100`}
+        className={`rounded-none bg-gradient-to-r ${roleColors[getDisplayRole(user)] || roleColors.customer} text-white ring-1 ring-slate-100`}
       >
-        {user.role?.replace('_', ' ')}
+        {getDisplayRoleLabel(user)}
       </Badge>
       <Badge
         variant={user.isActive ? 'success' : 'danger'}
@@ -256,10 +270,10 @@ const UserList = () => {
                       </button>
                       <div className="mt-2 lg:hidden">
                         <div
-                          className={`text-sm ${user.role === 'restaurant_admin' ? 'text-blue-600' : 'text-slate-600'}`}
-                          style={user.role === 'platform_admin' ? { color: 'rgb(107 33 168 / var(--tw-text-opacity, 1))' } : undefined}
+                          className={`text-sm ${getDisplayRole(user) === 'restaurant_admin' ? 'text-blue-600' : 'text-slate-600'}`}
+                          style={getDisplayRole(user) === 'platform_admin' ? { color: 'rgb(107 33 168 / var(--tw-text-opacity, 1))' } : undefined}
                         >
-                          {formatRoleLabel(user.role)}
+                          {getDisplayRoleLabel(user)}
                         </div>
                         <div
                           className={`text-sm ${user.isActive ? 'text-emerald-600' : 'text-slate-600'}`}
@@ -276,10 +290,10 @@ const UserList = () => {
                   </div>
 
                   <div
-                    className={`text-sm hidden lg:block ${user.role === 'restaurant_admin' ? 'text-blue-600' : 'text-slate-600'}`}
-                    style={user.role === 'platform_admin' ? { color: 'rgb(107 33 168 / var(--tw-text-opacity, 1))' } : undefined}
+                    className={`text-sm hidden lg:block ${getDisplayRole(user) === 'restaurant_admin' ? 'text-blue-600' : 'text-slate-600'}`}
+                    style={getDisplayRole(user) === 'platform_admin' ? { color: 'rgb(107 33 168 / var(--tw-text-opacity, 1))' } : undefined}
                   >
-                    {formatRoleLabel(user.role)}
+                    {getDisplayRoleLabel(user)}
                   </div>
 
                   <div

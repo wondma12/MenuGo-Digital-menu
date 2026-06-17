@@ -3,8 +3,14 @@ import { useDropzone } from 'react-dropzone'
 import { CloudArrowUpIcon, DocumentIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import { motion, AnimatePresence } from 'framer-motion'
 
-const FileUpload = ({ onFileSelect, accept = 'image/*', maxSize = 5 * 1024 * 1024, label, error, multiple = false, className = '' }) => {
+const FileUpload = ({ onFileSelect, accept = 'image/*', maxSize = 5 * 1024 * 1024, label, error, multiple = false, className = '', clearFilesKey }) => {
   const [files, setFiles] = useState([])
+
+  useEffect(() => {
+    if (clearFilesKey !== undefined) {
+      setFiles([])
+    }
+  }, [clearFilesKey])
 
   const onDrop = useCallback((acceptedFiles, rejectedFiles) => {
     if (rejectedFiles.length > 0) {

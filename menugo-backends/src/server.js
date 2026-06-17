@@ -1,11 +1,8 @@
 // Load environment early
 require('dotenv').config();
 const http = require('http');
+const net = require('net');
 const { Server } = require('socket.io');
-const app = require('./app');
-const { sequelize } = require('./models');
-const { initRedis } = require('./config/redis');
-const { initSocket } = require('./sockets');
 const { logger } = require('./utils/logger');
 
 let currentPort = parseInt(process.env.PORT, 10) || 5000;
@@ -13,82 +10,36 @@ let currentPort = parseInt(process.env.PORT, 10) || 5000;
 // Keep destructive changes opt-in for non-development environments.
 // Only enable automatic schema alteration when explicitly requested via env vars.
 // This avoids unexpected ALTER operations (which can fail) during normal development boots.
-let shouldAlterSchema =
+const shouldAlterSchema =
   process.env.DB_SYNC_ALTER === 'true' ||
   process.env.SEQUELIZE_SYNC_ALTER === 'true';
-const server = http.createServer(app);
+let server;
 let isShuttingDown = false;
-
-// Socket.io setup
-// Allow dev origins (Vite on 5173 and CRA on 3000) when CORS_ORIGIN isn't set.
-const defaultOrigins = process.env.NODE_ENV === 'development'
-  ? ['http://localhost:3000', 'http://localhost:5173']
-  : 'http://localhost:3000';
-const corsOrigins = process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : defaultOrigins;
-const io = new Server(server, {
-  cors: {
-    origin: corsOrigins,
-    credentials: true,
-    methods: ['GET', 'POST']
-  },
-  path: process.env.SOCKET_PATH || '/socket.io',
-  pingTimeout: parseInt(process.env.SOCKET_PING_TIMEOUT) || 60000,
-  pingInterval: parseInt(process.env.SOCKET_PING_INTERVAL) || 25000
-});
-
-// Initialize socket handlers
-initSocket(io);
-
-// Handle server errors such as EADDRINUSE so they don't surface as uncaught exceptions
-server.on('error', (err) => {
-  if (!err) {
-    return;
-}
-  if (err.code === 'EADDRINUSE') {
-    logger.error(`EADDRINUSE: Port ${currentPort} is already in use. Another process is bound to this port.`);
-
-    // Optional fallback: try next ports when ALLOW_PORT_FALLBACK=true
-    if (process.env.ALLOW_PORT_FALLBACK === 'true') {
-      const maxAttempts = parseInt(process.env.PORT_FALLBACK_ATTEMPTS, 10) || 5;
-      let attempts = 0;
-
-      const tryNextPort = () => {
-        if (attempts >= maxAttempts) {
-          logger.error('Port fallback exhausted, exiting.');
-          process.exit(1);
-        }
-        attempts += 1;
-        currentPort += 1;
-        logger.warn(`Attempting to listen on fallback port ${currentPort} (attempt ${attempts}/${maxAttempts})`);
-        server.listen(currentPort);
-      };
-
-      tryNextPort();
-      return;
-    }
-
-    logger.error('Hint: stop the other process or set a different PORT in your environment (.env).');
-    process.exit(1);
-  }
-
-  // For other server errors, log and allow the existing uncaughtException handler to manage shutdown
-  logger.error('Server error:', err);
-});
 
 // Database connection
 const startServer = async () => {
   try {
+    // Require modules that are safe to load now and used below. We delay
+    // requiring `app` until after the port probe so `process.env.API_URL`
+    // is correct for Passport callback generation.
+    // eslint-disable-next-line global-require
+    const { sequelize } = require('./models');
+    // eslint-disable-next-line global-require
+    const { initRedis } = require('./config/redis');
+    // eslint-disable-next-line global-require
+    const { initSocket } = require('./sockets');
+
     // Test database connection. If it fails we log a warning and continue
     // starting the server to make local development easier when DB isn't
     // available or uses incompatible auth. Feature flags or env vars can
     // re-enable strict behavior in CI/prod.
-    let dbConnected = false
+    let dbConnected = false;
     try {
       await sequelize.authenticate();
-      dbConnected = true
+      dbConnected = true;
       logger.info('Database connected successfully');
     } catch (dbErr) {
-      logger.warn('Database connection failed on startup (continuing without DB):', dbErr && dbErr.message ? dbErr.message : dbErr)
+      logger.warn('Database connection failed on startup (continuing without DB):', dbErr && dbErr.message ? dbErr.message : dbErr);
     }
 
     // Ensure kitchen-related tables exist to avoid runtime errors when migrations
@@ -125,7 +76,7 @@ const startServer = async () => {
               notes TEXT NULL,
               created_at DATETIME DEFAULT (CURRENT_TIMESTAMP),
               updated_at DATETIME DEFAULT (CURRENT_TIMESTAMP)
-            )`
+            )`,
           );
 
           creates.push(
@@ -138,7 +89,7 @@ const startServer = async () => {
               preparation_time INTEGER DEFAULT 5,
               special_instructions TEXT NULL,
               created_at DATETIME DEFAULT (CURRENT_TIMESTAMP)
-            )`
+            )`,
           );
 
           creates.push(
@@ -148,7 +99,7 @@ const startServer = async () => {
               modifier_name TEXT NOT NULL,
               modifier_price REAL DEFAULT 0,
               created_at DATETIME DEFAULT (CURRENT_TIMESTAMP)
-            )`
+            )`,
           );
 
           creates.push(
@@ -161,7 +112,7 @@ const startServer = async () => {
               is_active INTEGER DEFAULT 1,
               display_order INTEGER DEFAULT 0,
               created_at DATETIME DEFAULT (CURRENT_TIMESTAMP)
-            )`
+            )`,
           );
 
           creates.push(
@@ -171,7 +122,7 @@ const startServer = async () => {
               kitchen_order_id INTEGER NOT NULL,
               started_at DATETIME DEFAULT (CURRENT_TIMESTAMP),
               completed_at DATETIME NULL
-            )`
+            )`,
           );
 
           creates.push(
@@ -185,7 +136,7 @@ const startServer = async () => {
               new_status TEXT NULL,
               notes TEXT NULL,
               created_at DATETIME DEFAULT (CURRENT_TIMESTAMP)
-            )`
+            )`,
           );
 
           creates.push(
@@ -199,7 +150,7 @@ const startServer = async () => {
               peak_hour_orders INTEGER DEFAULT 0,
               cancelled_orders INTEGER DEFAULT 0,
               created_at DATETIME DEFAULT (CURRENT_TIMESTAMP)
-            )`
+            )`,
           );
 
           creates.push(
@@ -213,7 +164,7 @@ const startServer = async () => {
               status TEXT DEFAULT 'low',
               created_at DATETIME DEFAULT (CURRENT_TIMESTAMP),
               resolved_at DATETIME NULL
-            )`
+            )`,
           );
         } else {
           // MySQL-compatible statements (existing behavior)
@@ -237,7 +188,7 @@ const startServer = async () => {
               notes TEXT NULL,
               created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
               updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-            )`
+            )`,
           );
 
           creates.push(
@@ -250,7 +201,7 @@ const startServer = async () => {
               preparation_time INT DEFAULT 5,
               special_instructions TEXT NULL,
               created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-            )`
+            )`,
           );
 
           creates.push(
@@ -260,7 +211,7 @@ const startServer = async () => {
               modifier_name VARCHAR(100) NOT NULL,
               modifier_price DECIMAL(10,2) DEFAULT 0,
               created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-            )`
+            )`,
           );
 
           creates.push(
@@ -273,7 +224,7 @@ const startServer = async () => {
               is_active BOOLEAN DEFAULT TRUE,
               display_order INT DEFAULT 0,
               created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-            )`
+            )`,
           );
 
           creates.push(
@@ -283,7 +234,7 @@ const startServer = async () => {
               kitchen_order_id INT NOT NULL,
               started_at DATETIME DEFAULT CURRENT_TIMESTAMP,
               completed_at DATETIME NULL
-            )`
+            )`,
           );
 
           creates.push(
@@ -297,7 +248,7 @@ const startServer = async () => {
               new_status VARCHAR(50) NULL,
               notes TEXT NULL,
               created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-            )`
+            )`,
           );
 
           creates.push(
@@ -311,7 +262,7 @@ const startServer = async () => {
               peak_hour_orders INT DEFAULT 0,
               cancelled_orders INT DEFAULT 0,
               created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-            )`
+            )`,
           );
 
           creates.push(
@@ -325,7 +276,7 @@ const startServer = async () => {
               status ENUM('low','critical','out_of_stock') DEFAULT 'low',
               created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
               resolved_at DATETIME NULL
-            )`
+            )`,
           );
         }
 
@@ -346,6 +297,24 @@ const startServer = async () => {
       logger.info('Skipping DB table ensures because database is not connected');
     }
 
+    // If we're running with SQLite in development, proactively run `sequelize.sync()`
+    // to create any missing tables (non-destructive) so lightweight dev setups
+    // without migrations don't fail on simple model.create() calls.
+    try {
+      const db = require('./config/database');
+      const dialect = (db && db.sequelize && typeof db.sequelize.getDialect === 'function') ? db.sequelize.getDialect() : null;
+      if (dialect === 'sqlite') {
+        try {
+          await db.sequelize.sync();
+          logger.info('SQLite development DB synced: created missing tables');
+        } catch (syncErr) {
+          logger.warn('SQLite sync failed:', syncErr && syncErr.message ? syncErr.message : syncErr);
+        }
+      }
+    } catch (e) {
+      // ignore
+    }
+
     // Keep destructive schema alteration opt-in to avoid long dev boots and port collisions.
     if (shouldAlterSchema && dbConnected) {
       await sequelize.sync({ alter: true });
@@ -357,13 +326,129 @@ const startServer = async () => {
     // Initialize Redis
     await initRedis();
 
-    // Start server
+    // Probe for an available port before starting the HTTP server to avoid
+    // noisy EADDRINUSE errors and ensure predictable fallback behavior.
+    const findAvailablePort = async (startPort, maxAttempts = 5) => {
+      let port = Number(startPort) || 5000;
+      for (let i = 0; i < maxAttempts; i += 1) {
+        // eslint-disable-next-line no-await-in-loop
+        const ok = await new Promise((resolve) => {
+          const tester = net.createServer()
+            .once('error', (err) => {
+              tester.close?.();
+              resolve(false);
+            })
+            .once('listening', () => {
+              tester.close(() => resolve(true));
+            })
+            .listen(port);
+        });
+
+        if (ok) {
+          return port;
+        }
+        port += 1;
+      }
+      return null;
+    };
+
+    const maxAttempts = parseInt(process.env.PORT_FALLBACK_ATTEMPTS, 10) || 10;
+    const available = await findAvailablePort(currentPort, maxAttempts);
+    if (!available) {
+      logger.error('Port probe failed: no available port found in fallback range.');
+      process.exit(1);
+    }
+    currentPort = available;
+
+    // Ensure process.env.API_URL reflects the chosen port before loading the
+    // express app so modules that generate absolute URLs (Passport callbacks)
+    // use the correct address.
+    process.env.API_URL = `http://localhost:${currentPort}`;
+    // If GOOGLE_CALLBACK_URL wasn't explicitly set, derive it from API_URL
+    if (!process.env.GOOGLE_CALLBACK_URL) {
+      process.env.GOOGLE_CALLBACK_URL = `${process.env.API_URL}/api/auth/google/callback`;
+    }
+
+    // Now require app which may depend on process.env.API_URL (passport)
+    // Delayed require avoids reading stale env values at module-init time.
+    // eslint-disable-next-line global-require
+    const app = require('./app');
+
+    // Create HTTP server now that `app` is available
+    server = http.createServer(app);
+
+    // Socket.io setup
+    const defaultOrigins = process.env.NODE_ENV === 'development'
+      ? ['http://localhost:3000', 'http://localhost:5173']
+      : 'http://localhost:3000';
+    const corsOrigins = process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : defaultOrigins;
+    const io = new Server(server, {
+      cors: {
+        origin: corsOrigins,
+        credentials: true,
+        methods: ['GET', 'POST'],
+      },
+      path: process.env.SOCKET_PATH || '/socket.io',
+      pingTimeout: parseInt(process.env.SOCKET_PING_TIMEOUT) || 60000,
+      pingInterval: parseInt(process.env.SOCKET_PING_INTERVAL) || 25000,
+    });
+
+    // Initialize socket handlers
+    initSocket(io);
+
+    // Handle server errors such as EADDRINUSE so they don't surface as uncaught exceptions
+    server.on('error', (err) => {
+      if (!err) {
+        return;
+      }
+      if (err.code === 'EADDRINUSE') {
+        logger.error(`EADDRINUSE: Port ${currentPort} is already in use. Another process is bound to this port.`);
+
+        // Optional fallback: try next ports when ALLOW_PORT_FALLBACK=true
+        if (process.env.ALLOW_PORT_FALLBACK === 'true') {
+          const maxAttemptsFallback = parseInt(process.env.PORT_FALLBACK_ATTEMPTS, 10) || 5;
+          let attempts = 0;
+
+          const tryNextPort = () => {
+            if (attempts >= maxAttemptsFallback) {
+              logger.error('Port fallback exhausted, exiting.');
+              process.exit(1);
+            }
+            attempts += 1;
+            currentPort += 1;
+            logger.warn(`Attempting to listen on fallback port ${currentPort} (attempt ${attempts}/${maxAttemptsFallback})`);
+            server.listen(currentPort);
+          };
+
+          tryNextPort();
+          return;
+        }
+
+        logger.error('Hint: stop the other process or set a different PORT in your environment (.env).');
+        process.exit(1);
+      }
+
+      // For other server errors, log and allow the existing uncaughtException handler to manage shutdown
+      logger.error('Server error:', err);
+    });
+
+    // Start server on discovered available port
     server.listen(currentPort, () => {
       logger.info(`Server running on port ${currentPort}`);
       logger.info(`Environment: ${process.env.NODE_ENV}`);
-      // Ensure process.env.API_URL reflects actual listening port so generated URLs (local uploads) are correct
-      process.env.API_URL = `http://localhost:${currentPort}`;
       logger.info(`API URL: ${process.env.API_URL}`);
+      // If a static GOOGLE_CALLBACK_URL is configured and does not match
+      // the runtime API URL, warn the developer so they can update the
+      // registered redirect URI in Google Cloud Console or adjust .env.
+      try {
+        const configured = process.env.GOOGLE_CALLBACK_URL || null;
+        const expected = `${process.env.API_URL}/api/auth/google/callback`;
+        if (configured && configured !== expected) {
+          logger.warn('GOOGLE_CALLBACK_URL differs from runtime API URL. Ensure the redirect URI registered in Google Cloud matches the callback used by this server.', { configured, expected });
+        }
+      } catch (e) {
+        // ignore any inspection errors
+      }
     });
 
   } catch (error) {

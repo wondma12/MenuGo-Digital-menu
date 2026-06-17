@@ -15,8 +15,30 @@ const schema = yup.object({
   priceYearly: yup.number().positive().required('Yearly price is required'),
 })
 
+const normalizeFeatures = (features) => {
+  if (!features) return ['']
+  if (Array.isArray(features)) return features.length ? features : ['']
+  if (typeof features === 'string') {
+    try {
+      const parsed = JSON.parse(features)
+      if (Array.isArray(parsed)) return parsed.length ? parsed : ['']
+    } catch (e) {
+      // ignore parse failures
+    }
+    return features.split(',').map((feature) => feature.trim()).filter(Boolean).filter((_, idx, arr) => arr.indexOf(_ ) === idx)
+  }
+  if (typeof features === 'object') {
+    const normalized = Object.values(features)
+      .filter((value) => value !== null && value !== undefined)
+      .map((value) => (typeof value === 'string' ? value : String(value)))
+      .filter(Boolean)
+    return normalized.length ? normalized : ['']
+  }
+  return ['']
+}
+
 const PlanForm = ({ initialData, onSubmit, onCancel, isLoading }) => {
-  const [features, setFeatures] = useState(initialData?.features || [''])
+  const [features, setFeatures] = useState(normalizeFeatures(initialData?.features))
   const [limits, setLimits] = useState(initialData?.limits || {
     maxMenuItems: 50,
     maxStaff: 5,
@@ -39,7 +61,7 @@ const PlanForm = ({ initialData, onSubmit, onCancel, isLoading }) => {
   useEffect(() => {
     if (initialData) {
       reset(initialData)
-      setFeatures(initialData.features || [''])
+      setFeatures(normalizeFeatures(initialData.features))
       setLimits(initialData.limits || {
         maxMenuItems: 50,
         maxStaff: 5,

@@ -140,7 +140,9 @@ const seedUserSessions = async (users) => {
   
   const admin = users.find(u => u.email === 'haymanotwondmagegn3@gmail.com');
   
-  if (!admin) return;
+  if (!admin) {
+    return;
+  }
 
   const sessionData = {
     id: uuidv4(),
@@ -740,7 +742,9 @@ const seedMenuItems = async (restaurant, categories) => {
 const seedMenuItemOptionsAndModifiers = async (restaurant) => {
   console.log('Seeding menu item options and modifiers...');
   
-  if (!restaurant) return;
+  if (!restaurant) {
+    return;
+  }
 
   const salmonItem = await MenuItem.findOne({
     where: { restaurant_id: restaurant.id, name: 'Grilled Salmon' },
@@ -856,7 +860,9 @@ const seedTables = async (restaurant) => {
 const seedTableAssignments = async (restaurant, tables, waiters) => {
   console.log('Seeding table assignments...');
   
-  if (!restaurant || !tables.length || !waiters.length) return;
+  if (!restaurant || !tables.length || !waiters.length) {
+    return;
+  }
 
   const waiter = waiters[0];
   const table = tables[2]; // Center Table
@@ -883,7 +889,9 @@ const seedTableAssignments = async (restaurant, tables, waiters) => {
 const seedTableReservations = async (restaurant, tables) => {
   console.log('Seeding table reservations...');
   
-  if (!restaurant || !tables.length) return;
+  if (!restaurant || !tables.length) {
+    return;
+  }
 
   const table = tables[0];
   const tomorrow = new Date();
@@ -1227,7 +1235,9 @@ const seedInventory = async (restaurant) => {
 const seedReviews = async (restaurant, users) => {
   console.log('Seeding reviews...');
   
-  if (!restaurant) return;
+  if (!restaurant) {
+    return;
+  }
 
   const customer = users.find(u => u.email === 'customer@example.com');
   const order = await Order.findOne();
@@ -1343,10 +1353,14 @@ const seedSubscriptionPlans = async () => {
 const seedSubscription = async (restaurant) => {
   console.log('Seeding subscription...');
   
-  if (!restaurant) return;
+  if (!restaurant) {
+    return;
+  }
 
   const plan = await SubscriptionPlan.findOne({ where: { tier: 'premium' } });
-  if (!plan) return;
+  if (!plan) {
+    return;
+  }
 
   const existing = await Subscription.findOne({
     where: { restaurant_id: restaurant.id, status: 'active' },
@@ -1374,7 +1388,9 @@ const seedSubscription = async (restaurant) => {
 const seedWaiterNotifications = async (waiters, order) => {
   console.log('Seeding waiter notifications...');
   
-  if (!waiters.length || !order) return;
+  if (!waiters.length || !order) {
+    return;
+  }
 
   const waiter = waiters[0];
 
@@ -1404,7 +1420,9 @@ const seedWaiterNotifications = async (waiters, order) => {
 const seedDailySalesSummary = async (restaurant) => {
   console.log('Seeding daily sales summary...');
   
-  if (!restaurant) {return;}
+  if (!restaurant) {
+    return;
+  }
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);

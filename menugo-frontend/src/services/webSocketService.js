@@ -23,33 +23,14 @@ export const connectWebSocket = () => {
   if (!token) return null
   if (socket?.connected) return socket
 
-  const buildWsCandidates = () => {
-    const seen = new Set()
-    const add = (u) => {
-      if (!u) return
-      let normalized = u.replace(/\/$/, '')
-      if (!seen.has(normalized)) seen.add(normalized)
-    }
-
-    if (import.meta.env.VITE_WS_URL) add(import.meta.env.VITE_WS_URL)
-    try {
-      if (import.meta.env.VITE_API_URL) {
-        add(import.meta.env.VITE_API_URL.replace(/^http/, 'ws').replace(/\/api\/?$/, ''))
-      }
-
-      const host = window?.location?.hostname || 'localhost'
-      const proto = window?.location?.protocol === 'https:' ? 'wss' : 'ws'
-      const ports = [5000, 5008, 5007, 5006, 5005]
-      ports.forEach((p) => add(`${proto}://${host}:${p}`))
-      ports.forEach((p) => add(`${proto}://localhost:${p}`))
-    } catch (e) {
-      // ignore
-    }
-
-    return Array.from(seen)
-  }
-
-  const candidates = buildWsCandidates()
+  // Build a single candidate derived from known API base. This avoids noisy
+  // probing of multiple local ports and uses the backend the frontend is
+  // already communicating with (or the configured VITE_API_URL).
+  const candidates = []
+  if (import.meta.env.VITE_WS_URL) candidates.push(import.meta.env.VITE_WS_URL.replace(/\/$/, ''))
+  if (import.meta.env.VITE_API_URL) candidates.push(import.meta.env.VITE_API_URL.replace(/^http/, 'ws').replace(/\/$/, '').replace(/\/api$/, ''))
+  // fall back to derived WS_URL
+  candidates.push(WS_URL.replace(/\/$/, ''))
 
   // Try candidates sequentially until one connects
   const tryConnect = async () => {
@@ -60,8 +41,9 @@ export const connectWebSocket = () => {
           auth: { token },
           transports: ['websocket'],
           autoConnect: false,
-          reconnection: false,
-          timeout: 2000,
+          reconnection: true,
+          reconnectionAttempts: 5,
+          timeout: 3000,
         })
 
         await new Promise((resolve, reject) => {
@@ -76,7 +58,7 @@ export const connectWebSocket = () => {
           const timer = setTimeout(() => {
             cleanup()
             reject(new Error('ws timeout'))
-          }, 2000)
+          }, 3000)
 
           function cleanup() {
             clearTimeout(timer)
@@ -102,7 +84,7 @@ export const connectWebSocket = () => {
       }
     }
 
-    console.error('WebSocket: all connection attempts failed')
+    console.warn('WebSocket: all connection attempts failed')
     return null
   }
 

@@ -6,7 +6,7 @@ import { useAuthStore } from '../../store/authStore'
 import Header from './Header'
 import Sidebar from './Sidebar'
 import MobileNav from './MobileNav'
-import { BarChart2, Store, Users, CreditCard, TrendingUp, HelpCircle, Settings } from 'lucide-react'
+import { BarChart2, Store, Users, CreditCard, TrendingUp, HelpCircle, Settings, Phone } from 'lucide-react'
 
 const AdminLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true)
@@ -43,7 +43,8 @@ const AdminLayout = () => {
     { path: '/platform/users', label: 'Users', icon: <Users className="w-5 h-5" /> },
     { path: '/platform/subscriptions', label: 'Subscriptions', icon: <CreditCard className="w-5 h-5" /> },
     { path: '/platform/analytics', label: 'Analytics', icon: <TrendingUp className="w-5 h-5" /> },
-    // { path: '/platform/support', label: 'Support', icon: <HelpCircle className="w-5 h-5" /> },
+    { path: '/platform/support', label: 'Support', icon: <HelpCircle className="w-5 h-5" /> },
+    { path: '/platform/contact-messages', label: 'Contact Messages', icon: <Phone className="w-5 h-5" /> },
     { path: '/platform/profile', label: 'System', icon: <Settings className="w-5 h-5" /> },
   ]
 

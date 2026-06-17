@@ -36,6 +36,7 @@ import PlatformProfile from './components/platform-admin/profile/PlatformProfile
 import TicketList from './components/platform-admin/support/TicketList'
 import TicketDetails from './components/platform-admin/support/TicketDetails'
 import KnowledgeBase from './components/platform-admin/support/KnowledgeBase'
+import ContactMessagesPage from './components/platform-admin/support/ContactMessagesPage'
 import SystemSettings from './components/platform-admin/system/SystemSettings'
 import EmailSettings from './components/platform-admin/system/EmailSettings'
 import SecuritySettings from './components/platform-admin/system/SecuritySettings'
@@ -131,6 +132,16 @@ function App() {
     } catch (err) {
       // ignore
     }
+    // If auth is loading or we have a persisted token but no user yet,
+    // render Loading so we don't redirect to the wrong root while
+    // `checkAuth()` hydrates the full user profile.
+    try {
+      const sessionToken = typeof window !== 'undefined' ? window.sessionStorage.getItem('token') : null
+      if (isLoading) return <Loading fullScreen />
+      if (sessionToken && !user) return <Loading fullScreen />
+    } catch (e) {
+      // ignore storage access
+    }
 
     if (!isAuthenticated) {
       return <Navigate to="/home" replace />
@@ -147,6 +158,18 @@ function App() {
 
   // Run one-time bootstrap work on initial mount.
   useEffect(() => {
+    // Hydrate token from session storage into the store so axios
+    // request interceptor can attach it immediately on first requests.
+    try {
+      const sessionToken = window.sessionStorage.getItem('token')
+      const sessionRefresh = window.sessionStorage.getItem('refreshToken')
+      if (sessionToken && !useAuthStore.getState().token) {
+        useAuthStore.setState({ token: sessionToken, refreshToken: sessionRefresh || null })
+      }
+    } catch (e) {
+      // ignore storage errors
+    }
+
     checkAuth()
     preloadAllSounds()
 
@@ -287,6 +310,7 @@ function App() {
                 <Route path="analytics/users" element={<UserAnalytics />} />
                 <Route path="support" element={<TicketList />} />
                 <Route path="support/:id" element={<TicketDetails />} />
+                <Route path="contact-messages" element={<ContactMessagesPage />} />
                 <Route path="knowledge-base" element={<KnowledgeBase />} />
                 <Route path="settings" element={<PlatformProfile />} />
                 {/* Backwards-compatible system route aliases */}
@@ -309,8 +333,8 @@ function App() {
             
             {/* Restaurant Admin Routes */}
             <Route element={<ProtectedRoute allowedRoles={['restaurant_admin']} />}>
-              <Route path="/restaurant" element={<Navigate to="/admin" replace />} />
-              <Route path="/restaurant/dashboard" element={<Navigate to="/admin/dashboard" replace />} />
+              {/* <Route path="/restaurant" element={<Navigate to="/admin/dashboard" replace />} />
+              <Route path="/restaurant/dashboard" element={<Navigate to="/admin/dashboard" replace />} /> */}
               <Route path="/admin" element={<RestaurantLayout />}>
                 <Route index element={<Navigate to="/admin/dashboard" />} />
                 <Route path="dashboard" element={<RestaurantDashboard />} />

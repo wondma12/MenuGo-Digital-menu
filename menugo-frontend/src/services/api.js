@@ -22,9 +22,11 @@ const NORMALIZED_API_URL = normalizeApiUrl(API_URL)
 
 // Fallback ports to try when the configured API is unreachable during local development.
 // Include common local backend ports (5002 and 5003 used by this repo), then other candidates.
-const FALLBACK_PORTS = [5003, 5002, 5000, 5008, 5007, 5006, 5005]
+  // Probe a contiguous range of common local backend ports to improve
+  // auto-detection when the backend picks a nearby free port.
+  const FALLBACK_PORTS = Array.from({ length: 11 }, (_, i) => 5000 + i)
 
-const buildApiCandidates = () => {
+  const buildApiCandidates = () => {
   const seen = new Set()
   const add = (u) => {
     if (!u) return
@@ -33,6 +35,8 @@ const buildApiCandidates = () => {
       seen.add(normalized)
     }
   }
+
+  if (import.meta.env.VITE_API_URL) add(import.meta.env.VITE_API_URL)
 
   if (import.meta.env.VITE_API_URL) add(import.meta.env.VITE_API_URL)
 
@@ -51,7 +55,60 @@ const buildApiCandidates = () => {
   return Array.from(seen)
 }
 
-const attemptFallback = async (originalRequest) => {
+// Ensure we probe for a working API base once per session before sending
+// any requests. This avoids the race where the app sends `/auth/me` while
+// the frontend is still using a stale or incorrect baseURL.
+let baseProbePromise = null
+const ensureApiBaseReady = () => {
+  if (baseProbePromise) return baseProbePromise
+  baseProbePromise = (async () => {
+    const cacheKey = 'menugo_api_base'
+    const cached = typeof sessionStorage !== 'undefined' ? sessionStorage.getItem(cacheKey) : null
+    // Shorter probe timeout and parallel probing to reduce startup latency
+    const probeTimeout = 800
+
+    if (cached) {
+      try {
+        await axios.get(`${cached.replace(/\/$/, '')}/health`, { timeout: probeTimeout })
+        api.defaults.baseURL = cached
+        if (import.meta.env.DEV) console.warn('Using cached API baseURL:', cached)
+        return
+      } catch (e) {
+        if (import.meta.env.DEV) console.warn('Cached api base failed probe, clearing cache:', e && e.message)
+        try { sessionStorage.removeItem(cacheKey) } catch (err) {}
+      }
+    }
+
+    const candidates = buildApiCandidates()
+    const cap = Math.min(candidates.length, 6)
+
+    // Probe candidates in parallel and use the first successful one.
+    const probePromises = candidates.slice(0, cap).map((candidate) => {
+      const base = candidate.replace(/\/$/, '')
+      const healthUrl = `${base}/health`
+      return axios.get(healthUrl, { timeout: probeTimeout })
+        .then(() => base)
+        .catch(() => Promise.reject(base))
+    })
+
+    try {
+      const winner = await Promise.any(probePromises)
+      api.defaults.baseURL = winner
+      try { if (typeof sessionStorage !== 'undefined') sessionStorage.setItem(cacheKey, winner) } catch (e) { if (import.meta.env.DEV) console.warn('sessionStorage.setItem failed:', e && e.message) }
+      if (import.meta.env.DEV) console.warn('Initial API baseURL detected:', winner)
+      return
+    } catch (allErr) {
+      if (import.meta.env.DEV) console.warn('Initial probe: no candidate responded')
+    }
+
+    // Fall back to configured URL if nothing responded
+    api.defaults.baseURL = NORMALIZED_API_URL
+    if (import.meta.env.DEV) console.warn('No candidate responded; using configured NORMALIZED_API_URL:', NORMALIZED_API_URL)
+  })()
+  return baseProbePromise
+}
+
+  const attemptFallback = async (originalRequest) => {
   // Only attempt automatic fallback for idempotent requests to avoid
   // re-sending large uploads or mutating POSTs to unknown hosts.
   const method = (originalRequest && originalRequest.method) ? originalRequest.method.toLowerCase() : 'get'
@@ -76,31 +133,28 @@ const attemptFallback = async (originalRequest) => {
   const candidates = buildApiCandidates()
   const currentBase = (api.defaults && api.defaults.baseURL) ? api.defaults.baseURL.replace(/\/$/, '') : NORMALIZED_API_URL.replace(/\/$/, '')
 
-  // Limit the number of probes and use a short probe timeout to avoid long delays
-  let probed = 0
-  const MAX_PROBES = 3
-  for (const candidate of candidates) {
-    if (probed >= MAX_PROBES) break
+  // Probe a small set of candidates in parallel for fallback attempts.
+  const MAX_PROBES = Math.min(candidates.length, 6)
+  const probeCandidates = candidates.slice(0, MAX_PROBES).map((candidate) => {
     const base = candidate.replace(/\/$/, '')
-    if (base === currentBase) continue
-    probed += 1
+    if (base === currentBase) return Promise.reject(base)
+    const healthUrl = `${base}/health`
+    if (import.meta.env.DEV) console.warn('Probing fallback baseURL health:', healthUrl)
+    return axios.get(healthUrl, { timeout: 1200 }).then(() => base).catch(() => Promise.reject(base))
+  })
+
+  try {
+    const winner = await Promise.any(probeCandidates)
+    api.defaults.baseURL = winner
     try {
-      const healthUrl = `${base.replace(/\/$/, '')}/health`
-      if (import.meta.env.DEV) console.warn('Probing fallback baseURL health:', healthUrl)
-      await axios.get(healthUrl, { timeout: 1200 })
-      // If probe succeeded, switch base and cache it for this session
-      api.defaults.baseURL = base
-      try {
-        if (typeof sessionStorage !== 'undefined') sessionStorage.setItem(cacheKey, base)
-      } catch (e) {
-        // ignore storage errors
+      if (typeof sessionStorage !== 'undefined') {
+        try { sessionStorage.setItem(cacheKey, winner) } catch (e) { if (import.meta.env.DEV) console.warn('sessionStorage.setItem failed while caching api base:', e && e.message) }
       }
-      if (import.meta.env.DEV) console.warn('Using API fallback baseURL:', base)
-      return await api(originalRequest)
-    } catch (err) {
-      if (import.meta.env.DEV) console.warn('Fallback candidate probe failed:', base, (err && err.message) || err)
-      // try next candidate
-    }
+    } catch (e) {}
+    if (import.meta.env.DEV) console.warn('Using API fallback baseURL:', winner)
+    return await api(originalRequest)
+  } catch (err) {
+    if (import.meta.env.DEV) console.warn('Fallback candidate probes all failed')
   }
 
   // restore default and give up
@@ -108,7 +162,7 @@ const attemptFallback = async (originalRequest) => {
   return Promise.reject(originalRequest._originalError || new Error('All API fallback attempts failed'))
 }
 
-const api = axios.create({
+  const api = axios.create({
   baseURL: NORMALIZED_API_URL,
   headers: {
     'Content-Type': 'application/json',
@@ -143,9 +197,18 @@ const processQueue = (error, token = null) => {
   failedQueue = []
 }
 
-// Request interceptor to add token
+  // Request interceptor to add token
 api.interceptors.request.use(
-  (config) => {
+  async (config) => {
+    // Ensure we've probed and selected a working API base before sending
+    try {
+      await ensureApiBaseReady()
+    } catch (e) {
+      // If probe failed, continue — the rest of the code will use the
+      // configured NORMALIZED_API_URL.
+      if (import.meta.env.DEV) console.warn('ensureApiBaseReady failed:', e && e.message)
+    }
+
     // Get token from store
     const token = useAuthStore.getState().token || authSessionStorage?.getItem('token')
     
@@ -167,16 +230,12 @@ api.interceptors.request.use(
       // ignore
     }
     
-    // Log request in development
-      if (import.meta.env.DEV) {
-        let dataToLog = config.data
-        try {
-          dataToLog = config.data ? JSON.parse(JSON.stringify(config.data)) : config.data
-        } catch (err) {
-          dataToLog = '[unserializable]'
-        }
-        console.log(`🚀 API Request: ${config.method?.toUpperCase()} ${config.url}`, dataToLog)
-      }
+    // Log request in development (concise)
+    if (import.meta.env.DEV) {
+      try {
+        console.log(`🚀 API Request: ${config.method?.toUpperCase()} ${config.url}`)
+      } catch (e) {}
+    }
     
     return config
   },
@@ -265,8 +324,18 @@ api.interceptors.response.use(
           
           // Update session auth storage
           if (authSessionStorage) {
-            authSessionStorage.setItem('token', newToken)
-            if (newRefreshToken) authSessionStorage.setItem('refreshToken', newRefreshToken)
+            try {
+              authSessionStorage.setItem('token', newToken)
+            } catch (e) {
+              if (import.meta.env.DEV) console.warn('authSessionStorage.setItem token failed:', e && e.message)
+            }
+            if (newRefreshToken) {
+              try {
+                authSessionStorage.setItem('refreshToken', newRefreshToken)
+              } catch (e) {
+                if (import.meta.env.DEV) console.warn('authSessionStorage.setItem refreshToken failed:', e && e.message)
+              }
+            }
           }
           
           // Update failed requests queue
@@ -318,13 +387,14 @@ api.interceptors.response.use(
         console.error('Network error:', error.message)
 
         // Attempt to auto-detect the running backend by trying fallback ports/hosts.
-        // Ensure we only try fallback once per request to avoid recursion.
+        // Ensure we only try fallback once per request to avoid recursion. Limit
+        // fallback attempts to avoid noisy console logs in dev.
         if (originalRequest && !originalRequest._retryFallback) {
           originalRequest._retryFallback = true
           try {
             return await attemptFallback(originalRequest)
           } catch (fallbackErr) {
-            if (import.meta.env.DEV) console.warn('API fallback exhausted:', fallbackErr)
+              if (import.meta.env.DEV) console.warn('API fallback exhausted:', fallbackErr.message || fallbackErr)
             // fall through to reject original error
           }
         }

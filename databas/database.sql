@@ -1052,44 +1052,4 @@ CREATE TABLE push_notification_tokens (
     INDEX idx_push_tokens_token (token)
 );
 
--- ============================================
--- SAMPLE DATA
--- ============================================
-
--- Insert sample users
-INSERT INTO users (id, email, password_hash, full_name, phone, role, is_verified, email_verified) VALUES 
-(UUID(), 'restaurant.owner@menugo.com', '$2b$10$samplehash', 'John Owner', '+1234567890', 'restaurant_admin', TRUE, TRUE),
-(UUID(), 'waiter1@menugo.com', '$2b$10$samplehash', 'Mike Waiter', '+1234567891', 'waiter', TRUE, TRUE),
-(UUID(), 'chef1@menugo.com', '$2b$10$samplehash', 'Chef Gordon', '+1234567892', 'waiter', TRUE, TRUE),
-(UUID(), 'customer@example.com', '$2b$10$samplehash', 'Sarah Customer', '+1234567893', 'customer', TRUE, TRUE);
-
--- Insert sample restaurant
-INSERT INTO restaurants (id, owner_id, name, description, address, city, country, phone, email, cuisine_type, operating_hours, qr_code_identifier, subscription_tier, is_active, is_verified, latitude, longitude) VALUES 
-(UUID(), (SELECT id FROM users WHERE email = 'restaurant.owner@menugo.com'), 'Gourmet Bistro', 'Fine dining experience with international cuisine', '123 Main Street', 'New York', 'USA', '+1234567890', 'contact@gourmetbistro.com', 'Fusion', 
- '{"monday": {"open": "11:00", "close": "22:00"}, "tuesday": {"open": "11:00", "close": "22:00"}, "wednesday": {"open": "11:00", "close": "22:00"}, "thursday": {"open": "11:00", "close": "22:00"}, "friday": {"open": "11:00", "close": "23:00"}, "saturday": {"open": "10:00", "close": "23:00"}, "sunday": {"open": "10:00", "close": "21:00"}}',
- 'gourmet-bistro-nyc-12345', 'premium', TRUE, TRUE, 40.7128, -74.0060);
-
--- Insert sample menu categories
-INSERT INTO menu_categories (id, restaurant_id, name, description, display_order, is_active) VALUES 
-(UUID(), (SELECT id FROM restaurants WHERE name = 'Gourmet Bistro'), 'Appetizers', 'Start your meal with these delicious options', 1, TRUE),
-(UUID(), (SELECT id FROM restaurants WHERE name = 'Gourmet Bistro'), 'Main Courses', 'Our signature main dishes', 2, TRUE),
-(UUID(), (SELECT id FROM restaurants WHERE name = 'Gourmet Bistro'), 'Desserts', 'Sweet treats to end your meal', 3, TRUE),
-(UUID(), (SELECT id FROM restaurants WHERE name = 'Gourmet Bistro'), 'Beverages', 'Refreshing drinks', 4, TRUE);
-
--- Insert sample menu items
-INSERT INTO menu_items (id, restaurant_id, category_id, name, description, price, is_available, is_recommended, is_popular, is_vegetarian, preparation_time, calories) VALUES 
-(UUID(), (SELECT id FROM restaurants WHERE name = 'Gourmet Bistro'), (SELECT id FROM menu_categories WHERE name = 'Appetizers' LIMIT 1), 'Bruschetta', 'Grilled bread topped with fresh tomatoes, garlic, and basil', 12.99, TRUE, TRUE, TRUE, TRUE, 10, 320),
-(UUID(), (SELECT id FROM restaurants WHERE name = 'Gourmet Bistro'), (SELECT id FROM menu_categories WHERE name = 'Main Courses' LIMIT 1), 'Grilled Salmon', 'Fresh Atlantic salmon with lemon butter sauce', 28.99, TRUE, TRUE, TRUE, FALSE, 20, 550),
-(UUID(), (SELECT id FROM restaurants WHERE name = 'Gourmet Bistro'), (SELECT id FROM menu_categories WHERE name = 'Main Courses' LIMIT 1), 'Ribeye Steak', '12oz prime ribeye with garlic mashed potatoes', 42.99, TRUE, TRUE, TRUE, FALSE, 25, 980),
-(UUID(), (SELECT id FROM restaurants WHERE name = 'Gourmet Bistro'), (SELECT id FROM menu_categories WHERE name = 'Desserts' LIMIT 1), 'Tiramisu', 'Classic Italian dessert with mascarpone', 9.99, TRUE, TRUE, TRUE, TRUE, 5, 380),
-(UUID(), (SELECT id FROM restaurants WHERE name = 'Gourmet Bistro'), (SELECT id FROM menu_categories WHERE name = 'Beverages' LIMIT 1), 'Fresh Lemonade', 'House-made lemonade with mint', 5.99, TRUE, FALSE, FALSE, TRUE, 2, 120);
-
--- Insert sample tables
-INSERT INTO restaurant_tables (id, restaurant_id, table_number, table_name, capacity, section, status) VALUES 
-(UUID(), (SELECT id FROM restaurants WHERE name = 'Gourmet Bistro'), '1', 'Window Table 1', 4, 'Window', 'available'),
-(UUID(), (SELECT id FROM restaurants WHERE name = 'Gourmet Bistro'), '2', 'Window Table 2', 4, 'Window', 'available'),
-(UUID(), (SELECT id FROM restaurants WHERE name = 'Gourmet Bistro'), '3', 'Center Table', 6, 'Main Hall', 'available');
-
--- ============================================
--- END OF COMPLETE DATABASE SCHEMA (MySQL)
--- ============================================
+-- 

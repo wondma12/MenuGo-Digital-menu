@@ -205,20 +205,8 @@ const PlatformProfile = () => {
                 {avatarPreview && <img src={avatarPreview} alt="Logo preview" className="h-28 w-28 rounded-none object-cover ring-1 ring-slate-200" />}
                 <p className="text-xs text-slate-500">Used as the profile avatar/logo across the platform.</p>
               </div>
-
-              <div className="space-y-3 rounded-none border border-slate-100 bg-slate-50 p-4">
-                <div className="flex items-center gap-3 text-slate-900">
-                  <PhotoIcon className="h-5 w-5 text-blue-500" />
-                  <p className="font-semibold">Cover image</p>
-                </div>
-                <FileUpload onFileSelect={handleCoverUpload} accept={{ 'image/*': ['.jpeg', '.png', '.jpg', '.webp'] }} label="Upload cover" />
-                <Input label="Cover Image URL" value={profileData.coverImageUrl} onChange={(e) => setProfileData((current) => ({ ...current, coverImageUrl: e.target.value }))} placeholder="https://example.com/cover.jpg" />
-                {coverPreview && <img src={coverPreview} alt="Cover preview" className="h-28 w-full rounded-none object-cover ring-1 ring-slate-200" />}
-                <p className="text-xs text-slate-500">Shown on the profile banner and saved in your preferences.</p>
-              </div>
-            </div>
-
-            <div className="grid gap-4 md:grid-cols-2">
+ <div>
+            <div className="grid gap-4 md:grid-cols-1">
               <Input label="Full Name" value={profileData.full_name} onChange={(e) => setProfileData((current) => ({ ...current, full_name: e.target.value }))} required />
               <Input label="Email" type="email" value={profileData.email} onChange={(e) => setProfileData((current) => ({ ...current, email: e.target.value }))} required error={profileErrors.email} />
               <Input label="Phone" value={profileData.phone} onChange={(e) => setProfileData((current) => ({ ...current, phone: e.target.value }))} />
@@ -234,6 +222,19 @@ const PlatformProfile = () => {
                 Save Profile
               </Button>
             </div>
+         </div>
+              {/* <div className="space-y-3 rounded-none border border-slate-100 bg-slate-50 p-4">
+                <div className="flex items-center gap-3 text-slate-900">
+                  <PhotoIcon className="h-5 w-5 text-blue-500" />
+                  <p className="font-semibold">Cover image</p>
+                </div>
+                <FileUpload onFileSelect={handleCoverUpload} accept={{ 'image/*': ['.jpeg', '.png', '.jpg', '.webp'] }} label="Upload cover" />
+                <Input label="Cover Image URL" value={profileData.coverImageUrl} onChange={(e) => setProfileData((current) => ({ ...current, coverImageUrl: e.target.value }))} placeholder="https://example.com/cover.jpg" />
+                {coverPreview && <img src={coverPreview} alt="Cover preview" className="h-28 w-full rounded-none object-cover ring-1 ring-slate-200" />}
+                <p className="text-xs text-slate-500">Shown on the profile banner and saved in your preferences.</p>
+              </div> */}
+            </div>
+         
           </form>
 
           <div className="space-y-6">

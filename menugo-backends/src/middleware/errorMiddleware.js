@@ -8,6 +8,17 @@ const errorMiddleware = (err, req, res, next) => {
   error.message = err.message;
 
   // Log error
+  // If this was a body-parser size error, include Content-Length for diagnostics
+  const extra = {};
+  try {
+    if (err.name === 'PayloadTooLargeError' || err.type === 'entity.too.large' || err.status === 413) {
+      extra.contentLength = req.headers['content-length'] || null;
+      extra.contentType = req.headers['content-type'] || null;
+    }
+  } catch (e) {
+    // ignore
+  }
+
   logger.error({
     message: err.message,
     stack: err.stack,
@@ -16,6 +27,7 @@ const errorMiddleware = (err, req, res, next) => {
     method: req.method,
     ip: req.ip,
     userId: req.userId,
+    ...extra,
   });
 
   // Sequelize validation error
@@ -62,6 +74,11 @@ const errorMiddleware = (err, req, res, next) => {
     } else {
       error = new ApiError(400, err.message);
     }
+  }
+
+  // PayloadTooLargeError from raw-body / body-parser
+  if (err.name === 'PayloadTooLargeError' || err.type === 'entity.too.large' || err.status === 413) {
+    error = new ApiError(413, 'Payload too large. Send smaller JSON or use multipart/form-data for file uploads.');
   }
 
   // ValidationError from express-validator

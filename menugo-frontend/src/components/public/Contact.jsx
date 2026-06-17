@@ -18,6 +18,7 @@ import {
 import PublicHeader from './PublicHeader';
 import PublicFooter from './PublicFooter';
 import { Twitter, Facebook, Instagram, Linkedin } from 'lucide-react';
+import { createPublicContact } from '../../services/contactService';
 
 const Contact = () => {
   const [formData, setFormData] = useState({
@@ -65,13 +66,17 @@ const Contact = () => {
     setError('');
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      setSubmitted(true);
+      const payload = { ...formData };
+      const resp = await createPublicContact(payload);
+      if (resp && resp.success) {
+        setSubmitted(true);
+      } else {
+        setError((resp && resp.message) || 'Failed to send message');
+      }
       setFormData({ name: '', email: '', phone: '', subject: '', message: '' });
       setTimeout(() => setSubmitted(false), 5000);
     } catch (err) {
-      setError('Failed to send message. Please try again later.');
+      setError(err?.response?.data?.message || 'Failed to send message. Please try again later.');
     } finally {
       setLoading(false);
     }

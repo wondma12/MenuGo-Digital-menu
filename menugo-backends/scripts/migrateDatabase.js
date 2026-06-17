@@ -34,7 +34,9 @@ const executeSQLFile = async (connection, filePath) => {
 
   const pushStatement = (stmt) => {
     const s = stmt.trim();
-    if (s.length === 0) return;
+    if (s.length === 0) {
+      return;
+    }
     statements.push(s);
   };
 
@@ -48,7 +50,7 @@ const executeSQLFile = async (connection, filePath) => {
       continue;
     }
 
-    buffer += line + '\n';
+    buffer += `${line  }\n`;
 
     if (currentDelimiter === ';') {
       // Split buffer by semicolons when using default delimiter

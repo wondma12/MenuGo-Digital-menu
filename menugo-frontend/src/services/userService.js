@@ -117,9 +117,23 @@ export const updateRolePermissions = async (roleId, permissions) => {
   return response.data
 }
 
-export const getRestaurantUsers = async (restaurantId) => {
-  const response = await api.get(`/users/restaurant/${restaurantId}`)
-  return response.data
+export const getRestaurantUsers = async (arg) => {
+  // React Query may pass a QueryFunctionContext as the first arg.
+  let restaurantId = null
+  if (arg && typeof arg === 'object') {
+    // If called as queryFn(context), try to extract queryKey second element
+    if (Array.isArray(arg.queryKey) && arg.queryKey.length > 1) {
+      restaurantId = arg.queryKey[1]
+    } else if (arg?.restaurantId) {
+      restaurantId = arg.restaurantId
+    }
+  } else {
+    restaurantId = arg
+  }
+
+  const url = restaurantId ? `/users/restaurant/${restaurantId}` : `/users/restaurant`
+  const response = await api.get(url)
+  return response.data?.data ?? response.data
 }
 
 export const inviteUser = async (data) => {

@@ -3,7 +3,7 @@ import React, { useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { XMarkIcon, ChevronDownIcon, ChevronRightIcon } from '@heroicons/react/24/outline'
-import { BarChart2, Store, Users, CreditCard, TrendingUp, HelpCircle, Settings, Clipboard, QrCode, Database, LogOut } from 'lucide-react'
+import { BarChart2, Store, Users, CreditCard, TrendingUp, HelpCircle, Settings, Clipboard, QrCode, Database, LogOut, Phone } from 'lucide-react'
 
 const MobileNav = ({ isOpen, onClose, menuItems, user, onLogout, brand }) => {
   const [expandedMenus, setExpandedMenus] = useState({})
@@ -24,6 +24,7 @@ const MobileNav = ({ isOpen, onClose, menuItems, user, onLogout, brand }) => {
     { path: '/platform/subscriptions', label: 'Subscriptions', icon: <CreditCard className="w-5 h-5" /> },
     { path: '/platform/analytics', label: 'Analytics', icon: <TrendingUp className="w-5 h-5" /> },
     { path: '/platform/support', label: 'Support', icon: <HelpCircle className="w-5 h-5" /> },
+    { path: '/platform/contact-messages', label: 'Contact Messages', icon: <Phone className="w-5 h-5" /> },
     { 
       path: '/platform/system', 
       label: 'System', 

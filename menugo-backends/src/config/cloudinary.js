@@ -109,7 +109,17 @@ const pendingDir = (() => {
   const path = require('path');
   const dir = path.join(process.cwd(), 'uploads', 'pending');
   try {
-    fs.mkdirSync(dir, { recursive: true }); 
+    fs.mkdirSync(dir, { recursive: true });
+  } catch (e) { /* empty */ }
+  return dir;
+})();
+
+const pendingFilesDir = (() => {
+  const fs = require('fs');
+  const path = require('path');
+  const dir = path.join(process.cwd(), 'uploads', 'pending_files');
+  try {
+    fs.mkdirSync(dir, { recursive: true });
   } catch (e) { /* empty */ }
   return dir;
 })();
@@ -119,9 +129,23 @@ let backgroundProcessorStarted = false;
 const enqueueBackgroundRetry = (filePath, folder) => {
   const fs = require('fs');
   const path = require('path');
+
+  if (!fs.existsSync(filePath)) {
+    logger.warn(`Cannot enqueue Cloudinary retry because source file is missing: ${filePath}`);
+    return;
+  }
+
   const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  const pendingFile = path.join(pendingFilesDir, `${id}${path.extname(filePath) || ''}`);
+  try {
+    fs.copyFileSync(filePath, pendingFile);
+  } catch (e) {
+    logger.warn('Failed to copy file for pending Cloudinary retry:', e && e.message ? e.message : e);
+    return;
+  }
+
   const jobFile = path.join(pendingDir, `${id}.json`);
-  const job = { filePath, folder, createdAt: new Date().toISOString() };
+  const job = { filePath: pendingFile, folder, createdAt: new Date().toISOString() };
   fs.writeFileSync(jobFile, JSON.stringify(job));
   startBackgroundProcessor();
 };
@@ -136,29 +160,60 @@ const startBackgroundProcessor = () => {
 
   const processOnce = async () => {
     try {
+      if (!fs.existsSync(pendingDir)) {
+        return;
+      }
       const files = fs.readdirSync(pendingDir).filter(f => f.endsWith('.json'));
       for (const file of files) {
         const full = path.join(pendingDir, file);
         let job;
         try {
-          job = JSON.parse(fs.readFileSync(full, 'utf8')); 
+          const raw = fs.readFileSync(full, 'utf8');
+          job = JSON.parse(raw);
         } catch (e) {
-          fs.unlinkSync(full); continue; 
+          try {
+            fs.unlinkSync(full);
+          } catch (unlinkError) {
+            logger.warn('Failed to remove invalid pending job file:', unlinkError && unlinkError.message ? unlinkError.message : unlinkError);
+          }
+          continue;
         }
+
+        if (!job || !job.filePath || !job.folder) {
+          try {
+            fs.unlinkSync(full);
+          } catch (e) {
+            logger.warn('Failed to remove malformed pending job file:', e && e.message ? e.message : e);
+          }
+          continue;
+        }
+
+        if (!fs.existsSync(job.filePath)) {
+          logger.warn(`Pending Cloudinary upload file no longer exists, deleting job: ${job.filePath}`);
+          try {
+            fs.unlinkSync(full);
+          } catch (e) {
+            logger.warn('Failed to delete pending job file for missing upload:', e && e.message ? e.message : e);
+          }
+          continue;
+        }
+
         try {
           logger.info(`Background retry: attempting upload for ${job.filePath}`);
           // Try a longer upload attempt for background jobs
           const res = await uploadToCloudinaryBackground(job.filePath, job.folder);
           if (res && res.url) {
             logger.info(`Background upload succeeded for ${job.filePath}: ${res.url}`);
-            // Remove job file
             try {
-              fs.unlinkSync(full); 
+              fs.unlinkSync(full);
             } catch (e) {
-              logger.warn('Failed to remove pending job file', e && e.message ? e.message : e); 
+              logger.warn('Failed to remove pending job file', e && e.message ? e.message : e);
             }
-            // Optionally remove original local file to save space
-            // try { fs.unlinkSync(job.filePath); } catch (e) {}
+            try {
+              fs.unlinkSync(job.filePath);
+            } catch (e) {
+              logger.warn('Failed to remove pending retry file', e && e.message ? e.message : e);
+            }
           } else {
             logger.warn(`Background upload did not return url for ${job.filePath}`);
           }

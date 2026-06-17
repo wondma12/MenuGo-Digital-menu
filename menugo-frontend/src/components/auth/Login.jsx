@@ -26,7 +26,7 @@ const schema = yup.object({
 
 const Login = () => {
   const navigate = useNavigate();
-  const { login, isLoading, error, clearError } = useAuthStore();
+  const { login, isLoading, error, clearError, checkAuth } = useAuthStore();
   const [showError, setShowError] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const submitLockRef = useRef(false);
@@ -50,6 +50,54 @@ const Login = () => {
     };
   }, [clearError]);
 
+  // Handle token returned from OAuth redirects (e.g. /login?token=...)
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const token = params.get('token');
+      if (token) {
+        // Store token in session so backend-checks can pick it up during checkAuth
+        try { sessionStorage.setItem('token', token) } catch (e) { /* ignore */ }
+        // Attempt to hydrate auth from server
+        (async () => {
+          const ok = await checkAuth()
+          if (ok) {
+              const persistedUser = useAuthStore.getState().user
+              const srcUser = persistedUser
+
+              const parseJwt = (t) => {
+                try {
+                  const p = t.split('.')[1]
+                  const json = decodeURIComponent(atob(p.replace(/-/g, '+').replace(/_/g, '/')).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''))
+                  return JSON.parse(json)
+                } catch (e) {
+                  return null
+                }
+              }
+
+              const token = useAuthStore.getState().token || sessionStorage.getItem('token')
+              const parsed = token ? parseJwt(token) : null
+
+              const userRole = srcUser?.staff?.role || srcUser?.role || parsed?.staff?.role || parsed?.role || null
+              const roleRoutes = {
+                platform_admin: '/platform/dashboard',
+                restaurant_admin: '/admin/dashboard',
+                chef: '/chef/kitchen',
+                waiter: '/waiter/dashboard',
+                customer: '/scan',
+              };
+              const redirectPath = roleRoutes[userRole] || '/';
+              navigate(redirectPath, { replace: true });
+            } else {
+            // fall through to normal login UI
+          }
+        })();
+      }
+    } catch (e) {
+      // ignore malformed urls
+    }
+  }, [checkAuth, navigate]);
+
   const onSubmit = async (data) => {
     if (isLoading || submitLockRef.current) return;
     submitLockRef.current = true;
@@ -64,7 +112,21 @@ const Login = () => {
         setTimeout(() => {
           const persistedUser = useAuthStore.getState().user;
           const srcUser = result.user || persistedUser;
-          const userRole = srcUser?.staff?.role || srcUser?.role || null;
+
+          const parseJwt = (t) => {
+            try {
+              const p = t.split('.')[1]
+              const json = decodeURIComponent(atob(p.replace(/-/g, '+').replace(/_/g, '/')).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''))
+              return JSON.parse(json)
+            } catch (e) {
+              return null
+            }
+          }
+
+          const token = useAuthStore.getState().token || sessionStorage.getItem('token')
+          const parsed = token ? parseJwt(token) : null
+
+          const userRole = srcUser?.staff?.role || srcUser?.role || parsed?.staff?.role || parsed?.role || null
           const roleRoutes = {
             platform_admin: '/platform/dashboard',
             restaurant_admin: '/admin/dashboard',
@@ -79,7 +141,7 @@ const Login = () => {
         setShowError(true);
         toast.error(result?.error || 'Login failed');
       }
-    } catch (err) {
+        } catch (err) {
       setShowError(true);
       const message = err?.response?.data?.message || 'Login failed';
       toast.error(message);
@@ -87,6 +149,7 @@ const Login = () => {
       submitLockRef.current = false;
     }
   };
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-orange-50/30 flex flex-col justify-center py-8 sm:py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">

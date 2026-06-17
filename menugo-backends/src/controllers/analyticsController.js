@@ -5,6 +5,15 @@ const { ApiError } = require('../utils/apiError');
 const { catchAsync } = require('../utils/catchAsync');
 const { Op } = require('sequelize');
 
+// Dialect helpers: use sqlite's strftime when running on sqlite, otherwise use MySQL functions
+const dialect = sequelize && sequelize.getDialect ? sequelize.getDialect() : (sequelize && sequelize.options && sequelize.options.dialect) || 'mysql';
+const formatDateCol = (col, format) => dialect === 'sqlite'
+  ? sequelize.fn('strftime', format, sequelize.col(col))
+  : sequelize.fn('DATE_FORMAT', sequelize.col(col), format);
+const formatHourCol = (colName = 'created_at') => dialect === 'sqlite'
+  ? sequelize.fn('strftime', '%H', sequelize.col(colName))
+  : sequelize.fn('HOUR', sequelize.col(colName));
+
 const toStartOfDay = (value) => {
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return null
@@ -114,21 +123,22 @@ const getSalesAnalytics = catchAsync(async (req, res) => {
       order: [['date', 'ASC'], ['hour', 'ASC']],
     });
   } else if (group_by === 'month') {
-    // MySQL: use DATE_FORMAT to group by month
+    // Group by month (dialect-aware)
     const monthFormat = '%Y-%m';
+    const monthExpr = formatDateCol('date', monthFormat);
     salesData = await DailySalesSummary.findAll({
       where: {
         restaurant_id: restaurantId,
         date: { [Op.between]: [startDate, endDate] },
       },
       attributes: [
-        [sequelize.fn('DATE_FORMAT', sequelize.col('date'), monthFormat), 'month'],
+        [monthExpr, 'month'],
         [sequelize.fn('SUM', sequelize.col('total_orders')), 'total_orders'],
         [sequelize.fn('SUM', sequelize.col('total_revenue')), 'total_revenue'],
         [sequelize.fn('AVG', sequelize.col('average_order_value')), 'average_order_value'],
       ],
-      group: [sequelize.fn('DATE_FORMAT', sequelize.col('date'), monthFormat)],
-      order: [[sequelize.fn('DATE_FORMAT', sequelize.col('date'), monthFormat), 'ASC']],
+      group: [monthExpr],
+      order: [[monthExpr, 'ASC']],
     });
   }
 
@@ -315,11 +325,11 @@ const getHourlyAnalytics = catchAsync(async (req, res) => {
       const raw = await Order.findAll({
         where: { restaurant_id: restaurantId, created_at: { [Op.between]: [startWindow, new Date()] }, status: 'completed' },
         attributes: [
-          [sequelize.fn('HOUR', sequelize.col('created_at')), 'hour'],
+          [formatHourCol('created_at'), 'hour'],
           [sequelize.fn('COUNT', sequelize.col('id')), 'orders_count'],
           [sequelize.fn('SUM', sequelize.col('total_amount')), 'revenue'],
         ],
-        group: [sequelize.fn('HOUR', sequelize.col('created_at'))],
+        group: [formatHourCol('created_at')],
         order: [[sequelize.literal('orders_count'), 'DESC']],
         limit: 5,
       });
@@ -433,14 +443,14 @@ const getRevenueAnalytics = catchAsync(async (req, res) => {
     },
     attributes: [
       // Map grouping to MySQL DATE_FORMAT patterns
-      [sequelize.fn('DATE_FORMAT', sequelize.col('date'), groupBy === 'month' ? '%Y-%m' : '%Y-%m-%d'), 'period'],
+      [formatDateCol('date', groupBy === 'month' ? '%Y-%m' : '%Y-%m-%d'), 'period'],
       [sequelize.fn('SUM', sequelize.col('total_revenue')), 'revenue'],
       [sequelize.fn('SUM', sequelize.col('dine_in_revenue')), 'dine_in_revenue'],
       [sequelize.fn('SUM', sequelize.col('takeaway_revenue')), 'takeaway_revenue'],
       [sequelize.fn('SUM', sequelize.col('delivery_revenue')), 'delivery_revenue'],
     ],
-    group: [sequelize.fn('DATE_FORMAT', sequelize.col('date'), groupBy === 'month' ? '%Y-%m' : '%Y-%m-%d')],
-    order: [[sequelize.fn('DATE_FORMAT', sequelize.col('date'), groupBy === 'month' ? '%Y-%m' : '%Y-%m-%d'), 'ASC']],
+    group: [formatDateCol('date', groupBy === 'month' ? '%Y-%m' : '%Y-%m-%d')],
+    order: [[formatDateCol('date', groupBy === 'month' ? '%Y-%m' : '%Y-%m-%d'), 'ASC']],
   });
 
   // Calculate growth

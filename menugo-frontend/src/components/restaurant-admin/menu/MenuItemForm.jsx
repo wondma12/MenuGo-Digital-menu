@@ -88,19 +88,27 @@ const MenuItemForm = ({ item, onSuccess, onCancel }) => {
   )
 
   const handleImageUpload = async (files) => {
-    if (files[0]) {
-      setIsUploading(true)
+    // FileUpload may pass a single File, an array of Files, or null.
+    if (!files) return
+
+    const file = Array.isArray(files) ? files[0] : files
+    if (!file) return
+
+    setIsUploading(true)
+    try {
+      const result = await uploadFile(file, 'menu-items')
+      setImageFile(result.url)
+      // Show a local preview while upload succeeded (server url used for payload)
       try {
-        const result = await uploadFile(files[0], 'menu-items')
-        setImageFile(result.url)
-        // Show a local preview while upload succeeded (server url used for payload)
-        setImagePreview(URL.createObjectURL(files[0]))
-        setImageUrlInput('')
-      } catch (error) {
-        toast.error('Failed to upload image')
-      } finally {
-        setIsUploading(false)
+        setImagePreview(URL.createObjectURL(file))
+      } catch (e) {
+        setImagePreview(result.url || null)
       }
+      setImageUrlInput('')
+    } catch (error) {
+      toast.error('Failed to upload image')
+    } finally {
+      setIsUploading(false)
     }
   }
 

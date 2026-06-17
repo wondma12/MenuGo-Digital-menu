@@ -17,6 +17,9 @@ const RestaurantProfile = ({ settings }) => {
   const [isUploading, setIsUploading] = useState(false)
   const [businessLicenseFile, setBusinessLicenseFile] = useState(null)
   const [businessLicensePreview, setBusinessLicensePreview] = useState(settings?.business_license_url || settings?.settings?.business_license?.url || null)
+  const [logoUploadKey, setLogoUploadKey] = useState(0)
+  const [coverUploadKey, setCoverUploadKey] = useState(0)
+  const [businessLicenseUploadKey, setBusinessLicenseUploadKey] = useState(0)
   const queryClient = useQueryClient()
 
   const { register, handleSubmit, formState: { errors }, watch, setValue } = useForm({
@@ -62,6 +65,7 @@ const RestaurantProfile = ({ settings }) => {
         setLogoPreview(URL.createObjectURL(file))
         // Persist uploaded URL into the form field so it submits correctly
         setValue('logoUrl', result.url)
+        setLogoUploadKey((prev) => prev + 1)
       } catch (error) {
         toast.error('Failed to upload logo')
       } finally {
@@ -80,6 +84,7 @@ const RestaurantProfile = ({ settings }) => {
         setCoverPreview(URL.createObjectURL(file))
         // Persist uploaded URL into the form field so it submits correctly
         setValue('coverImageUrl', result.url)
+        setCoverUploadKey((prev) => prev + 1)
       } catch (error) {
         toast.error('Failed to upload cover image')
       } finally {
@@ -98,6 +103,7 @@ const RestaurantProfile = ({ settings }) => {
         setBusinessLicensePreview(URL.createObjectURL(file))
         // Persist uploaded URL into the form field so it submits correctly
         setValue('businessLicenseUrl', result.url)
+        setBusinessLicenseUploadKey((prev) => prev + 1)
       } catch (error) {
         toast.error('Failed to upload business license document')
       } finally {
@@ -170,7 +176,7 @@ const RestaurantProfile = ({ settings }) => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-2">Restaurant Logo</label>
-          <FileUpload onFileSelect={handleLogoUpload} accept={{ 'image/*': ['.jpeg', '.png', '.jpg'] }} />
+          <FileUpload clearFilesKey={logoUploadKey} onFileSelect={handleLogoUpload} accept={{ 'image/*': ['.jpeg', '.png', '.jpg'] }} />
           {logoPreview ? (
             <div className="mt-2 flex items-center gap-3">
               <img src={logoPreview} alt="Logo" className="w-24 h-24 object-cover rounded-lg" />
@@ -195,7 +201,7 @@ const RestaurantProfile = ({ settings }) => {
         </div>
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-2">Cover Image</label>
-          <FileUpload onFileSelect={handleCoverUpload} accept={{ 'image/*': ['.jpeg', '.png', '.jpg'] }} />
+          <FileUpload clearFilesKey={coverUploadKey} onFileSelect={handleCoverUpload} accept={{ 'image/*': ['.jpeg', '.png', '.jpg'] }} />
           {coverPreview ? (
             <div className="mt-2 relative">
               <img src={coverPreview} alt="Cover" className="w-full h-32 object-cover rounded-lg" />
@@ -251,7 +257,7 @@ const RestaurantProfile = ({ settings }) => {
 
         <div className="mt-4">
           <label className="block text-sm font-medium text-slate-700 mb-2">Business License Document</label>
-          <FileUpload onFileSelect={handleBusinessLicenseUpload} accept={{ 'application/pdf': ['.pdf'], 'image/*': ['.jpeg', '.png', '.jpg'] }} />
+          <FileUpload clearFilesKey={businessLicenseUploadKey} onFileSelect={handleBusinessLicenseUpload} accept={{ 'application/pdf': ['.pdf'], 'image/*': ['.jpeg', '.png', '.jpg'] }} />
           {businessLicensePreview ? (
             <div className="mt-2 flex items-center gap-3">
                 <a href={businessLicenseFile || watch('businessLicenseUrl')} target="_blank" rel="noopener noreferrer" className="text-sm text-orange-600 hover:underline">View / Download document</a>

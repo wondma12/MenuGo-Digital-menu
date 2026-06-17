@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { protect, restrictTo } = require('../middleware/authMiddleware');
+const { protect, restrictTo, authorize } = require('../middleware/authMiddleware');
 const { validate, commonValidations } = require('../middleware/validationMiddleware');
 const { body } = require('express-validator');
 const { uploadSingle } = require('../middleware/uploadMiddleware');
@@ -17,6 +17,8 @@ const {
   getUserStats,
   toggleUserStatus,
   createUser,
+  inviteUser,
+  getRestaurantUsers,
 } = require('../controllers/userController');
 
 // All routes require authentication
@@ -42,6 +44,22 @@ router.post(
 );
 router.get('/stats', restrictTo('platform_admin'), getUserStats);
 router.post('/:id/toggle-status', restrictTo('platform_admin'), toggleUserStatus);
+
+// Invite a user to the restaurant (restaurant admin/owner or platform admin)
+router.post(
+  '/invite',
+  protect,
+  authorize('restaurant_admin', 'platform_admin', 'admin'),
+  validate([
+    commonValidations.email,
+    body('role').optional().isString(),
+  ]),
+  inviteUser,
+);
+
+// Get restaurant users (optionally provide :restaurantId or omit to infer)
+router.get('/restaurant/:restaurantId', protect, authorize('restaurant_admin', 'platform_admin', 'admin'), getRestaurantUsers);
+router.get('/restaurant', protect, authorize('restaurant_admin', 'platform_admin', 'admin'), getRestaurantUsers);
 
 // User profile routes
 router.get('/me/sessions', getUserSessions);

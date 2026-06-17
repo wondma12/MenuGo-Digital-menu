@@ -20,6 +20,7 @@ const UserForm = React.lazy(() => import('./components/platform-admin/users/User
 const SubscriptionPlans = React.lazy(() => import('./components/platform-admin/subscriptions/SubscriptionPlans'))
 const PlatformAnalytics = React.lazy(() => import('./components/platform-admin/analytics/PlatformAnalytics'))
 const TicketList = React.lazy(() => import('./components/platform-admin/support/TicketList'))
+const ContactMessagesPage = React.lazy(() => import('./components/platform-admin/support/ContactMessagesPage'))
 const SystemSettings = React.lazy(() => import('./components/platform-admin/system/SystemSettings'))
 const SystemHealth = React.lazy(() => import('./components/platform-admin/system/SystemHealth'))
 const AuditLogs = React.lazy(() => import('./components/platform-admin/system/AuditLogs'))
@@ -116,6 +117,7 @@ export const routeConfig = {
     { path: '/platform/subscriptions', element: SubscriptionPlans, layout: AdminLayout },
     { path: '/platform/analytics', element: PlatformAnalytics, layout: AdminLayout },
     { path: '/platform/support', element: TicketList, layout: AdminLayout },
+    { path: '/platform/contact-messages', element: ContactMessagesPage, layout: AdminLayout },
     { path: '/platform/settings', element: SystemSettings, layout: AdminLayout },
     { path: '/platform/system', element: SystemSettings, layout: AdminLayout },
     { path: '/platform/system/health', element: SystemHealth, layout: AdminLayout },
@@ -225,9 +227,38 @@ export const AppRoutes = () => {
           return <Route key={`nolayout-${index}`} path={route.path} element={<Element />} />
         })}
         
-        {/* Routes with layout - group by layout type */}
+        {/* Routes with layout - group by layout type.
+            Wrap protected layouts with <ProtectedRoute> so their children
+            don't mount until authentication is hydrated. This prevents
+            race conditions where child components issue protected API
+            calls before `checkAuth()` completes and cause 401-driven
+            logouts on page refresh. */}
         {[...new Set(routesWithLayout.map(r => r.layout))].map((Layout, layoutIndex) => {
           const layoutRoutes = routesWithLayout.filter(r => r.layout === Layout)
+
+          // Layouts that render admin/waiter/kitchen pages require authentication.
+          const protectedLayouts = [AdminLayout, RestaurantLayout, WaiterLayout, KitchenLayout]
+          const needsAuth = protectedLayouts.includes(Layout)
+
+          if (needsAuth) {
+            return (
+              <Route key={`layout-protected-${layoutIndex}`} element={<ProtectedRoute />}>
+                <Route element={<Layout />}>
+                  {layoutRoutes.map((route, routeIndex) => {
+                    const Element = route.element
+                    return (
+                      <Route 
+                        key={`route-${layoutIndex}-${routeIndex}`} 
+                        path={route.path} 
+                        element={<Element />} 
+                      />
+                    )
+                  })}
+                </Route>
+              </Route>
+            )
+          }
+
           return (
             <Route key={`layout-${layoutIndex}`} element={<Layout />}>
               {layoutRoutes.map((route, routeIndex) => {
@@ -258,6 +289,7 @@ export const AppRoutes = () => {
             <Route path="/platform/system/health" element={<SystemHealth />} />
             <Route path="/platform/system/audit-logs" element={<AuditLogs />} />
             <Route path="/platform/system/backup" element={<BackupManager />} />
+            <Route path="/platform/contact-messages" element={<ContactMessagesPage />} />
           </Route>
           
           {/* Default redirect based on role */}

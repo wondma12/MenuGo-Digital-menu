@@ -48,10 +48,23 @@ const getAllUsers = catchAsync(async (req, res) => {
   const { count, rows } = await User.findAndCountAll({
     where,
     attributes: { exclude: ['password_hash'] },
+    include: [{ model: RestaurantStaff, as: 'staff_assignments', attributes: ['role'] }],
     limit: parseInt(limit),
     offset,
     order: [['created_at', 'DESC']],
   });
+
+  const users = rows.map((user) => {
+    const json = user.toJSON ? user.toJSON() : user
+    const staffRole = Array.isArray(json.staff_assignments) && json.staff_assignments.length > 0
+      ? json.staff_assignments[0].role
+      : null
+
+    return {
+      ...json,
+      displayRole: staffRole || json.role,
+    }
+  })
 
   // Compute summary stats (respecting role/search filters so UI reflects current filter set)
   const statsWhere = {};
@@ -79,7 +92,7 @@ const getAllUsers = catchAsync(async (req, res) => {
   const newThisMonth = await User.count({ where: { ...statsWhere, created_at: { [Op.gte]: startOfMonth } } });
 
   res.json(ApiResponse.success({
-    users: rows,
+    users,
     total: count,
     page: parseInt(page),
     totalPages: Math.ceil(count / limit),
@@ -170,13 +183,23 @@ const updateUser = catchAsync(async (req, res) => {
     throw new ApiError(403, 'Only platform admin can change user role');
   }
 
+  const existingPreferences = (typeof user.preferences === 'object' && user.preferences !== null)
+    ? user.preferences
+    : {}
+
+  const incomingPreferences = (typeof preferences === 'object' && preferences !== null)
+    ? preferences
+    : {}
+
   await user.update({
     full_name: full_name || user.full_name,
     phone: phone || user.phone,
     avatar_url: avatar_url || user.avatar_url,
     is_active: is_active !== undefined ? is_active : user.is_active,
     role: role || user.role,
-    preferences: { ...user.preferences, ...preferences },
+    preferences: Object.keys(incomingPreferences).length > 0
+      ? { ...existingPreferences, ...incomingPreferences }
+      : existingPreferences,
   });
 
   const updatedUser = await User.findByPk(id, { attributes: { exclude: ['password_hash'] } });
@@ -478,6 +501,81 @@ const createUser = catchAsync(async (req, res) => {
   res.status(201).json(ApiResponse.success({ user: createdUser, restaurant }, 'User created'));
 });
 
+// Invite user to a restaurant (restaurant admin/owner or platform admin)
+const inviteUser = catchAsync(async (req, res) => {
+  const { email, role } = req.body;
+  if (!email) {
+    throw new ApiError(400, 'Email is required');
+  }
+
+  // Resolve restaurant context from request or current user's assignments/ownership
+  const { Restaurant } = require('../models');
+  let restaurantId = req.body.restaurant_id || req.body.restaurantId;
+
+  if (!restaurantId) {
+    // Try owned restaurant
+    const owned = await Restaurant.findOne({ where: { owner_id: req.user.id } }).catch(() => null);
+    if (owned) restaurantId = owned.id;
+  }
+
+  if (!restaurantId) {
+    const assign = await RestaurantStaff.findOne({ where: { user_id: req.user.id } }).catch(() => null);
+    if (assign) restaurantId = assign.restaurant_id;
+  }
+
+  if (!restaurantId) {
+    throw new ApiError(403, 'Restaurant context required to invite a user');
+  }
+
+  // Find or create user by email
+  let user = await require('../models').User.findOne({ where: { email } });
+
+  if (!user) {
+    // Create a lightweight placeholder account for invited user
+    const bcrypt = require('bcryptjs');
+    const rand = Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
+    const salt = await bcrypt.genSalt(10);
+    const password_hash = await bcrypt.hash(rand, salt);
+
+    const defaultName = email.split('@')[0].replace(/[._\-]/g, ' ') || 'Invited User';
+    user = await require('../models').User.create({
+      email,
+      password_hash,
+      full_name: defaultName,
+      phone: null,
+      role: 'customer',
+      is_active: true,
+      is_verified: false,
+    });
+  }
+
+  // Ensure no duplicate staff entry
+  const existingStaff = await RestaurantStaff.findOne({ where: { restaurant_id: restaurantId, user_id: user.id } });
+  if (existingStaff) {
+    throw new ApiError(400, 'User is already a member of this restaurant');
+  }
+
+  const staff = await RestaurantStaff.create({
+    restaurant_id: restaurantId,
+    user_id: user.id,
+    role: role || 'manager',
+    is_active: true,
+  });
+
+  // Best-effort: send welcome/invite email if configured
+  try {
+    const { sendWelcomeEmail } = require('../config/email');
+    if (sendWelcomeEmail) {
+      await sendWelcomeEmail(email, user.full_name || '');
+    }
+  } catch (e) {
+    // ignore email failures
+  }
+
+  const resultUser = await require('../models').User.findByPk(user.id, { attributes: { exclude: ['password_hash'] } });
+  res.status(201).json(ApiResponse.success({ user: resultUser, staff }, 'Invitation created'));
+});
+
 // Toggle user status
 const toggleUserStatus = catchAsync(async (req, res) => {
   const { id } = req.params;
@@ -519,6 +617,44 @@ const toggleUserStatus = catchAsync(async (req, res) => {
   res.json(ApiResponse.success({ is_active: updatedUser.is_active }, 'User status toggled'));
 });
 
+// Get users for a restaurant (supports inferred restaurant from auth if no param)
+const getRestaurantUsers = catchAsync(async (req, res) => {
+  let restaurantId = req.params.restaurantId || req.query.restaurant_id || req.body.restaurant_id;
+
+  // If not provided, infer from authenticated user's staff assignment or ownership
+  if (!restaurantId) {
+    if (req.user.role === 'restaurant_admin') {
+      const owned = await Restaurant.findOne({ where: { owner_id: req.user.id } }).catch(() => null);
+      if (owned) restaurantId = owned.id;
+    }
+    if (!restaurantId) {
+      const assign = await RestaurantStaff.findOne({ where: { user_id: req.user.id } }).catch(() => null);
+      if (assign) restaurantId = assign.restaurant_id;
+    }
+  }
+
+  if (!restaurantId) throw new ApiError(400, 'Restaurant id required');
+
+  const staffs = await RestaurantStaff.findAll({
+    where: { restaurant_id: restaurantId },
+    include: [{ model: User, as: 'user', attributes: { exclude: ['password_hash'] } }],
+  });
+
+  const users = staffs.map(s => {
+    const u = s.user && s.user.toJSON ? s.user.toJSON() : s.user;
+    return {
+      id: u.id,
+      email: u.email,
+      full_name: u.full_name,
+      role: s.role,
+      is_active: s.is_active,
+      avatar_url: u.avatar_url,
+    };
+  });
+
+  res.json(ApiResponse.success(users, 'Restaurant users retrieved'));
+});
+
 module.exports = {
   getAllUsers,
   getUserById,
@@ -530,6 +666,8 @@ module.exports = {
   getUserStats,
   createUser,
   toggleUserStatus,
+  inviteUser,
+  getRestaurantUsers,
   getUserActivity,
   uploadBusinessLicense,
 };

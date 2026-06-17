@@ -49,7 +49,7 @@ export const DEFAULTS = {
   preparationTime: 15,
   tableCapacity: 4,
   ratingScale: 5,
-  currency: 'USD',
+  currency: 'ETB',
   language: 'en',
   timezone: 'UTC',
   dateFormat: 'YYYY-MM-DD',

@@ -21,6 +21,15 @@ const UserDetails = () => {
 
   if (isLoading) return <Loading />
 
+  const getUserDisplayRole = (currentUser) => {
+    if (!currentUser) return 'N/A'
+    if (currentUser.displayRole) return currentUser.displayRole
+    if (Array.isArray(currentUser.staff_assignments) && currentUser.staff_assignments.length > 0) {
+      return currentUser.staff_assignments[0].role
+    }
+    return currentUser.role
+  }
+
   const tabs = [
     { label: 'Overview', content: <OverviewTab user={user} /> },
     { label: 'Activity Log', content: <ActivityLogTab userId={id} /> },
@@ -61,7 +70,7 @@ const UserDetails = () => {
                   const date = d ? new Date(d) : null
                   return date && !isNaN(date) ? date.toLocaleDateString() : 'Unknown'
                 })()} />
-                <InfoItem icon={ShieldCheckIcon} label="Role" value={user.role?.replace('_', ' ') || 'N/A'} />
+                <InfoItem icon={ShieldCheckIcon} label="Role" value={getUserDisplayRole(user)?.replace(/_/g, ' ') || 'N/A'} />
                 <InfoItem label="Last Login" value={user.lastLogin ? new Date(user.lastLogin).toLocaleString() : 'Never'} />
                 <InfoItem label="2FA" value={user.twoFactorEnabled ? 'Enabled' : 'Disabled'} />
               </div>

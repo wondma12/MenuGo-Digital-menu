@@ -196,10 +196,50 @@ const updateStaff = catchAsync(async (req, res) => {
 
   if (!staff) throw new ApiError(404, 'Staff member not found');
 
-  await staff.update(updates);
+  // Normalize incoming update keys so frontend can send camelCase fields.
+  const staffUpdates = {};
+  const userUpdates = {};
+
+  // Staff-level fields
+  if (updates.role !== undefined) staffUpdates.role = updates.role;
+  if (updates.permissions !== undefined) staffUpdates.permissions = updates.permissions;
+  if (updates.hourly_rate !== undefined) staffUpdates.hourly_rate = updates.hourly_rate;
+  if (updates.hourlyRate !== undefined) staffUpdates.hourly_rate = updates.hourlyRate;
+  if (updates.shift_start !== undefined) staffUpdates.shift_start = updates.shift_start;
+  if (updates.shiftStart !== undefined) staffUpdates.shift_start = updates.shiftStart;
+  if (updates.shift_end !== undefined) staffUpdates.shift_end = updates.shift_end;
+  if (updates.shiftEnd !== undefined) staffUpdates.shift_end = updates.shiftEnd;
+  if (updates.is_active !== undefined) staffUpdates.is_active = updates.is_active;
+  if (updates.isActive !== undefined) staffUpdates.is_active = updates.isActive;
+
+  // User-level fields should update the linked User record
+  if (updates.full_name !== undefined) userUpdates.full_name = updates.full_name;
+  if (updates.name !== undefined) userUpdates.full_name = updates.name;
+  if (updates.email !== undefined) userUpdates.email = updates.email;
+  if (updates.phone !== undefined) userUpdates.phone = updates.phone;
+  if (updates.avatar !== undefined) userUpdates.avatar_url = updates.avatar;
+  if (updates.avatar_url !== undefined) userUpdates.avatar_url = updates.avatar_url;
+
+  // Apply staff updates to RestaurantStaff
+  if (Object.keys(staffUpdates).length) {
+    await staff.update(staffUpdates);
+  }
+
+  // Apply user updates to linked User if present
+  if (Object.keys(userUpdates).length && staff.user_id) {
+    try {
+      const user = await User.findByPk(staff.user_id);
+      if (user) {
+        await user.update(userUpdates);
+      }
+    } catch (e) {
+      // Log but don't fail the whole request for non-critical user update errors
+      console.warn('Failed to update linked user for staff update:', e && e.message ? e.message : e);
+    }
+  }
 
   // Re-fetch using the resolved restaurant_staff PK (staff.id).
-  const updated = await RestaurantStaff.findByPk(staff.id, { include: [{ model: User, as: 'assigned_user', attributes: ['id', 'full_name', 'email', 'avatar_url'] }] });
+  const updated = await RestaurantStaff.findByPk(staff.id, { include: [{ model: User, as: 'assigned_user', attributes: ['id', 'full_name', 'email', 'avatar_url', 'phone'] }] });
   res.json(ApiResponse.success(updated, 'Staff updated'));
 });
 

@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+// eslint-disable-next-line no-unused-vars
 const { protect, restrictTo } = require('../middleware/authMiddleware');
 const { isRestaurantStaff } = require('../middleware/roleMiddleware');
 const { validate } = require('../middleware/validationMiddleware');

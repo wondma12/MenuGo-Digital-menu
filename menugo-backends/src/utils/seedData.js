@@ -7,7 +7,7 @@ const seedUsers = async (models) => {
   
   const users = [
     {
-      email: 'admin@menugo.com',
+      email: 'haymanotwondmagegn3@gmail.com',
       password: 'Admin@123',
       full_name: 'Platform Admin',
       role: USER_ROLES.PLATFORM_ADMIN,
@@ -15,8 +15,8 @@ const seedUsers = async (models) => {
       email_verified: true,
     },
     {
-      email: 'restaurant@menugo.com',
-      password: 'Restaurant@123',
+      email: 'haymanotwondmagegn22@gmail.com',
+      password: 'Admin@123',
       full_name: 'Restaurant Owner',
       role: USER_ROLES.RESTAURANT_ADMIN,
       is_verified: true,
@@ -56,7 +56,9 @@ const seedRestaurant = async (models) => {
   const { Restaurant, User } = models;
   
   const owner = await User.findOne({ where: { email: 'restaurant@menugo.com' } });
-  if (!owner) return;
+  if (!owner) {
+    return;
+  }
   
   const existing = await Restaurant.findOne({ where: { owner_id: owner.id } });
   if (!existing) {
@@ -86,7 +88,9 @@ const seedMenuCategories = async (models) => {
   const { MenuCategory, Restaurant } = models;
   
   const restaurant = await Restaurant.findOne({ where: { name: 'Gourmet Bistro' } });
-  if (!restaurant) return;
+  if (!restaurant) {
+    return;
+  }
   
   const categories = [
     { name: 'Appetizers', description: 'Start your meal', display_order: 1 },
@@ -115,11 +119,15 @@ const seedMenuItems = async (models) => {
   const { MenuItem, MenuCategory, Restaurant } = models;
   
   const restaurant = await Restaurant.findOne({ where: { name: 'Gourmet Bistro' } });
-  if (!restaurant) return;
+  if (!restaurant) {
+    return;
+  }
   
   const categories = await MenuCategory.findAll({ where: { restaurant_id: restaurant.id } });
   const categoryMap = {};
-  categories.forEach(c => { categoryMap[c.name] = c.id; });
+  categories.forEach(c => {
+    categoryMap[c.name] = c.id; 
+  });
   
   const items = [
     {
@@ -196,7 +204,9 @@ const seedTables = async (models) => {
   const { Table, Restaurant } = models;
   
   const restaurant = await Restaurant.findOne({ where: { name: 'Gourmet Bistro' } });
-  if (!restaurant) return;
+  if (!restaurant) {
+    return;
+  }
   
   const tables = [
     { table_number: '1', table_name: 'Window Table 1', capacity: 4, section: 'Window' },
@@ -216,7 +226,7 @@ const seedTables = async (models) => {
         ...table,
         status: 'available',
       });
-      console.log(`Created table: ${table.table_number}`);
+      console.log (`Created table: ${table.table_number}`);
     }
   }
 };

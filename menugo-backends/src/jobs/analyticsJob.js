@@ -1,6 +1,7 @@
 const { Order, OrderItem, MenuItem, MenuItemAnalytics, HourlyAnalytics, Restaurant, InventoryItem, Notification } = require('../models');
 const { logger } = require('../utils/logger');
 const { Op } = require('sequelize');
+const { sequelize } = require('../config/database');
 
 // Aggregate hourly analytics
 const aggregateHourlyAnalytics = async () => {
@@ -102,9 +103,10 @@ const generateDailySummary = async () => {
         // Update menu item sales count
         await MenuItem.update(
           { 
+            // eslint-disable-next-line no-undef
             sales_count: sequelize.literal(`sales_count + ${stats.quantity}`),
           },
-          { where: { id: menuItemId } }
+          { where: { id: menuItemId } },
         );
       }
     }
@@ -121,6 +123,7 @@ const checkLowStock = async () => {
   try {
     const lowStockItems = await InventoryItem.findAll({
       where: {
+        // eslint-disable-next-line no-undef
         quantity: { [Op.lte]: sequelize.col('reorder_level') },
         reorder_level: { [Op.gt]: 0 },
       },
@@ -243,7 +246,9 @@ const getPopularItems = async (restaurantId, startDate, endDate, limit = 10) => 
     });
 
     const menuItemIds = analytics.map((row) => row.menu_item_id).filter(Boolean);
-    if (menuItemIds.length === 0) return analytics;
+    if (menuItemIds.length === 0) {
+      return analytics;
+    }
 
     const menuItems = await MenuItem.findAll({
       where: { id: menuItemIds },
