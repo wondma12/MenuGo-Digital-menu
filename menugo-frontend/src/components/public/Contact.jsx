@@ -400,7 +400,7 @@ const Contact = () => {
                   <h3 className="text-lg font-bold text-slate-900">Visit our office</h3>
                   <p className="mt-1 text-slate-600">
                     123 Main Street, Suite 100<br />
-                    New York, NY 10001
+                    Addis Abeba , AA 1000
                   </p>
                   <div className="mt-4 flex items-center justify-between">
                     <a

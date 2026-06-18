@@ -100,6 +100,10 @@ import Home from './components/public/Home'
 import About from './components/public/About'
 import Services from './components/public/Services'
 import Contact from './components/public/Contact'
+import Faq from './components/public/Faq'
+import Privacy from './components/public/Privacy'
+import Terms from './components/public/Terms'
+import Security from './components/public/Security'
 
 // Common Components
 import ProtectedRoute from './components/common/ProtectedRoute'
@@ -254,6 +258,10 @@ function App() {
             <Route path="/service" element={<Navigate to="/services" replace />} />
             <Route path="/services" element={<Services />} />
             <Route path="/contact" element={<Contact />} />
+            <Route path="/faq" element={<Faq />} />
+            <Route path="/privacy" element={<Privacy />} />
+            <Route path="/terms" element={<Terms />} />
+            <Route path="/security" element={<Security />} />
             
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />

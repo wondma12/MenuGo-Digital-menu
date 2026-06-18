@@ -5,7 +5,10 @@ services:
     branch: master
     autoDeployTrigger: commit
     rootDir: menugo-frontend
-    buildCommand: npm ci && npm run build
+    # Run install and build explicitly in the frontend folder to avoid
+    # accidentally invoking the dev server. Using `--prefix` ensures
+    # Render executes the commands in the correct subfolder.
+    buildCommand: npm ci --prefix menugo-frontend && npm run build --prefix menugo-frontend
     staticPublishPath: dist
 
   - type: web

@@ -66,7 +66,9 @@ export default defineConfig({
           forms: ['react-hook-form', 'yup', '@hookform/resolvers'],
           utils: ['date-fns', 'axios', 'react-query', 'zustand'],
           qr: ['react-qr-code', 'html5-qrcode'],
-          exports: ['file-saver', 'xlsx', 'jspdf', 'html2canvas'],
+          // Removed 'xlsx' because the project intentionally avoids the
+          // client-side `xlsx` package (exports fall back to CSV instead).
+          exports: ['file-saver', 'jspdf', 'html2canvas'],
         },
         chunkFileNames: 'assets/[name]-[hash].js',
         entryFileNames: 'assets/[name]-[hash].js',
