@@ -158,7 +158,7 @@ const Contact = () => {
       <PublicHeader />
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden pt-28 pb-16 sm:pt-36 sm:pb-24 bg-gradient-to-br from-orange-600 to-orange-800">
+      <section className="relative overflow-hidden pt-28 pb-16 sm:pt-32 sm:pb-20 bg-gradient-to-br from-orange-600 to-orange-800">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(255,255,255,0.2),transparent_60%)]" />
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">
           <motion.div
@@ -167,29 +167,29 @@ const Contact = () => {
             transition={{ duration: 0.6 }}
             className="mx-auto max-w-3xl"
           >
-            <div className="inline-flex items-center gap-2 rounded-full bg-white/20 backdrop-blur-sm px-3 py-1 text-xs font-semibold text-white mb-4">
-              <SparklesIcon className="h-4 w-4" />
+            <div className="inline-flex items-center gap-2 rounded-full bg-white/20 backdrop-blur-sm px-3 py-1 text-xs font-semibold text-white mb-3">
+              <SparklesIcon className="h-3.5 w-3.5" />
               Get in touch
             </div>
-            <h1 className="text-4xl font-extrabold tracking-tight text-white sm:text-5xl lg:text-6xl">
+            <h1 className="text-3xl font-extrabold tracking-tight text-white sm:text-4xl lg:text-5xl">
               Let's talk
             </h1>
-            <p className="mt-4 text-lg text-orange-100 max-w-2xl mx-auto">
+            <p className="mt-3 text-sm text-orange-100 max-w-2xl mx-auto sm:text-base">
               We're here to answer your questions, schedule a demo, or help you get started with MenuGo.
             </p>
-            <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
               <a
                 href="#contact-form"
-                className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-orange-700 shadow-lg transition-all hover:-translate-y-0.5 hover:shadow-xl"
+                className="inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-orange-700 shadow-lg transition-all hover:-translate-y-0.5 hover:shadow-xl"
               >
                 Send a Message
-                <EnvelopeIcon className="h-5 w-5" />
+                <EnvelopeIcon className="h-4 w-4" />
               </a>
               <a
                 href="/schedule-demo"
-                className="inline-flex items-center gap-2 rounded-full bg-orange-500/80 backdrop-blur-sm px-6 py-3 text-sm font-semibold text-white transition-all hover:-translate-y-0.5 hover:bg-orange-500"
+                className="inline-flex items-center gap-2 rounded-full bg-orange-500/80 backdrop-blur-sm px-5 py-2.5 text-sm font-semibold text-white transition-all hover:-translate-y-0.5 hover:bg-orange-500"
               >
-                <CalendarDaysIcon className="h-5 w-5" />
+                <CalendarDaysIcon className="h-4 w-4" />
                 Schedule Demo
               </a>
             </div>
@@ -198,9 +198,9 @@ const Contact = () => {
       </section>
 
       {/* Contact Info Cards */}
-      <section className="py-12 bg-white -mt-8">
+      <section className="py-10 bg-white -mt-8">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {contactInfo.map((info, index) => (
               <motion.div
                 key={index}
@@ -209,18 +209,18 @@ const Contact = () => {
                 transition={{ delay: index * 0.08 }}
                 viewport={{ once: true }}
                 whileHover={{ y: -4 }}
-                className="rounded-2xl border border-slate-100 bg-white p-6 text-center shadow-sm transition-all hover:shadow-md"
+                className="rounded-2xl border border-slate-100 bg-white p-5 text-center shadow-sm transition-all hover:shadow-md"
               >
-                <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-orange-100 text-orange-600">
-                  <info.icon className="h-7 w-7" />
+                <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-orange-100 text-orange-600">
+                  <info.icon className="h-6 w-6" />
                 </div>
-                <h3 className="text-lg font-bold text-slate-900">{info.title}</h3>
-                <p className="mt-1 text-slate-600">{info.details}</p>
-                <p className="text-sm text-slate-500">{info.sub}</p>
+                <h3 className="text-base font-bold text-slate-900">{info.title}</h3>
+                <p className="mt-1 text-sm text-slate-600">{info.details}</p>
+                <p className="text-xs text-slate-500">{info.sub}</p>
                 {info.action && (
                   <a
                     href={info.action}
-                    className="mt-3 inline-block text-sm font-medium text-orange-600 transition-colors hover:text-orange-800"
+                    className="mt-2 inline-block text-xs font-medium text-orange-600 transition-colors hover:text-orange-800"
                     target={info.title === 'Visit Us' ? '_blank' : '_self'}
                     rel="noopener noreferrer"
                   >
@@ -234,9 +234,9 @@ const Contact = () => {
       </section>
 
       {/* Contact Form + Map Section */}
-      <section id="contact-form" className="py-16 bg-slate-50">
+      <section id="contact-form" className="py-12 bg-slate-50">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 gap-10 lg:grid-cols-2">
+          <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
             {/* Form */}
             <motion.div
               initial={{ opacity: 0, x: -20 }}
@@ -245,17 +245,17 @@ const Contact = () => {
               viewport={{ once: true }}
               className="rounded-2xl bg-white p-6 shadow-lg sm:p-8"
             >
-              <h2 className="text-2xl font-bold text-slate-900">Send us a message</h2>
-              <p className="mt-1 text-slate-600">We'll reply within 24 hours. For urgent issues, use live chat.</p>
+              <h2 className="text-xl font-bold text-slate-900">Send us a message</h2>
+              <p className="mt-1 text-sm text-slate-600">We'll reply within 24 hours. For urgent issues, use live chat.</p>
 
               {submitted && (
                 <motion.div
                   initial={{ opacity: 0, y: -8 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="mt-6 rounded-lg border border-green-200 bg-green-50 p-4"
+                  className="mt-4 rounded-lg border border-green-200 bg-green-50 p-3"
                 >
-                  <div className="flex items-center gap-2 text-green-700">
-                    <CheckCircleIcon className="h-5 w-5" />
+                  <div className="flex items-center gap-2 text-sm text-green-700">
+                    <CheckCircleIcon className="h-4 w-4" />
                     <span>Thank you — we'll get back to you shortly.</span>
                   </div>
                 </motion.div>
@@ -265,62 +265,62 @@ const Contact = () => {
                 <motion.div
                   initial={{ opacity: 0, y: -8 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="mt-6 rounded-lg border border-red-200 bg-red-50 p-4"
+                  className="mt-4 rounded-lg border border-red-200 bg-red-50 p-3"
                 >
-                  <div className="flex items-center gap-2 text-red-700">
-                    <ExclamationCircleIcon className="h-5 w-5" />
+                  <div className="flex items-center gap-2 text-sm text-red-700">
+                    <ExclamationCircleIcon className="h-4 w-4" />
                     <span>{error}</span>
                   </div>
                 </motion.div>
               )}
 
-              <form onSubmit={handleSubmit} className="mt-6 space-y-5">
-                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+              <form onSubmit={handleSubmit} className="mt-5 space-y-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div>
                     <label className="mb-1 block text-sm font-medium text-slate-700">Full name *</label>
                     <div className="relative">
-                      <UserIcon className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+                      <UserIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                       <input
                         type="text"
                         name="name"
                         required
                         value={formData.name}
                         onChange={handleChange}
-                        className="w-full rounded-xl border border-slate-200 py-2.5 pl-10 pr-4 transition-colors focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-200"
+                        className="w-full rounded-xl border border-slate-200 py-2 pl-9 pr-3 text-sm transition-colors focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-200"
                         placeholder="Your name"
                       />
                     </div>
-                    {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name}</p>}
+                    {errors.name && <p className="mt-1 text-xs text-red-600">{errors.name}</p>}
                   </div>
                   <div>
                     <label className="mb-1 block text-sm font-medium text-slate-700">Email address *</label>
                     <div className="relative">
-                      <EnvelopeIcon className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+                      <EnvelopeIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                       <input
                         type="email"
                         name="email"
                         required
                         value={formData.email}
                         onChange={handleChange}
-                        className="w-full rounded-xl border border-slate-200 py-2.5 pl-10 pr-4 transition-colors focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-200"
+                        className="w-full rounded-xl border border-slate-200 py-2 pl-9 pr-3 text-sm transition-colors focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-200"
                         placeholder="you@example.com"
                       />
                     </div>
-                    {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email}</p>}
+                    {errors.email && <p className="mt-1 text-xs text-red-600">{errors.email}</p>}
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div>
                     <label className="mb-1 block text-sm font-medium text-slate-700">Phone (optional)</label>
                     <div className="relative">
-                      <PhoneIcon className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+                      <PhoneIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                       <input
                         type="tel"
                         name="phone"
                         value={formData.phone}
                         onChange={handleChange}
-                        className="w-full rounded-xl border border-slate-200 py-2.5 pl-10 pr-4 transition-colors focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-200"
+                        className="w-full rounded-xl border border-slate-200 py-2 pl-9 pr-3 text-sm transition-colors focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-200"
                         placeholder="+1 (555) 000-0000"
                       />
                     </div>
@@ -328,13 +328,13 @@ const Contact = () => {
                   <div>
                     <label className="mb-1 block text-sm font-medium text-slate-700">Subject</label>
                     <div className="relative">
-                      <PencilIcon className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+                      <PencilIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                       <input
                         type="text"
                         name="subject"
                         value={formData.subject}
                         onChange={handleChange}
-                        className="w-full rounded-xl border border-slate-200 py-2.5 pl-10 pr-4 transition-colors focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-200"
+                        className="w-full rounded-xl border border-slate-200 py-2 pl-9 pr-3 text-sm transition-colors focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-200"
                         placeholder="How can we help?"
                       />
                     </div>
@@ -345,24 +345,24 @@ const Contact = () => {
                   <label className="mb-1 block text-sm font-medium text-slate-700">Message *</label>
                   <textarea
                     name="message"
-                    rows={5}
+                    rows={4}
                     required
                     value={formData.message}
                     onChange={handleChange}
-                    className="w-full rounded-xl border border-slate-200 p-3 transition-colors focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-200"
+                    className="w-full rounded-xl border border-slate-200 p-3 text-sm transition-colors focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-200"
                     placeholder="Please describe your question or concern..."
                   />
-                  {errors.message && <p className="mt-1 text-sm text-red-600">{errors.message}</p>}
+                  {errors.message && <p className="mt-1 text-xs text-red-600">{errors.message}</p>}
                 </div>
 
                 <button
                   type="submit"
                   disabled={loading}
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-orange-600 px-6 py-3 text-sm font-semibold text-white shadow-md transition-all hover:-translate-y-0.5 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 disabled:opacity-70"
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-orange-600 px-5 py-2.5 text-sm font-semibold text-white shadow-md transition-all hover:-translate-y-0.5 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 disabled:opacity-70"
                 >
                   {loading ? (
                     <>
-                      <svg className="h-5 w-5 animate-spin text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <svg className="h-4 w-4 animate-spin text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                       </svg>
@@ -381,11 +381,11 @@ const Contact = () => {
               whileInView={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6 }}
               viewport={{ once: true }}
-              className="space-y-6"
+              className="space-y-5"
             >
               {/* Map */}
               <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-                <div className="h-64 w-full bg-slate-200">
+                <div className="h-56 w-full bg-slate-200">
                   <iframe
                     src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3024.2219901290355!2d-74.00369368400567!3d40.71312937933098!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x89c25a316bbaf9a7%3A0xb89d1fe6bc499443!2sDowntown%20Conference%20Center!5e0!3m2!1sen!2sus!4v1644262073846!5m2!1sen!2sus"
                     width="100%"
@@ -396,13 +396,13 @@ const Contact = () => {
                     title="MenuGo Office Location"
                   ></iframe>
                 </div>
-                <div className="p-5">
-                  <h3 className="text-lg font-bold text-slate-900">Visit our office</h3>
-                  <p className="mt-1 text-slate-600">
+                <div className="p-4">
+                  <h3 className="text-base font-bold text-slate-900">Visit our office</h3>
+                  <p className="mt-1 text-sm text-slate-600">
                     123 Main Street, Suite 100<br />
                     Addis Abeba , AA 1000
                   </p>
-                  <div className="mt-4 flex items-center justify-between">
+                  <div className="mt-3 flex items-center justify-between">
                     <a
                       href="https://maps.google.com"
                       target="_blank"
@@ -411,18 +411,18 @@ const Contact = () => {
                     >
                       Get directions →
                     </a>
-                    <div className="flex gap-3">
+                    <div className="flex gap-2">
                       <a href="#" className="text-slate-500 transition-colors hover:text-orange-600">
-                        <Twitter className="h-5 w-5" />
+                        <Twitter className="h-4 w-4" />
                       </a>
                       <a href="#" className="text-slate-500 transition-colors hover:text-orange-600">
-                        <Facebook className="h-5 w-5" />
+                        <Facebook className="h-4 w-4" />
                       </a>
                       <a href="#" className="text-slate-500 transition-colors hover:text-orange-600">
-                        <Instagram className="h-5 w-5" />
+                        <Instagram className="h-4 w-4" />
                       </a>
                       <a href="#" className="text-slate-500 transition-colors hover:text-orange-600">
-                        <Linkedin className="h-5 w-5" />
+                        <Linkedin className="h-4 w-4" />
                       </a>
                     </div>
                   </div>
@@ -430,48 +430,48 @@ const Contact = () => {
               </div>
 
               {/* Live Chat CTA */}
-              <div className="rounded-2xl bg-gradient-to-r from-orange-600 to-orange-700 p-6 text-white shadow-lg">
+              <div className="rounded-2xl bg-gradient-to-r from-orange-600 to-orange-700 p-5 text-white shadow-lg">
                 <div className="flex items-center gap-3">
-                  <ChatBubbleLeftRightIcon className="h-8 w-8" />
-                  <h3 className="text-xl font-bold">Live Chat Support</h3>
+                  <ChatBubbleLeftRightIcon className="h-7 w-7" />
+                  <h3 className="text-lg font-bold">Live Chat Support</h3>
                 </div>
-                <p className="mt-2 text-orange-100">Need immediate assistance? Our team is available 24/7.</p>
+                <p className="mt-1 text-sm text-orange-100">Need immediate assistance? Our team is available 24/7.</p>
                 <button
                   onClick={() => window.open('/chat', '_blank')}
-                  className="mt-4 inline-flex items-center gap-2 rounded-full bg-white px-5 py-2 font-semibold text-orange-600 transition-all hover:-translate-y-0.5 hover:shadow-md"
+                  className="mt-3 inline-flex items-center gap-2 rounded-full bg-white px-4 py-1.5 text-sm font-semibold text-orange-600 transition-all hover:-translate-y-0.5 hover:shadow-md"
                 >
                   Start Live Chat
                 </button>
               </div>
 
               {/* Newsletter Signup */}
-              <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+              <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                 <div className="flex items-center gap-2">
-                  <NewspaperIcon className="h-6 w-6 text-orange-600" />
-                  <h3 className="text-lg font-bold text-slate-900">Stay updated</h3>
+                  <NewspaperIcon className="h-5 w-5 text-orange-600" />
+                  <h3 className="text-base font-bold text-slate-900">Stay updated</h3>
                 </div>
-                <p className="mt-2 text-sm text-slate-600">Get the latest features, tips, and restaurant industry insights.</p>
-                <form onSubmit={handleNewsletter} className="mt-4 flex flex-col gap-3 sm:flex-row">
+                <p className="mt-1 text-sm text-slate-600">Get the latest features, tips, and restaurant industry insights.</p>
+                <form onSubmit={handleNewsletter} className="mt-3 flex flex-col gap-2 sm:flex-row">
                   <input
                     type="email"
                     value={newsletterEmail}
                     onChange={(e) => setNewsletterEmail(e.target.value)}
                     placeholder="Your email"
-                    className="flex-1 rounded-xl border border-slate-200 px-4 py-2 focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-200"
+                    className="flex-1 rounded-xl border border-slate-200 px-3 py-1.5 text-sm focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-200"
                     required
                   />
                   <button
                     type="submit"
-                    className="rounded-xl bg-orange-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-orange-700"
+                    className="rounded-xl bg-orange-600 px-4 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-orange-700"
                   >
                     Subscribe
                   </button>
                 </form>
                 {newsletterSubmitted && (
-                  <p className="mt-2 text-sm text-green-600">Thanks for subscribing!</p>
+                  <p className="mt-1 text-sm text-green-600">Thanks for subscribing!</p>
                 )}
-                <div className="mt-4 flex items-center gap-2 text-xs text-slate-500">
-                  <ShieldCheckIcon className="h-4 w-4" />
+                <div className="mt-3 flex items-center gap-2 text-xs text-slate-500">
+                  <ShieldCheckIcon className="h-3.5 w-3.5" />
                   No spam, unsubscribe anytime.
                 </div>
               </div>
@@ -481,20 +481,20 @@ const Contact = () => {
       </section>
 
       {/* FAQ Section */}
-      <section className="py-16 bg-white">
+      <section className="py-12 bg-white">
         <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
             viewport={{ once: true }}
-            className="mb-10 text-center"
+            className="mb-8 text-center"
           >
-            <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 md:text-4xl">Frequently asked questions</h2>
-            <p className="mt-3 text-lg text-slate-600">Quick answers to common questions</p>
+            <h2 className="text-2xl font-extrabold tracking-tight text-slate-900 md:text-3xl">Frequently asked questions</h2>
+            <p className="mt-2 text-sm text-slate-600">Quick answers to common questions</p>
           </motion.div>
 
-          <div className="space-y-4">
+          <div className="space-y-3">
             {faqs.map((faq, index) => (
               <motion.div
                 key={index}
@@ -506,11 +506,11 @@ const Contact = () => {
               >
                 <button
                   onClick={() => setActiveFaq(activeFaq === index ? null : index)}
-                  className="flex w-full items-center justify-between px-5 py-4 text-left transition-colors hover:bg-slate-50"
+                  className="flex w-full items-center justify-between px-4 py-3 text-left transition-colors hover:bg-slate-50"
                 >
-                  <span className="font-semibold text-slate-900">{faq.question}</span>
+                  <span className="text-sm font-semibold text-slate-900">{faq.question}</span>
                   <svg
-                    className={`h-5 w-5 text-slate-500 transition-transform duration-200 ${activeFaq === index ? 'rotate-180' : ''}`}
+                    className={`h-4 w-4 text-slate-500 transition-transform duration-200 ${activeFaq === index ? 'rotate-180' : ''}`}
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -527,8 +527,8 @@ const Contact = () => {
                       transition={{ duration: 0.2 }}
                       className="border-t border-slate-100 bg-slate-50"
                     >
-                      <div className="px-5 py-4">
-                        <p className="text-slate-600">{faq.answer}</p>
+                      <div className="px-4 py-3">
+                        <p className="text-sm text-slate-600">{faq.answer}</p>
                       </div>
                     </motion.div>
                   )}
@@ -542,15 +542,15 @@ const Contact = () => {
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
             viewport={{ once: true }}
-            className="mt-12 rounded-xl bg-slate-50 p-6 text-center"
+            className="mt-10 rounded-xl bg-slate-50 p-5 text-center"
           >
-            <h3 className="text-lg font-bold text-slate-900">Still have questions?</h3>
-            <p className="mt-1 text-slate-600">Can't find the answer? Our support team is here to help.</p>
+            <h3 className="text-base font-bold text-slate-900">Still have questions?</h3>
+            <p className="mt-1 text-sm text-slate-600">Can't find the answer? Our support team is here to help.</p>
             <a
               href="mailto:support@menugo.com"
-              className="mt-4 inline-flex items-center gap-2 rounded-full bg-orange-600 px-6 py-2 font-semibold text-white transition-colors hover:bg-orange-700"
+              className="mt-3 inline-flex items-center gap-2 rounded-full bg-orange-600 px-5 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-orange-700"
             >
-              <EnvelopeIcon className="h-5 w-5" />
+              <EnvelopeIcon className="h-4 w-4" />
               Contact Support
             </a>
           </motion.div>

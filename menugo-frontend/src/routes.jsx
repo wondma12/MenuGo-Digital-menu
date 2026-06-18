@@ -19,8 +19,6 @@ const UserDetails = React.lazy(() => import('./components/platform-admin/users/U
 const UserForm = React.lazy(() => import('./components/platform-admin/users/UserForm'))
 const SubscriptionPlans = React.lazy(() => import('./components/platform-admin/subscriptions/SubscriptionPlans'))
 const PlatformAnalytics = React.lazy(() => import('./components/platform-admin/analytics/PlatformAnalytics'))
-const TicketList = React.lazy(() => import('./components/platform-admin/support/TicketList'))
-const ContactMessagesPage = React.lazy(() => import('./components/platform-admin/support/ContactMessagesPage'))
 const SystemSettings = React.lazy(() => import('./components/platform-admin/system/SystemSettings'))
 const SystemHealth = React.lazy(() => import('./components/platform-admin/system/SystemHealth'))
 const AuditLogs = React.lazy(() => import('./components/platform-admin/system/AuditLogs'))
@@ -116,8 +114,7 @@ export const routeConfig = {
     { path: '/platform/users/:id/edit', element: UserForm, layout: AdminLayout },
     { path: '/platform/subscriptions', element: SubscriptionPlans, layout: AdminLayout },
     { path: '/platform/analytics', element: PlatformAnalytics, layout: AdminLayout },
-    { path: '/platform/support', element: TicketList, layout: AdminLayout },
-    { path: '/platform/contact-messages', element: ContactMessagesPage, layout: AdminLayout },
+    
     { path: '/platform/settings', element: SystemSettings, layout: AdminLayout },
     { path: '/platform/system', element: SystemSettings, layout: AdminLayout },
     { path: '/platform/system/health', element: SystemHealth, layout: AdminLayout },
@@ -289,7 +286,7 @@ export const AppRoutes = () => {
             <Route path="/platform/system/health" element={<SystemHealth />} />
             <Route path="/platform/system/audit-logs" element={<AuditLogs />} />
             <Route path="/platform/system/backup" element={<BackupManager />} />
-            <Route path="/platform/contact-messages" element={<ContactMessagesPage />} />
+            
           </Route>
           
           {/* Default redirect based on role */}

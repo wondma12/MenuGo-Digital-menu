@@ -419,28 +419,85 @@ export const getUserAnalytics = async (dateRange) => {
 
 export const getPublicPlatformSummary = async () => {
   try {
+    // Primary public summary endpoint
     const response = await api.get('/platform/public-summary');
-    return response?.data?.data || response?.data || {};
+    const data = response?.data?.data || response?.data || {};
+    // If the endpoint returned useful fields, normalize and return
+    if (data && (Object.keys(data).length > 0)) {
+      return {
+        active_users: data.active_users ?? data.activeUsers ?? data.total_users ?? data.users ?? data.team_members_enabled ?? data.activeUsersCount ?? null,
+        active_restaurants: data.active_restaurants ?? data.activeRestaurants ?? data.restaurants_live ?? data.total_restaurants ?? data.restaurants ?? null,
+        restaurants_live: data.restaurants_live ?? data.total_restaurants ?? data.restaurants ?? data.active_restaurants ?? null,
+        team_members_enabled: data.team_members_enabled ?? data.teamMembersEnabled ?? data.total_users ?? null,
+        uptime: data.uptime ?? data.platform_uptime ?? null,
+        support: data.support ?? null,
+        // keep raw payload for any other UI uses
+        _raw: data,
+      }
+    }
   } catch (error) {
-    console.error('Error fetching public platform summary:', error);
-    return {};
+    if (import.meta.env.DEV) console.warn('platform/public-summary not available:', error?.message || error)
   }
+
+  // Fallbacks: try dashboard/platform then platform analytics or users list
+  try {
+    const dashResp = await api.get('/dashboard/platform');
+    const payload = dashResp?.data?.data || dashResp?.data || {};
+    const stats = payload?.stats || {};
+    if (Object.keys(stats).length > 0) {
+      return {
+        active_users: stats.active_users ?? stats.activeUsers ?? stats.activeUsersCount ?? stats.active_users_count ?? payload.active_users ?? null,
+        active_restaurants: stats.active_restaurants ?? stats.activeRestaurants ?? stats.active_restaurants_count ?? payload.active_restaurants ?? null,
+        restaurants_live: stats.total_restaurants ?? stats.restaurants_live ?? payload.total_restaurants ?? null,
+        team_members_enabled: payload.team_members_enabled ?? payload.teamMembersEnabled ?? null,
+        uptime: stats.platform_health ?? payload.platform_health ?? null,
+        support: null,
+        _raw: payload,
+      }
+    }
+  } catch (err) {
+    if (import.meta.env.DEV) console.warn('dashboard/platform fallback failed:', err?.message || err)
+  }
+
+  // Try a lightweight users summary (may require auth); handle failures gracefully
+  try {
+    const usersResp = await api.get('/users', { params: { page: 1, limit: 1 } });
+    const udata = usersResp?.data?.data || usersResp?.data || {};
+    // Common shapes: { total: N } or { meta: { total: N } } or { total_users: N }
+    const total = udata.total ?? udata.total_users ?? udata.totalUsers ?? udata.meta?.total ?? udata.count ?? null;
+    if (total !== null && total !== undefined) {
+      return {
+        active_users: total,
+        active_restaurants: null,
+        restaurants_live: null,
+        team_members_enabled: null,
+        uptime: null,
+        support: null,
+        _raw: udata,
+      }
+    }
+  } catch (err) {
+    if (import.meta.env.DEV) console.warn('users endpoint fallback failed:', err?.message || err)
+  }
+
+  // As a final fallback return empty summary so UI keeps defaults
+  return {};
 };
 
 // MAIN DASHBOARD API - FIXED VERSION
 export const getPlatformDashboardData = async (dateRange) => {
   try {
-    console.log('Calling dashboard API...');
-    
+    if (import.meta.env.DEV) console.log('Calling dashboard API...');
+
     const response = await api.get('/dashboard/platform', {
       params: {
         startDate: toLocalDateString(dateRange?.start),
         endDate: toLocalDateString(dateRange?.end),
       }
     });
-    
-    console.log('Dashboard API response status:', response.status);
-    
+
+    if (import.meta.env.DEV) console.log('Dashboard API response status:', response.status);
+
     // Handle successful response
     if (response.data && response.data.success !== false) {
       const payload = response.data.data || response.data;
@@ -516,8 +573,17 @@ export const getPlatformDashboardData = async (dateRange) => {
       return getDefaultDashboardData();
     }
   } catch (error) {
-    console.error('Dashboard API error:', error.message);
-    console.error('Error details:', error.response?.data);
+    // If unauthorized, quietly return defaults (public pages shouldn't need auth)
+    if (error?.response?.status === 401) {
+      if (import.meta.env.DEV) console.debug('Dashboard API unauthorized (401) — skipping dashboard fetch')
+      return getDefaultDashboardData();
+    }
+
+    // For other errors, log in DEV only and return defaults
+    if (import.meta.env.DEV) {
+      console.error('Dashboard API error:', error.message);
+      console.error('Error details:', error.response?.data);
+    }
     return getDefaultDashboardData();
   }
 };

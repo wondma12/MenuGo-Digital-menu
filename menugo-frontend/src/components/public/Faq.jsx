@@ -35,6 +35,7 @@ import {
   Link,
   QrCode
 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import PublicHeader from './PublicHeader';
 import PublicFooter from './PublicFooter';
 
@@ -49,7 +50,7 @@ const Faq = () => {
 
   const categories = [
     { id: 'all', label: 'All Questions', icon: HelpCircle },
-    { id: 'getting-started', label: 'Getting Started', icon: Rocket },
+    { id: 'getting-started', label: 'Getting Started', icon: Zap },
     { id: 'menu-management', label: 'Menu Management', icon: Menu },
     { id: 'orders', label: 'Orders & Payments', icon: ShoppingBag },
     { id: 'account', label: 'Account & Security', icon: UserCheck },
@@ -261,38 +262,49 @@ const Faq = () => {
       <PublicHeader />
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-indigo-50 via-white to-purple-50 pt-28 pb-16">
+      <section className="relative overflow-hidden bg-gradient-to-br from-orange-600 to-orange-800 pt-28 pb-16 sm:pt-32 sm:pb-20">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(255,255,255,0.15),transparent_60%)]" />
         <div className="absolute inset-0 opacity-10">
-          <div className="absolute -right-20 -top-20 h-96 w-96 rounded-full bg-indigo-500 blur-3xl"></div>
-          <div className="absolute -left-20 -bottom-20 h-96 w-96 rounded-full bg-purple-500 blur-3xl"></div>
+          <div className="absolute -right-20 -top-20 h-96 w-96 rounded-full bg-white blur-3xl"></div>
+          <div className="absolute -left-20 -bottom-20 h-96 w-96 rounded-full bg-white blur-3xl"></div>
         </div>
 
         <div className="relative mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-indigo-600 shadow-lg">
-              <HelpCircle className="h-10 w-10 text-white" />
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="text-center"
+          >
+            <div className="inline-flex items-center gap-2 rounded-full bg-white/20 backdrop-blur-sm px-3 py-1 text-xs font-semibold text-white mb-3">
+              <Sparkles className="h-3.5 w-3.5" />
+              Help Center
             </div>
             
-            <h1 className="text-4xl font-extrabold text-slate-900 sm:text-5xl lg:text-6xl">
+            <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-white/10 backdrop-blur-sm">
+              <HelpCircle className="h-8 w-8 text-white" />
+            </div>
+            
+            <h1 className="text-3xl font-extrabold text-white sm:text-4xl lg:text-5xl">
               Frequently Asked
-              <span className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent"> Questions</span>
+              <span className="text-orange-200"> Questions</span>
             </h1>
             
-            <p className="mx-auto mt-4 max-w-2xl text-lg text-slate-600">
+            <p className="mx-auto mt-3 max-w-2xl text-sm text-orange-100 sm:text-base">
               Find answers to the most common questions about MenuGo. Can't find what you're looking for? 
-              <a href="/contact" className="text-indigo-600 hover:underline"> Contact our support team</a>
+              <a href="/contact" className="text-white font-semibold hover:underline"> Contact our support team</a>
             </p>
 
             {/* Search Bar */}
-            <div className="mx-auto mt-8 max-w-2xl">
+            <div className="mx-auto mt-6 max-w-2xl">
               <div className="relative">
-                <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+                <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                 <input
                   type="text"
                   placeholder="Search for answers..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full rounded-full border border-slate-200 py-3 pl-12 pr-4 text-slate-900 placeholder-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                  className="w-full rounded-full border-0 py-2.5 pl-11 pr-4 text-sm text-slate-900 placeholder-slate-400 focus:ring-2 focus:ring-orange-400 shadow-lg"
                 />
                 {searchTerm && (
                   <button
@@ -304,30 +316,37 @@ const Faq = () => {
                 )}
               </div>
             </div>
-          </div>
+          </motion.div>
         </div>
       </section>
 
       {/* Stats Section */}
-      <section className="border-y border-slate-200 bg-white py-8">
+      <section className="border-y border-slate-200 bg-white py-6 shadow-sm">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             {stats.map((stat, index) => (
-              <div key={index} className="text-center">
-                <p className="text-2xl font-bold text-indigo-600">{stat.value}</p>
-                <p className="mt-1 text-sm text-slate-600">{stat.label}</p>
-              </div>
+              <motion.div 
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.08 }}
+                viewport={{ once: true }}
+                className="text-center"
+              >
+                <p className="text-xl font-bold text-orange-600 sm:text-2xl">{stat.value}</p>
+                <p className="mt-0.5 text-xs text-slate-600 sm:text-sm">{stat.label}</p>
+              </motion.div>
             ))}
           </div>
         </div>
       </section>
 
       {/* Popular Questions */}
-      <section className="py-8">
+      <section className="py-6 bg-slate-50">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h2 className="text-sm font-medium text-slate-500">Popular Questions</h2>
+              <h2 className="text-xs font-medium text-slate-500 sm:text-sm">Popular Questions</h2>
               <div className="mt-2 flex flex-wrap gap-2">
                 {popularQuestions.map((faq) => (
                   <button
@@ -336,7 +355,7 @@ const Faq = () => {
                       setExpandedFaq(faq.id);
                       document.getElementById(`faq-${faq.id}`)?.scrollIntoView({ behavior: 'smooth' });
                     }}
-                    className="rounded-full bg-slate-100 px-4 py-1.5 text-sm text-slate-700 transition hover:bg-indigo-100 hover:text-indigo-700"
+                    className="rounded-full bg-white px-3 py-1 text-xs text-slate-700 transition hover:bg-orange-100 hover:text-orange-700 shadow-sm sm:px-4 sm:py-1.5 sm:text-sm"
                   >
                     {faq.question}
                   </button>
@@ -348,13 +367,13 @@ const Faq = () => {
       </section>
 
       {/* Main Content */}
-      <section className="py-12">
+      <section className="py-10 bg-slate-50">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-          <div className="grid gap-8 lg:grid-cols-4">
+          <div className="grid gap-6 lg:grid-cols-4">
             {/* Categories Sidebar */}
             <div className="lg:col-span-1">
-              <div className="sticky top-24 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-                <h3 className="mb-4 font-semibold text-slate-900">Categories</h3>
+              <div className="sticky top-24 rounded-xl border border-slate-200 bg-white p-4 shadow-lg">
+                <h3 className="mb-3 text-sm font-semibold text-slate-900">Categories</h3>
                 <nav className="space-y-1">
                   {categories.map((category) => {
                     const Icon = category.icon;
@@ -367,18 +386,18 @@ const Faq = () => {
                       <button
                         key={category.id}
                         onClick={() => setActiveCategory(category.id)}
-                        className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm transition ${
+                        className={`flex w-full items-center justify-between rounded-lg px-3 py-1.5 text-xs transition ${
                           isActive 
-                            ? 'bg-indigo-50 text-indigo-700' 
+                            ? 'bg-orange-50 text-orange-700' 
                             : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                         }`}
                       >
                         <span className="flex items-center gap-2">
-                          <Icon className="h-4 w-4" />
+                          <Icon className="h-3.5 w-3.5" />
                           {category.label}
                         </span>
-                        <span className={`rounded-full px-2 py-0.5 text-xs ${
-                          isActive ? 'bg-indigo-200 text-indigo-700' : 'bg-slate-100 text-slate-500'
+                        <span className={`rounded-full px-1.5 py-0.5 text-xs ${
+                          isActive ? 'bg-orange-200 text-orange-700' : 'bg-slate-100 text-slate-500'
                         }`}>
                           {count}
                         </span>
@@ -388,13 +407,13 @@ const Faq = () => {
                 </nav>
 
                 {/* Contact Support */}
-                <div className="mt-6 border-t border-slate-200 pt-4">
-                  <p className="text-sm text-slate-600">Still have questions?</p>
+                <div className="mt-4 border-t border-slate-200 pt-4">
+                  <p className="text-xs text-slate-600">Still have questions?</p>
                   <a
                     href="/contact"
-                    className="mt-2 flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-700"
+                    className="mt-2 flex items-center justify-center gap-2 rounded-lg bg-orange-600 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-orange-700 hover:-translate-y-0.5 shadow-md"
                   >
-                    <MessageCircle className="h-4 w-4" />
+                    <MessageCircle className="h-3.5 w-3.5" />
                     Contact Support
                   </a>
                 </div>
@@ -403,103 +422,122 @@ const Faq = () => {
 
             {/* FAQ List */}
             <div className="lg:col-span-3">
-              {filteredFaqs.length === 0 ? (
-                <div className="rounded-xl border border-slate-200 bg-white p-12 text-center">
-                  <Search className="mx-auto h-12 w-12 text-slate-300" />
-                  <h3 className="mt-4 text-lg font-semibold text-slate-900">No results found</h3>
-                  <p className="mt-2 text-slate-600">
-                    We couldn't find any questions matching "{searchTerm}". Try adjusting your search or browse by category.
-                  </p>
-                  <button
-                    onClick={() => { setSearchTerm(''); setActiveCategory('all'); }}
-                    className="mt-4 text-indigo-600 hover:underline"
+              <AnimatePresence mode="wait">
+                {filteredFaqs.length === 0 ? (
+                  <motion.div 
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    className="rounded-xl border border-slate-200 bg-white p-10 text-center shadow-lg"
                   >
-                    Clear filters
-                  </button>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {filteredFaqs.map((faq) => {
-                    const isExpanded = expandedFaq === faq.id;
-                    const category = categories.find(c => c.id === faq.category);
-                    const CategoryIcon = category?.icon || HelpCircle;
+                    <Search className="mx-auto h-10 w-10 text-slate-300" />
+                    <h3 className="mt-3 text-base font-semibold text-slate-900">No results found</h3>
+                    <p className="mt-1 text-sm text-slate-600">
+                      We couldn't find any questions matching "{searchTerm}". Try adjusting your search or browse by category.
+                    </p>
+                    <button
+                      onClick={() => { setSearchTerm(''); setActiveCategory('all'); }}
+                      className="mt-3 text-sm text-orange-600 hover:underline font-medium"
+                    >
+                      Clear filters
+                    </button>
+                  </motion.div>
+                ) : (
+                  <div className="space-y-3">
+                    {filteredFaqs.map((faq) => {
+                      const isExpanded = expandedFaq === faq.id;
+                      const category = categories.find(c => c.id === faq.category);
+                      const CategoryIcon = category?.icon || HelpCircle;
 
-                    return (
-                      <div
-                        key={faq.id}
-                        id={`faq-${faq.id}`}
-                        className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition hover:shadow-md"
-                      >
-                        <button
-                          onClick={() => toggleFaq(faq.id)}
-                          className="flex w-full items-start justify-between text-left"
+                      return (
+                        <motion.div
+                          key={faq.id}
+                          id={`faq-${faq.id}`}
+                          initial={{ opacity: 0, y: 10 }}
+                          whileInView={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.3 }}
+                          viewport={{ once: true }}
+                          className="rounded-xl border border-slate-200 bg-white p-3 shadow-md transition hover:shadow-lg"
                         >
-                          <div className="flex items-start gap-4">
-                            <div className="flex-shrink-0 rounded-lg bg-indigo-100 p-2">
-                              <CategoryIcon className="h-4 w-4 text-indigo-600" />
-                            </div>
-                            <div>
-                              <p className="text-sm font-medium text-slate-500">
-                                {category?.label}
-                              </p>
-                              <h3 className="text-base font-semibold text-slate-900">
-                                {faq.question}
-                              </h3>
-                            </div>
-                          </div>
-                          <div className="ml-4 flex-shrink-0">
-                            {isExpanded ? (
-                              <ChevronUp className="h-5 w-5 text-slate-400" />
-                            ) : (
-                              <ChevronDown className="h-5 w-5 text-slate-400" />
-                            )}
-                          </div>
-                        </button>
-
-                        {isExpanded && (
-                          <div className="mt-4 border-t border-slate-100 pt-4 animate-fade-in">
-                            <p className="text-slate-600">{faq.answer}</p>
-                            
-                            {faq.related && faq.related.length > 0 && (
-                              <div className="mt-4">
-                                <p className="text-sm font-medium text-slate-700">Related questions:</p>
-                                <div className="mt-2 flex flex-wrap gap-2">
-                                  {faq.related.map((related, index) => (
-                                    <span
-                                      key={index}
-                                      className="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-600"
-                                    >
-                                      {related}
-                                    </span>
-                                  ))}
-                                </div>
+                          <button
+                            onClick={() => toggleFaq(faq.id)}
+                            className="flex w-full items-start justify-between text-left"
+                          >
+                            <div className="flex items-start gap-3">
+                              <div className="flex-shrink-0 rounded-lg bg-orange-100 p-1.5">
+                                <CategoryIcon className="h-3.5 w-3.5 text-orange-600" />
                               </div>
+                              <div>
+                                <p className="text-xs font-medium text-slate-500">
+                                  {category?.label}
+                                </p>
+                                <h3 className="text-sm font-semibold text-slate-900">
+                                  {faq.question}
+                                </h3>
+                              </div>
+                            </div>
+                            <div className="ml-3 flex-shrink-0">
+                              {isExpanded ? (
+                                <ChevronUp className="h-4 w-4 text-orange-600" />
+                              ) : (
+                                <ChevronDown className="h-4 w-4 text-slate-400" />
+                              )}
+                            </div>
+                          </button>
+
+                          <AnimatePresence>
+                            {isExpanded && (
+                              <motion.div 
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: 'auto', opacity: 1 }}
+                                exit={{ height: 0, opacity: 0 }}
+                                transition={{ duration: 0.2 }}
+                                className="mt-3 border-t border-slate-100 pt-3 overflow-hidden"
+                              >
+                                <p className="text-sm text-slate-600">{faq.answer}</p>
+                                
+                                {faq.related && faq.related.length > 0 && (
+                                  <div className="mt-3">
+                                    <p className="text-xs font-medium text-slate-700">Related questions:</p>
+                                    <div className="mt-1.5 flex flex-wrap gap-1.5">
+                                      {faq.related.map((related, index) => (
+                                        <span
+                                          key={index}
+                                          className="rounded-full bg-orange-50 px-2.5 py-0.5 text-xs text-orange-700"
+                                        >
+                                          {related}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+                              </motion.div>
                             )}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
+                          </AnimatePresence>
+                        </motion.div>
+                      );
+                    })}
+                  </div>
+                )}
+              </AnimatePresence>
 
               {/* Pagination */}
               {filteredFaqs.length > 10 && (
-                <div className="mt-8 flex items-center justify-between border-t border-slate-200 pt-4">
-                  <p className="text-sm text-slate-500">
+                <div className="mt-6 flex items-center justify-between border-t border-slate-200 pt-4">
+                  <p className="text-xs text-slate-500">
                     Showing {filteredFaqs.length} questions
                   </p>
-                  <div className="flex gap-2">
-                    <button className="rounded-lg border border-slate-300 px-3 py-1 text-sm text-slate-600 hover:bg-slate-50">
+                  <div className="flex gap-1.5">
+                    <button className="rounded-lg border border-slate-300 px-2.5 py-0.5 text-xs text-slate-600 hover:bg-slate-50">
                       Previous
                     </button>
-                    <button className="rounded-lg bg-indigo-600 px-3 py-1 text-sm text-white">
+                    <button className="rounded-lg bg-orange-600 px-2.5 py-0.5 text-xs text-white">
                       1
                     </button>
-                    <button className="rounded-lg border border-slate-300 px-3 py-1 text-sm text-slate-600 hover:bg-slate-50">
+                    <button className="rounded-lg border border-slate-300 px-2.5 py-0.5 text-xs text-slate-600 hover:bg-slate-50">
                       2
                     </button>
-                    <button className="rounded-lg border border-slate-300 px-3 py-1 text-sm text-slate-600 hover:bg-slate-50">
+                    <button className="rounded-lg border border-slate-300 px-2.5 py-0.5 text-xs text-slate-600 hover:bg-slate-50">
                       Next
                     </button>
                   </div>
@@ -511,37 +549,43 @@ const Faq = () => {
       </section>
 
       {/* Contact Section */}
-      <section className="border-t border-slate-200 bg-slate-50 py-16">
+      <section className="border-t border-slate-200 bg-white py-12">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-          <div className="rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600 p-8 text-center text-white md:p-12">
-            <h2 className="text-2xl font-bold">Still Have Questions?</h2>
-            <p className="mt-2 text-indigo-100">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            viewport={{ once: true }}
+            className="rounded-2xl bg-gradient-to-r from-orange-600 to-orange-700 p-6 text-center text-white md:p-10 shadow-xl"
+          >
+            <h2 className="text-xl font-bold md:text-2xl">Still Have Questions?</h2>
+            <p className="mt-1 text-sm text-orange-100">
               Our support team is ready to help you with any questions or concerns.
             </p>
-            <div className="mt-6 flex flex-wrap justify-center gap-4">
+            <div className="mt-4 flex flex-wrap justify-center gap-3">
               <a
                 href="/contact"
-                className="inline-flex items-center gap-2 rounded-lg bg-white px-6 py-3 font-semibold text-indigo-600 transition hover:bg-indigo-50"
+                className="inline-flex items-center gap-2 rounded-lg bg-white px-5 py-2 text-sm font-semibold text-orange-600 transition hover:bg-orange-50 hover:-translate-y-0.5 shadow-md"
               >
-                <MessageCircle className="h-5 w-5" />
+                <MessageCircle className="h-4 w-4" />
                 Contact Us
               </a>
               <a
                 href="mailto:support@menugo.com"
-                className="inline-flex items-center gap-2 rounded-lg border border-white/30 px-6 py-3 font-semibold text-white transition hover:bg-white/10"
+                className="inline-flex items-center gap-2 rounded-lg border border-white/30 px-5 py-2 text-sm font-semibold text-white transition hover:bg-white/10"
               >
-                <Mail className="h-5 w-5" />
+                <Mail className="h-4 w-4" />
                 support@menugo.com
               </a>
               <a
                 href="#"
-                className="inline-flex items-center gap-2 rounded-lg border border-white/30 px-6 py-3 font-semibold text-white transition hover:bg-white/10"
+                className="inline-flex items-center gap-2 rounded-lg border border-white/30 px-5 py-2 text-sm font-semibold text-white transition hover:bg-white/10"
               >
-                <Phone className="h-5 w-5" />
+                <Phone className="h-4 w-4" />
                 +251931486967
               </a>
             </div>
-          </div>
+          </motion.div>
         </div>
       </section>
 

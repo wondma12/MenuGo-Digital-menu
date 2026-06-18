@@ -27,8 +27,7 @@ export const ROUTES = {
     SUBSCRIPTIONS: '/platform/subscriptions',
     SUBSCRIPTION_PLANS: '/platform/subscriptions/plans',
     ANALYTICS: '/platform/analytics',
-    SUPPORT: '/platform/support',
-    TICKET_DETAILS: '/platform/support/:id',
+    
     SYSTEM: '/platform/system',
     SYSTEM_SETTINGS: '/platform/system/settings',
     SYSTEM_HEALTH: '/platform/system/health',
@@ -90,7 +89,6 @@ export const NAVIGATION = {
     { path: ROUTES.PLATFORM.USERS, label: 'Users', icon: <Users className="w-5 h-5" /> },
     { path: ROUTES.PLATFORM.SUBSCRIPTIONS, label: 'Subscriptions', icon: <CreditCard className="w-5 h-5" /> },
     { path: ROUTES.PLATFORM.ANALYTICS, label: 'Analytics', icon: <TrendingUp className="w-5 h-5" /> },
-    { path: ROUTES.PLATFORM.SUPPORT, label: 'Support', icon: <HelpCircle className="w-5 h-5" /> },
     { path: ROUTES.PLATFORM.SYSTEM, label: 'System', icon: <Settings className="w-5 h-5" /> },
   ],
   RESTAURANT_ADMIN: [

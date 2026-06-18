@@ -7,14 +7,21 @@ import Button from '../../../common/Button'
 import Input from '../../../common/Input'
 import Switch from '../../../common/Switch'
 import Loading from '../../../common/Loading'
+import FileUpload from '../../../common/FileUpload'
+import { uploadFile } from '../../../services/uploadService'
 import { getSystemSettings, updateSystemSettings } from '../../../services/systemService'
+import { useQueryClient } from 'react-query'
 import toast from 'react-hot-toast'
 
 const SystemSettings = () => {
   const navigate = useNavigate()
   const { data: settings, isLoading, isError, error, refetch } = useQuery('systemSettings', getSystemSettings)
+  const queryClient = useQueryClient()
   const mutation = useMutation(updateSystemSettings, {
-    onSuccess: () => toast.success('Settings saved successfully'),
+    onSuccess: (data) => {
+      toast.success('Settings saved successfully')
+      try { queryClient.invalidateQueries('systemSettings') } catch (e) {}
+    },
     onError: () => toast.error('Failed to save settings'),
   })
 
@@ -75,15 +82,47 @@ const GeneralSettings = ({ settings, onSave }) => {
     supportEmail: settings?.supportEmail || '',
     maintenanceMode: settings?.maintenanceMode || false,
     allowRegistration: settings?.allowRegistration || true,
+    platformLogoUrl: settings?.platform_logo || settings?.logo || settings?.logo_url || settings?.branding?.logo || settings?.preferences?.logo || '',
   })
+
+  const [uploadingLogo, setUploadingLogo] = useState(false)
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    onSave({ type: 'general', data: formData })
+    const payload = {
+      ...formData,
+      platform_logo: formData.platformLogoUrl,
+    }
+    onSave({ type: 'general', data: payload })
+  }
+
+  const handleLogoUpload = async (fileOrFiles) => {
+    const file = Array.isArray(fileOrFiles) ? fileOrFiles[0] : fileOrFiles
+    if (!file) return
+    setUploadingLogo(true)
+    try {
+      const res = await uploadFile(file, 'system-logo')
+      const url = res?.url || ''
+      setFormData((s) => ({ ...s, platformLogoUrl: url }))
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setUploadingLogo(false)
+    }
   }
 
   return (
     <form onSubmit={handleSubmit} className="bg-white p-6 border border-orange-100 border-l-4 border-l-orange-500 rounded-none shadow-[0_16px_40px_rgba(15,23,42,0.06)] space-y-4">
+      <div className="space-y-2">
+        <p className="text-sm text-slate-600">Platform logo (shown in header and admin)</p>
+        <div className="grid gap-4 md:grid-cols-3 items-center">
+          <FileUpload onFileSelect={handleLogoUpload} accept={{ 'image/*': ['.jpeg', '.png', '.jpg', '.webp', '.svg'] }} label="Upload logo" />
+          <Input label="Logo URL" value={formData.platformLogoUrl} onChange={(e) => setFormData((current) => ({ ...current, platformLogoUrl: e.target.value }))} placeholder="https://example.com/logo.png" />
+          <div className="flex items-center">
+            {formData.platformLogoUrl ? <img src={formData.platformLogoUrl} alt="logo preview" className="h-12 w-12 object-contain" onError={(e) => (e.currentTarget.src = '/logo.svg')} /> : <div className="h-12 w-12 bg-slate-100" />}
+          </div>
+        </div>
+      </div>
       <Input label="Platform Name" value={formData.platformName} onChange={(e) => setFormData({ ...formData, platformName: e.target.value })} />
       <Input label="Support Email" type="email" value={formData.supportEmail} onChange={(e) => setFormData({ ...formData, supportEmail: e.target.value })} />
       <Switch label="Maintenance Mode" checked={formData.maintenanceMode} onChange={(checked) => setFormData({ ...formData, maintenanceMode: checked })} />

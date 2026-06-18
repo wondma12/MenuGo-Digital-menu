@@ -1,12 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Bars3Icon, XMarkIcon, SparklesIcon } from '@heroicons/react/24/outline';
+import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
+import { useAuthStore } from '../../store/authStore'
+import { useQuery } from 'react-query'
+import { getSystemSettings } from '../../services/systemService'
 
 export default function PublicHeader() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
+
+  const { data: settings } = useQuery('systemSettings', getSystemSettings)
+  const headerLogo = settings?.platform_logo || settings?.logo || settings?.logo_url || settings?.logoUrl || settings?.branding?.logo || settings?.branding?.logo_url || settings?.preferences?.logo
 
   // Handle scroll effect for sticky header
   useEffect(() => {
@@ -41,15 +47,17 @@ export default function PublicHeader() {
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between lg:h-20">
-          {/* Logo */}
-          <Link to="/home" className="flex items-center gap-2 group">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-orange-500 to-orange-600 shadow-md transition-all group-hover:scale-105">
-              <SparklesIcon className="h-5 w-5 text-white" />
-            </div>
-            <span className="text-xl font-extrabold tracking-tight text-slate-900">
-              Menu<span className="text-orange-600">Go</span>
-            </span>
-          </Link>
+                  {/* Logo */}
+                  <Link to="/home" className="flex items-center gap-3 group">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white shadow-md transition-all group-hover:scale-105">
+                      <HeaderLogo src={headerLogo} className="h-8 w-8 object-contain" />
+                    </div>
+                    {!headerLogo && (
+                      <span className="text-xl font-extrabold tracking-tight text-slate-900">
+                        Menu<span className="text-orange-600">Go</span>
+                      </span>
+                    )}
+                  </Link>
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-8">
@@ -153,4 +161,18 @@ export default function PublicHeader() {
       </AnimatePresence>
     </header>
   );
+}
+
+function HeaderLogo({ src, className }) {
+  const logoSrc = src || '/logo.svg'
+  return (
+    <img
+      src={logoSrc}
+      alt="Platform logo"
+      className={className || 'h-6 w-6 object-contain'}
+      onError={(e) => {
+        e.currentTarget.src = '/logo.svg'
+      }}
+    />
+  )
 }

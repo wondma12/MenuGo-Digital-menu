@@ -33,8 +33,10 @@ import {
   Printer,
   Info,
   HelpCircle,
-  HeartHandshake
+  HeartHandshake,
+  SparklesIcon,
 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import PublicHeader from './PublicHeader';
 import PublicFooter from './PublicFooter';
 
@@ -186,9 +188,9 @@ const Privacy = () => {
       title: '10. Contact Us',
       content: 'Reach out if you have questions about this policy.',
       details: [
-        'Email: privacy@menugo.com',
-        'Phone: +1 (555) 123-4567',
-        'Address: 123 Business St, Suite 100',
+        'Email: haymanotwondmagegn3@gmail.com',
+        'Phone: +251931486967',
+        'Address: AA  Ethiopia, Suite 100',
         'Data Protection Officer: dpo@menugo.com'
       ]
     }
@@ -197,8 +199,6 @@ const Privacy = () => {
   const quickLinks = [
     { label: 'Terms of Service', icon: FileCheck, href: '/terms' },
     { label: 'Security', icon: Lock, href: '/security' },
-    { label: 'Cookie Policy', icon: Cookie, href: '/cookies' },
-    { label: 'Support', icon: HelpCircle, href: '/support' }
   ];
 
   const keyPoints = [
@@ -213,100 +213,125 @@ const Privacy = () => {
       <PublicHeader />
 
       {/* Consent Banner */}
-      {showConsent && (
-        <div className="fixed bottom-0 left-0 right-0 z-50 bg-slate-900 p-4 text-white shadow-lg">
-          <div className="mx-auto max-w-6xl flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="flex items-start gap-3">
-              <Shield className="h-6 w-6 flex-shrink-0 text-indigo-400" />
-              <div>
-                <h4 className="font-semibold">We value your privacy</h4>
-                <p className="text-sm text-slate-300">
-                  We use cookies to enhance your experience. By continuing, you agree to our{' '}
-                  <a href="/privacy" className="text-indigo-400 hover:underline">Privacy Policy</a>.
-                </p>
+      <AnimatePresence>
+        {showConsent && (
+          <motion.div 
+            initial={{ y: 100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 100, opacity: 0 }}
+            className="fixed bottom-0 left-0 right-0 z-50 bg-slate-900 p-3 text-white shadow-lg"
+          >
+            <div className="mx-auto max-w-6xl flex flex-col sm:flex-row items-center justify-between gap-3">
+              <div className="flex items-start gap-2.5">
+                <Shield className="h-5 w-5 flex-shrink-0 text-orange-400" />
+                <div>
+                  <h4 className="text-sm font-semibold">We value your privacy</h4>
+                  <p className="text-xs text-slate-300">
+                    We use cookies to enhance your experience. By continuing, you agree to our{' '}
+                    <a href="/privacy" className="text-orange-400 hover:underline">Privacy Policy</a>.
+                  </p>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <button 
+                  onClick={handleConsent}
+                  className="rounded-lg bg-orange-600 px-5 py-1.5 text-sm font-medium text-white transition hover:bg-orange-700"
+                >
+                  Accept
+                </button>
+                <button 
+                  onClick={() => setShowConsent(false)}
+                  className="rounded-lg border border-slate-600 px-5 py-1.5 text-sm font-medium text-slate-300 transition hover:bg-slate-800"
+                >
+                  Dismiss
+                </button>
               </div>
             </div>
-            <div className="flex gap-3">
-              <button 
-                onClick={handleConsent}
-                className="rounded-lg bg-indigo-600 px-6 py-2 font-medium text-white transition hover:bg-indigo-700"
-              >
-                Accept
-              </button>
-              <button 
-                onClick={() => setShowConsent(false)}
-                className="rounded-lg border border-slate-600 px-6 py-2 font-medium text-slate-300 transition hover:bg-slate-800"
-              >
-                Dismiss
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-indigo-900 to-purple-900 pt-28 pb-16">
+      <section className="relative overflow-hidden bg-gradient-to-br from-orange-600 to-orange-800 pt-28 pb-16 sm:pt-32 sm:pb-20">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(255,255,255,0.15),transparent_60%)]" />
         <div className="absolute inset-0 opacity-10">
-          <div className="absolute -right-20 -top-20 h-96 w-96 rounded-full bg-indigo-500 blur-3xl"></div>
-          <div className="absolute -left-20 -bottom-20 h-96 w-96 rounded-full bg-purple-500 blur-3xl"></div>
+          <div className="absolute -right-20 -top-20 h-96 w-96 rounded-full bg-white blur-3xl"></div>
+          <div className="absolute -left-20 -bottom-20 h-96 w-96 rounded-full bg-white blur-3xl"></div>
         </div>
 
         <div className="relative mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-white/10 backdrop-blur-sm">
-              <Shield className="h-10 w-10 text-white" />
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="text-center"
+          >
+            <div className="inline-flex items-center gap-2 rounded-full bg-white/20 backdrop-blur-sm px-2.5 py-0.5 text-xs font-semibold text-white mb-3">
+              <SparklesIcon className="h-3.5 w-3.5" />
+              Your Privacy Matters
             </div>
             
-            <h1 className="text-4xl font-extrabold text-white sm:text-5xl lg:text-6xl">
+            <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-white/10 backdrop-blur-sm">
+              <Shield className="h-8 w-8 text-white" />
+            </div>
+            
+            <h1 className="text-3xl font-extrabold text-white sm:text-4xl lg:text-5xl">
               Privacy Policy
             </h1>
             
-            <p className="mx-auto mt-4 max-w-2xl text-lg text-indigo-200">
+            <p className="mx-auto mt-3 max-w-2xl text-sm text-orange-100 sm:text-base">
               Your privacy matters to us. Learn how we collect, use, and protect your personal information.
             </p>
 
-            <div className="mt-6 flex flex-wrap justify-center gap-4">
-              <div className="flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-sm text-white backdrop-blur-sm">
-                <Calendar className="h-4 w-4" />
+            <div className="mt-5 flex flex-wrap justify-center gap-3">
+              <div className="flex items-center gap-1.5 rounded-full bg-white/10 backdrop-blur-sm px-3 py-1.5 text-xs text-white">
+                <Calendar className="h-3.5 w-3.5" />
                 Last Updated: {lastUpdated}
               </div>
-              <div className="flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-sm text-white backdrop-blur-sm">
-                <FileCheck className="h-4 w-4" />
+              <div className="flex items-center gap-1.5 rounded-full bg-white/10 backdrop-blur-sm px-3 py-1.5 text-xs text-white">
+                <FileCheck className="h-3.5 w-3.5" />
                 Version 3.0
               </div>
             </div>
-          </div>
+          </motion.div>
         </div>
       </section>
 
       {/* Key Points Banner */}
-      <section className="border-b border-slate-200 bg-slate-50 py-8">
+      <section className="border-b border-slate-200 bg-white py-6 shadow-sm">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {keyPoints.map((point, index) => (
-              <div key={index} className="flex items-center gap-3">
-                <div className="flex-shrink-0 rounded-full bg-indigo-100 p-2">
-                  <point.icon className="h-4 w-4 text-indigo-600" />
+              <motion.div 
+                key={index} 
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.08 }}
+                viewport={{ once: true }}
+                className="flex items-center gap-2.5 rounded-xl bg-slate-50 p-3"
+              >
+                <div className="flex-shrink-0 rounded-full bg-orange-100 p-1.5">
+                  <point.icon className="h-3.5 w-3.5 text-orange-600" />
                 </div>
-                <p className="text-sm text-slate-700">{point.text}</p>
-              </div>
+                <p className="text-xs font-medium text-slate-700 sm:text-sm">{point.text}</p>
+              </motion.div>
             ))}
           </div>
         </div>
       </section>
 
       {/* Quick Navigation */}
-      <section className="border-b border-slate-200 bg-white py-4">
+      <section className="border-b border-slate-200 bg-slate-50 py-3">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-wrap items-center gap-4">
-            <span className="text-sm font-medium text-slate-500">Quick Links:</span>
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="text-xs font-medium text-slate-500 sm:text-sm">Quick Links:</span>
             {quickLinks.map((link, index) => (
               <a
                 key={index}
                 href={link.href}
-                className="flex items-center gap-1 rounded-full bg-slate-100 px-4 py-1.5 text-sm text-slate-700 transition hover:bg-indigo-100 hover:text-indigo-700"
+                className="flex items-center gap-1 rounded-full bg-white px-3 py-1 text-xs text-slate-700 transition hover:bg-orange-100 hover:text-orange-700 shadow-sm sm:px-4 sm:py-1.5 sm:text-sm"
               >
-                <link.icon className="h-3.5 w-3.5" />
+                <link.icon className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                 {link.label}
               </a>
             ))}
@@ -315,13 +340,13 @@ const Privacy = () => {
       </section>
 
       {/* Main Content */}
-      <section className="py-16">
+      <section className="py-12 bg-slate-50">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-          <div className="grid gap-8 lg:grid-cols-4">
+          <div className="grid gap-6 lg:grid-cols-4">
             {/* Sidebar */}
             <div className="lg:col-span-1">
-              <div className="sticky top-24 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-                <h3 className="mb-4 font-semibold text-slate-900">On this page</h3>
+              <div className="sticky top-24 rounded-xl border border-slate-200 bg-white p-4 shadow-lg">
+                <h3 className="mb-3 text-sm font-semibold text-slate-900">On this page</h3>
                 <nav className="space-y-1">
                   {sections.map((section) => (
                     <button
@@ -330,18 +355,18 @@ const Privacy = () => {
                         const element = document.getElementById(section.id);
                         if (element) element.scrollIntoView({ behavior: 'smooth' });
                       }}
-                      className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-600 transition hover:bg-indigo-50 hover:text-indigo-700"
+                      className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs text-slate-600 transition hover:bg-orange-50 hover:text-orange-700 sm:text-sm"
                     >
-                      <section.icon className="h-4 w-4" />
+                      <section.icon className="h-3.5 w-3.5" />
                       {section.title.replace(/^\d+\.\s*/, '')}
                     </button>
                   ))}
                 </nav>
 
                 {/* Download Button */}
-                <div className="mt-6 border-t border-slate-200 pt-4">
-                  <button className="flex w-full items-center justify-center gap-2 rounded-lg border border-indigo-600 px-4 py-2 text-sm font-medium text-indigo-600 transition hover:bg-indigo-50">
-                    <Download className="h-4 w-4" />
+                <div className="mt-4 border-t border-slate-200 pt-4">
+                  <button className="flex w-full items-center justify-center gap-2 rounded-lg bg-orange-600 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-orange-700 hover:-translate-y-0.5 shadow-md sm:text-sm">
+                    <Download className="h-3.5 w-3.5" />
                     Download PDF
                   </button>
                 </div>
@@ -350,87 +375,111 @@ const Privacy = () => {
 
             {/* Content */}
             <div className="lg:col-span-3">
-              <div className="space-y-8">
+              <div className="space-y-6">
                 {/* Introduction */}
-                <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-                  <h2 className="text-xl font-bold text-slate-900">Introduction</h2>
-                  <p className="mt-2 text-slate-600">
+                <motion.div 
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6 }}
+                  viewport={{ once: true }}
+                  className="rounded-xl border border-slate-200 bg-white p-5 shadow-lg"
+                >
+                  <h2 className="text-lg font-bold text-slate-900">Introduction</h2>
+                  <p className="mt-1.5 text-sm text-slate-600">
                     At MenuGo, we take your privacy seriously. This Privacy Policy explains how we collect, use, 
                     disclose, and safeguard your information when you use our digital menu platform. Please read 
                     this policy carefully to understand our views and practices regarding your personal data.
                   </p>
-                  <div className="mt-4 rounded-lg bg-indigo-50 p-4">
-                    <div className="flex items-start gap-3">
-                      <Info className="h-5 w-5 text-indigo-600" />
-                      <p className="text-sm text-indigo-800">
+                  <div className="mt-3 rounded-lg bg-orange-50 p-3 border border-orange-100">
+                    <div className="flex items-start gap-2.5">
+                      <Info className="h-4 w-4 text-orange-600" />
+                      <p className="text-xs text-orange-800 sm:text-sm">
                         <span className="font-semibold">Key Principle:</span> We only collect data that helps us 
                         provide better service, and we never sell your personal information to third parties.
                       </p>
                     </div>
                   </div>
-                </div>
+                </motion.div>
 
-                {sections.map((section) => {
+                {sections.map((section, index) => {
                   const Icon = section.icon;
                   const isExpanded = expandedSection === section.id;
 
                   return (
-                    <div
+                    <motion.div
                       key={section.id}
                       id={section.id}
-                      className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm transition hover:shadow-md"
+                      initial={{ opacity: 0, y: 20 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.05 }}
+                      viewport={{ once: true }}
+                      className="rounded-xl border border-slate-200 bg-white p-5 shadow-lg transition hover:shadow-xl"
                     >
                       <button
                         onClick={() => toggleSection(section.id)}
                         className="flex w-full items-start justify-between text-left"
                       >
-                        <div className="flex items-start gap-4">
-                          <div className="flex-shrink-0 rounded-lg bg-indigo-100 p-2">
-                            <Icon className="h-5 w-5 text-indigo-600" />
+                        <div className="flex items-start gap-3">
+                          <div className="flex-shrink-0 rounded-lg bg-orange-100 p-1.5">
+                            <Icon className="h-4 w-4 text-orange-600" />
                           </div>
                           <div>
-                            <h2 className="text-lg font-semibold text-slate-900">
+                            <h2 className="text-base font-semibold text-slate-900">
                               {section.title}
                             </h2>
-                            <p className="mt-1 text-sm text-slate-600">{section.content}</p>
+                            <p className="mt-0.5 text-xs text-slate-600">{section.content}</p>
                           </div>
                         </div>
-                        <div className="flex-shrink-0 ml-4">
+                        <div className="flex-shrink-0 ml-3">
                           {isExpanded ? (
-                            <ChevronUp className="h-5 w-5 text-slate-400" />
+                            <ChevronUp className="h-4 w-4 text-orange-600" />
                           ) : (
-                            <ChevronDown className="h-5 w-5 text-slate-400" />
+                            <ChevronDown className="h-4 w-4 text-slate-400" />
                           )}
                         </div>
                       </button>
 
-                      {isExpanded && (
-                        <div className="mt-4 border-t border-slate-100 pt-4 animate-fade-in">
-                          <ul className="space-y-2">
-                            {section.details.map((detail, index) => (
-                              <li key={index} className="flex items-start gap-3 text-sm text-slate-700">
-                                <CheckCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-green-500" />
-                                <span>{detail}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                    </div>
+                      <AnimatePresence>
+                        {isExpanded && (
+                          <motion.div 
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="mt-3 border-t border-slate-100 pt-3 overflow-hidden"
+                          >
+                            <ul className="space-y-1.5">
+                              {section.details.map((detail, index) => (
+                                <li key={index} className="flex items-start gap-2.5 text-xs text-slate-700 sm:text-sm">
+                                  <CheckCircle className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-orange-500" />
+                                  <span>{detail}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </motion.div>
                   );
                 })}
 
                 {/* Footer Note */}
-                <div className="rounded-xl border border-slate-200 bg-slate-50 p-6 text-center">
-                  <p className="text-sm text-slate-600">
+                <motion.div 
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6 }}
+                  viewport={{ once: true }}
+                  className="rounded-xl border border-slate-200 bg-orange-50 p-5 text-center"
+                >
+                  <p className="text-xs text-slate-600 sm:text-sm">
                     By using MenuGo, you agree to this Privacy Policy. 
                     If you have any questions, please{' '}
-                    <a href="/contact" className="font-medium text-indigo-600 hover:underline">
+                    <a href="/contact" className="font-medium text-orange-600 hover:underline">
                       contact our Privacy Team
                     </a>
                     .
                   </p>
-                </div>
+                </motion.div>
               </div>
             </div>
           </div>

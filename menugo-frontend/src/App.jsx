@@ -33,10 +33,7 @@ import PlatformAnalytics from './components/platform-admin/analytics/PlatformAna
 import RevenueAnalytics from './components/platform-admin/analytics/RevenueAnalytics'
 import UserAnalytics from './components/platform-admin/analytics/UserAnalytics'
 import PlatformProfile from './components/platform-admin/profile/PlatformProfile'
-import TicketList from './components/platform-admin/support/TicketList'
-import TicketDetails from './components/platform-admin/support/TicketDetails'
-import KnowledgeBase from './components/platform-admin/support/KnowledgeBase'
-import ContactMessagesPage from './components/platform-admin/support/ContactMessagesPage'
+// Support module removed
 import SystemSettings from './components/platform-admin/system/SystemSettings'
 import EmailSettings from './components/platform-admin/system/EmailSettings'
 import SecuritySettings from './components/platform-admin/system/SecuritySettings'
@@ -316,10 +313,9 @@ function App() {
                 <Route path="analytics" element={<PlatformAnalytics />} />
                 <Route path="analytics/revenue" element={<RevenueAnalytics />} />
                 <Route path="analytics/users" element={<UserAnalytics />} />
-                <Route path="support" element={<TicketList />} />
-                <Route path="support/:id" element={<TicketDetails />} />
-                <Route path="contact-messages" element={<ContactMessagesPage />} />
-                <Route path="knowledge-base" element={<KnowledgeBase />} />
+                
+                
+                {/* Knowledge Base route remains if needed */}
                 <Route path="settings" element={<PlatformProfile />} />
                 {/* Backwards-compatible system route aliases */}
                 <Route path="system" element={<Navigate to="system/settings" replace />} />

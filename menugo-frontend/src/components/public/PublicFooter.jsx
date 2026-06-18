@@ -41,11 +41,11 @@ export default function PublicFooter() {
               </div>
               <div className="flex items-center gap-2 text-sm text-slate-300">
                 <Phone className="h-4 w-4" />
-                <a href="tel:+15551234567" className="hover:text-orange-400 transition">+1 (555) 123-4567</a>
+                <a href="tel:+251931486967" className="hover:text-orange-400 transition">+251 931 48 69 67</a>
               </div>
               <div className="flex items-center gap-2 text-sm text-slate-300">
                 <MapPin className="h-4 w-4" />
-                <span>123 Main Street, New York, NY 10001</span>
+                <span>Addis Ababa, Ethiopia</span>
               </div>
             </div>
           </div>
@@ -101,18 +101,19 @@ export default function PublicFooter() {
               )}
             </form>
             <div className="mt-4 flex gap-4">
-              <a href="https://twitter.com/" target="_blank" rel="noopener noreferrer" className="text-slate-400 hover:text-orange-400 transition">
+              <a href="https://x.com/HWondmageg23368" target="_blank" rel="noopener noreferrer" className="text-slate-400 hover:text-orange-400 transition">
                 <Twitter className="h-5 w-5" />
               </a>
-              <a href="https://facebook.com/" target="_blank" rel="noopener noreferrer" className="text-slate-400 hover:text-orange-400 transition">
+              <a href="https://web.facebook.com/profile.php?id=100091640838987" target="_blank" rel="noopener noreferrer" className="text-slate-400 hover:text-orange-400 transition">
                 <Facebook className="h-5 w-5" />
               </a>
-              <a href="https://instagram.com/" target="_blank" rel="noopener noreferrer" className="text-slate-400 hover:text-orange-400 transition">
+              <a href="https://www.instagram.com/haymanotwondmagegn/" target="_blank" rel="noopener noreferrer" className="text-slate-400 hover:text-orange-400 transition">
                 <Instagram className="h-5 w-5" />
               </a>
-              <a href="https://linkedin.com/" target="_blank" rel="noopener noreferrer" className="text-slate-400 hover:text-orange-400 transition">
+              <a href="https://www.linkedin.com/in/haymanot-wondmagegn-b57502300/" target="_blank" rel="noopener noreferrer" className="text-slate-400 hover:text-orange-400 transition">
                 <Linkedin className="h-5 w-5" />
               </a>
+              
             </div>
           </div>
         </div>

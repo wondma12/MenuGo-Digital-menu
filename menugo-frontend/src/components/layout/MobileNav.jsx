@@ -23,7 +23,6 @@ const MobileNav = ({ isOpen, onClose, menuItems, user, onLogout, brand }) => {
     { path: '/platform/users', label: 'Users', icon: <Users className="w-5 h-5" /> },
     { path: '/platform/subscriptions', label: 'Subscriptions', icon: <CreditCard className="w-5 h-5" /> },
     { path: '/platform/analytics', label: 'Analytics', icon: <TrendingUp className="w-5 h-5" /> },
-    { path: '/platform/support', label: 'Support', icon: <HelpCircle className="w-5 h-5" /> },
     { path: '/platform/contact-messages', label: 'Contact Messages', icon: <Phone className="w-5 h-5" /> },
     { 
       path: '/platform/system', 
