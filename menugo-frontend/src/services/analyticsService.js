@@ -441,6 +441,11 @@ export const getPublicPlatformSummary = async () => {
 
   // Fallbacks: try dashboard/platform then platform analytics or users list
   try {
+    // Only attempt the protected dashboard endpoint when we have a token.
+    // Avoid unauthenticated 401 requests from public summary probe.
+    const token = useAuthStore.getState().token || (typeof window !== 'undefined' ? window.sessionStorage.getItem('token') : null)
+    if (!token) throw new Error('no_token_for_protected_fallback')
+
     const dashResp = await api.get('/dashboard/platform');
     const payload = dashResp?.data?.data || dashResp?.data || {};
     const stats = payload?.stats || {};
@@ -488,6 +493,13 @@ export const getPublicPlatformSummary = async () => {
 export const getPlatformDashboardData = async (dateRange) => {
   try {
     if (import.meta.env.DEV) console.log('Calling dashboard API...');
+
+    // Avoid calling protected dashboard when there is no auth token present.
+    const token = useAuthStore.getState().token || (typeof window !== 'undefined' ? window.sessionStorage.getItem('token') : null)
+    if (!token) {
+      if (import.meta.env.DEV) console.debug('Skipping dashboard fetch: no token present')
+      return getDefaultDashboardData()
+    }
 
     const response = await api.get('/dashboard/platform', {
       params: {

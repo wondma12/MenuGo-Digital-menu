@@ -30,6 +30,7 @@ import SubscriptionList from './components/platform-admin/subscriptions/Subscrip
 import InvoiceList from './components/platform-admin/subscriptions/InvoiceList'
 import RevenueReport from './components/platform-admin/subscriptions/RevenueReport'
 import PlatformAnalytics from './components/platform-admin/analytics/PlatformAnalytics'
+import ContactMessages from './components/platform-admin/messages/Messages'
 import RevenueAnalytics from './components/platform-admin/analytics/RevenueAnalytics'
 import UserAnalytics from './components/platform-admin/analytics/UserAnalytics'
 import PlatformProfile from './components/platform-admin/profile/PlatformProfile'
@@ -313,6 +314,7 @@ function App() {
                 <Route path="analytics" element={<PlatformAnalytics />} />
                 <Route path="analytics/revenue" element={<RevenueAnalytics />} />
                 <Route path="analytics/users" element={<UserAnalytics />} />
+                <Route path="contact-messages" element={<ContactMessages />} />
                 
                 
                 {/* Knowledge Base route remains if needed */}

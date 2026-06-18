@@ -1,1 +1,0 @@
-{"success":false,"message":"Session expired or invalid","errors":null,"stack":"Error: Session expired or invalid\n    at protect (C:\\Users\\aed\\Downloads\\MenuGo-Digital-menu\\menugo-backend\\src\\middleware\\authMiddleware.js:49:13)\n    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)"}

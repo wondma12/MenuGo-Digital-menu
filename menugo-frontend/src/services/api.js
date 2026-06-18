@@ -179,6 +179,7 @@ const publicPaths = [
   '/auth/forgot-password',
   '/auth/reset-password',
   '/auth/verify-email',
+  '/platform/public-summary',
 ]
 
 // Flag to prevent multiple refresh token calls
@@ -209,13 +210,52 @@ api.interceptors.request.use(
       if (import.meta.env.DEV) console.warn('ensureApiBaseReady failed:', e && e.message)
     }
 
-    // Get token from store
+    // Get token from store or session storage
     const token = useAuthStore.getState().token || authSessionStorage?.getItem('token')
-    
-    // Add token to headers if it exists and not a public path
-    const isPublicPath = publicPaths.some(path => config.url?.includes(path))
+
+    // Robust public path detection:
+    // Try to resolve config.url to an absolute pathname (handles absolute URLs,
+    // relative paths, and baseURL variations), then match against known publicPaths.
+    let requestPath = config.url || ''
+    try {
+      // base may be undefined in some contexts
+      const base = (api.defaults && api.defaults.baseURL) ? api.defaults.baseURL : window?.location?.origin
+      const u = new URL(String(config.url), String(base))
+      requestPath = u.pathname || requestPath
+    } catch (e) {
+      // ignore – fallback to raw config.url
+    }
+
+    const method = (config.method || 'get').toLowerCase()
+
+    let isPublicPath = publicPaths.some((path) => {
+      try {
+        // Normalize: ensure both start with a slash and compare pathname segments
+        const np = path.startsWith('/') ? path : `/${path}`
+        return requestPath === np || requestPath.startsWith(np) || requestPath.includes(np)
+      } catch (e) {
+        return String(requestPath).includes(path)
+      }
+    })
+
+    // Special-case: allow public POST to the contact form even though the
+    // same pathname is used for the admin GET listing. We only treat the
+    // POST as public so unauthenticated users can submit messages, while
+    // GET remains protected for admin listing.
+    if (!isPublicPath && requestPath === '/public/contact' && method === 'post') {
+      isPublicPath = true
+    }
+
+    // Attach token only when present and the request is not public
     if (token && !isPublicPath) {
       config.headers.Authorization = `Bearer ${token}`
+    } else if (!token && !isPublicPath) {
+      // Prevent sending unauthenticated requests to protected endpoints.
+      const err = new Error('No auth token present')
+      err.isAuthMissing = true
+      // Mark as silent so response interceptor can suppress noisy logs
+      err.silent = true
+      return Promise.reject(err)
     }
 
     // If this is a file upload (FormData) increase timeout to avoid client-side
@@ -384,6 +424,14 @@ api.interceptors.response.use(
     }
 
       if (!error.response) {
+        // Suppress logging for expected auth-missing errors to avoid noise in DEV console.
+        if (error.isAuthMissing || error.silent) {
+          if (import.meta.env.DEV) {
+            try { console.debug('Request prevented: missing auth token for', originalRequest?.url) } catch (e) {}
+          }
+          return Promise.reject(error)
+        }
+
         console.error('Network error:', error.message)
 
         // Attempt to auto-detect the running backend by trying fallback ports/hosts.
