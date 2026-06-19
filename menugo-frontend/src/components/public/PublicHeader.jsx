@@ -164,14 +164,14 @@ export default function PublicHeader() {
 }
 
 function HeaderLogo({ src, className }) {
-  const logoSrc = src || '/logo.svg'
+  const logoSrc = src || '/colored-logo.png'
   return (
     <img
       src={logoSrc}
       alt="Platform logo"
       className={className || 'h-6 w-6 object-contain'}
       onError={(e) => {
-        e.currentTarget.src = '/logo.svg'
+        e.currentTarget.src = '/colored-logo.png'
       }}
     />
   )

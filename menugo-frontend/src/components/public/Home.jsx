@@ -26,7 +26,7 @@ import {
 import PublicHeader from './PublicHeader';
 import PublicFooter from './PublicFooter';
 import { getPublicPlatformSummary, getPlatformDashboardData } from '../../services/analyticsService';
-
+// moved any scroll state into header component; remove top-level hook
 // Custom motion variants
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -214,9 +214,15 @@ const Home = () => {
   return (
     <div className="min-h-screen bg-white font-['Manrope',system-ui,sans-serif] text-gray-900">
       <PublicHeader />
-
-      {/* Hero Section */}
-      <section className="relative overflow-hidden pt-28 pb-16 sm:pt-32 sm:pb-20">
+      <br />
+      <br />
+      <br />
+        
+      {/* Hero Section with background carousel below navbar */}
+      <section className="relative  overflow-hidden  pt-28 pb-16 sm:pt-32 sm:pb-20">
+        {/* Background carousel (covers header area behind content) */}
+        
+        <BackgroundCarousel />
         {/* Decorative elements */}
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_rgba(251,146,60,0.2),transparent_50%),_radial-gradient(ellipse_at_bottom_left,_rgba(59,130,246,0.1),transparent_60%)]" />
         <div className="pointer-events-none absolute -left-20 top-1/3 h-72 w-72 rounded-full bg-orange-300/20 blur-3xl" />
@@ -230,25 +236,25 @@ const Home = () => {
             whileInView="show"
             viewport={{ once: true, amount: 0.2 }}
           >
-            <motion.div variants={fadeInUp} className="max-w-2xl">
-              <div className="inline-flex items-center gap-2 rounded-full border border-orange-200 bg-white/80 px-3 py-1 text-xs font-semibold tracking-wide text-orange-700 shadow-sm backdrop-blur-sm">
-                <SparklesIcon className="h-3.5 w-3.5" />
-                Digital dining, reimagined
+            <motion.div variants={fadeInUp} className="max-w-2xl ">
+              <div className="inline-flex items-center gap-2 rounded-full border border-orange-200 bg-white/80 px-3 py-1 text-slate-900 font-semibold tracking-wide text-orange-700 shadow-sm backdrop-blur-sm">
+                {/* <SparklesIcon className="h-3.5 w-3.5" /> */}
+                SOFTWARE AS A SERVICE (SaaS) FOR RESTAURANTS
               </div>
 
-              <h1 className="mt-4 text-3xl font-extrabold leading-[1.1] tracking-tight text-slate-900 sm:text-4xl lg:text-5xl">
+              <h1 className="mt-4  text-3xl font-extrabold leading-[1.1] tracking-tight text-slate-900 sm:text-4xl lg:text-5xl">
                 Design a better
                 <span className="block bg-gradient-to-r from-orange-600 to-orange-500 bg-clip-text text-transparent">
                   restaurant journey
                 </span>
               </h1>
 
-              <p className="mt-4 max-w-xl text-sm leading-relaxed text-slate-600 sm:text-base">
+              {/* <p className="mt-4 max-w-xl text-sm leading-relaxed text-slate-600 sm:text-base">
                 MenuGo helps restaurants move from paper menus to a complete digital flow with QR ordering,
                 instant updates, and practical analytics your team can use every day.
-              </p>
+              </p> */}
 
-              <div className="mt-6 flex flex-wrap gap-3">
+              <div className="mt-20 flex flex-wrap gap-3">
                 <Link
                   to="/contact"
                   className="inline-flex items-center gap-2 rounded-xl bg-orange-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-orange-600/30 transition-all hover:-translate-y-0.5 hover:bg-orange-700"
@@ -264,45 +270,10 @@ const Home = () => {
                 </Link>
               </div>
 
-              <div className="mt-5 flex flex-wrap items-center gap-3 text-xs text-slate-600 sm:gap-4">
-                <div className="flex items-center gap-1.5">
-                  <CheckBadgeIcon className="h-4 w-4 text-emerald-600" />
-                  No credit card required
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <CheckBadgeIcon className="h-4 w-4 text-emerald-600" />
-                  Fast onboarding support
-                </div>
-              </div>
+             
             </motion.div>
 
-            <motion.div variants={heroImage} className="relative">
-              <div className="absolute -left-4 -top-4 h-24 w-24 rounded-2xl bg-orange-300/30 blur-2xl" />
-              <div className="absolute -bottom-6 -right-6 h-28 w-28 rounded-full bg-orange-400/25 blur-2xl" />
-              <div className="relative rounded-2xl border border-white/70 bg-white/90 p-2 shadow-2xl backdrop-blur-md">
-                <img
-                  src="https://images.unsplash.com/photo-1508424757105-b6d5ad9329d0?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTR8fHJlc3RhdXJhbnR8ZW58MHx8MHx8fDA%3D"
-                  alt="MenuGo Dashboard"
-                  className="h-40 sm:h-48 md:h-64 w-full rounded-xl object-cover shadow-sm"
-                />
-                <div className="mt-3 grid grid-cols-3 gap-2">
-                  {highlights.map((item, idx) => (
-                    <motion.div
-                      key={item.title}
-                      className="rounded-xl border border-slate-100 bg-white/70 p-2 shadow-sm backdrop-blur-sm"
-                      initial={{ opacity: 0, y: 10 }}
-                      whileInView={{ opacity: 1, y: 0 }}
-                      viewport={{ once: true }}
-                      transition={{ delay: 0.2 + idx * 0.08, duration: 0.5 }}
-                    >
-                      <item.icon className="h-4 w-4 text-orange-600" />
-                      <p className="mt-1 text-xs font-bold text-slate-800">{item.title}</p>
-                      <p className="mt-0.5 text-[10px] leading-snug text-slate-500">{item.text}</p>
-                    </motion.div>
-                  ))}
-                </div>
-              </div>
-            </motion.div>
+            {/* Image card removed per request */}
           </motion.div>
         </div>
       </section>
@@ -472,35 +443,7 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Integrations
-      <section className="bg-slate-50 py-14 sm:py-16">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="mx-auto mb-8 max-w-3xl text-center">
-            <h2 className="text-2xl font-extrabold tracking-tight text-slate-900 md:text-3xl">
-              Works with your stack
-            </h2>
-            <p className="mt-2 text-sm text-slate-600">
-              Seamless integrations with the tools you already use.
-            </p>
-          </div>
 
-          <div className="flex flex-wrap items-center justify-center gap-6 md:gap-10">
-            {integrations.map((integration, idx) => (
-              <motion.div
-                key={idx}
-                initial={{ opacity: 0, scale: 0.9 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ delay: idx * 0.05 }}
-                className="flex flex-col items-center gap-1.5 rounded-xl bg-white px-5 py-2.5 shadow-sm"
-              >
-                <span className="text-xl">{integration.icon}</span>
-                <span className="text-xs font-medium text-slate-700">{integration.name}</span>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section> */}
 
       {/* Testimonials */}
       <section className="bg-white py-14 sm:py-16">
@@ -543,55 +486,59 @@ const Home = () => {
         </div>
       </section>
 
-      {/* CTA Section
-      <section className="relative overflow-hidden bg-slate-900 py-14 sm:py-16">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_20%_30%,rgba(251,146,60,0.2),transparent_50%)]" />
-        <div className="relative mx-auto max-w-4xl px-4 text-center sm:px-6 lg:px-8">
-          <motion.h2
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-2xl font-extrabold tracking-tight text-white md:text-3xl"
-          >
-            Ready to level up your restaurant experience?
-          </motion.h2>
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.1 }}
-            className="mx-auto mt-3 max-w-2xl text-sm text-slate-200"
-          >
-            Join hundreds of restaurant owners who streamlined their operations with MenuGo.
-          </motion.p>
-
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.2 }}
-            className="mt-6 flex flex-wrap items-center justify-center gap-3"
-          >
-            <Link
-              to="/contact"
-              className="inline-flex items-center gap-2 rounded-xl bg-orange-500 px-5 py-2.5 text-sm font-bold text-slate-900 transition-all hover:-translate-y-0.5 hover:bg-orange-400"
-            >
-              Start Free Trial
-              <ArrowRightIcon className="h-4 w-4" />
-            </Link>
-            <Link
-              to="/login"
-              className="inline-flex items-center rounded-xl border border-slate-600 px-5 py-2.5 text-sm font-semibold text-slate-100 transition-all hover:-translate-y-0.5 hover:border-slate-400 hover:text-white"
-            >
-              Sign In
-            </Link>
-          </motion.div>
-        </div>
-      </section> */}
+    
 
       <PublicFooter />
     </div>
   );
 };
+
+function BackgroundCarousel() {
+  const images = [
+    'https://images.pexels.com/photos/29000057/pexels-photo-29000057.jpeg',
+    'https://images.pexels.com/photos/28999499/pexels-photo-28999499.jpeg',
+    'https://images.pexels.com/photos/26729401/pexels-photo-26729401.jpeg',
+    'https://images.pexels.com/photos/29000046/pexels-photo-29000046.jpeg',
+    'https://images.pexels.com/photos/33948377/pexels-photo-33948377.jpeg'
+    // 'https://media.istockphoto.com/id/2000117676/photo/here-try-some-tacos-are-super-tasty.jpg?s=1024x1024&w=is&k=20&c=ziCbqQyXOAhg1hNQvfZSdyYH2Zlw1xSffPNwS51cOUU='
+  ];
+
+  const [index, setIndex] = useState(0);
+  const [hovered, setHovered] = useState(false);
+
+  useEffect(() => {
+    const t = setInterval(() => setIndex((i) => (i + 1) % images.length), 5000);
+    return () => clearInterval(t);
+  }, []);
+
+  return (
+    <div className="pointer-events-none absolute inset-0 z-0 h-80 sm:h-96 lg:h-[420px]">
+      
+      {images.map((src, i) => (
+        <div
+          key={i}
+          className={`absolute inset-0 transition-opacity duration-1000 ${i === index ? 'opacity-100' : 'opacity-0'}`}
+          style={{ backgroundImage: `url(${src})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
+        />
+      ))}
+
+      {/* clickable overlay shown on hover */}
+      <div
+        className="absolute inset-0 flex items-center justify-center bg-black/0 transition-colors duration-300"
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+        onClick={() => window.location.href = '/contact'}
+        style={{ cursor: 'pointer' }}
+      >
+        <div className={`pointer-events-auto mx-auto max-w-3xl px-4 text-center transition-opacity duration-200 ${hovered ? 'opacity-100' : 'opacity-0'}`}>
+          <div className="rounded-xl bg-black/50 px-6 py-4 text-white backdrop-blur-sm">
+            <h2 className="text-xl font-semibold">Digital dining, reimagined</h2>
+            <p className="mt-2 text-sm">Design a better restaurant journey — click to book a demo.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default Home;
