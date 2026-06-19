@@ -112,8 +112,8 @@ const Messages = () => {
         
         setSendingReply(true);
         try {
-            await contactService.markMessageReplied(selectedMessage.id);
-            toast.success(`Reply recorded for ${selectedMessage.name}`);
+            await contactService.markMessageReplied(selectedMessage.id, replyText);
+            toast.success(`Reply sent to ${selectedMessage.email}`);
             setReplyText('');
             await fetchMessages();
         } catch (error) {

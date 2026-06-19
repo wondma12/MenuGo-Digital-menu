@@ -20,14 +20,12 @@ export const markMessageRead = (id) => {
   return Promise.resolve({ ok: false });
 };
 
-export const markMessageReplied = (id) => {
-  console.warn('markMessageReplied: skipping server call (no admin endpoint)');
-  return Promise.resolve({ ok: false });
+export const markMessageReplied = (id, reply) => {
+  return api.post(`/public/contact/${id}/reply`, { reply }).then(res => res.data);
 };
 
 export const deleteMessage = (id) => {
-  console.warn('deleteMessage: skipping server call (no admin endpoint)');
-  return Promise.resolve({ ok: false });
+  return api.delete(`/public/contact/${id}`).then(res => res.data);
 };
 
 export default {

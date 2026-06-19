@@ -3,17 +3,62 @@ const handlebars = require('handlebars');
 const fs = require('fs');
 const path = require('path');
 const { logger } = require('../utils/logger');
+let oauth2Client = null;
+// Lazy-load google auth only if OAuth2 vars are provided
+if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET && process.env.GOOGLE_REFRESH_TOKEN) {
+  try {
+    const { google } = require('googleapis');
+    oauth2Client = new google.auth.OAuth2(
+      process.env.GOOGLE_CLIENT_ID,
+      process.env.GOOGLE_CLIENT_SECRET,
+      process.env.GOOGLE_REDIRECT_URI || 'https://developers.google.com/oauthplayground'
+    );
+    oauth2Client.setCredentials({ refresh_token: process.env.GOOGLE_REFRESH_TOKEN });
+  } catch (e) {
+    logger.warn('googleapis not available, Gmail OAuth2 disabled');
+  }
+}
 
-// Create transporter
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: parseInt(process.env.SMTP_PORT),
-  secure: process.env.SMTP_SECURE === 'true',
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-});
+// Create transporter factory (supports plain SMTP or Gmail OAuth2)
+const createTransporter = async () => {
+  // Prefer explicit SMTP settings when provided
+  if (process.env.SMTP_HOST && process.env.SMTP_USER && (process.env.SMTP_PASS || oauth2Client)) {
+    // If OAuth2 configured for Gmail use it
+    if (oauth2Client && (process.env.SMTP_HOST.includes('gmail') || process.env.SMTP_HOST.includes('google'))) {
+      try {
+        const accessToken = await oauth2Client.getAccessToken();
+        return nodemailer.createTransport({
+          service: 'gmail',
+          auth: {
+            type: 'OAuth2',
+            user: process.env.SMTP_USER,
+            clientId: process.env.GOOGLE_CLIENT_ID,
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+            refreshToken: process.env.GOOGLE_REFRESH_TOKEN,
+            accessToken: accessToken ? accessToken.token : undefined,
+          },
+        });
+      } catch (err) {
+        logger.error('Failed to obtain Gmail access token, falling back to SMTP username/password', err && err.message ? err.message : err);
+      }
+    }
+
+    // Fallback to plain SMTP auth
+    return nodemailer.createTransport({
+      host: process.env.SMTP_HOST,
+      port: parseInt(process.env.SMTP_PORT || '587'),
+      secure: process.env.SMTP_SECURE === 'true',
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
+      },
+    });
+  }
+
+  // If no SMTP config provided, create a direct transport (may be blocked by providers)
+  logger.warn('No SMTP configuration found; using direct transport (may not deliver)');
+  return nodemailer.createTransport({ sendmail: true });
+};
 
 // Load email template
 const loadTemplate = (templateName, data) => {
@@ -25,11 +70,12 @@ const loadTemplate = (templateName, data) => {
 
 // Send email
 const sendEmail = async (to, subject, template, data) => {
+  const transporter = await createTransporter();
   try {
     const html = loadTemplate(template, data);
-    
+
     const mailOptions = {
-      from: `${process.env.EMAIL_FROM_NAME} <${process.env.EMAIL_FROM}>`,
+      from: `${process.env.EMAIL_FROM_NAME || process.env.EMAIL_FROM || 'no-reply'} <${process.env.EMAIL_FROM || process.env.SMTP_USER}>`,
       to,
       subject,
       html,
