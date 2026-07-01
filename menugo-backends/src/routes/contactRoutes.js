@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { createContactMessage, listContactMessages, deleteContactMessage, replyContactMessage } = require('../controllers/contactController');
+const { createContactMessage, listContactMessages, markContactMessageRead, deleteContactMessage, replyContactMessage } = require('../controllers/contactController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
 // Public endpoint for creating contact messages
@@ -8,6 +8,7 @@ router.post('/', createContactMessage);
 
 // Admin listing - protected, allow platform_admin role or system admins
 router.get('/', protect, authorize('platform_admin', 'system_admin'), listContactMessages);
+router.patch('/:id/read', protect, authorize('platform_admin', 'system_admin'), markContactMessageRead);
 
 // Admin delete
 router.delete('/:id', protect, authorize('platform_admin', 'system_admin'), deleteContactMessage);

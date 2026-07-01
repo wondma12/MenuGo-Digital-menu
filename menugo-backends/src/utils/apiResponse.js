@@ -58,7 +58,7 @@ class ApiResponse {
 }
 
 // Paginated response helper
-const paginatedResponse = (data, total, page, limit) => {
+const paginatedResponse = (data, total, page, limit, summary = null) => {
   return ApiResponse.success(data, 'Success', {
     pagination: {
       total,
@@ -68,6 +68,7 @@ const paginatedResponse = (data, total, page, limit) => {
       hasNextPage: page * limit < total,
       hasPrevPage: page > 1,
     },
+    ...(summary ? { summary } : {}),
   });
 };
 

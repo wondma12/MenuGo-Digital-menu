@@ -15,9 +15,7 @@ export const getAdminContactMessages = (params) => {
 };
 
 export const markMessageRead = (id) => {
-  // No-op: avoid calling admin endpoints that may not exist. UI should update optimistically.
-  console.warn('markMessageRead: skipping server call (no admin endpoint)');
-  return Promise.resolve({ ok: false });
+  return api.patch(`/public/contact/${id}/read`).then(res => res.data);
 };
 
 export const markMessageReplied = (id, reply) => {

@@ -12,6 +12,7 @@ import contactService from '../../../services/contactService';
 const Messages = () => {
     const [messages, setMessages] = useState([]);
     const [filteredMessages, setFilteredMessages] = useState([]);
+    const [summary, setSummary] = useState({ total: 0, unread: 0, read: 0, replied: 0 });
     const [loading, setLoading] = useState(true);
     const [selectedMessage, setSelectedMessage] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
@@ -27,12 +28,29 @@ const Messages = () => {
         filterMessages();
     }, [searchTerm, statusFilter, messages]);
 
+    const getMessageStatus = (msg) => {
+        if (!msg) return 'unread';
+        if (msg.status) return msg.status;
+        if (msg.replied_at || msg.reply_from_restaurant) return 'replied';
+        if (msg.read_at) return 'read';
+        return 'unread';
+    };
+
+    const buildSummary = (items) => {
+        const counts = { total: items.length, unread: 0, read: 0, replied: 0 };
+        items.forEach((msg) => {
+            counts[getMessageStatus(msg)] += 1;
+        });
+        return counts;
+    };
+
     const fetchMessages = async () => {
         try {
             const response = await contactService.getAdminContactMessages();
             const items = response?.data || [];
             setMessages(items);
             setFilteredMessages(items);
+            setSummary(response?.meta?.summary || buildSummary(items));
         } catch (error) {
             console.error('Error fetching messages:', error);
             toast.error('Failed to fetch messages');
@@ -54,20 +72,44 @@ const Messages = () => {
         }
         
         if (statusFilter !== 'all') {
-            filtered = filtered.filter(msg => msg.status === statusFilter);
+            filtered = filtered.filter(msg => getMessageStatus(msg) === statusFilter);
         }
         
         setFilteredMessages(filtered);
     };
 
+    const handleSelectMessage = async (msg) => {
+        setSelectedMessage(msg);
+
+        if (getMessageStatus(msg) === 'unread') {
+            try {
+                const updated = await contactService.markMessageRead(msg.id);
+                const updatedMessage = updated?.data || msg;
+                setMessages((current) => current.map((item) => (item.id === msg.id ? { ...item, ...updatedMessage } : item)));
+                setSelectedMessage((current) => (current?.id === msg.id ? { ...current, ...updatedMessage } : current));
+                setSummary((current) => ({
+                    ...current,
+                    unread: Math.max((current.unread || 0) - 1, 0),
+                    read: (current.read || 0) + (getMessageStatus(updatedMessage) === 'read' ? 1 : 0),
+                    replied: current.replied || 0,
+                }));
+            } catch (error) {
+                console.error('Error marking message as read on open:', error);
+            }
+        }
+    };
+
     const handleMarkAsRead = async (id) => {
         try {
-            await contactService.markMessageRead(id);
+            const response = await contactService.markMessageRead(id);
+            const updatedMessage = response?.data;
             toast.success('Message marked as read');
-            fetchMessages();
-            if (selectedMessage?.id === id) {
-                setSelectedMessage({ ...selectedMessage, status: 'read' });
+            if (updatedMessage) {
+                setMessages((current) => current.map((item) => (item.id === id ? { ...item, ...updatedMessage } : item)));
+                setFilteredMessages((current) => current.map((item) => (item.id === id ? { ...item, ...updatedMessage } : item)));
+                setSelectedMessage((current) => (current?.id === id ? { ...current, ...updatedMessage } : current));
             }
+            await fetchMessages();
         } catch (error) {
             console.error('Error marking message as read:', error);
             toast.error('Failed to update message');
@@ -133,10 +175,10 @@ const Messages = () => {
     };
 
     const stats = {
-        total: messages.length,
-        unread: messages.filter(m => m.status === 'unread').length,
-        read: messages.filter(m => m.status === 'read').length,
-        replied: messages.filter(m => m.status === 'replied').length
+        total: summary.total ?? messages.length,
+        unread: summary.unread ?? buildSummary(messages).unread,
+        read: summary.read ?? buildSummary(messages).read,
+        replied: summary.replied ?? buildSummary(messages).replied
     };
 
     if (loading) {
@@ -298,14 +340,14 @@ const Messages = () => {
                                         className={`flex gap-3 px-6 py-4 border-b border-slate-100 cursor-pointer transition-all hover:bg-orange-50/50 ${
                                             selectedMessage?.id === msg.id ? 'bg-orange-50/70 border-l-4 border-l-orange-500' : ''
                                         }`}
-                                        onClick={() => setSelectedMessage(msg)}
+                                        onClick={() => handleSelectMessage(msg)}
                                     >
                                         <div className="relative flex-shrink-0">
                                             <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-400 to-amber-400 flex items-center justify-center text-white font-semibold text-lg">
                                                 {(msg.name || 'U').charAt(0).toUpperCase()}
                                             </div>
                                             <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-0.5">
-                                                {getStatusIcon(msg.status)}
+                                                {getStatusIcon(getMessageStatus(msg))}
                                             </div>
                                         </div>
                                         <div className="flex-1 min-w-0">
@@ -340,11 +382,13 @@ const Messages = () => {
                                             {selectedMessage.subject || 'Message'}
                                         </h2>
                                         <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${
-                                            selectedMessage.status === 'unread' ? 'bg-amber-50 text-amber-600' :
-                                            selectedMessage.status === 'read' ? 'bg-emerald-50 text-emerald-600' :
-                                            'bg-blue-50 text-blue-600'
+                                            getMessageStatus(selectedMessage) === 'unread'
+                                                ? 'bg-amber-50 text-amber-600'
+                                                : getMessageStatus(selectedMessage) === 'read'
+                                                    ? 'bg-emerald-50 text-emerald-600'
+                                                    : 'bg-blue-50 text-blue-600'
                                         }`}>
-                                            {selectedMessage.status || 'unread'}
+                                            {getMessageStatus(selectedMessage)}
                                         </span>
                                     </div>
                                     <div className="flex flex-wrap gap-2">

@@ -27,6 +27,23 @@ const ContactMessage = sequelize.define('ContactMessage', {
     type: DataTypes.TEXT,
     allowNull: false,
   },
+  status: {
+    type: DataTypes.STRING(20),
+    allowNull: false,
+    defaultValue: 'unread',
+  },
+  read_at: {
+    type: DataTypes.DATE,
+    allowNull: true,
+  },
+  replied_at: {
+    type: DataTypes.DATE,
+    allowNull: true,
+  },
+  reply_from_restaurant: {
+    type: DataTypes.TEXT,
+    allowNull: true,
+  },
   created_at: {
     type: DataTypes.DATE,
     defaultValue: DataTypes.NOW,

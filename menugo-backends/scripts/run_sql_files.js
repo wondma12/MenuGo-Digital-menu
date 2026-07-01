@@ -15,6 +15,7 @@ async function main() {
     path.join(__dirname, '..', 'db-migrations', '005_create_invoices.sql'),
     path.join(__dirname, '..', 'db-migrations', '006_create_subscriptions.sql'),
     path.join(__dirname, '..', 'db-migrations', '007_create_date_trunc.sql'),
+    path.join(__dirname, '..', 'db-migrations', '012_add_contact_message_status_fields.sql'),
   ];
 
   const conn = await mysql.createConnection({
