@@ -1,6 +1,7 @@
 import { useCallback } from 'react'
 import { useAuthStore } from '../store/authStore'
 import { useNavigate } from 'react-router-dom'
+import { getRoleHomePath } from '../utils/authRouting'
 
 export const useAuth = () => {
   const {
@@ -27,16 +28,7 @@ export const useAuth = () => {
   const handleLogin = useCallback(async (email, password, rememberMe) => {
     const result = await login(email, password, rememberMe)
     if (result.success) {
-      const role = result.user?.role
-      if (role === 'platform_admin') {
-        navigate('/platform/dashboard')
-      } else if (role === 'restaurant_admin') {
-        navigate('/admin/dashboard')
-      } else if (role === 'waiter') {
-        navigate('/waiter/dashboard')
-      } else {
-        navigate('/')
-      }
+      navigate(getRoleHomePath(result.user))
     }
     return result
   }, [login, navigate])

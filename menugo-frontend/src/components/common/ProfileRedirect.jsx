@@ -1,6 +1,7 @@
 import React from 'react'
 import { Navigate } from 'react-router-dom'
 import { useAuthStore } from '../../store/authStore'
+import { getRoleHomePath } from '../../utils/authRouting'
 
 const ProfileRedirect = () => {
   const { user, isAuthenticated } = useAuthStore()
@@ -21,7 +22,7 @@ const ProfileRedirect = () => {
     return <Navigate to="/waiter/profile" replace />
   }
 
-  return <Navigate to="/home" replace />
+  return <Navigate to={getRoleHomePath(user)} replace />
 }
 
 export default ProfileRedirect

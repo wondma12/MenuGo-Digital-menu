@@ -107,6 +107,7 @@ import Security from './components/public/Security'
 import ProtectedRoute from './components/common/ProtectedRoute'
 import ErrorBoundary from './components/common/ErrorBoundary'
 import Loading from './components/common/Loading'
+import { getEffectiveRole, getRoleHomePath } from './utils/authRouting'
 import ProfileRedirect from './components/common/ProfileRedirect'
 
 // Create Query Client
@@ -151,11 +152,7 @@ function App() {
     if (user?.role === 'restaurant_admin' && (!user?.is_active || !user?.is_verified)) {
       return <Navigate to="/login" replace />
     }
-    if (user?.role === 'platform_admin') return <Navigate to="/platform/dashboard" replace />
-    if (user?.role === 'restaurant_admin') return <Navigate to="/admin/dashboard" replace />
-    if (user?.role === 'chef' || user?.staff?.role === 'chef') return <Navigate to="/chef/kitchen" replace />
-    if (user?.role === 'waiter') return <Navigate to="/waiter/dashboard" replace />
-    return <Navigate to="/scan" replace />
+    return <Navigate to={getRoleHomePath(getEffectiveRole(user))} replace />
   }
 
   // Run one-time bootstrap work on initial mount.

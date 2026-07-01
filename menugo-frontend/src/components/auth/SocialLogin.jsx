@@ -5,6 +5,7 @@ import { API_CONFIG } from '../../config/api.config'
 import { authService } from '../../services/authService'
 import { useAuthStore } from '../../store/authStore'
 import { setUser } from '../../utils/localStorage'
+import { getRoleHomePath } from '../../utils/authRouting'
 
 const normalizeApiBase = (url) => {
   if (!url) return url
@@ -13,13 +14,7 @@ const normalizeApiBase = (url) => {
 
 const OAUTH_BASE_URL = normalizeApiBase(API_CONFIG.baseURL)
 
-const roleToRoute = (role) => {
-  if (role === 'platform_admin') return '/platform/dashboard'
-  if (role === 'restaurant_admin') return '/admin/dashboard'
-  if (role === 'waiter') return '/waiter/dashboard'
-  if (role === 'chef') return '/chef/kitchen'
-  return '/'
-}
+const roleToRoute = (role) => getRoleHomePath(role)
 
 const SocialLogin = () => {
   const navigate = useNavigate()

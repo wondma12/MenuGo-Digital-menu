@@ -1,6 +1,7 @@
 // src/components/common/ProtectedRoute.jsx
 import { Navigate, Outlet } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
+import { getEffectiveRole, getRoleHomePath } from '../utils/authRouting';
 
 const ProtectedRoute = ({ allowedRoles = [] }) => {
   const { isAuthenticated, user, isLoading } = useAuthStore();
@@ -41,15 +42,11 @@ const ProtectedRoute = ({ allowedRoles = [] }) => {
   }
 
   // Check if user has required role
-  const userRole = user?.role || user?.staff?.role;
+  const userRole = getEffectiveRole(user)
   
   if (allowedRoles.length > 0 && !allowedRoles.includes(userRole)) {
     // Redirect based on user role
-    if (userRole === 'platform_admin') return <Navigate to="/platform/dashboard" replace />;
-    if (userRole === 'restaurant_admin') return <Navigate to="/admin/dashboard" replace />;
-    if (userRole === 'chef') return <Navigate to="/chef/kitchen" replace />;
-    if (userRole === 'waiter') return <Navigate to="/waiter/dashboard" replace />;
-    return <Navigate to="/" replace />;
+    return <Navigate to={getRoleHomePath(userRole)} replace />;
   }
 
   return <Outlet />;

@@ -79,6 +79,7 @@ const TwoFactorAuth = React.lazy(() => import('./components/auth/TwoFactorAuth')
 import ProtectedRoute from './components/common/ProtectedRoute'
 import Loading from './components/common/Loading'
 import ErrorBoundary from './components/common/ErrorBoundary'
+import { getEffectiveRole, getRoleHomePath } from './utils/authRouting'
 
 // Route Configuration
 export const routeConfig = {
@@ -189,9 +190,12 @@ export const AppRoutes = () => {
         return routeConfig.public
     }
     // Consider both top-level user role and any staff role attached to the user
-    const rolesToConsider = [user.role]
-    if (user.staff && user.staff.role && !rolesToConsider.includes(user.staff.role)) {
-      rolesToConsider.push(user.staff.role)
+    const rolesToConsider = [getEffectiveRole(user)]
+    if (user.staff && user.staff.role) {
+      const staffRole = getEffectiveRole({ role: user.staff.role })
+      if (!rolesToConsider.includes(staffRole)) {
+        rolesToConsider.push(staffRole)
+      }
     }
 
     // Collect unique route keys for all applicable roles
@@ -296,19 +300,7 @@ export const AppRoutes = () => {
           <Route
             path="/"
             element={
-              !user ? (
-                <Navigate to="/login" replace />
-              ) : (user.staff && user.staff.role ? user.staff.role : user.role) === 'platform_admin' ? (
-                <Navigate to="/platform/dashboard" replace />
-              ) : (user.staff && user.staff.role ? user.staff.role : user.role) === 'restaurant_admin' ? (
-                <Navigate to="/admin/dashboard" replace />
-              ) : (user.staff && user.staff.role ? user.staff.role : user.role) === 'chef' ? (
-                <Navigate to="/chef/kitchen" replace />
-              ) : (user.staff && user.staff.role ? user.staff.role : user.role) === 'waiter' ? (
-                <Navigate to="/waiter/dashboard" replace />
-              ) : (
-                <Navigate to="/scan" replace />
-              )
+              !user ? <Navigate to="/login" replace /> : <Navigate to={getRoleHomePath(user)} replace />
             }
           />
           

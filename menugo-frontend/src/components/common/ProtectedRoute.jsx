@@ -2,6 +2,7 @@ import React from 'react'
 import { Navigate, Outlet } from 'react-router-dom'
 import { useAuthStore } from '../../store/authStore'
 import Loading from './Loading'
+import { getEffectiveRole, getRoleHomePath } from '../../utils/authRouting'
 
 const ProtectedRoute = ({ allowedRoles = [] }) => {
   const { isAuthenticated, user, isLoading } = useAuthStore()
@@ -27,12 +28,13 @@ const ProtectedRoute = ({ allowedRoles = [] }) => {
 
   // If allowedRoles provided, ensure the current user's role matches.
   if (Array.isArray(allowedRoles) && allowedRoles.length > 0) {
-    if (!user || !allowedRoles.includes(user.role)) {
+    const userRole = getEffectiveRole(user)
+    if (!userRole || !allowedRoles.includes(userRole)) {
       console.warn('ProtectedRoute: access denied for user role, redirecting to root', {
-        userRole: user?.role,
+        userRole,
         allowedRoles,
       })
-      return <Navigate to="/" replace />
+      return <Navigate to={getRoleHomePath(userRole)} replace />
     }
   }
 

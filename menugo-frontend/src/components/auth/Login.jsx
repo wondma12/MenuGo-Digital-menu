@@ -11,6 +11,7 @@ import Button from '../common/Button';
 import Alert from '../common/Alert';
 import { toast } from 'react-toastify';
 import SocialLogin from './SocialLogin';
+import { getRoleHomePath } from '../../utils/authRouting';
 
 const schema = yup.object({
   email: yup
@@ -79,14 +80,7 @@ const Login = () => {
               const parsed = token ? parseJwt(token) : null
 
               const userRole = srcUser?.staff?.role || srcUser?.role || parsed?.staff?.role || parsed?.role || null
-              const roleRoutes = {
-                platform_admin: '/platform/dashboard',
-                restaurant_admin: '/admin/dashboard',
-                chef: '/chef/kitchen',
-                waiter: '/waiter/dashboard',
-                customer: '/scan',
-              };
-              const redirectPath = roleRoutes[userRole] || '/';
+              const redirectPath = getRoleHomePath(userRole);
               navigate(redirectPath, { replace: true });
             } else {
             // fall through to normal login UI
@@ -127,14 +121,7 @@ const Login = () => {
           const parsed = token ? parseJwt(token) : null
 
           const userRole = srcUser?.staff?.role || srcUser?.role || parsed?.staff?.role || parsed?.role || null
-          const roleRoutes = {
-            platform_admin: '/platform/dashboard',
-            restaurant_admin: '/admin/dashboard',
-            chef: '/chef/kitchen',
-            waiter: '/waiter/dashboard',
-            customer: '/scan',
-          };
-          const redirectPath = roleRoutes[userRole] || '/';
+          const redirectPath = getRoleHomePath(userRole);
           navigate(redirectPath);
         }, 1000);
       } else {
