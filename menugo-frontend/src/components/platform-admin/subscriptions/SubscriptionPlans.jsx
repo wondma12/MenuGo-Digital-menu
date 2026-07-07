@@ -68,27 +68,34 @@ const SubscriptionPlans = () => {
       {/* </div> */}
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
-        {plans?.map((plan, index) => (
-          <motion.div
-            key={plan.id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1 }}
-          >
-            <PlanCard
-              plan={plan}
-              onEdit={() => {
-                setEditingPlan(plan)
-                setShowModal(true)
-              }}
-              onDelete={() => {
-                if (confirm('Are you sure you want to delete this plan?')) {
-                  deleteMutation.mutate(plan.id)
-                }
-              }}
-            />
-          </motion.div>
-        ))}
+        {plans && plans.length > 0 ? (
+          plans.map((plan, index) => (
+            <motion.div
+              key={plan.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.1 }}
+            >
+              <PlanCard
+                plan={plan}
+                onEdit={() => {
+                  setEditingPlan(plan)
+                  setShowModal(true)
+                }}
+                onDelete={() => {
+                  if (confirm('Are you sure you want to delete this plan?')) {
+                    deleteMutation.mutate(plan.id)
+                  }
+                }}
+              />
+            </motion.div>
+          ))
+        ) : (
+          <div className="col-span-full rounded-none border border-dashed border-slate-300 bg-slate-50 p-12 text-center">
+            <p className="text-slate-600">No subscription plans yet</p>
+            <p className="mt-1 text-sm text-slate-500">Click "Add Plan" to create your first subscription plan</p>
+          </div>
+        )}
       </div>
 
       <Modal

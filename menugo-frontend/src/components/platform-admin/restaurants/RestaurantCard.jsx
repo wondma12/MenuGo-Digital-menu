@@ -35,10 +35,10 @@ const RestaurantCard = ({ restaurant, onUpdate, variant = 'grid' }) => {
       : { label: 'Active', color: 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100', icon: CheckCircleIcon }
 
   const tierBadge = {
-    basic: { label: 'Basic', color: 'bg-slate-100 text-slate-700 ring-1 ring-slate-200' },
-    premium: { label: 'Premium', color: 'bg-blue-50 text-blue-700 ring-1 ring-blue-100' },
-    enterprise: { label: 'Enterprise', color: 'bg-orange-50 text-orange-700 ring-1 ring-orange-100' },
-  }[restaurant.subscription_tier] || { label: 'Basic', color: 'bg-slate-100 text-slate-700 ring-1 ring-slate-200' }
+    monthly: { label: 'Monthly', color: 'bg-slate-100 text-slate-700 ring-1 ring-slate-200' },
+    six_month: { label: '6-Month', color: 'bg-blue-50 text-blue-700 ring-1 ring-blue-100' },
+    yearly: { label: 'Yearly', color: 'bg-orange-50 text-orange-700 ring-1 ring-orange-100' },
+  }[restaurant.subscription_tier] || { label: 'Monthly', color: 'bg-slate-100 text-slate-700 ring-1 ring-slate-200' }
 
   const StatusIcon = statusBadge.icon
   const logoSrc = restaurant.logo_url || restaurant.logo || restaurant.logoUrl || '/logo.svg'

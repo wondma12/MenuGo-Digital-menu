@@ -207,7 +207,7 @@ const seedRestaurant = async (users) => {
     service_charge: 10.00,
     delivery_fee: 3.99,
     qr_code_identifier: 'gourmet-bistro-nyc-12345',
-    subscription_tier: 'premium',
+    subscription_tier: 'monthly',
     is_active: true,
     is_verified: true,
     verification_date: new Date(),
@@ -1270,52 +1270,53 @@ const seedSubscriptionPlans = async () => {
   
   const plans = [
     {
-      name: 'Basic Plan',
-      tier: 'basic',
-      description: 'Essential features for small restaurants',
-      price_monthly: 0,
-      price_yearly: 0,
-      features: JSON.stringify([
-        'Digital menu',
-        'QR code ordering',
-        'Basic analytics',
-        'Up to 50 menu items',
-        '5 staff accounts',
-      ]),
-      limits: JSON.stringify({
-        menu_items: 50,
-        staff_accounts: 5,
-        orders_per_day: 100,
-      }),
-      is_active: true,
-    },
-    {
-      name: 'Premium Plan',
-      tier: 'premium',
-      description: 'Advanced tools for growing businesses',
+      name: 'Monthly Plan',
+      tier: 'monthly',
+      description: 'Full platform access with monthly billing',
       price_monthly: 29.99,
-      price_yearly: 299.99,
+      price_yearly: 29.99,
       features: JSON.stringify([
-        'Everything in Basic',
-        'Priority support',
-        'Inventory tracking',
-        'Advanced analytics',
-        'Up to 200 menu items',
-        '15 staff accounts',
+        'Everything in Premium',
+        'Dedicated support',
+        'Custom integrations',
+        'Unlimited menu items',
+        'Unlimited staff',
+        'API access',
       ]),
       limits: JSON.stringify({
-        menu_items: 200,
-        staff_accounts: 15,
-        orders_per_day: 500,
+        menu_items: -1,
+        staff_accounts: -1,
+        orders_per_day: -1,
       }),
       is_active: true,
     },
     {
-      name: 'Enterprise Plan',
-      tier: 'enterprise',
-      description: 'Full platform access and customization',
-      price_monthly: 99.99,
-      price_yearly: 999.99,
+      name: '6-Month Plan',
+      tier: 'six_month',
+      description: 'Full platform access with 6-month billing (save 17%)',
+      price_monthly: 24.99,
+      price_yearly: 149.94,
+      features: JSON.stringify([
+        'Everything in Premium',
+        'Dedicated support',
+        'Custom integrations',
+        'Unlimited menu items',
+        'Unlimited staff',
+        'API access',
+      ]),
+      limits: JSON.stringify({
+        menu_items: -1,
+        staff_accounts: -1,
+        orders_per_day: -1,
+      }),
+      is_active: true,
+    },
+    {
+      name: 'Yearly Plan',
+      tier: 'yearly',
+      description: 'Full platform access with yearly billing (save 17%)',
+      price_monthly: 24.99,
+      price_yearly: 299.99,
       features: JSON.stringify([
         'Everything in Premium',
         'Dedicated support',
@@ -1357,7 +1358,7 @@ const seedSubscription = async (restaurant) => {
     return;
   }
 
-  const plan = await SubscriptionPlan.findOne({ where: { tier: 'premium' } });
+  const plan = await SubscriptionPlan.findOne({ where: { tier: 'monthly' } });
   if (!plan) {
     return;
   }
@@ -1371,7 +1372,7 @@ const seedSubscription = async (restaurant) => {
       id: uuidv4(),
       restaurant_id: restaurant.id,
       plan_id: plan.id,
-      tier: 'premium',
+      tier: 'monthly',
       amount: 29.99,
       billing_interval: 'monthly',
       status: 'active',

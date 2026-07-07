@@ -11,9 +11,9 @@ const RestaurantFilters = ({ filters, onFiltersChange }) => {
 
   const tierOptions = [
     { value: 'all', label: 'All Tiers' },
-    { value: 'basic', label: 'Basic' },
-    { value: 'premium', label: 'Premium' },
-    { value: 'enterprise', label: 'Enterprise' },
+    { value: 'monthly', label: 'Monthly' },
+    { value: 'six_month', label: '6-Month' },
+    { value: 'yearly', label: 'Yearly' },
   ];
 
   const countryOptions = [

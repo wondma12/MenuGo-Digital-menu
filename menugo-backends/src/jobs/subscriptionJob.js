@@ -65,14 +65,14 @@ const processExpiredSubscriptions = async () => {
     });
 
     for (const restaurant of expiredSubscriptions) {
-      // Downgrade to basic plan
+      // Downgrade to monthly plan
       const previousTier = restaurant.subscription_tier;
       await restaurant.update({
-        subscription_tier: 'basic',
+        subscription_tier: 'monthly',
         subscription_status: 'expired',
-        max_menu_items: 50,
-        max_users: 5,
-        max_orders_per_day: 100,
+        max_menu_items: -1,
+        max_users: -1,
+        max_orders_per_day: -1,
       });
 
       // Create notification
@@ -81,10 +81,10 @@ const processExpiredSubscriptions = async () => {
         user_id: restaurant.owner_id,
         type: 'system',
         title: 'Subscription Expired',
-        message: `Your ${previousTier} subscription has expired. Your account has been downgraded to the Basic plan.`,
+        message: `Your ${previousTier} subscription has expired. Your account has been downgraded to the Monthly plan.`,
         data: {
           previous_tier: previousTier,
-          current_tier: 'basic',
+          current_tier: 'monthly',
           end_date: restaurant.subscription_end_date,
         },
       });
@@ -142,9 +142,9 @@ const getSubscriptionStats = async () => {
     const stats = {
       total: await Restaurant.count(),
       by_tier: {
-        basic: await Restaurant.count({ where: { subscription_tier: 'basic' } }),
-        premium: await Restaurant.count({ where: { subscription_tier: 'premium' } }),
-        enterprise: await Restaurant.count({ where: { subscription_tier: 'enterprise' } }),
+        monthly: await Restaurant.count({ where: { subscription_tier: 'monthly' } }),
+        six_month: await Restaurant.count({ where: { subscription_tier: 'six_month' } }),
+        yearly: await Restaurant.count({ where: { subscription_tier: 'yearly' } }),
       },
       by_status: {
         trial: await Restaurant.count({ where: { subscription_status: 'trial' } }),

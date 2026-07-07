@@ -5,42 +5,8 @@ const { ApiError } = require('../utils/apiError');
 const { catchAsync } = require('../utils/catchAsync');
 const { Op } = require('sequelize');
 
-// Default subscription plans
-const DEFAULT_SUBSCRIPTION_PLANS = [
-  {
-    id: 'plan_basic',
-    tier: 'basic',
-    name: 'Basic Plan',
-    description: 'Essential features for small restaurants',
-    price_monthly: 0,
-    price_yearly: 0,
-    features: ['Digital menu', 'QR ordering', 'Basic analytics', 'Up to 50 menu items'],
-    limits: { menu_items: 50, staff_accounts: 5, orders_per_day: 100 },
-    is_active: true,
-  },
-  {
-    id: 'plan_premium',
-    tier: 'premium',
-    name: 'Premium Plan',
-    description: 'Advanced tools for growing businesses',
-    price_monthly: 29,
-    price_yearly: 290,
-    features: ['Everything in Basic', 'Priority support', 'Inventory tracking', 'Advanced analytics'],
-    limits: { menu_items: 200, staff_accounts: 15, orders_per_day: 500 },
-    is_active: true,
-  },
-  {
-    id: 'plan_enterprise',
-    tier: 'enterprise',
-    name: 'Enterprise Plan',
-    description: 'Full platform access and customization',
-    price_monthly: 99,
-    price_yearly: 990,
-    features: ['Everything in Premium', 'Dedicated support', 'Custom integrations', 'Unlimited everything'],
-    limits: { menu_items: -1, staff_accounts: -1, orders_per_day: -1 },
-    is_active: true,
-  },
-];
+// Default subscription plans - now empty, plans come from database only
+const DEFAULT_SUBSCRIPTION_PLANS = [];
 
 // Get all subscription plans
 const getSubscriptionPlans = async (req, res) => {
@@ -145,10 +111,39 @@ const updateSubscriptionPlan = async (req, res) => {
     const { id } = req.params;
     const updates = req.body;
     
+    if (!SubscriptionPlan) {
+      return res.status(500).json({
+        success: false,
+        message: 'SubscriptionPlan model not available',
+      });
+    }
+    
+    // Ensure numeric values are numbers
+    const updateData = {
+      ...updates,
+      price_monthly: updates.price_monthly ? parseFloat(updates.price_monthly) : undefined,
+      price_yearly: updates.price_yearly ? parseFloat(updates.price_yearly) : undefined,
+      updated_at: new Date(),
+    };
+    
+    const [updated] = await SubscriptionPlan.update(updateData, {
+      where: { id: id }
+    });
+    
+    if (!updated) {
+      return res.status(404).json({
+        success: false,
+        message: 'Subscription plan not found',
+      });
+    }
+    
+    // Fetch the updated plan
+    const updatedPlan = await SubscriptionPlan.findByPk(id);
+    
     res.status(200).json({
       success: true,
-      message: 'Subscription plan updated',
-      data: { id, ...updates },
+      message: 'Subscription plan updated successfully',
+      data: updatedPlan,
     });
   } catch (error) {
     console.error('Error in updateSubscriptionPlan:', error);
@@ -164,9 +159,27 @@ const deleteSubscriptionPlan = async (req, res) => {
   try {
     const { id } = req.params;
     
+    if (!SubscriptionPlan) {
+      return res.status(500).json({
+        success: false,
+        message: 'SubscriptionPlan model not available',
+      });
+    }
+    
+    const deleted = await SubscriptionPlan.destroy({
+      where: { id: id }
+    });
+    
+    if (!deleted) {
+      return res.status(404).json({
+        success: false,
+        message: 'Subscription plan not found',
+      });
+    }
+    
     res.status(200).json({
       success: true,
-      message: 'Subscription plan deleted',
+      message: 'Subscription plan deleted successfully',
     });
   } catch (error) {
     console.error('Error in deleteSubscriptionPlan:', error);
@@ -230,7 +243,7 @@ const getRestaurantSubscription = async (req, res) => {
       message: 'Restaurant subscription retrieved',
       data: {
         current_subscription: null,
-        subscription_tier: 'basic',
+        subscription_tier: 'monthly',
         subscription_status: 'active',
         subscription_end_date: null,
       },

@@ -70,7 +70,7 @@ const RestaurantForm = () => {
   } = useForm({
     resolver: yupResolver(schema),
     defaultValues: {
-      subscriptionTier: 'basic',
+      subscriptionTier: 'monthly',
     },
   })
 
@@ -516,9 +516,9 @@ const RestaurantForm = () => {
             {...register('subscriptionTier')}
             error={errors.subscriptionTier?.message}
             options={[
-              { value: 'basic', label: 'Basic - $29/month' },
-              { value: 'premium', label: 'Premium - $79/month' },
-              { value: 'enterprise', label: 'Enterprise - $199/month' },
+              { value: 'monthly', label: 'Monthly - $29.99/month' },
+              { value: 'six_month', label: '6-Month - $149.94 (save 17%)' },
+              { value: 'yearly', label: 'Yearly - $299.99/year (save 17%)' },
             ]}
             required
           />

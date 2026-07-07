@@ -197,8 +197,8 @@ export const getRestaurantDetails = async (id) => {
     is_verified: r.is_verified ?? false,
     isActive: r.is_active ?? r.isActive ?? true,
     is_active: r.is_active ?? true,
-    subscriptionTier: r.subscription_tier || r.subscriptionTier || 'basic',
-    subscription_tier: r.subscription_tier || 'basic',
+    subscriptionTier: r.subscription_tier || r.subscriptionTier || 'monthly',
+    subscription_tier: r.subscription_tier || 'monthly',
     subscriptionStatus: r.subscription_status || r.subscriptionStatus || null,
     subscription_status: r.subscription_status || null,
     subscriptionStartDate: r.subscription_start_date || r.subscriptionStartDate || null,
@@ -289,22 +289,45 @@ export const getPendingVerifications = async () => {
 }
 
 export const verifyRestaurant = async (id, status, notes) => {
-  // Normalize verify payload to match backend expectations: { is_verified, rejection_reason }
-  let payload = {}
+  let targetId = id;
+  let targetStatus = status;
+  let targetNotes = notes;
 
-  if (typeof status === 'boolean') {
-    payload.is_verified = status
-  } else if (status && typeof status === 'object') {
-    payload.is_verified = typeof status.is_verified !== 'undefined' ? status.is_verified : status.isVerified || status.status
-    payload.rejection_reason = status.rejection_reason || status.rejectionReason || notes
-  } else {
-    payload.is_verified = Boolean(status)
-    if (notes) payload.rejection_reason = notes
+  // Handle case where arguments are passed as a single object (e.g. from react-query useMutation mutate)
+  if (id && typeof id === 'object' && !Array.isArray(id)) {
+    targetId = id.restaurantId || id.id || id.restaurant_id;
+    targetStatus = typeof id.status !== 'undefined' ? id.status : (typeof id.is_verified !== 'undefined' ? id.is_verified : id.isVerified);
+    targetNotes = id.notes || id.rejection_reason || id.rejectionReason;
   }
 
-  const response = await api.post(`/restaurants/${id}/verify`, payload)
-  return response?.data?.data || response?.data || {}
-}
+  // Normalize verify payload to match backend expectations: { is_verified, rejection_reason }
+  let payload = {};
+
+  if (targetStatus === 'approved' || targetStatus === true || targetStatus === 'true') {
+    payload.is_verified = true;
+  } else if (targetStatus === 'rejected' || targetStatus === false || targetStatus === 'false') {
+    payload.is_verified = false;
+  } else if (targetStatus && typeof targetStatus === 'object') {
+    const isVerifiedField = typeof targetStatus.is_verified !== 'undefined' ? targetStatus.is_verified : targetStatus.isVerified || targetStatus.status;
+    if (isVerifiedField === 'approved' || isVerifiedField === true || isVerifiedField === 'true') {
+      payload.is_verified = true;
+    } else if (isVerifiedField === 'rejected' || isVerifiedField === false || isVerifiedField === 'false') {
+      payload.is_verified = false;
+    } else {
+      payload.is_verified = Boolean(isVerifiedField);
+    }
+    payload.rejection_reason = targetStatus.rejection_reason || targetStatus.rejectionReason || targetNotes;
+  } else {
+    payload.is_verified = Boolean(targetStatus);
+  }
+
+  if (targetNotes && !payload.rejection_reason) {
+    payload.rejection_reason = targetNotes;
+  }
+
+  const response = await api.post(`/restaurants/${targetId}/verify`, payload);
+  return response?.data?.data || response?.data || {};
+};
 
 export const getRestaurantDocuments = async (id) => {
   const response = await api.get(`/restaurants/${id}/documents`)

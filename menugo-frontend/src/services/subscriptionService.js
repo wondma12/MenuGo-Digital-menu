@@ -2,41 +2,8 @@
 import api from './api'
 import { useAuthStore } from '../store/authStore'
 
-const DEFAULT_SUBSCRIPTION_PLANS = [
-  {
-    id: 'plan_basic',
-    tier: 'basic',
-    name: 'Basic Plan',
-    description: 'Essential features for small restaurants',
-    price_monthly: 0,
-    price_yearly: 0,
-    features: ['Digital menu', 'QR ordering', 'Basic analytics', 'Up to 50 menu items'],
-    limits: { menu_items: 50, staff_accounts: 5, orders_per_day: 100 },
-    is_active: true,
-  },
-  {
-    id: 'plan_premium',
-    tier: 'premium',
-    name: 'Premium Plan',
-    description: 'Advanced tools for growing businesses',
-    price_monthly: 29,
-    price_yearly: 290,
-    features: ['Everything in Basic', 'Priority support', 'Inventory tracking', 'Advanced analytics'],
-    limits: { menu_items: 200, staff_accounts: 15, orders_per_day: 500 },
-    is_active: true,
-  },
-  {
-    id: 'plan_enterprise',
-    tier: 'enterprise',
-    name: 'Enterprise Plan',
-    description: 'Full platform access and customization',
-    price_monthly: 99,
-    price_yearly: 990,
-    features: ['Everything in Premium', 'Dedicated support', 'Custom integrations', 'Unlimited everything'],
-    limits: { menu_items: -1, staff_accounts: -1, orders_per_day: -1 },
-    is_active: true,
-  },
-]
+// Empty defaults - plans should only come from API
+const DEFAULT_SUBSCRIPTION_PLANS = []
 
 const resolveRestaurantId = (restaurantId) => {
   if (restaurantId && typeof restaurantId === 'object') {
@@ -78,8 +45,8 @@ export const getCurrentSubscription = async (restaurantId) => {
   if (!resolvedRestaurantId) {
     const restaurant = useAuthStore.getState()?.user?.restaurant || {}
     return {
-      tier: restaurant.subscription_tier || restaurant.subscriptionTier || 'basic',
-      name: restaurant.subscription_name || restaurant.subscriptionName || 'Basic Plan',
+      tier: restaurant.subscription_tier || restaurant.subscriptionTier || 'monthly',
+      name: restaurant.subscription_name || restaurant.subscriptionName || 'Monthly Plan',
       billingCycle: restaurant.billing_cycle || restaurant.billingCycle || 'monthly',
       price: restaurant.price_monthly || restaurant.priceMonthly || 0,
       nextBillingDate: restaurant.next_billing_date || restaurant.nextBillingDate || null,
@@ -90,8 +57,8 @@ export const getCurrentSubscription = async (restaurantId) => {
   if (getAuthRole() && getAuthRole() !== 'platform_admin') {
     const restaurant = useAuthStore.getState()?.user?.restaurant || {}
     return {
-      tier: restaurant.subscription_tier || restaurant.subscriptionTier || 'basic',
-      name: restaurant.subscription_name || restaurant.subscriptionName || 'Basic Plan',
+      tier: restaurant.subscription_tier || restaurant.subscriptionTier || 'monthly',
+      name: restaurant.subscription_name || restaurant.subscriptionName || 'Monthly Plan',
       billingCycle: restaurant.billing_cycle || restaurant.billingCycle || 'monthly',
       price: restaurant.price_monthly || restaurant.priceMonthly || 0,
       nextBillingDate: restaurant.next_billing_date || restaurant.nextBillingDate || null,
@@ -182,7 +149,7 @@ export const getRestaurantSubscription = async (restaurantId) => {
     const restaurant = useAuthStore.getState()?.user?.restaurant || {}
     return {
       current_subscription: null,
-      subscription_tier: restaurant.subscription_tier || restaurant.subscriptionTier || 'basic',
+      subscription_tier: restaurant.subscription_tier || restaurant.subscriptionTier || 'monthly',
       subscription_status: restaurant.subscription_status || restaurant.subscriptionStatus || 'active',
       subscription_end_date: restaurant.subscription_end_date || restaurant.subscriptionEndDate || null,
     }

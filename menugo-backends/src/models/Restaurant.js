@@ -160,8 +160,8 @@ const Restaurant = sequelize.define('Restaurant', {
     allowNull: true,
   },
   subscription_tier: {
-    type: DataTypes.ENUM('basic', 'premium', 'enterprise'),
-    defaultValue: 'basic',
+    type: DataTypes.ENUM('monthly', 'six_month', 'yearly'),
+    defaultValue: 'monthly',
   },
   subscription_start_date: {
     type: DataTypes.DATEONLY,

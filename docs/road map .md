@@ -26,7 +26,7 @@ Got it! Here's a complete **Beginner → Expert React Developer Roadmap** - stru
 □ Data types & type coercion
 □ Functions (declarations, expressions, arrow functions)
 □ Arrays & array methods (map, filter, reduce, find)
-□ Objects & object manipulation
+□ Objects & object manipulation 
 □ Destructuring arrays/objects
 □ Spread/rest operators
 □ Template literals
@@ -44,7 +44,7 @@ Got it! Here's a complete **Beginner → Expert React Developer Roadmap** - stru
 
 ---
 
-## **LEVEL 1: REACT FOUNDATIONS (3-4 weeks)*================-096
+## **LEVEL 1: REACT FOUNDATIONS (3-4 weeks)*================ 096
 
 ### 1.1 Understanding React
 
@@ -54,7 +54,7 @@ Got it! Here's a complete **Beginner → Expert React Developer Roadmap** - stru
 □ Virtual DOM concept (high-level)
 □ Create React App / Vite setup
 □ Project folder structure walkthrough
-```
+
 
 ### 1.2 JSX Deep Dive
 

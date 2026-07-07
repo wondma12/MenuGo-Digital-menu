@@ -28,7 +28,7 @@ const Subscription = sequelize.define('Subscription', {
     allowNull: true,
   },
   tier: {
-    type: DataTypes.ENUM('basic', 'premium', 'enterprise'),
+    type: DataTypes.ENUM('monthly', 'six_month', 'yearly'),
     allowNull: false,
   },
   amount: {

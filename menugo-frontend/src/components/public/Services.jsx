@@ -98,24 +98,24 @@ const Services = () => {
 
   const pricing = [
     {
-      name: 'Basic',
-      price: '$29',
+      name: 'Monthly',
+      price: '$29.99',
       period: 'month',
-      features: ['Up to 50 menu items', 'QR code generation', 'Basic analytics', 'Email support'],
+      features: ['Everything in Premium', 'Dedicated support', 'Custom integrations', 'Unlimited menu items', 'Unlimited staff', 'API access'],
       recommended: false,
     },
     {
-      name: 'Premium',
-      price: '$79',
-      period: 'month',
-      features: ['Unlimited menu items', 'Advanced analytics', 'Staff management', 'Priority support', 'Custom branding', 'API access'],
+      name: '6-Month',
+      price: '$149.94',
+      period: '6 months',
+      features: ['Everything in Premium', 'Dedicated support', 'Custom integrations', 'Unlimited menu items', 'Unlimited staff', 'API access', 'Save 17%'],
       recommended: true,
     },
     {
-      name: 'Enterprise',
-      price: 'Custom',
-      period: 'Custom',
-      features: ['Everything in Premium', 'Multi-location support', 'Dedicated account manager', 'SLA agreement', 'Custom integration', '24/7 phone support'],
+      name: 'Yearly',
+      price: '$299.99',
+      period: 'year',
+      features: ['Everything in Premium', 'Dedicated support', 'Custom integrations', 'Unlimited menu items', 'Unlimited staff', 'API access', 'Save 17%'],
       recommended: false,
     },
   ];

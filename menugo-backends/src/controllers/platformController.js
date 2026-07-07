@@ -312,17 +312,17 @@ const getPlatformDashboard = catchAsync(async (req, res) => {
     let enterpriseCount = 0;
     
     try {
-      basicCount = await Restaurant.count({ where: { subscription_tier: 'basic', deleted_at: null } }) || 0;
-      premiumCount = await Restaurant.count({ where: { subscription_tier: 'premium', deleted_at: null } }) || 0;
-      enterpriseCount = await Restaurant.count({ where: { subscription_tier: 'enterprise', deleted_at: null } }) || 0;
+      basicCount = await Restaurant.count({ where: { subscription_tier: 'monthly', deleted_at: null } }) || 0;
+      premiumCount = await Restaurant.count({ where: { subscription_tier: 'six_month', deleted_at: null } }) || 0;
+      enterpriseCount = await Restaurant.count({ where: { subscription_tier: 'yearly', deleted_at: null } }) || 0;
     } catch (err) {
       console.error('Subscription breakdown error:', err);
     }
     
     const subscriptionBreakdown = [
-      { tier: 'basic', count: basicCount },
-      { tier: 'premium', count: premiumCount },
-      { tier: 'enterprise', count: enterpriseCount },
+      { tier: 'monthly', count: basicCount },
+      { tier: 'six_month', count: premiumCount },
+      { tier: 'yearly', count: enterpriseCount },
     ];
     
     // Build revenue data honoring optional startDate/endDate query params.

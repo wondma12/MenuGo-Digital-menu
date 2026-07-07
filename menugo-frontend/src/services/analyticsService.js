@@ -626,9 +626,9 @@ function getDefaultDashboardData() {
     recentRestaurants: [],
     recentOrders: [],
     subscriptionBreakdown: [
-      { tier: 'basic', count: 0 },
-      { tier: 'premium', count: 0 },
-      { tier: 'enterprise', count: 0 },
+      { tier: 'monthly', count: 0 },
+      { tier: 'six_month', count: 0 },
+      { tier: 'yearly', count: 0 },
     ],
     alerts: [{ message: 'Unable to load dashboard data', severity: 'info' }],
   };

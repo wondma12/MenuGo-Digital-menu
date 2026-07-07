@@ -240,28 +240,28 @@ const getPlatformDashboard = catchAsync(async (req, res) => {
     }
     
     // 8. Get Subscription Breakdown - FIXED: This was the error
-    let basicCount = 0;
-    let premiumCount = 0;
-    let enterpriseCount = 0;
+    let monthlyCount = 0;
+    let sixMonthCount = 0;
+    let yearlyCount = 0;
     
     try {
-      basicCount = await Restaurant.count({ 
-        where: { subscription_tier: 'basic', deleted_at: null } 
+      monthlyCount = await Restaurant.count({ 
+        where: { subscription_tier: 'monthly', deleted_at: null } 
       });
-      premiumCount = await Restaurant.count({ 
-        where: { subscription_tier: 'premium', deleted_at: null } 
+      sixMonthCount = await Restaurant.count({ 
+        where: { subscription_tier: 'six_month', deleted_at: null } 
       });
-      enterpriseCount = await Restaurant.count({ 
-        where: { subscription_tier: 'enterprise', deleted_at: null } 
+      yearlyCount = await Restaurant.count({ 
+        where: { subscription_tier: 'yearly', deleted_at: null } 
       });
     } catch (err) {
       console.error('Subscription breakdown error:', err);
     }
     
     const subscriptionBreakdown = [
-      { tier: 'basic', count: basicCount || 0 },
-      { tier: 'premium', count: premiumCount || 0 },
-      { tier: 'enterprise', count: enterpriseCount || 0 },
+      { tier: 'monthly', count: monthlyCount || 0 },
+      { tier: 'six_month', count: sixMonthCount || 0 },
+      { tier: 'yearly', count: yearlyCount || 0 },
     ];
     
     // 9. Generate daily Revenue Data for the requested range (or last 7 days fallback)

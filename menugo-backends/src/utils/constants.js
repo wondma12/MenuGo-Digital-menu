@@ -54,9 +54,9 @@ const TABLE_STATUS = {
 
 // Subscription Tiers
 const SUBSCRIPTION_TIERS = {
-  BASIC: 'basic',
-  PREMIUM: 'premium',
-  ENTERPRISE: 'enterprise',
+  MONTHLY: 'monthly',
+  SIX_MONTH: 'six_month',
+  YEARLY: 'yearly',
 };
 
 // Subscription Status

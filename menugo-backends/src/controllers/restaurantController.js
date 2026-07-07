@@ -122,7 +122,7 @@ const getAllRestaurants = catchAsync(async (req, res) => {
     where: { is_verified: false, is_active: true, deleted_at: null },
   });
   const premiumCount = await Restaurant.count({ 
-    where: { subscription_tier: 'premium', deleted_at: null },
+    where: { subscription_tier: 'monthly', deleted_at: null },
   });
 
   res.json(ApiResponse.success({
@@ -335,7 +335,7 @@ const createRestaurant = catchAsync(async (req, res) => {
     qr_code_identifier: qrIdentifier,
     qr_code_url: qrCloudinaryUrl,
     subscription_status: 'trial',
-    subscription_tier: 'basic',
+    subscription_tier: 'monthly',
     subscription_start_date: new Date(),
     subscription_end_date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
     is_active: true,

@@ -50,8 +50,8 @@ const register = catchAsync(async (req, res) => {
     full_name,
     phone,
     role: role || 'customer',
-    is_verified: true,
-    is_active: true,
+    is_verified: !isRestaurantAdmin,
+    is_active: !isRestaurantAdmin,
   });
 
   // If registering as restaurant admin, create restaurant
@@ -66,7 +66,7 @@ const register = catchAsync(async (req, res) => {
       country: restaurant_country || null,
       website: restaurant_website || null,
       slogan: restaurant_slogan || null,
-      is_verified: true,
+      is_verified: false,
       subscription_status: 'trial',
       subscription_start_date: new Date(),
       subscription_end_date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),

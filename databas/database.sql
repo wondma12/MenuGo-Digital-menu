@@ -98,7 +98,7 @@ CREATE TABLE restaurants (
     verification_date TIMESTAMP NULL,
     verified_by CHAR(36),
     rejection_reason TEXT,
-    subscription_tier ENUM('basic', 'premium', 'enterprise') DEFAULT 'basic',
+    subscription_tier ENUM('monthly', 'six_month', 'yearly') DEFAULT 'monthly',
     subscription_start_date DATE,
     subscription_end_date DATE,
     subscription_status ENUM('trial', 'active', 'past_due', 'cancelled', 'expired') DEFAULT 'trial',

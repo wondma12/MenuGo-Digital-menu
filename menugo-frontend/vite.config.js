@@ -12,7 +12,7 @@ export default defineConfig({
       '@services': path.resolve(__dirname, './src/services'),
       '@store': path.resolve(__dirname, './src/store'),
       '@utils': path.resolve(__dirname, './src/utils'),
-      	  'react-hot-toast': path.resolve(__dirname, './src/utils/hotToastShim.js'),
+      'react-hot-toast': path.resolve(__dirname, './src/utils/hotToastShim.js'),
       '@styles': path.resolve(__dirname, './src/styles'),
       '@assets': path.resolve(__dirname, './src/assets'),
       '@config': path.resolve(__dirname, './src/config'),
