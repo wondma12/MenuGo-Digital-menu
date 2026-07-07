@@ -42,7 +42,7 @@ const RestaurantCard = ({ restaurant, onUpdate, variant = 'grid' }) => {
   const statusBadge = !restaurant.is_active
     ? { label: 'Inactive', color: 'bg-rose-50 text-rose-700 ring-1 ring-rose-100', icon: XCircleIcon }
     : !restaurant.is_verified
-      ? { label: 'Pending Verification', color: 'bg-amber-50 text-amber-700 ring-1 ring-amber-100', icon: ClockIcon }
+      ? { label: 'Pending Verification', color: 'bg-[rgb(254,243,199)] text-[rgb(217,119,6)] ring-1 ring-[rgb(253,230,138)]', icon: ClockIcon }
       : { label: 'Active', color: 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100', icon: CheckCircleIcon }
 
   const tierBadge = {

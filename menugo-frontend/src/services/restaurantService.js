@@ -247,6 +247,18 @@ export const updateRestaurantProfile = async (data) => {
     payload.postal_code = payload.postalCode
     delete payload.postalCode
   }
+  if (payload.businessLicenseUrl) {
+    payload.business_license_url = payload.businessLicenseUrl
+    delete payload.businessLicenseUrl
+  }
+  if (payload.businessLicenseNumber) {
+    payload.business_license_number = payload.businessLicenseNumber
+    delete payload.businessLicenseNumber
+  }
+  if (payload.googleMapsLink) {
+    payload.google_maps_link = payload.googleMapsLink
+    delete payload.googleMapsLink
+  }
 
   const response = await api.put(`/restaurants/${restaurantId}`, payload)
   return response?.data?.data || response?.data || {}

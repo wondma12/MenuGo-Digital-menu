@@ -17,19 +17,14 @@ const schema = yup.object({
   email: yup.string().email('Invalid email').required('Email is required'),
   phoneNumber: yup.string(),
   role: yup.string().required('Role is required'),
+  subscriptionPlan: yup.string().when('role', {
+    is: 'restaurant_admin',
+    then: (schema) => schema.required('Subscription plan is required'),
+    otherwise: (schema) => schema.notRequired(),
+  }),
   restaurantName: yup.string().when('role', {
     is: 'restaurant_admin',
     then: (schema) => schema.required('Restaurant name is required'),
-    otherwise: (schema) => schema.notRequired(),
-  }),
-  businessEmail: yup.string().when('role', {
-    is: 'restaurant_admin',
-    then: (schema) => schema.required('Business email is required').email('Invalid email'),
-    otherwise: (schema) => schema.notRequired(),
-  }),
-  businessPhone: yup.string().when('role', {
-    is: 'restaurant_admin',
-    then: (schema) => schema.required('Business phone is required'),
     otherwise: (schema) => schema.notRequired(),
   }),
   country: yup.string().when('role', {
@@ -50,16 +45,6 @@ const schema = yup.object({
   streetAddress: yup.string().when('role', {
     is: 'restaurant_admin',
     then: (schema) => schema.required('Street address is required'),
-    otherwise: (schema) => schema.notRequired(),
-  }),
-  googleMapsLink: yup.string().when('role', {
-    is: 'restaurant_admin',
-    then: (schema) => schema.required('Google Maps link is required'),
-    otherwise: (schema) => schema.notRequired(),
-  }),
-  ownerName: yup.string().when('role', {
-    is: 'restaurant_admin',
-    then: (schema) => schema.required('Owner name is required'),
     otherwise: (schema) => schema.notRequired(),
   }),
   businessLicenseNumber: yup.string().when('role', {
@@ -107,16 +92,13 @@ const UserForm = () => {
     context: { isEditing },
     defaultValues: {
       role: 'customer',
+      subscriptionPlan: 'monthly',
       phoneNumber: '',
       restaurantName: '',
-      businessEmail: '',
-      businessPhone: '',
       country: '',
       city: '',
       subCity: '',
       streetAddress: '',
-      googleMapsLink: '',
-      ownerName: '',
       businessLicenseNumber: '',
       tinNumber: '',
       slogan: '',
@@ -130,15 +112,12 @@ const UserForm = () => {
         email: user.email,
         phoneNumber: user.phone,
         role: user.role,
+        subscriptionPlan: user.subscriptionPlan || user.subscription_plan || 'monthly',
         restaurantName: user.restaurantName || user.restaurant_name || '',
-        businessEmail: user.businessEmail || user.business_email || '',
-        businessPhone: user.businessPhone || user.restaurant_phone || '',
         country: user.country || user.restaurant_country || '',
         city: user.city || user.restaurant_city || '',
         subCity: user.subCity || user.restaurant_sub_city || '',
         streetAddress: user.streetAddress || user.restaurant_address || '',
-        googleMapsLink: user.googleMapsLink || user.restaurant_website || '',
-        ownerName: user.ownerName || user.owner_name || '',
         businessLicenseNumber: user.businessLicenseNumber || user.business_license_number || '',
         tinNumber: user.tinNumber || user.tin_number || '',
         slogan: user.slogan || user.restaurant_slogan || '',
@@ -186,15 +165,12 @@ const UserForm = () => {
     }
 
     if (data.restaurantName) payload.restaurant_name = data.restaurantName
-    if (data.businessEmail) payload.business_email = data.businessEmail
-    if (data.businessPhone) payload.restaurant_phone = data.businessPhone
+    if (data.subscriptionPlan) payload.subscription_plan = data.subscriptionPlan
     if (data.country) payload.restaurant_country = data.country
     if (data.city) payload.restaurant_city = data.city
     if (data.subCity) payload.restaurant_sub_city = data.subCity
     if (data.streetAddress) payload.restaurant_address = data.streetAddress
-    if (data.googleMapsLink) payload.restaurant_website = data.googleMapsLink
     if (data.slogan) payload.restaurant_slogan = data.slogan
-    if (data.ownerName) payload.owner_name = data.ownerName
     if (data.businessLicenseNumber) payload.business_license_number = data.businessLicenseNumber
     if (data.tinNumber) payload.tin_number = data.tinNumber
 
@@ -256,14 +232,37 @@ const UserForm = () => {
         {currentRole === 'restaurant_admin' && (
           <div className="space-y-3">
             <Input label="Restaurant Name" {...register('restaurantName')} error={errors.restaurantName?.message} required />
-            <Input label="Business Email" type="email" {...register('businessEmail')} error={errors.businessEmail?.message} required />
-            <Input label="Business Phone" {...register('businessPhone')} error={errors.businessPhone?.message} required />
+            <div>
+              <label className="mb-2 block text-sm font-semibold text-slate-700">Subscription Plan *</label>
+              <div className="space-y-2">
+                <label className="flex items-center gap-3 rounded-lg border border-slate-200 p-3 cursor-pointer transition-colors hover:border-orange-400 has-[:checked]:border-orange-600 has-[:checked]:bg-orange-50">
+                  <input type="radio" value="monthly" {...register('subscriptionPlan')} className="accent-orange-600" />
+                  <div>
+                    <p className="text-sm font-semibold text-slate-900">Monthly</p>
+                    <p className="text-xs text-slate-500">Renews every month</p>
+                  </div>
+                </label>
+                <label className="flex items-center gap-3 rounded-lg border border-slate-200 p-3 cursor-pointer transition-colors hover:border-orange-400 has-[:checked]:border-orange-600 has-[:checked]:bg-orange-50">
+                  <input type="radio" value="six_months" {...register('subscriptionPlan')} className="accent-orange-600" />
+                  <div>
+                    <p className="text-sm font-semibold text-slate-900">6 Months</p>
+                    <p className="text-xs text-slate-500">Save up to 10%</p>
+                  </div>
+                </label>
+                <label className="flex items-center gap-3 rounded-lg border border-slate-200 p-3 cursor-pointer transition-colors hover:border-orange-400 has-[:checked]:border-orange-600 has-[:checked]:bg-orange-50">
+                  <input type="radio" value="yearly" {...register('subscriptionPlan')} className="accent-orange-600" />
+                  <div>
+                    <p className="text-sm font-semibold text-slate-900">Yearly</p>
+                    <p className="text-xs text-slate-500">Save up to 20%</p>
+                  </div>
+                </label>
+              </div>
+              {errors.subscriptionPlan?.message && <p className="mt-1 text-xs text-red-600">{errors.subscriptionPlan.message}</p>}
+            </div>
             <Input label="Country" {...register('country')} error={errors.country?.message} required />
             <Input label="City" {...register('city')} error={errors.city?.message} required />
             <Input label="Sub-city / District" {...register('subCity')} error={errors.subCity?.message} required />
             <Input label="Street Address" {...register('streetAddress')} error={errors.streetAddress?.message} required />
-            <Input label="Google Maps Link" {...register('googleMapsLink')} error={errors.googleMapsLink?.message} required />
-            <Input label="Owner Name" {...register('ownerName')} error={errors.ownerName?.message} required />
             <Input label="Business License Number" {...register('businessLicenseNumber')} error={errors.businessLicenseNumber?.message} required />
             <Input label="TIN Number" {...register('tinNumber')} error={errors.tinNumber?.message} required />
             <Input label="Slogan" {...register('slogan')} error={errors.slogan?.message} />

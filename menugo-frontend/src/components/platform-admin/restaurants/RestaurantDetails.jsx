@@ -119,7 +119,17 @@ const RestaurantDetails = () => {
   const googleMaps = restaurant?.website || restaurant?.google_maps || '';
   const businessLicenseNumber = restaurant?.business_license_number || '';
   const tinNumber = restaurant?.tin_number || '';
-  const businessLicenseDoc = restaurant?.settings?.business_license?.url || restaurant?.business_license_url || null;
+  const businessLicenseDoc = (
+    restaurant?.settings?.business_license?.url ||
+    restaurant?.settings?.business_license?.fileUrl ||
+    restaurant?.settings?.business_license?.path ||
+    restaurant?.settings?.business_license_url ||
+    restaurant?.settings?.business_license ||
+    restaurant?.business_license_url ||
+    restaurant?.businessLicenseUrl ||
+    restaurant?.business_license?.url ||
+    null
+  );
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
@@ -280,7 +290,7 @@ const RestaurantDetails = () => {
 
       {/* Owner Information */}
       {(
-        ownerFullName || ownerEmail || ownerPhone || subCity || googleMaps || businessLicenseNumber || tinNumber || businessLicenseDoc
+        ownerFullName || ownerEmail || ownerPhone || subCity || businessLicenseNumber || tinNumber || businessLicenseDoc
       ) && (
         <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 mb-8">
           <h2 className="text-lg font-semibold mb-4 flex items-center gap-2 text-gray-900">
@@ -304,17 +314,6 @@ const RestaurantDetails = () => {
               <p className="text-sm text-gray-600">Sub-city / District</p>
               <p className="font-medium text-gray-900">{subCity || 'N/A'}</p>
             </div>
-            <div>
-              <p className="text-sm text-gray-600">Google Maps Link</p>
-              {googleMaps ? (
-                <a href={googleMaps} target="_blank" rel="noopener noreferrer" className="text-primary-600">
-                  {googleMaps}
-                </a>
-              ) : (
-                <p className="font-medium text-gray-900">N/A</p>
-              )}
-            </div>
-            
             <div>
               <p className="text-sm text-gray-600">Business License Number</p>
               <p className="font-medium text-gray-900">{businessLicenseNumber || 'N/A'}</p>

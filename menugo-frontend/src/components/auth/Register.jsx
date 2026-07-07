@@ -36,7 +36,6 @@ const MultiStepRegistration = () => {
     city: "",
     subCity: "",
     streetAddress: "",
-    ownerName: "",
     businessLicenseNumber: "",
     tinNumber: "",
     description: "",
@@ -89,7 +88,6 @@ const MultiStepRegistration = () => {
         break;
 
       case 4:
-        if (!formData.ownerName.trim()) newErrors.ownerName = "Owner name is required";
         if (!formData.businessLicenseNumber.trim()) newErrors.businessLicenseNumber = "Business license number is required";
         if (!formData.tinNumber.trim()) newErrors.tinNumber = "TIN number is required";
         if (!formData.businessLicenseDocument) newErrors.businessLicenseDocument = "Business license document is required";
@@ -650,21 +648,6 @@ const MultiStepRegistration = () => {
               <h2 className="text-xl font-bold text-slate-900 sm:text-2xl">Business Verification</h2>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700">Owner Name *</label>
-                  <div className="relative mt-1">
-                    <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                    <Input
-                      type="text"
-                      placeholder="Enter owner name"
-                      value={formData.ownerName}
-                      onChange={(e) => handleChange("ownerName", e.target.value)}
-                      className="pl-9 rounded-xl border-slate-200 focus:border-orange-400 focus:ring-orange-400"
-                    />
-                  </div>
-                  {errors.ownerName && <p className="mt-1 text-xs text-red-600">{errors.ownerName}</p>}
-                </div>
-
-                <div>
                   <label className="block text-sm font-medium text-slate-700">Business License Number *</label>
                   <div className="relative mt-1">
                     <FileText className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -763,7 +746,6 @@ const MultiStepRegistration = () => {
                 <div>
                   <h3 className="text-sm font-semibold text-slate-900">Verification</h3>
                   <div className="mt-2 space-y-1 text-sm text-slate-600">
-                    <p><span className="font-medium">Owner:</span> {formData.ownerName}</p>
                     <p><span className="font-medium">License #:</span> {formData.businessLicenseNumber}</p>
                     <p><span className="font-medium">TIN:</span> {formData.tinNumber}</p>
                     <p><span className="font-medium">Description:</span> {formData.description || "—"}</p>
