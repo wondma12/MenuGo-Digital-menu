@@ -23,6 +23,7 @@ const register = catchAsync(async (req, res) => {
     phone,
     role,
     restaurant_name,
+    subscription_plan,
     restaurant_address,
     restaurant_city,
     restaurant_country,
@@ -56,6 +57,24 @@ const register = catchAsync(async (req, res) => {
 
   // If registering as restaurant admin, create restaurant
   if (isRestaurantAdmin && restaurant_name) {
+    // Calculate subscription end date based on plan type
+    const now = new Date();
+    let subscriptionDays = 30; // default to monthly (30 days)
+    let subscriptionTier = 'monthly';
+    
+    if (subscription_plan === 'six_months') {
+      subscriptionDays = 180;
+      subscriptionTier = 'six_month';
+    } else if (subscription_plan === 'yearly') {
+      subscriptionDays = 365;
+      subscriptionTier = 'yearly';
+    } else if (subscription_plan === 'monthly') {
+      subscriptionDays = 30;
+      subscriptionTier = 'monthly';
+    }
+    
+    const subscriptionEndDate = new Date(now.getTime() + subscriptionDays * 24 * 60 * 60 * 1000);
+    
     const restaurant = await Restaurant.create({
       owner_id: user.id,
       name: restaurant_name,
@@ -67,9 +86,10 @@ const register = catchAsync(async (req, res) => {
       website: restaurant_website || null,
       slogan: restaurant_slogan || null,
       is_verified: false,
-      subscription_status: 'trial',
-      subscription_start_date: new Date(),
-      subscription_end_date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
+      subscription_tier: subscriptionTier,
+      subscription_status: 'active',
+      subscription_start_date: now,
+      subscription_end_date: subscriptionEndDate,
       is_active: true,
     });
 

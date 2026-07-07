@@ -126,13 +126,13 @@ const PlanForm = ({ initialData, onSubmit, onCancel, isLoading }) => {
       
       {/* Dynamic Price Input Based on Tier */}
       {tier === 'monthly' && (
-        <Input label="Monthly Price ($)" type="number" step="0.01" {...register('price_monthly')} error={errors.price_monthly?.message} required />
+        <Input label="Monthly Price (ETB)" type="number" step="0.01" {...register('price_monthly')} error={errors.price_monthly?.message} required />
       )}
       {tier === 'six_month' && (
-        <Input label="6-Month Price ($)" type="number" step="0.01" {...register('price_six_month')} error={errors.price_six_month?.message} required />
+        <Input label="6-Month Price (ETB)" type="number" step="0.01" {...register('price_six_month')} error={errors.price_six_month?.message} required />
       )}
       {tier === 'yearly' && (
-        <Input label="Yearly Price ($)" type="number" step="0.01" {...register('price_yearly')} error={errors.price_yearly?.message} required />
+        <Input label="Yearly Price (ETB)" type="number" step="0.01" {...register('price_yearly')} error={errors.price_yearly?.message} required />
       )}
 
       {/* Features */}

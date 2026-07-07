@@ -83,7 +83,7 @@ const InvoiceList = () => {
                   </div>
                 </td>
                 <td className="px-6 py-4">
-                  <span className="font-semibold text-gray-900">${invoice.amount.toLocaleString()}</span>
+                  <span className="font-semibold text-gray-900">ETB {invoice.amount.toLocaleString()}</span>
                 </td>
                 <td className="px-6 py-4">
                   <Badge variant={getStatusColor(invoice.status)} size="sm">
@@ -152,11 +152,11 @@ const InvoiceList = () => {
               </div>
               <div className="p-3 bg-gray-50 rounded-lg">
                 <p className="text-xs text-gray-500">Amount</p>
-                <p className="font-medium text-gray-900">${selectedInvoice.amount.toLocaleString()}</p>
+                <p className="font-medium text-gray-900">ETB {selectedInvoice.amount.toLocaleString()}</p>
               </div>
               <div className="p-3 bg-gray-50 rounded-lg">
                 <p className="text-xs text-gray-500">Tax</p>
-                <p className="font-medium text-gray-900">${selectedInvoice.taxAmount?.toLocaleString() || 0}</p>
+                <p className="font-medium text-gray-900">ETB {selectedInvoice.taxAmount?.toLocaleString() || 0}</p>
               </div>
               <div className="p-3 bg-gray-50 rounded-lg">
                 <p className="text-xs text-gray-500">Created Date</p>

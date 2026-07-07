@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
+import { getSubscriptionPlans } from '../../services/subscriptionService';
+import { formatPrice } from '../../utils/currency';
 import {
   DevicePhoneMobileIcon,
   QrCodeIcon,
@@ -96,30 +98,6 @@ const Services = () => {
     },
   ];
 
-  const pricing = [
-    {
-      name: 'Monthly',
-      price: '$29.99',
-      period: 'month',
-      features: ['Everything in Premium', 'Dedicated support', 'Custom integrations', 'Unlimited menu items', 'Unlimited staff', 'API access'],
-      recommended: false,
-    },
-    {
-      name: '6-Month',
-      price: '$149.94',
-      period: '6 months',
-      features: ['Everything in Premium', 'Dedicated support', 'Custom integrations', 'Unlimited menu items', 'Unlimited staff', 'API access', 'Save 17%'],
-      recommended: true,
-    },
-    {
-      name: 'Yearly',
-      price: '$299.99',
-      period: 'year',
-      features: ['Everything in Premium', 'Dedicated support', 'Custom integrations', 'Unlimited menu items', 'Unlimited staff', 'API access', 'Save 17%'],
-      recommended: false,
-    },
-  ];
-
   const process = [
     { icon: BuildingStorefrontIcon, title: 'Set up your space', text: 'Add your restaurant, tables, and menu structure.' },
     { icon: QrCodeIcon, title: 'Go live with QR', text: 'Place QR codes and let guests access menus instantly.' },
@@ -133,6 +111,58 @@ const Services = () => {
     support: '24/7',
     orders_processed: 0,
   })
+  const [pricing, setPricing] = useState([])
+  const [plansLoading, setPlansLoading] = useState(true)
+
+  useEffect(() => {
+    let cancelled = false
+
+    const normalizePlan = (plan) => {
+      const rawTier = plan.tier || ''
+      const tier = typeof rawTier === 'string' ? rawTier.toLowerCase() : 'monthly'
+      const normalizedFeatures = Array.isArray(plan.features)
+        ? plan.features
+        : typeof plan.features === 'string'
+          ? plan.features.split(',').map((item) => item.trim()).filter(Boolean)
+          : ['Everything in Premium', 'Dedicated support', 'Custom integrations', 'Unlimited menu items', 'Unlimited staff', 'API access']
+
+      const name = plan.name || (tier === 'six_month' ? '6-Month' : tier === 'yearly' ? 'Yearly' : 'Monthly')
+      const period = tier === 'yearly' ? 'year' : tier === 'six_month' ? '6 months' : 'month'
+      const priceValue = tier === 'yearly'
+        ? plan.price_yearly ?? plan.priceYearly ?? plan.price ?? 0
+        : tier === 'six_month'
+          ? plan.price_yearly ?? plan.priceYearly ?? plan.price ?? 0
+          : plan.price_monthly ?? plan.priceMonthly ?? plan.price ?? 0
+
+      return {
+        name,
+        description: plan.description || '',
+        price: formatPrice(Number(priceValue) || 0),
+        period,
+        features: normalizedFeatures,
+        recommended: tier === 'six_month',
+      }
+    }
+
+    const loadPlans = async () => {
+      try {
+        const plans = await getSubscriptionPlans()
+        if (cancelled) return
+        if (Array.isArray(plans) && plans.length > 0) {
+          setPricing(plans.map(normalizePlan))
+        } else {
+          setPricing([])
+        }
+      } catch (error) {
+        setPricing([])
+      } finally {
+        if (!cancelled) setPlansLoading(false)
+      }
+    }
+
+    loadPlans()
+    return () => { cancelled = true }
+  }, [])
 
   const compactNumber = (value) => {
     const numericValue = Number(value)
@@ -514,7 +544,7 @@ const Services = () => {
                   <h3 className="text-xl font-bold text-slate-900">{plan.name}</h3>
                   <div className="mt-3 flex items-end gap-1">
                     <span className="text-3xl font-black text-slate-900">{plan.price}</span>
-                    {plan.period !== 'Custom' && <span className="pb-1 text-sm text-slate-500">/{plan.period}</span>}
+                    {plan.period && <span className="pb-1 text-sm text-slate-500">/{plan.period}</span>}
                   </div>
                   <ul className="mt-5 space-y-2.5 text-left">
                     {plan.features.map((feature) => (

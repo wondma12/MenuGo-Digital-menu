@@ -33,6 +33,9 @@ const {
 // Public homepage summary
 router.get('/public-summary', getPublicPlatformSummary);
 
+// Public subscription plans endpoint for the services page
+router.get('/subscriptions/plans', getSubscriptionPlans);
+
 // All other platform routes require authentication and platform admin role
 router.use(protect);
 router.use(restrictTo('platform_admin'));
@@ -53,7 +56,7 @@ router.get('/logs', getSystemLogs);
 router.get('/health', getSystemHealth);
 
 // IMPORTANT: Subscription routes - MAKE SURE THESE EXIST
-router.get('/subscriptions/plans', getSubscriptionPlans);
+// router.get('/subscriptions/plans', getSubscriptionPlans); // already exposed publicly above
 router.get('/subscriptions', getAllSubscriptions);
 router.get('/subscriptions/:id', getSubscriptionById);
 router.get('/subscriptions/restaurant/:restaurantId', getRestaurantSubscription);

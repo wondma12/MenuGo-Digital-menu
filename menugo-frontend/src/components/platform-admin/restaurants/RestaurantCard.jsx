@@ -28,6 +28,17 @@ const RestaurantCard = ({ restaurant, onUpdate, variant = 'grid' }) => {
 
   const isListView = variant === 'list'
 
+  // Calculate days remaining for subscription
+  const calculateDaysRemaining = () => {
+    if (!restaurant.subscription_end_date) return null
+    const endDate = new Date(restaurant.subscription_end_date)
+    const today = new Date()
+    const daysRemaining = Math.ceil((endDate - today) / (1000 * 60 * 60 * 24))
+    return daysRemaining > 0 ? daysRemaining : 0
+  }
+
+  const daysRemaining = calculateDaysRemaining()
+
   const statusBadge = !restaurant.is_active
     ? { label: 'Inactive', color: 'bg-rose-50 text-rose-700 ring-1 ring-rose-100', icon: XCircleIcon }
     : !restaurant.is_verified
@@ -167,8 +178,21 @@ const RestaurantCard = ({ restaurant, onUpdate, variant = 'grid' }) => {
               <h3 className="text-lg font-black tracking-tight text-slate-900 group-hover:text-orange-600">
                 {restaurant.name}
               </h3>
-              <div className="mt-1 text-sm font-semibold text-slate-700">
-                {tierBadge.label}
+              <div className="mt-1 flex items-center gap-2">
+                <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${tierBadge.color}`}>
+                  {tierBadge.label}
+                </span>
+                {daysRemaining !== null && daysRemaining !== undefined && (
+                  <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${
+                    daysRemaining === 0
+                      ? 'bg-rose-50 text-rose-700 ring-1 ring-rose-200'
+                      : daysRemaining <= 7
+                      ? 'bg-orange-50 text-orange-700 ring-1 ring-orange-200'
+                      : 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200'
+                  }`}>
+                    {daysRemaining === 0 ? 'Expired' : `${daysRemaining} days left`}
+                  </span>
+                )}
               </div>
             </div>
             {/* Description and address removed from list view per UI request */}
@@ -278,14 +302,25 @@ const RestaurantCard = ({ restaurant, onUpdate, variant = 'grid' }) => {
             }}
           />
         </div>
-        <div className="absolute right-3 top-3 flex gap-2 items-center">
+        <div className="absolute right-3 top-3 flex gap-2 items-center flex-wrap justify-end">
           <div className={`flex items-center gap-1 text-xs font-semibold ${restaurant.is_active ? 'text-emerald-600' : (!restaurant.is_verified ? 'text-amber-600' : 'text-rose-600')}`}>
             <StatusIcon className="h-3 w-3" />
             {statusBadge.label}
           </div>
-          <div className="text-xs font-semibold text-slate-700">
+          <div className={`text-xs font-semibold px-2 py-1 rounded-full ${tierBadge.color}`}>
             {tierBadge.label}
           </div>
+          {daysRemaining !== null && daysRemaining !== undefined && (
+            <div className={`text-xs font-semibold px-2 py-1 rounded-full ${
+              daysRemaining === 0
+                ? 'bg-rose-50 text-rose-700 ring-1 ring-rose-200'
+                : daysRemaining <= 7
+                ? 'bg-orange-50 text-orange-700 ring-1 ring-orange-200'
+                : 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200'
+            }`}>
+              {daysRemaining === 0 ? 'Expired' : `${daysRemaining}d`}
+            </div>
+          )}
         </div>
       </div>
 

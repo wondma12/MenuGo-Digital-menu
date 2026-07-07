@@ -67,7 +67,7 @@ const SubscriptionPlans = () => {
         </div>
       {/* </div> */}
 
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+      <div className="grid grid-cols-1 gap-6 items-stretch md:grid-cols-2 xl:grid-cols-3">
         {plans && plans.length > 0 ? (
           plans.map((plan, index) => (
             <motion.div
@@ -75,6 +75,7 @@ const SubscriptionPlans = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
+              className="h-full"
             >
               <PlanCard
                 plan={plan}

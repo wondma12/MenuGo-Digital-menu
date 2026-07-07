@@ -589,6 +589,34 @@ const deleteRestaurant = catchAsync(async (req, res) => {
         orderItemIds = [];
       }
 
+      // Collect waiters for this restaurant so we can clean up waiter-scoped records properly
+      let waiterIds = [];
+      let waiterUserIds = [];
+      try {
+        const waiters = Waiter ? await Waiter.findAll({ where: { restaurant_id: id }, attributes: ['id', 'user_id'], transaction: t }) : [];
+        waiterIds = waiters.map(w => w.id);
+        waiterUserIds = waiters.map(w => w.user_id).filter(Boolean);
+      } catch (e) {
+        console.warn('Ignoring waiter lookup error during restaurant hard-delete cleanup:', e.message || e);
+        waiterIds = [];
+        waiterUserIds = [];
+      }
+
+      // Collect restaurant staff users and ids to clean up staff-scoped records and push tokens
+      let staffIds = [];
+      let staffUserIds = [];
+      try {
+        const staffMembers = RestaurantStaff ? await RestaurantStaff.findAll({ where: { restaurant_id: id }, attributes: ['id', 'user_id'], transaction: t }) : [];
+        staffIds = staffMembers.map(s => s.id);
+        staffUserIds = staffMembers.map(s => s.user_id).filter(Boolean);
+      } catch (e) {
+        console.warn('Ignoring restaurant staff lookup error during restaurant hard-delete cleanup:', e.message || e);
+        staffIds = [];
+        staffUserIds = [];
+      }
+
+      const pushTokenUserIds = [...new Set([...(restaurant.owner_id ? [restaurant.owner_id] : []), ...waiterUserIds, ...staffUserIds])];
+
       // Collect support tickets so we can delete messages
       let ticketIds = [];
       try {
@@ -598,6 +626,29 @@ const deleteRestaurant = catchAsync(async (req, res) => {
         console.warn('Ignoring support ticket lookup error during restaurant hard-delete cleanup:', e.message || e);
         ticketIds = [];
       }
+
+      // Collect menu-related IDs to safely delete menu children without unbounded deletes
+      let menuItemIds = [];
+      let menuModifierIds = [];
+      try {
+        const menuItems = MenuItem ? await MenuItem.findAll({ where: { restaurant_id: id }, attributes: ['id'], transaction: t }) : [];
+        menuItemIds = menuItems.map(m => m.id);
+      } catch (e) {
+        console.warn('Ignoring menu item lookup error during restaurant hard-delete cleanup:', e.message || e);
+        menuItemIds = [];
+      }
+
+      try {
+        const modifiers = MenuItemModifier ? await MenuItemModifier.findAll({ where: { restaurant_id: id }, attributes: ['id'], transaction: t }) : [];
+        menuModifierIds = modifiers.map(m => m.id);
+      } catch (e) {
+        console.warn('Ignoring menu item modifier lookup error during restaurant hard-delete cleanup:', e.message || e);
+        menuModifierIds = [];
+      }
+
+      const menuItemModifierAssignmentWhere = [];
+      if (menuItemIds.length) menuItemModifierAssignmentWhere.push({ menu_item_id: { [Op.in]: menuItemIds } });
+      if (menuModifierIds.length) menuItemModifierAssignmentWhere.push({ modifier_id: { [Op.in]: menuModifierIds } });
 
       // Build destroy operations covering more dependent tables (order children, tickets, waiter-related, subscriptions, notifications, etc.)
       const destroyOps = [
@@ -645,20 +696,20 @@ const deleteRestaurant = catchAsync(async (req, res) => {
         (Review) ? Review.destroy({ where: { restaurant_id: id }, force: true, transaction: t }) : Promise.resolve(),
 
         // Menu structures and options/modifiers
-        (MenuItemOption) ? MenuItemOption.destroy({ where: { }, force: true, transaction: t }) : Promise.resolve(),
+        (MenuItemOption && menuItemIds.length) ? MenuItemOption.destroy({ where: { menu_item_id: { [Op.in]: menuItemIds } }, force: true, transaction: t }) : Promise.resolve(),
         (MenuItemOptionGroup) ? MenuItemOptionGroup.destroy({ where: { restaurant_id: id }, force: true, transaction: t }) : Promise.resolve(),
-        (MenuItemModifierAssignment) ? MenuItemModifierAssignment.destroy({ where: { }, force: true, transaction: t }) : Promise.resolve(),
-        (MenuItemModifier) ? MenuItemModifier.destroy({ where: { }, force: true, transaction: t }) : Promise.resolve(),
+        (MenuItemModifierAssignment && menuItemModifierAssignmentWhere.length) ? MenuItemModifierAssignment.destroy({ where: { [Op.or]: menuItemModifierAssignmentWhere }, force: true, transaction: t }) : Promise.resolve(),
+        (MenuItemModifier && menuModifierIds.length) ? MenuItemModifier.destroy({ where: { id: { [Op.in]: menuModifierIds } }, force: true, transaction: t }) : Promise.resolve(),
         (MenuItem) ? MenuItem.destroy({ where: { restaurant_id: id }, force: true, transaction: t }) : Promise.resolve(),
         (MenuCategory) ? MenuCategory.destroy({ where: { restaurant_id: id }, force: true, transaction: t }) : Promise.resolve(),
 
         // Restaurant staff and waiter related records
         (RestaurantStaff) ? RestaurantStaff.destroy({ where: { restaurant_id: id }, force: true, transaction: t }) : Promise.resolve(),
-        (WaiterActivityLog) ? WaiterActivityLog.destroy({ where: { restaurant_id: id }, force: true, transaction: t }) : Promise.resolve(),
-        (StaffActivityLog) ? StaffActivityLog.destroy({ where: { restaurant_id: id }, force: true, transaction: t }) : Promise.resolve(),
-        (WaiterShift) ? WaiterShift.destroy({ where: { restaurant_id: id }, force: true, transaction: t }) : Promise.resolve(),
-        (WaiterPerformance) ? WaiterPerformance.destroy({ where: { restaurant_id: id }, force: true, transaction: t }) : Promise.resolve(),
-        (WaiterRealtimeStatus) ? WaiterRealtimeStatus.destroy({ where: { restaurant_id: id }, force: true, transaction: t }) : Promise.resolve(),
+        (WaiterActivityLog && waiterIds.length) ? WaiterActivityLog.destroy({ where: { waiter_id: { [Op.in]: waiterIds } }, force: true, transaction: t }) : Promise.resolve(),
+        (StaffActivityLog && staffIds.length) ? StaffActivityLog.destroy({ where: { staff_id: { [Op.in]: staffIds } }, force: true, transaction: t }) : Promise.resolve(),
+        (WaiterShift && waiterIds.length) ? WaiterShift.destroy({ where: { waiter_id: { [Op.in]: waiterIds } }, force: true, transaction: t }) : Promise.resolve(),
+        (WaiterPerformance && waiterIds.length) ? WaiterPerformance.destroy({ where: { waiter_id: { [Op.in]: waiterIds } }, force: true, transaction: t }) : Promise.resolve(),
+        (WaiterRealtimeStatus && waiterIds.length) ? WaiterRealtimeStatus.destroy({ where: { waiter_id: { [Op.in]: waiterIds } }, force: true, transaction: t }) : Promise.resolve(),
         (Waiter) ? Waiter.destroy({ where: { restaurant_id: id }, force: true, transaction: t }) : Promise.resolve(),
 
         // Support tickets and messages
@@ -669,8 +720,8 @@ const deleteRestaurant = catchAsync(async (req, res) => {
         (Invoice) ? Invoice.destroy({ where: { restaurant_id: id }, force: true, transaction: t }) : Promise.resolve(),
         (Subscription) ? Subscription.destroy({ where: { restaurant_id: id }, force: true, transaction: t }) : Promise.resolve(),
 
-        // Push tokens (if scoped to restaurant)
-        (PushNotificationToken) ? PushNotificationToken.destroy({ where: { restaurant_id: id }, force: true, transaction: t }) : Promise.resolve(),
+        // Push tokens are scoped to users; delete tokens for staff/waiter/user IDs if available
+        (PushNotificationToken && pushTokenUserIds.length) ? PushNotificationToken.destroy({ where: { user_id: { [Op.in]: pushTokenUserIds } }, force: true, transaction: t }) : Promise.resolve(),
 
         // Table records themselves
         (Table) ? Table.destroy({ where: { restaurant_id: id }, force: true, transaction: t }) : Promise.resolve(),
@@ -689,7 +740,7 @@ const deleteRestaurant = catchAsync(async (req, res) => {
         } catch (e) {
           // Ignore errors caused by missing tables/columns in the database (dev/test environments)
           const msg = (e && (e.original && e.original.message)) || e.message || '';
-          if (/doesn't exist|does not exist|Unknown table|ER_NO_SUCH_TABLE|Unknown column|ER_BAD_FIELD_ERROR/i.test(msg)) {
+          if (/doesn't exist|does not exist|Unknown table|ER_NO_SUCH_TABLE|Unknown column|no such column|ER_BAD_FIELD_ERROR/i.test(msg)) {
             console.warn('Skipping destroy op due to missing table/column:', msg);
             continue;
           }

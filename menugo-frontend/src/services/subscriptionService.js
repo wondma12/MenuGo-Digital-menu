@@ -22,11 +22,6 @@ const getAuthRole = () => useAuthStore.getState()?.user?.role
 
 // Get all subscription plans
 export const getSubscriptionPlans = async () => {
-  // Restaurant admins should not hit the platform-only plans endpoint.
-  if (getAuthRole() && getAuthRole() !== 'platform_admin') {
-    return DEFAULT_SUBSCRIPTION_PLANS
-  }
-
   const response = await api.get('/platform/subscriptions/plans')
   const payload = response.data
   // Normalize responses: some APIs return { data: [...] } or { data: { plans: [...] } }

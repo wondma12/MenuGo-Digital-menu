@@ -65,14 +65,14 @@ const processExpiredSubscriptions = async () => {
     });
 
     for (const restaurant of expiredSubscriptions) {
-      // Downgrade to monthly plan
+      // Deactivate restaurant account
       const previousTier = restaurant.subscription_tier;
       await restaurant.update({
-        subscription_tier: 'monthly',
         subscription_status: 'expired',
-        max_menu_items: -1,
-        max_users: -1,
-        max_orders_per_day: -1,
+        is_active: false,
+        max_menu_items: 0,
+        max_users: 0,
+        max_orders_per_day: 0,
       });
 
       // Create notification
@@ -80,11 +80,10 @@ const processExpiredSubscriptions = async () => {
         restaurant_id: restaurant.id,
         user_id: restaurant.owner_id,
         type: 'system',
-        title: 'Subscription Expired',
-        message: `Your ${previousTier} subscription has expired. Your account has been downgraded to the Monthly plan.`,
+        title: 'Subscription Expired - Account Deactivated',
+        message: `Your ${previousTier} subscription has expired on ${new Date(restaurant.subscription_end_date).toLocaleDateString()}. Your restaurant account has been automatically deactivated. Please renew your subscription to reactivate.`,
         data: {
           previous_tier: previousTier,
-          current_tier: 'monthly',
           end_date: restaurant.subscription_end_date,
         },
       });
@@ -98,7 +97,7 @@ const processExpiredSubscriptions = async () => {
         });
       }
 
-      logger.info(`Expired subscription processed for restaurant ${restaurant.id}`);
+      logger.info(`Expired subscription processed for restaurant ${restaurant.id} - account deactivated`);
     }
   } catch (error) {
     logger.error('Error processing expired subscriptions:', error);
@@ -123,12 +122,12 @@ const sendSubscriptionExpiryEmail = async (email, name, data) => {
 
 // Send subscription expired email
 const sendSubscriptionExpiredEmail = async (email, name, data) => {
-  const subject = `Your MenuGo Subscription Has Expired`;
+  const subject = `Your MenuGo Subscription Has Expired - Account Deactivated`;
   const html = `
     <h2>Subscription Expired</h2>
     <p>Dear ${name},</p>
     <p>Your ${data.previous_tier} subscription for <strong>${data.restaurant_name}</strong> has expired on <strong>${new Date(data.end_date).toLocaleDateString()}</strong>.</p>
-    <p>Your account has been downgraded to the Basic plan. To restore premium features, please renew your subscription.</p>
+    <p>Your restaurant account has been automatically deactivated. To reactivate your account and continue serving customers, please renew your subscription.</p>
     <p>If you have any questions, please contact our support team.</p>
     <br>
     <p>Best regards,<br>MenuGo Team</p>

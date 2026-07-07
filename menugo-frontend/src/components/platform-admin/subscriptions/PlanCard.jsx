@@ -36,18 +36,18 @@ const PlanCard = ({ plan, onEdit, onDelete }) => {
 
   const getPriceDisplay = () => {
     if (plan.tier === 'monthly') {
-      return `$${plan.price_monthly || plan.priceMonthly}/month`
+      return `ETB ${plan.price_monthly || plan.priceMonthly}/month`
     } else if (plan.tier === 'six_month') {
-      return `$${plan.price_yearly || plan.priceYearly}/6 months`
+      return `ETB ${plan.price_yearly || plan.priceYearly}/6 months`
     } else if (plan.tier === 'yearly') {
-      return `$${plan.price_yearly || plan.priceYearly}/year`
+      return `ETB ${plan.price_yearly || plan.priceYearly}/year`
     }
     return 'N/A'
   }
 
   return (
-    <div className={`overflow-hidden rounded-none border border-slate-100 border-l-4 border-l-slate-100 bg-white shadow-sm transition-all hover:shadow-md`}>
-      <div className="p-6">
+    <div className="flex h-full flex-col overflow-hidden rounded-none border border-slate-100 border-l-4 border-l-slate-100 bg-white shadow-sm transition-all hover:shadow-md">
+      <div className="flex-1 p-6">
         <div className="flex justify-between items-start">
           <div>
             <h3 className="text-xl font-black capitalize tracking-tight text-slate-900">{plan.name}</h3>
@@ -60,7 +60,7 @@ const PlanCard = ({ plan, onEdit, onDelete }) => {
 
         <div className="mt-4">
           <div className="flex items-baseline gap-1">
-            <span className="text-3xl font-black text-slate-900">{getPriceDisplay()}</span>
+            <span className="text-2xl font-black text-slate-900">{getPriceDisplay()}</span>
           </div>
         </div>
 
@@ -72,8 +72,10 @@ const PlanCard = ({ plan, onEdit, onDelete }) => {
             </div>
           ))}
         </div>
+      </div>
 
-        <div className="mt-6 flex gap-2 border-t border-orange-100 pt-4">
+      <div className="border-t border-orange-100 px-6 py-4">
+        <div className="flex gap-2">
           <button onClick={onEdit} className="flex flex-1 items-center justify-center gap-2 rounded-none px-3 py-2 text-sm text-slate-600 hover:bg-orange-50">
             <PencilIcon className="w-4 h-4" />
             Edit

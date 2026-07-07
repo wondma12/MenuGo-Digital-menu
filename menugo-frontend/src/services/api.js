@@ -19,26 +19,24 @@ const normalizeApiUrl = (url) => {
 }
 
 const NORMALIZED_API_URL = normalizeApiUrl(API_URL)
+const EXPLICIT_API_URL = import.meta.env.VITE_API_URL ? normalizeApiUrl(import.meta.env.VITE_API_URL) : null
 
 // Fallback ports to try when the configured API is unreachable during local development.
 // Include common local backend ports (5002 and 5003 used by this repo), then other candidates.
-  // Probe a contiguous range of common local backend ports to improve
-  // auto-detection when the backend picks a nearby free port.
-  const FALLBACK_PORTS = Array.from({ length: 11 }, (_, i) => 5000 + i)
+const FALLBACK_PORTS = Array.from({ length: 11 }, (_, i) => 5000 + i)
 
-  const buildApiCandidates = () => {
+const buildApiCandidates = () => {
   const seen = new Set()
   const add = (u) => {
     if (!u) return
-    let normalized = normalizeApiUrl(u)
+    const normalized = normalizeApiUrl(u)
     if (!seen.has(normalized)) {
       seen.add(normalized)
     }
   }
 
   if (import.meta.env.VITE_API_URL) add(import.meta.env.VITE_API_URL)
-
-  if (import.meta.env.VITE_API_URL) add(import.meta.env.VITE_API_URL)
+  if (import.meta.env.API_URL) add(import.meta.env.API_URL)
 
   try {
     const host = window?.location?.hostname || 'localhost'
@@ -49,9 +47,7 @@ const NORMALIZED_API_URL = normalizeApiUrl(API_URL)
     // ignore - window may not exist in some build-time contexts
   }
 
-  // Always ensure API_URL is present as a last resort
   add(NORMALIZED_API_URL)
-
   return Array.from(seen)
 }
 
@@ -64,8 +60,19 @@ const ensureApiBaseReady = () => {
   baseProbePromise = (async () => {
     const cacheKey = 'menugo_api_base'
     const cached = typeof sessionStorage !== 'undefined' ? sessionStorage.getItem(cacheKey) : null
-    // Shorter probe timeout and parallel probing to reduce startup latency
     const probeTimeout = 800
+
+    if (EXPLICIT_API_URL) {
+      try {
+        await axios.get(`${EXPLICIT_API_URL.replace(/\/$/, '')}/health`, { timeout: probeTimeout })
+        api.defaults.baseURL = EXPLICIT_API_URL
+        if (import.meta.env.DEV) console.warn('Using explicit VITE_API_URL baseURL:', EXPLICIT_API_URL)
+        try { if (typeof sessionStorage !== 'undefined') sessionStorage.removeItem(cacheKey) } catch (err) {}
+        return
+      } catch (e) {
+        if (import.meta.env.DEV) console.warn('Explicit VITE_API_URL failed probe:', e && e.message)
+      }
+    }
 
     if (cached) {
       try {
@@ -77,12 +84,13 @@ const ensureApiBaseReady = () => {
         if (import.meta.env.DEV) console.warn('Cached api base failed probe, clearing cache:', e && e.message)
         try { sessionStorage.removeItem(cacheKey) } catch (err) {}
       }
+    } else if (typeof sessionStorage !== 'undefined') {
+      try { sessionStorage.removeItem(cacheKey) } catch (err) {}
     }
 
     const candidates = buildApiCandidates()
     const cap = Math.min(candidates.length, 6)
 
-    // Probe candidates in parallel and use the first successful one.
     const probePromises = candidates.slice(0, cap).map((candidate) => {
       const base = candidate.replace(/\/$/, '')
       const healthUrl = `${base}/health`
@@ -94,21 +102,26 @@ const ensureApiBaseReady = () => {
     try {
       const winner = await Promise.any(probePromises)
       api.defaults.baseURL = winner
-      try { if (typeof sessionStorage !== 'undefined') sessionStorage.setItem(cacheKey, winner) } catch (e) { if (import.meta.env.DEV) console.warn('sessionStorage.setItem failed:', e && e.message) }
+      try {
+        if (typeof sessionStorage !== 'undefined') {
+          sessionStorage.setItem(cacheKey, winner)
+        }
+      } catch (e) {
+        if (import.meta.env.DEV) console.warn('sessionStorage.setItem failed:', e && e.message)
+      }
       if (import.meta.env.DEV) console.warn('Initial API baseURL detected:', winner)
       return
     } catch (allErr) {
       if (import.meta.env.DEV) console.warn('Initial probe: no candidate responded')
     }
 
-    // Fall back to configured URL if nothing responded
     api.defaults.baseURL = NORMALIZED_API_URL
     if (import.meta.env.DEV) console.warn('No candidate responded; using configured NORMALIZED_API_URL:', NORMALIZED_API_URL)
   })()
   return baseProbePromise
 }
 
-  const attemptFallback = async (originalRequest) => {
+const attemptFallback = async (originalRequest) => {
   // Only attempt automatic fallback for idempotent requests to avoid
   // re-sending large uploads or mutating POSTs to unknown hosts.
   const method = (originalRequest && originalRequest.method) ? originalRequest.method.toLowerCase() : 'get'
@@ -180,7 +193,18 @@ const publicPaths = [
   '/auth/reset-password',
   '/auth/verify-email',
   '/platform/public-summary',
+  '/platform/subscriptions/plans',
 ]
+
+const normalizePath = (path) => String(path || '').replace(/\/+$|^\s+|\s+$/g, '')
+
+const isPublicPath = (requestPath) => {
+  const normalizedRequestPath = normalizePath(requestPath).replace(/\/$/, '')
+  return publicPaths.some((path) => {
+    const normalizedPublicPath = normalizePath(path).replace(/\/$/, '')
+    return normalizedRequestPath === normalizedPublicPath
+  })
+}
 
 // Flag to prevent multiple refresh token calls
 let isRefreshing = false
@@ -228,22 +252,26 @@ api.interceptors.request.use(
 
     const method = (config.method || 'get').toLowerCase()
 
-    let isPublicPath = publicPaths.some((path) => {
-      try {
-        // Normalize: ensure both start with a slash and compare pathname segments
-        const np = path.startsWith('/') ? path : `/${path}`
-        return requestPath === np || requestPath.startsWith(np) || requestPath.includes(np)
-      } catch (e) {
-        return String(requestPath).includes(path)
-      }
-    })
+    let isRequestPublic = isPublicPath(requestPath)
 
     // Special-case: allow public POST to the contact form even though the
     // same pathname is used for the admin GET listing. We only treat the
     // POST as public so unauthenticated users can submit messages, while
     // GET remains protected for admin listing.
-    if (!isPublicPath && requestPath === '/public/contact' && method === 'post') {
-      isPublicPath = true
+    if (!isRequestPublic && requestPath === '/public/contact' && method === 'post') {
+      isRequestPublic = true
+    }
+
+    // Attach token only when present and the request is not public
+    if (token && !isRequestPublic) {
+      config.headers.Authorization = `Bearer ${token}`
+    } else if (!token && !isRequestPublic) {
+      // Prevent sending unauthenticated requests to protected endpoints.
+      const err = new Error('No auth token present')
+      err.isAuthMissing = true
+      // Mark as silent so response interceptor can suppress noisy logs
+      err.silent = true
+      return Promise.reject(err)
     }
 
     // Attach token only when present and the request is not public
@@ -306,13 +334,21 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config
     const requestUrl = originalRequest?.url || ''
-    const isPublicPath = publicPaths.some(path => requestUrl.includes(path))
-    
+    const requestPath = (() => {
+      try {
+        const base = (api.defaults && api.defaults.baseURL) ? api.defaults.baseURL : window?.location?.origin
+        return new URL(String(requestUrl), String(base)).pathname
+      } catch (e) {
+        return requestUrl
+      }
+    })()
+    const requestIsPublic = isPublicPath(requestPath)
+
     // Get current token
     const token = useAuthStore.getState().token || authSessionStorage?.getItem('token')
     
     // Handle 401 Unauthorized
-    if (error.response?.status === 401 && token && !isPublicPath && !originalRequest?._retry) {
+    if (error.response?.status === 401 && token && !requestIsPublic && !originalRequest?._retry) {
       console.log('Token expired, attempting refresh...')
       
       if (isRefreshing) {
