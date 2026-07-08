@@ -1,4 +1,7 @@
-const { QRCode, QRCodeScan, Restaurant, Table } = require('../models');
+const SequelizePkg = require('sequelize');
+const { Sequelize } = require('../config/database');
+const Op = SequelizePkg.Op || Sequelize.Op;
+const { QRCode, QRCodeScan, Restaurant, Table, sequelize } = require('../models');
 const { ApiResponse } = require('../utils/apiResponse');
 const { ApiError } = require('../utils/apiError');
 const { catchAsync } = require('../utils/catchAsync');
@@ -6,6 +9,11 @@ const { generateQRCode, generateQRCodeBase64 } = require('../utils/generateQR');
 const { uploadToCloudinary } = require('../config/cloudinary');
 const { slugify } = require('../utils/helpers');
 const fs = require('fs');
+
+const getBaseUrl = (req) => {
+  const origin = (req.get && req.get('origin')) || (req.headers && req.headers.origin) || process.env.CLIENT_URL || 'http://localhost:5173';
+  return String(origin).replace(/\/$/, '');
+};
 
 // Generate QR code for restaurant
 const generateRestaurantQR = catchAsync(async (req, res) => {
@@ -28,15 +36,8 @@ const generateRestaurantQR = catchAsync(async (req, res) => {
   const tableNumber = req.query && (req.query.table || req.query.tableNumber) ? String(req.query.table || req.query.tableNumber) : null
   const orderIdParam = req.query && req.query.orderId ? String(req.query.orderId) : null
 
-  const getBaseUrl = () => {
-    // Prefer the request origin (frontend host) so generated QR links point to the UI that made the request.
-    // Fallback to configured CLIENT_URL, then to a sensible localhost default.
-    const origin = (req.get && req.get('origin')) || (req.headers && req.headers.origin) || process.env.CLIENT_URL || 'http://localhost:5173'
-    return String(origin).replace(/\/$/, '')
-  }
-
   const makeQrUrl = (identifier) => {
-    const base = getBaseUrl()
+    const base = getBaseUrl(req)
     if (!route || route === 'menu') return `${base}/menu/${identifier}`
     if (route === 'customer' || route === 'root') return `${base}/menu/${identifier}`
     if (route === 'cart') return `${base}/menu/${identifier}/cart`
@@ -131,7 +132,7 @@ const generateTableQR = catchAsync(async (req, res) => {
   if (!qrIdentifier) {
     // Create a new restaurant qr identifier and QR
     qrIdentifier = slugify(restaurant.name || 'restaurant') || 'restaurant'
-    const qrUrl = `${getBaseUrl()}/menu/${qrIdentifier}`
+    const qrUrl = `${getBaseUrl(req)}/menu/${qrIdentifier}`
 
     // Try to generate and upload; if upload fails we'll still return base64/local file
     try {
@@ -169,7 +170,7 @@ const generateTableQR = catchAsync(async (req, res) => {
 
     // Always regenerate the image and base64 for table QR as well so the UI gets usable data
     try {
-      const qrUrl = `${getBaseUrl()}/menu/${qrIdentifier}`
+      const qrUrl = `${getBaseUrl(req)}/menu/${qrIdentifier}`
       const qrImagePath = await generateQRCode(qrUrl, qrIdentifier)
       qrBase64 = await generateQRCodeBase64(qrUrl)
       if (qrImagePath && fs.existsSync(qrImagePath)) {

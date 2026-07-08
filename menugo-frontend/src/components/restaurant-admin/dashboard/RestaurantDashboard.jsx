@@ -14,11 +14,8 @@ import DashboardMetrics from './DashboardMetrics'
 import RevenueChart from './RevenueChart'
 import OrdersChart from './OrdersChart'
 import PopularItemsChart from './PopularItemsChart'
-import RecentOrdersTable from './RecentOrdersTable'
 import QuickActions from './QuickActions'
 import TodaySchedule from './TodaySchedule'
-import LowStockAlert from './LowStockAlert'
-import CustomerInsights from './CustomerInsights'
 import Loading from '../../common/Loading'
 import Alert from '../../common/Alert'
 import DateRangePicker from '../analytics/DateRangePicker'
@@ -138,14 +135,6 @@ const RestaurantDashboard = () => {
         <TodaySchedule schedule={data?.todaySchedule || {}} />
       </div>
 
-      {/* Alerts Row */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <LowStockAlert items={data?.lowStockItems || []} />
-        <CustomerInsights insights={data?.customerInsights || {}} />
-      </div>
-
-      {/* Recent Orders Table */}
-      <RecentOrdersTable orders={data?.recentOrders || []} />
     </div>
   )
 }
