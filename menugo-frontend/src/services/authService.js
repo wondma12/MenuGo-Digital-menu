@@ -21,7 +21,7 @@ export const register = async (userData) => {
   try {
     let response
     if (userData instanceof FormData) {
-      response = await api.post('/auth/register', userData, { headers: { 'Content-Type': 'multipart/form-data' } })
+      response = await api.post('/auth/register', userData)
     } else {
       response = await api.post('/auth/register', userData)
     }

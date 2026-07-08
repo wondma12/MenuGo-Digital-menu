@@ -460,24 +460,47 @@ const createUser = catchAsync(async (req, res) => {
   let restaurant = null;
   // If creating a restaurant admin, also create the restaurant and staff assignment
   if (role === 'restaurant_admin' && req.body.restaurant_name) {
+    const restaurantSubCity = req.body.restaurant_sub_city || req.body.sub_city || req.body.subCity || req.body.restaurantSubCity || null;
+    const businessLicenseNumber = req.body.business_license_number || req.body.businessLicenseNumber || null;
+    const tinNumber = req.body.tin_number || req.body.tinNumber || null;
+    const restaurantSlogan = req.body.restaurant_slogan || req.body.slogan || req.body.description || null;
+
     restaurant = await Restaurant.create({
       owner_id: user.id,
       name: req.body.restaurant_name,
       email: req.body.business_email || user.email,
       phone: req.body.restaurant_phone || phone || null,
-      address: req.body.restaurant_address || null,
-      city: req.body.restaurant_city || null,
-      country: req.body.restaurant_country || null,
+      address: req.body.restaurant_address || req.body.streetAddress || null,
+      city: req.body.restaurant_city || req.body.city || null,
+      country: req.body.restaurant_country || req.body.country || null,
       website: req.body.restaurant_website || null,
-      slogan: req.body.restaurant_slogan || null,
-      sub_city: req.body.restaurant_sub_city || null,
-      business_license_number: req.body.business_license_number || null,
-      tin_number: req.body.tin_number || null,
+      slogan: restaurantSlogan,
+      sub_city: restaurantSubCity,
+      business_license_number: businessLicenseNumber,
+      tin_number: tinNumber,
       owner_name: req.body.owner_name || full_name || null,
       is_verified: true,
       subscription_status: 'trial',
       subscription_start_date: new Date(),
       subscription_end_date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
+      settings: {
+        auto_accept_orders: false,
+        allow_online_payment: true,
+        allow_cash_payment: true,
+        enable_delivery: false,
+        enable_takeaway: true,
+        table_management: true,
+        order_notifications: true,
+        email_notifications: true,
+        sms_notifications: false,
+        loyalty_program: false,
+        happy_hour: false,
+        business_license: {
+          number: businessLicenseNumber,
+          tin_number: tinNumber,
+          tinNumber: tinNumber,
+        },
+      },
     });
 
     await RestaurantStaff.create({

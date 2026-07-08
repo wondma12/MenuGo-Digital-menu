@@ -30,6 +30,21 @@ const { generateQRCode, generateQRCodeBase64 } = require('../utils/generateQR');
 const { uploadToCloudinary } = require('../config/cloudinary');
 const { Op } = require('sequelize');
 
+const normalizeSettingsValue = (value) => {
+  if (!value) return {};
+  if (typeof value === 'string') {
+    try {
+      return JSON.parse(value);
+    } catch (error) {
+      return {};
+    }
+  }
+  if (typeof value === 'object' && !Array.isArray(value)) {
+    return value;
+  }
+  return {};
+};
+
 // Get all restaurants (platform admin)
 const getAllRestaurants = catchAsync(async (req, res) => {
   const { page = 1, limit = 20, status, tier, country, search } = req.query;
@@ -218,10 +233,36 @@ const getRestaurantById = catchAsync(async (req, res) => {
     where: { restaurant_id: restaurantPk }, 
   });
 
+  const parsedSettings = normalizeSettingsValue(restaurant.settings);
+
+  const businessLicenseSettings =
+    parsedSettings?.business_license && typeof parsedSettings.business_license === 'object' && !Array.isArray(parsedSettings.business_license)
+      ? parsedSettings.business_license
+      : {};
+
+  const resolvedBusinessLicenseUrl = (
+    restaurant.business_license_url ||
+    parsedSettings?.business_license_url ||
+    parsedSettings?.businessLicenseUrl ||
+    businessLicenseSettings.url ||
+    businessLicenseSettings.fileUrl ||
+    businessLicenseSettings.file_url ||
+    businessLicenseSettings.document_url ||
+    businessLicenseSettings.documentUrl ||
+    businessLicenseSettings.path ||
+    parsedSettings?.document_url ||
+    parsedSettings?.documentUrl ||
+    restaurant?.document_url ||
+    restaurant?.documentUrl ||
+    null
+  );
+
   const responseData = {
     ...restaurant.toJSON(),
     cover_image_url: restaurant.cover_image_url || null,
     logo_url: restaurant.logo_url || null,
+    settings: parsedSettings,
+    business_license_url: resolvedBusinessLicenseUrl,
     tax_rate: restaurant.tax_rate ?? restaurant.getDataValue?.('tax_rate') ?? 0,
     taxRate: restaurant.tax_rate ?? restaurant.getDataValue?.('tax_rate') ?? 0,
     service_charge: restaurant.service_charge ?? restaurant.getDataValue?.('service_charge') ?? 0,
@@ -447,7 +488,7 @@ function generateRandomPassword(length = 10) {
 // Update restaurant
 const updateRestaurant = catchAsync(async (req, res) => {
   const { id } = req.params;
-  const updates = req.body;
+  const updates = { ...req.body };
 
   const restaurant = await Restaurant.findByPk(id);
   if (!restaurant) {
@@ -457,6 +498,36 @@ const updateRestaurant = catchAsync(async (req, res) => {
   // Check ownership
   if (restaurant.owner_id !== req.user.id && req.user.role !== 'platform_admin') {
     throw new ApiError(403, 'You do not have permission to update this restaurant');
+  }
+
+  const normalizedSubCity = updates.sub_city || updates.subCity || updates.restaurant_sub_city || updates.restaurantSubCity || null;
+  const normalizedBusinessLicenseNumber = updates.business_license_number || updates.businessLicenseNumber || updates.businessLicenseNumber || null;
+  const normalizedTinNumber = updates.tin_number || updates.tinNumber || null;
+  const normalizedSlogan = updates.restaurant_slogan || updates.slogan || updates.description || null;
+
+  if (normalizedSubCity) updates.sub_city = normalizedSubCity;
+  if (normalizedBusinessLicenseNumber) updates.business_license_number = normalizedBusinessLicenseNumber;
+  if (normalizedTinNumber) updates.tin_number = normalizedTinNumber;
+  if (normalizedSlogan) updates.slogan = normalizedSlogan;
+
+  if (normalizedBusinessLicenseNumber || normalizedTinNumber || updates.settings?.business_license?.number || updates.settings?.business_license?.tin_number || updates.settings?.business_license?.tinNumber) {
+    const existingSettings = normalizeSettingsValue(restaurant.settings);
+    const businessLicenseSettings = normalizeSettingsValue(existingSettings.business_license);
+
+    if (normalizedBusinessLicenseNumber) {
+      businessLicenseSettings.number = normalizedBusinessLicenseNumber;
+    }
+    if (normalizedTinNumber) {
+      businessLicenseSettings.tin_number = normalizedTinNumber;
+      businessLicenseSettings.tinNumber = normalizedTinNumber;
+    }
+
+    if (updates.settings?.business_license && typeof updates.settings.business_license === 'object' && !Array.isArray(updates.settings.business_license)) {
+      Object.assign(businessLicenseSettings, updates.settings.business_license);
+    }
+
+    existingSettings.business_license = businessLicenseSettings;
+    updates.settings = existingSettings;
   }
 
   // Handle uploaded files (support req.files from upload.fields)
@@ -484,14 +555,16 @@ const updateRestaurant = catchAsync(async (req, res) => {
       try {
         const uploadResult = await uploadToCloudinary(docFile.path, 'menugo/documents');
         if (uploadResult && uploadResult.url) {
-          const settings = restaurant.settings || {};
+          const settings = normalizeSettingsValue(restaurant.settings);
           settings.business_license = {
+            ...normalizeSettingsValue(settings.business_license),
             url: uploadResult.url,
             publicId: uploadResult.publicId || null,
             uploadedAt: new Date(),
             originalName: docFile.originalname,
           };
           updates.settings = settings;
+          updates.business_license_url = uploadResult.url;
         }
       } catch (docErr) {
         console.error('Failed to upload business license during restaurant update:', docErr && docErr.message ? docErr.message : docErr);

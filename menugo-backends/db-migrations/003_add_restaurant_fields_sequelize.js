@@ -32,6 +32,11 @@ module.exports = {
       allowNull: true,
     });
 
+    await queryInterface.addColumn('restaurants', 'business_license_url', {
+      type: Sequelize.TEXT,
+      allowNull: true,
+    });
+
     // optional index
     await queryInterface.addIndex('restaurants', ['owner_name'], { name: 'idx_restaurants_owner_name' });
   },
@@ -39,6 +44,7 @@ module.exports = {
   down: async (queryInterface) => {
     await queryInterface.removeIndex('restaurants', 'idx_restaurants_owner_name').catch(() => {});
     await queryInterface.removeColumn('restaurants', 'owner_name').catch(() => {});
+    await queryInterface.removeColumn('restaurants', 'business_license_url').catch(() => {});
     await queryInterface.removeColumn('restaurants', 'tin_number').catch(() => {});
     await queryInterface.removeColumn('restaurants', 'business_license_number').catch(() => {});
     await queryInterface.removeColumn('restaurants', 'slogan').catch(() => {});

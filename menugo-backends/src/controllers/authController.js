@@ -27,10 +27,23 @@ const register = catchAsync(async (req, res) => {
     restaurant_address,
     restaurant_city,
     restaurant_country,
+    restaurant_sub_city,
+    sub_city,
+    business_license_number,
+    businessLicenseNumber,
+    tin_number,
+    tinNumber,
     restaurant_phone,
     restaurant_website,
     restaurant_slogan,
+    restaurant_description,
+    description,
+    slogan,
   } = req.body;
+  const resolvedSubCity = restaurant_sub_city || sub_city || null;
+  const resolvedBusinessLicenseNumber = business_license_number || businessLicenseNumber || null;
+  const resolvedTinNumber = tin_number || tinNumber || null;
+  const resolvedSlogan = restaurant_slogan || restaurant_description || description || slogan || null;
   const normalizedEmail = normalizeEmailInput(email);
 
   // Check if user exists
@@ -83,14 +96,35 @@ const register = catchAsync(async (req, res) => {
       address: restaurant_address || null,
       city: restaurant_city || null,
       country: restaurant_country || null,
+      sub_city: resolvedSubCity,
+      business_license_number: resolvedBusinessLicenseNumber,
+      tin_number: resolvedTinNumber,
       website: restaurant_website || null,
-      slogan: restaurant_slogan || null,
+      slogan: resolvedSlogan,
       is_verified: false,
       subscription_tier: subscriptionTier,
       subscription_status: 'active',
       subscription_start_date: now,
       subscription_end_date: subscriptionEndDate,
       is_active: true,
+      settings: {
+        auto_accept_orders: false,
+        allow_online_payment: true,
+        allow_cash_payment: true,
+        enable_delivery: false,
+        enable_takeaway: true,
+        table_management: true,
+        order_notifications: true,
+        email_notifications: true,
+        sms_notifications: false,
+        loyalty_program: false,
+        happy_hour: false,
+        business_license: {
+          number: resolvedBusinessLicenseNumber,
+          tin_number: resolvedTinNumber,
+          tinNumber: resolvedTinNumber,
+        },
+      },
     });
 
     await RestaurantStaff.create({
@@ -115,7 +149,12 @@ const register = catchAsync(async (req, res) => {
             uploadedAt: new Date(),
             originalName: licenseFile.originalname,
           };
-          await restaurant.update({ settings });
+          try {
+            await restaurant.update({ settings, business_license_url: uploadResult.url });
+          } catch (persistErr) {
+            console.warn('Falling back to settings-only persistence for business license URL:', persistErr && persistErr.message ? persistErr.message : persistErr);
+            await restaurant.update({ settings });
+          }
         }
       }
 

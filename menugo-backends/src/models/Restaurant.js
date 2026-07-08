@@ -86,6 +86,10 @@ const Restaurant = sequelize.define('Restaurant', {
     type: DataTypes.STRING(128),
     allowNull: true,
   },
+  business_license_url: {
+    type: DataTypes.TEXT,
+    allowNull: true,
+  },
   owner_name: {
     type: DataTypes.STRING(255),
     allowNull: true,

@@ -555,7 +555,7 @@ const Services = () => {
                     ))}
                   </ul>
                   <Link
-                    to="/contact"
+                    to="/register"
                     className={`mt-6 inline-flex w-full items-center justify-center rounded-xl px-5 py-2.5 text-sm font-semibold transition-colors ${
                       plan.recommended
                         ? 'bg-orange-600 text-white hover:bg-orange-700'

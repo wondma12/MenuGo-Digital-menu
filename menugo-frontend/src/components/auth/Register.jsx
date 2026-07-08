@@ -141,7 +141,9 @@ const MultiStepRegistration = () => {
           fd.append('restaurant_address', formData.streetAddress);
           fd.append('restaurant_city', formData.city);
           fd.append('restaurant_country', formData.country);
-
+          fd.append('restaurant_sub_city', formData.subCity);
+          fd.append('business_license_number', formData.businessLicenseNumber);
+          fd.append('tin_number', formData.tinNumber);
           fd.append('restaurant_slogan', formData.description);
           if (formData.logo) fd.append('logo', formData.logo);
           if (formData.banner) fd.append('banner', formData.banner);
@@ -159,6 +161,9 @@ const MultiStepRegistration = () => {
             restaurant_address: formData.streetAddress,
             restaurant_city: formData.city,
             restaurant_country: formData.country,
+            restaurant_sub_city: formData.subCity,
+            business_license_number: formData.businessLicenseNumber,
+            tin_number: formData.tinNumber,
             restaurant_slogan: formData.description,
           };
         }

@@ -171,6 +171,39 @@ export const getRestaurantDetails = async (id) => {
   const payload = response?.data?.data || response?.data || {};
   const r = payload;
 
+  const normalizeSettings = (value) => {
+    if (!value) return {};
+    if (typeof value === 'string') {
+      try {
+        return JSON.parse(value);
+      } catch (error) {
+        return {};
+      }
+    }
+    return value;
+  };
+
+  const settings = normalizeSettings(r.settings);
+  const businessLicenseSettings =
+    settings?.business_license && typeof settings.business_license === 'object' && !Array.isArray(settings.business_license)
+      ? settings.business_license
+      : {};
+  const resolvedBusinessLicenseUrl = (
+    r.business_license_url ||
+    r.businessLicenseUrl ||
+    settings?.business_license_url ||
+    settings?.businessLicenseUrl ||
+    businessLicenseSettings.url ||
+    businessLicenseSettings.fileUrl ||
+    businessLicenseSettings.file_url ||
+    businessLicenseSettings.document_url ||
+    businessLicenseSettings.documentUrl ||
+    businessLicenseSettings.path ||
+    r.document_url ||
+    r.documentUrl ||
+    null
+  );
+
   const normalized = {
     ...r,
     id: r.id,
@@ -180,6 +213,7 @@ export const getRestaurantDetails = async (id) => {
     city: r.city,
     state: r.state,
     country: r.country,
+    sub_city: r.sub_city || r.subCity || r.restaurant_sub_city || r.restaurantSubCity || null,
     postal_code: r.postal_code,
     latitude: r.latitude,
     longitude: r.longitude,
@@ -211,6 +245,10 @@ export const getRestaurantDetails = async (id) => {
     totalStaff: r.total_staff || r.totalStaff || 0,
     average_rating: r.average_rating || 0,
     total_reviews: r.total_reviews || 0,
+    business_license_number: r.business_license_number || r.businessLicenseNumber || settings?.business_license?.number || settings?.business_license_number || settings?.businessLicenseNumber || null,
+    tin_number: r.tin_number || r.tinNumber || settings?.tin_number || settings?.tinNumber || settings?.business_license?.tin_number || settings?.business_license?.tinNumber || null,
+    business_license_url: resolvedBusinessLicenseUrl,
+    settings,
     owner: r.owner || null,
     staff: r.staff || [],
     tables: r.tables || [],

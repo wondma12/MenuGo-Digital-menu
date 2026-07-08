@@ -115,21 +115,88 @@ const RestaurantDetails = () => {
   const ownerFullName = restaurant?.owner_name || owner?.full_name || owner?.fullName || '';
   const ownerEmail = owner?.email || restaurant?.email || '';
   const ownerPhone = owner?.phone || restaurant?.phone || '';
-  const subCity = restaurant?.sub_city || '';
+  const parsedSettings = (() => {
+    const rawSettings = restaurant?.settings;
+    if (!rawSettings) return {};
+    if (typeof rawSettings === 'string') {
+      try {
+        return JSON.parse(rawSettings);
+      } catch (error) {
+        return {};
+      }
+    }
+    return rawSettings;
+  })();
+
+  const subCity = (
+    restaurant?.sub_city ||
+    restaurant?.subCity ||
+    restaurant?.restaurant_sub_city ||
+    restaurant?.restaurantSubCity ||
+    parsedSettings?.sub_city ||
+    parsedSettings?.subCity ||
+    restaurant?.address_details?.sub_city ||
+    restaurant?.address_details?.subCity ||
+    restaurant?.data?.sub_city ||
+    restaurant?.data?.subCity ||
+    ''
+  );
   const googleMaps = restaurant?.website || restaurant?.google_maps || '';
-  const businessLicenseNumber = restaurant?.business_license_number || '';
-  const tinNumber = restaurant?.tin_number || '';
+  const businessLicenseNumber = (
+    restaurant?.business_license_number ||
+    restaurant?.businessLicenseNumber ||
+    parsedSettings?.business_license?.number ||
+    parsedSettings?.business_license?.businessLicenseNumber ||
+    parsedSettings?.business_license_number ||
+    parsedSettings?.businessLicenseNumber ||
+    restaurant?.data?.business_license_number ||
+    restaurant?.data?.businessLicenseNumber ||
+    ''
+  );
+  const tinNumber = (
+    restaurant?.tin_number ||
+    restaurant?.tinNumber ||
+    parsedSettings?.tin_number ||
+    parsedSettings?.tinNumber ||
+    parsedSettings?.business_license?.tin_number ||
+    parsedSettings?.business_license?.tinNumber ||
+    restaurant?.data?.tin_number ||
+    restaurant?.data?.tinNumber ||
+    ''
+  );
   const businessLicenseDoc = (
-    restaurant?.settings?.business_license?.url ||
-    restaurant?.settings?.business_license?.fileUrl ||
-    restaurant?.settings?.business_license?.path ||
-    restaurant?.settings?.business_license_url ||
-    restaurant?.settings?.business_license ||
+    parsedSettings?.business_license?.url ||
+    parsedSettings?.business_license?.fileUrl ||
+    parsedSettings?.business_license?.file_url ||
+    parsedSettings?.business_license?.document_url ||
+    parsedSettings?.business_license?.documentUrl ||
+    parsedSettings?.business_license?.path ||
+    parsedSettings?.business_license_url ||
+    parsedSettings?.businessLicenseUrl ||
     restaurant?.business_license_url ||
     restaurant?.businessLicenseUrl ||
     restaurant?.business_license?.url ||
+    restaurant?.document_url ||
+    restaurant?.documentUrl ||
+    restaurant?.settings?.business_license?.url ||
+    restaurant?.settings?.business_license_url ||
+    restaurant?.settings?.businessLicenseUrl ||
+    restaurant?.data?.business_license_url ||
+    restaurant?.data?.businessLicenseUrl ||
     null
   );
+
+  const resolveDocumentHref = (value) => {
+    if (typeof value !== 'string') return null;
+    const normalizedValue = value.trim();
+    if (!normalizedValue) return null;
+    if (normalizedValue.startsWith('http://') || normalizedValue.startsWith('https://')) return normalizedValue;
+    if (normalizedValue.startsWith('/')) return `http://localhost:5003${normalizedValue}`;
+    return normalizedValue;
+  };
+
+  const businessLicenseHref = resolveDocumentHref(businessLicenseDoc);
+  const hasBusinessLicenseInfo = Boolean(businessLicenseNumber || tinNumber || businessLicenseHref);
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
@@ -290,7 +357,7 @@ const RestaurantDetails = () => {
 
       {/* Owner Information */}
       {(
-        ownerFullName || ownerEmail || ownerPhone || subCity || businessLicenseNumber || tinNumber || businessLicenseDoc
+        ownerFullName || ownerEmail || ownerPhone || subCity || hasBusinessLicenseInfo
       ) && (
         <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 mb-8">
           <h2 className="text-lg font-semibold mb-4 flex items-center gap-2 text-gray-900">
@@ -324,10 +391,15 @@ const RestaurantDetails = () => {
             </div>
             <div className="md:col-span-2">
               <p className="text-sm text-gray-600">Business License Document</p>
-              {businessLicenseDoc ? (
-                <a href={businessLicenseDoc} target="_blank" rel="noopener noreferrer" className="text-primary-600">
-                  View / Download document
-                </a>
+              {businessLicenseHref ? (
+                <div className="flex flex-wrap gap-4 mt-1">
+                  <a href={businessLicenseHref} target="_blank" rel="noopener noreferrer" className="text-primary-600 hover:underline">
+                    View document
+                  </a>
+                  <a href={businessLicenseHref} target="_blank" rel="noopener noreferrer" download className="text-primary-600 hover:underline">
+                    Download document
+                  </a>
+                </div>
               ) : (
                 <p className="font-medium text-gray-700">No file uploaded</p>
               )}

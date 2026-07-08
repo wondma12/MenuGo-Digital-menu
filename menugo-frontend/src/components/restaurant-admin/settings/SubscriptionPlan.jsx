@@ -21,6 +21,26 @@ const SubscriptionPlan = ({ settings }) => {
     return colors[tier] || 'default'
   }
 
+  const normalizeFeatures = (features) => {
+    if (!features) return []
+    if (Array.isArray(features)) return features
+    if (typeof features === 'string') {
+      try {
+        const parsed = JSON.parse(features)
+        if (Array.isArray(parsed)) return parsed
+      } catch (e) {
+        // ignore
+      }
+      return features.split(',').map((item) => item.trim()).filter(Boolean)
+    }
+    if (typeof features === 'object') {
+      return Object.values(features)
+        .filter((value) => value !== null && value !== undefined)
+        .map((value) => (typeof value === 'string' ? value : String(value)))
+    }
+    return []
+  }
+
   return (
     <div className="space-y-6">
       {/* Current Plan */}
@@ -76,7 +96,7 @@ const SubscriptionPlan = ({ settings }) => {
               </div>
               <p className="text-sm text-slate-500 mt-1">or ${plan.priceYearly}/year</p>
               <div className="mt-4 space-y-2">
-                {plan.features?.slice(0, 5).map((feature, idx) => (
+                {normalizeFeatures(plan.features).slice(0, 5).map((feature, idx) => (
                   <div key={idx} className="flex items-center gap-2 text-sm">
                     <CheckIcon className="w-4 h-4 text-green-500" />
                     <span className="text-slate-600">{feature}</span>

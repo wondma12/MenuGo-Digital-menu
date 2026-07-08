@@ -55,7 +55,7 @@ const fileFilter = (req, file, cb) => {
     return cb(null, true)
   }
 
-  const allowedTypes = /jpeg|jpg|png|gif|webp|pdf|svg/;
+  const allowedTypes = /jpeg|jpg|png|gif|webp|pdf|svg|doc|docx/;
   const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
   const mimetype = allowedTypes.test(file.mimetype);
 

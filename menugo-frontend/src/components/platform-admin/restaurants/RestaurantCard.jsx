@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-hot-toast'
 import {
@@ -28,16 +28,41 @@ const RestaurantCard = ({ restaurant, onUpdate, variant = 'grid' }) => {
 
   const isListView = variant === 'list'
 
-  // Calculate days remaining for subscription
-  const calculateDaysRemaining = () => {
-    if (!restaurant.subscription_end_date) return null
-    const endDate = new Date(restaurant.subscription_end_date)
-    const today = new Date()
-    const daysRemaining = Math.ceil((endDate - today) / (1000 * 60 * 60 * 24))
-    return daysRemaining > 0 ? daysRemaining : 0
-  }
+  const [timeLeft, setTimeLeft] = useState(null)
 
-  const daysRemaining = calculateDaysRemaining()
+  const subscriptionEndDate = useMemo(() => {
+    if (!restaurant.subscription_end_date) return null
+    const parsed = new Date(restaurant.subscription_end_date)
+    return Number.isNaN(parsed.getTime()) ? null : parsed
+  }, [restaurant.subscription_end_date])
+
+  const shouldShowCountdown = Boolean(restaurant.is_verified && subscriptionEndDate)
+
+  useEffect(() => {
+    if (!shouldShowCountdown) {
+      setTimeLeft(null)
+      return
+    }
+
+    const updateCountdown = () => {
+      const difference = subscriptionEndDate.getTime() - Date.now()
+      if (difference <= 0) {
+        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0, expired: true })
+        return
+      }
+
+      const days = Math.floor(difference / (1000 * 60 * 60 * 24))
+      const hours = Math.floor((difference / (1000 * 60 * 60)) % 24)
+      const minutes = Math.floor((difference / (1000 * 60)) % 60)
+      const seconds = Math.floor((difference / 1000) % 60)
+
+      setTimeLeft({ days, hours, minutes, seconds, expired: false })
+    }
+
+    updateCountdown()
+    const timer = window.setInterval(updateCountdown, 1000)
+    return () => window.clearInterval(timer)
+  }, [shouldShowCountdown, subscriptionEndDate])
 
   const statusBadge = !restaurant.is_active
     ? { label: 'Inactive', color: 'bg-rose-50 text-rose-700 ring-1 ring-rose-100', icon: XCircleIcon }
@@ -182,15 +207,15 @@ const RestaurantCard = ({ restaurant, onUpdate, variant = 'grid' }) => {
                 <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${tierBadge.color}`}>
                   {tierBadge.label}
                 </span>
-                {daysRemaining !== null && daysRemaining !== undefined && (
+                {shouldShowCountdown && timeLeft && (
                   <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${
-                    daysRemaining === 0
+                    timeLeft.expired
                       ? 'bg-rose-50 text-rose-700 ring-1 ring-rose-200'
-                      : daysRemaining <= 7
+                      : timeLeft.days <= 7
                       ? 'bg-orange-50 text-orange-700 ring-1 ring-orange-200'
                       : 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200'
                   }`}>
-                    {daysRemaining === 0 ? 'Expired' : `${daysRemaining} days left`}
+                    {timeLeft.expired ? 'Expired' : `${timeLeft.days}d ${timeLeft.hours}h ${timeLeft.minutes}m ${timeLeft.seconds}s left`}
                   </span>
                 )}
               </div>
@@ -310,15 +335,15 @@ const RestaurantCard = ({ restaurant, onUpdate, variant = 'grid' }) => {
           <div className={`text-xs font-semibold px-2 py-1 rounded-full ${tierBadge.color}`}>
             {tierBadge.label}
           </div>
-          {daysRemaining !== null && daysRemaining !== undefined && (
+          {shouldShowCountdown && timeLeft && (
             <div className={`text-xs font-semibold px-2 py-1 rounded-full ${
-              daysRemaining === 0
+              timeLeft.expired
                 ? 'bg-rose-50 text-rose-700 ring-1 ring-rose-200'
-                : daysRemaining <= 7
+                : timeLeft.days <= 7
                 ? 'bg-orange-50 text-orange-700 ring-1 ring-orange-200'
                 : 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200'
             }`}>
-              {daysRemaining === 0 ? 'Expired' : `${daysRemaining}d`}
+              {timeLeft.expired ? 'Expired' : `${timeLeft.days}d ${timeLeft.hours}h`}
             </div>
           )}
         </div>
