@@ -58,6 +58,7 @@ const StaffForm = ({ staff, onSubmit, onCancel, isLoading }) => {
   }, [staff, reset])
 
   const handleAvatarUpload = async (files) => {
+    if (!files) return // Handle case where FileUpload passes null
     if (files[0]) {
       setIsUploading(true)
       try {

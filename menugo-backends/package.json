@@ -29,7 +29,11 @@
     "pm2:restart": "pm2 restart ecosystem.config.js",
     "pm2:logs": "pm2 logs menugo-backend",
     "pm2:monit": "pm2 monit",
-    "dev:local-api": "node local_dev_server.js"
+    "dev:local-api": "node local_dev_server.js",
+    "setup:railway": "node scripts/setupRailwayDatabase.js",
+    "setup:railway:env": "node scripts/setupRailwayDatabaseEnv.js",
+    "migrate:railway": "node scripts/runMigrationsRailway.js",
+    "migrate:railway:all": "node scripts/setupRailwayDatabase.js && node scripts/runMigrationsRailway.js"
   },
   "keywords": [
     "menu",

@@ -74,6 +74,26 @@ window.addEventListener('error', (event) => {
 // Add unhandled promise rejection handler
 window.addEventListener('unhandledrejection', (event) => {
   const reason = event.reason
+  
+  // Suppress auth-missing errors (user not logged in, no token)
+  if (reason?.isAuthMissing || reason?.message?.includes('No auth token present')) {
+    event.preventDefault()
+    if (import.meta.env.DEV) {
+      console.debug('Suppressed: Auth-missing error (user not logged in)')
+    }
+    return
+  }
+  
+  // Suppress 5xx server errors (backend issues, timeouts, etc.)
+  const statusCode = reason?.response?.status
+  if (statusCode >= 500 || reason?.message?.includes('503') || reason?.message?.includes('500')) {
+    event.preventDefault()
+    if (import.meta.env.DEV) {
+      console.debug(`Suppressed: Server error (${statusCode}) - backend may be starting up or experiencing issues`)
+    }
+    return
+  }
+  
   const isAbortedMediaPlay =
     reason?.name === 'AbortError' &&
     typeof reason?.message === 'string' &&

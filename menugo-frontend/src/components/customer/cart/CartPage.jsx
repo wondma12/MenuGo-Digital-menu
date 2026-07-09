@@ -99,6 +99,7 @@ const CartPage = () => {
           totalAmount={totalAmount}
           orderType={orderType}
           customerName={customerName}
+          restaurant={restaurant}
           onSuccess={() => {
             clearCart()
             navigate(`/menu/${restaurantId}`)

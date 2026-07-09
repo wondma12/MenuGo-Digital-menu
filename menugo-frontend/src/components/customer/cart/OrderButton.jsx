@@ -3,6 +3,7 @@ import { useMutation } from 'react-query'
 import { useNavigate } from 'react-router-dom'
 import jsPDF from 'jspdf'
 import Button from '../../common/Button'
+import ReceiptModal from './ReceiptModal'
 import { createOrder } from '../../../services/orderService'
 import { getPublicTables } from '../../../services/tableService'
 import { getRestaurantDetails } from '../../../services/restaurantService'
@@ -16,7 +17,7 @@ const getItemUnitPrice = (item) => {
   return basePrice + optionsPrice
 }
 
-const downloadCustomerReceipt = ({ data, items, tableNumber, orderType, customerName, specialInstructions, totalAmount }) => {
+const downloadCustomerReceipt = ({ data, items, tableNumber, orderType, customerName, specialInstructions, totalAmount, restaurant = {} }) => {
   const orderNumber = data?.order_number || data?.orderNumber || data?.order_id || data?.orderId || 'new-order'
   const doc = new jsPDF({ unit: 'pt', format: 'a4' })
   const pageWidth = doc.internal.pageSize.getWidth()
@@ -36,60 +37,127 @@ const downloadCustomerReceipt = ({ data, items, tableNumber, orderType, customer
   const writeLine = (text, options = {}) => {
     const fontSize = options.fontSize || 11
     const style = options.style || 'normal'
+    const align = options.align || 'left'
+    const color = options.color || [20, 20, 20]
+    
     doc.setFont('helvetica', style)
     doc.setFontSize(fontSize)
+    doc.setTextColor(...color)
+    
     const lines = doc.splitTextToSize(String(text), options.width || contentWidth)
     ensureSpace(lines.length * (fontSize + 4))
-    doc.text(lines, marginX, cursorY)
+    
+    if (align === 'center') {
+      doc.text(lines, pageWidth / 2, cursorY, { align: 'center' })
+    } else {
+      doc.text(lines, marginX, cursorY)
+    }
     cursorY += lines.length * (fontSize + 4)
   }
 
-  doc.setTextColor(20)
-  writeLine('MenuGo Order Receipt', { fontSize: 18, style: 'bold' })
+  // Header with restaurant info
+  doc.setTextColor(230, 126, 34) // Orange color
+  writeLine(restaurant?.name || 'MenuGo', { fontSize: 24, style: 'bold', align: 'center' })
+  doc.setTextColor(100, 100, 100)
+  if (restaurant?.location) writeLine(restaurant.location, { fontSize: 10, align: 'center' })
+  if (restaurant?.contact_phone) writeLine(restaurant.contact_phone, { fontSize: 10, align: 'center' })
+  
   cursorY += 6
-  writeLine(`Order Number: ${orderNumber}`)
-  writeLine(`Date: ${new Date().toLocaleString()}`)
-  writeLine(`Customer: ${customerName || 'Guest'}`)
-  writeLine(`Order Type: ${orderType}`)
-  writeLine(`Table Number: ${tableNumber || 'N/A'}`)
+  
+  // Divider line
+  doc.setDrawColor(230, 126, 34)
+  doc.setLineWidth(1)
+  doc.line(marginX, cursorY, pageWidth - marginX, cursorY)
   cursorY += 8
-  writeLine('Items:', { fontSize: 13, style: 'bold' })
+
+  // Order details
+  doc.setTextColor(20, 20, 20)
+  writeLine(`ORDER RECEIPT`, { fontSize: 14, style: 'bold' })
+  cursorY += 4
+  
+  writeLine(`Order #: ${orderNumber}`)
+  writeLine(`Date: ${new Date().toLocaleString()}`)
+  writeLine(`Type: ${orderType.replace('_', ' ').toUpperCase()}`)
+  if (tableNumber) writeLine(`Table: ${tableNumber}`)
+  if (customerName) writeLine(`Customer: ${customerName}`)
+  
+  cursorY += 8
+  writeLine('─'.repeat(50))
+  cursorY += 4
+  
+  // Items header
+  doc.setTextColor(230, 126, 34)
+  writeLine('ITEMS', { fontSize: 12, style: 'bold' })
+  doc.setTextColor(20, 20, 20)
+  cursorY += 4
 
   let calculatedSubtotal = 0
   items.forEach((item, index) => {
     const qty = Number(item?.quantity || 0)
-    const unitPrice = getItemUnitPrice(item)
+    const basePrice = Number(item?.price || 0)
+    const optionsPrice = Object.values(item?.selectedOptions || {}).reduce((sum, price) => sum + (Number(price) || 0), 0)
+    const unitPrice = basePrice + optionsPrice
     const lineTotal = unitPrice * qty
     calculatedSubtotal += lineTotal
 
     const itemName = item?.name || 'Item'
-    const optionSummary = item?.selectedOptions && Object.keys(item.selectedOptions).length > 0
-      ? ` (${Object.entries(item.selectedOptions).map(([key, value]) => `${key}: ${formatMoney(value)}`).join(', ')})`
-      : ''
-
-    writeLine(`${index + 1}. ${itemName}${optionSummary}`)
-    writeLine(`   Qty: ${qty}   Unit: ${formatMoney(unitPrice)}   Line Total: ${formatMoney(lineTotal)}`)
+    
+    // Item name and price
+    writeLine(`${index + 1}. ${itemName}`, { style: 'bold' })
+    
+    // Options if any
+    if (item?.selectedOptions && Object.keys(item.selectedOptions).length > 0) {
+      const optionsText = Object.entries(item.selectedOptions)
+        .map(([key, value]) => `${key}: Br ${Number(value || 0).toFixed(2)}`)
+        .join(' • ')
+      writeLine(`    ${optionsText}`, { fontSize: 9 })
+    }
+    
+    // Quantity and price
+    writeLine(`    Qty: ${qty} × Br ${unitPrice.toFixed(2)} = Br ${lineTotal.toFixed(2)}`, { fontSize: 10 })
     cursorY += 2
   })
 
   cursorY += 6
-  writeLine(`Subtotal: ${formatMoney(calculatedSubtotal)}`, { style: 'bold' })
-  writeLine(`Total: ${formatMoney(totalAmount)}`, { fontSize: 13, style: 'bold' })
+  writeLine('─'.repeat(50))
+  cursorY += 4
+
+  // Special instructions
   if (specialInstructions) {
-    cursorY += 6
-    writeLine('Special Instructions:', { style: 'bold' })
-    writeLine(specialInstructions)
+    doc.setTextColor(230, 126, 34)
+    writeLine('SPECIAL INSTRUCTIONS', { fontSize: 11, style: 'bold' })
+    doc.setTextColor(20, 20, 20)
+    writeLine(specialInstructions, { fontSize: 10 })
+    cursorY += 4
+    writeLine('─'.repeat(50))
+    cursorY += 4
   }
 
-  doc.save(`order-${orderNumber}.pdf`)
+  // Totals
+  doc.setTextColor(20, 20, 20)
+  writeLine(`Subtotal: Br ${calculatedSubtotal.toFixed(2)}`, { style: 'bold' })
+  doc.setTextColor(230, 126, 34)
+  writeLine(`TOTAL: Br ${totalAmount.toFixed(2)}`, { fontSize: 14, style: 'bold' })
+
+  // Footer
+  cursorY += 8
+  doc.setTextColor(100, 100, 100)
+  writeLine('Thank you for your order!', { fontSize: 11, align: 'center', style: 'italic' })
+  writeLine('Enjoy your meal! 🍽️', { fontSize: 10, align: 'center' })
+
+  doc.save(`MenuGo-Receipt-${orderNumber}.pdf`)
 }
 
-const OrderButton = ({ restaurantId, items, tableNumber, specialInstructions, totalAmount, orderType = 'dine_in', customerName = '', customerPhone = '', customerEmail = '', deliveryAddress = '', onSuccess }) => {
+const OrderButton = ({ restaurantId, items, tableNumber, specialInstructions, totalAmount, orderType = 'dine_in', customerName = '', customerPhone = '', customerEmail = '', deliveryAddress = '', restaurant = {}, onSuccess }) => {
   const [isLoading, setIsLoading] = useState(false)
+  const [showReceipt, setShowReceipt] = useState(false)
+  const [lastOrder, setLastOrder] = useState(null)
   const navigate = useNavigate()
 
   const mutation = useMutation(createOrder, {
     onSuccess: (data) => {
+      setLastOrder(data)
+      setShowReceipt(true)
       downloadCustomerReceipt({
         data,
         items,
@@ -98,11 +166,9 @@ const OrderButton = ({ restaurantId, items, tableNumber, specialInstructions, to
         customerName,
         specialInstructions,
         totalAmount,
+        restaurant,
       })
       toast.success('Order placed successfully!')
-      onSuccess()
-      // Auto-show the "chicken" category after placing an order
-      navigate(`/menu/${restaurantId}?category=chicken`)
     },
     onError: (error) => {
       const resp = error?.response?.data
@@ -211,15 +277,34 @@ const OrderButton = ({ restaurantId, items, tableNumber, specialInstructions, to
   }
 
   return (
-    <Button
-      onClick={handlePlaceOrder}
-      isLoading={isLoading}
-      fullWidth
-      size="lg"
-      className="mt-6"
-    >
-      Place Order
-    </Button>
+    <>
+      <Button
+        onClick={handlePlaceOrder}
+        isLoading={isLoading}
+        fullWidth
+        size="lg"
+        className="mt-6"
+      >
+        Place Order
+      </Button>
+      {lastOrder && (
+        <ReceiptModal
+          isOpen={showReceipt}
+          onClose={() => {
+            setShowReceipt(false)
+            onSuccess()
+            navigate(`/menu/${restaurantId}`)
+          }}
+          order={lastOrder}
+          restaurant={restaurant}
+          items={items}
+          totalAmount={totalAmount}
+          orderType={orderType}
+          tableNumber={tableNumber}
+          specialInstructions={specialInstructions}
+        />
+      )}
+    </>
   )
 }
 

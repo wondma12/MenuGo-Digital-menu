@@ -23,22 +23,22 @@ const {
   addOption,
 } = require('../controllers/menuController');
 
-// Public routes (customer menu)
+// Public routes (customer menu - view only)
 router.get('/restaurant/:restaurantId', getCustomerMenu);
+router.get('/items/:restaurantId', getMenuItems); // Allow customers to view menu items
+router.get('/item/:id', getMenuItemById); // Allow customers to view individual menu items
+router.get('/categories/:restaurantId', getCategories); // Allow customers to view menu categories
 
-// Protected routes
+// Protected routes (requires authentication for admin operations)
 router.use(protect);
 
-// Category routes
-router.get('/categories/:restaurantId', isRestaurantStaff, getCategories);
+// Category routes (POST/PUT/DELETE/PATCH - admin only, GET is public)
 router.post('/categories/:restaurantId', isRestaurantStaff, validate(menuValidations.createCategory), createCategory);
 router.put('/categories/:id', isRestaurantStaff, updateCategory);
 router.delete('/categories/:id', isRestaurantStaff, deleteCategory);
 router.patch('/categories/:id/status', isRestaurantStaff, toggleCategoryStatus);
 
-// Menu item routes
-router.get('/items/:restaurantId', isRestaurantStaff, getMenuItems);
-router.get('/item/:id', isRestaurantStaff, getMenuItemById);
+// Menu item routes (POST/PUT/DELETE/PATCH - admin only, GET is public)
 router.post('/items/:restaurantId', isRestaurantStaff, uploadSingle('image'), validate(menuValidations.createItem), createMenuItem);
 router.put('/items/:id', isRestaurantStaff, uploadSingle('image'), validate(menuValidations.updateItem), updateMenuItem);
 router.delete('/items/:id', isRestaurantStaff, deleteMenuItem);

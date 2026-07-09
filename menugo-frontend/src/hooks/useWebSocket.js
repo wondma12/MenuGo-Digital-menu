@@ -1,9 +1,11 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { io } from 'socket.io-client'
 import { useAuthStore } from '../store/authStore'
+import { getWebSocketURL } from '../services/api'
 
 let socket = null
-const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:5000'
+// WebSocket URL will be dynamically determined
+let WS_URL = null
 
 export const useWebSocket = () => {
   const { token, user } = useAuthStore()
@@ -15,10 +17,22 @@ export const useWebSocket = () => {
   useEffect(() => {
     if (!token || !user) return
 
+    // Get the correct WebSocket URL
+    WS_URL = getWebSocketURL()
+    
+    if (import.meta.env.DEV) {
+      console.log('Initializing WebSocket connection to:', WS_URL)
+    }
+
     // Initialize socket connection
     socket = io(WS_URL, {
       auth: { token },
-      transports: ['websocket'],
+      transports: ['websocket', 'polling'],
+      reconnection: true,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      reconnectionAttempts: 10,
+      path: '/socket.io/',
     })
 
     socket.on('connect', () => {
@@ -38,9 +52,17 @@ export const useWebSocket = () => {
       }
     })
 
-    socket.on('disconnect', () => {
-      console.log('WebSocket disconnected')
+    socket.on('disconnect', (reason) => {
+      console.log('WebSocket disconnected:', reason)
       setIsConnected(false)
+    })
+
+    socket.on('connect_error', (error) => {
+      console.warn('WebSocket connection error:', error)
+    })
+
+    socket.on('error', (error) => {
+      console.error('WebSocket error:', error)
     })
 
     // Generic handler: listen to any server event and normalize event names

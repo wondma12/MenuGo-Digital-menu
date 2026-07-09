@@ -379,7 +379,7 @@ const startServer = async () => {
 
     // Socket.io setup
     const defaultOrigins = process.env.NODE_ENV === 'development'
-      ? ['http://localhost:3000', 'http://localhost:5173']
+      ? ['http://localhost:3000', 'http://localhost:5173', 'http://127.0.0.1:5173']
       : 'http://localhost:3000';
     const corsOrigins = process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : defaultOrigins;
     const io = new Server(server, {
@@ -387,10 +387,16 @@ const startServer = async () => {
         origin: corsOrigins,
         credentials: true,
         methods: ['GET', 'POST'],
+        allowEIO3: true,
       },
+      transports: ['websocket', 'polling'],
       path: process.env.SOCKET_PATH || '/socket.io',
       pingTimeout: parseInt(process.env.SOCKET_PING_TIMEOUT) || 60000,
       pingInterval: parseInt(process.env.SOCKET_PING_INTERVAL) || 25000,
+      reconnection: true,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      reconnectionAttempts: 10,
     });
 
     // Initialize socket handlers

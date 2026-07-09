@@ -5,7 +5,7 @@ import { useAuthStore } from '../store/authStore'
 // Use the explicit backend URL when provided, otherwise fall back to the local
 // backend port used by this project. Using an absolute URL avoids Vite proxy
 // dependencies and prevents ECONNREFUSED noise when the proxy backend is absent.
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5003/api'
+const API_URL = 'http://localhost:5003/api'
 
 // Ensure the configured API_URL always includes the `/api` suffix so
 // requests like `api.get('/dashboard/platform')` resolve to
@@ -19,7 +19,7 @@ const normalizeApiUrl = (url) => {
 }
 
 const NORMALIZED_API_URL = normalizeApiUrl(API_URL)
-const EXPLICIT_API_URL = import.meta.env.VITE_API_URL ? normalizeApiUrl(import.meta.env.VITE_API_URL) : null
+const EXPLICIT_API_URL = null // Disable explicit URL to force auto-detection of working backend port
 
 // Fallback ports to try when the configured API is unreachable during local development.
 // Include common local backend ports (5002 and 5003 used by this repo), then other candidates.
@@ -59,7 +59,9 @@ const ensureApiBaseReady = () => {
   if (baseProbePromise) return baseProbePromise
   baseProbePromise = (async () => {
     const cacheKey = 'menugo_api_base'
-    const cached = typeof sessionStorage !== 'undefined' ? sessionStorage.getItem(cacheKey) : null
+    // Force fresh detection in development to avoid stale cached ports
+    const shouldIgnoreCache = import.meta.env.DEV || new URLSearchParams(window.location.search).has('fresh')
+    const cached = !shouldIgnoreCache && typeof sessionStorage !== 'undefined' ? sessionStorage.getItem(cacheKey) : null
     const probeTimeout = 800
 
     if (EXPLICIT_API_URL) {
@@ -74,7 +76,7 @@ const ensureApiBaseReady = () => {
       }
     }
 
-    if (cached) {
+    if (cached && !shouldIgnoreCache) {
       try {
         await axios.get(`${cached.replace(/\/$/, '')}/health`, { timeout: probeTimeout })
         api.defaults.baseURL = cached
@@ -84,7 +86,7 @@ const ensureApiBaseReady = () => {
         if (import.meta.env.DEV) console.warn('Cached api base failed probe, clearing cache:', e && e.message)
         try { sessionStorage.removeItem(cacheKey) } catch (err) {}
       }
-    } else if (typeof sessionStorage !== 'undefined') {
+    } else if (typeof sessionStorage !== 'undefined' && !shouldIgnoreCache) {
       try { sessionStorage.removeItem(cacheKey) } catch (err) {}
     }
 
@@ -185,24 +187,45 @@ const attemptFallback = async (originalRequest) => {
 })
 
 // Paths that don't require authentication
-const publicPaths = [
-  '/auth/login',
-  '/auth/register',
-  '/auth/refresh-token',
-  '/auth/forgot-password',
-  '/auth/reset-password',
-  '/auth/verify-email',
-  '/platform/public-summary',
-  '/platform/subscriptions/plans',
+const publicPathRules = [
+  { path: '/auth/login', methods: ['post'], exact: true },
+  { path: '/auth/register', methods: ['post'], exact: true },
+  { path: '/auth/refresh-token', methods: ['post'], exact: true },
+  { path: '/auth/forgot-password', methods: ['post'], exact: true },
+  { path: '/auth/reset-password', methods: ['post'], exact: true },
+  { path: '/auth/verify-email', methods: ['post'], exact: true },
+  { path: '/platform/public-summary', methods: ['get'], prefix: true },
+  { path: '/platform/subscriptions/plans', methods: ['get'], exact: true },
+  { path: '/menu/restaurant', methods: ['get'], prefix: true },
+  { path: '/menu/items', methods: ['get'], prefix: true },
+  { path: '/menu/item', methods: ['get'], prefix: true },
+  { path: '/menu/categories', methods: ['get'], prefix: true },
+  { path: '/restaurants', methods: ['get'], prefix: true },
+  { path: '/reviews', methods: ['get'], prefix: true },
+  { path: '/orders', methods: ['post'], exact: true },
+  { path: '/orders/restaurant', methods: ['get'], prefix: true },
+  { path: '/public/contact', methods: ['post'], exact: true },
 ]
 
 const normalizePath = (path) => String(path || '').replace(/\/+$|^\s+|\s+$/g, '')
 
-const isPublicPath = (requestPath) => {
+const isPublicPath = (requestPath, method = 'get') => {
   const normalizedRequestPath = normalizePath(requestPath).replace(/\/$/, '')
-  return publicPaths.some((path) => {
-    const normalizedPublicPath = normalizePath(path).replace(/\/$/, '')
-    return normalizedRequestPath === normalizedPublicPath
+  const normalizedMethod = String(method || 'get').toLowerCase()
+  return publicPathRules.some((rule) => {
+    const normalizedRulePath = normalizePath(rule.path).replace(/\/$/, '')
+    const methodMatches = !rule.methods || rule.methods.map((m) => String(m).toLowerCase()).includes(normalizedMethod)
+    if (!methodMatches) return false
+
+    if (rule.exact) {
+      return normalizedRequestPath === normalizedRulePath
+    }
+
+    if (rule.prefix) {
+      return normalizedRequestPath === normalizedRulePath || normalizedRequestPath.startsWith(`${normalizedRulePath}/`)
+    }
+
+    return normalizedRequestPath === normalizedRulePath || normalizedRequestPath.startsWith(`${normalizedRulePath}/`)
   })
 }
 
@@ -234,8 +257,10 @@ api.interceptors.request.use(
       if (import.meta.env.DEV) console.warn('ensureApiBaseReady failed:', e && e.message)
     }
 
-    // Get token from store or session storage
-    const token = useAuthStore.getState().token || authSessionStorage?.getItem('token')
+    // Get token from store or session storage (try both sources)
+    const storeToken = useAuthStore.getState().token
+    const sessionToken = authSessionStorage?.getItem('token')
+    const token = storeToken || sessionToken
 
     // Robust public path detection:
     // Try to resolve config.url to an absolute pathname (handles absolute URLs,
@@ -252,7 +277,7 @@ api.interceptors.request.use(
 
     const method = (config.method || 'get').toLowerCase()
 
-    let isRequestPublic = isPublicPath(requestPath)
+    let isRequestPublic = isPublicPath(requestPath, method)
 
     // Special-case: allow public POST to the contact form even though the
     // same pathname is used for the admin GET listing. We only treat the
@@ -262,28 +287,52 @@ api.interceptors.request.use(
       isRequestPublic = true
     }
 
+    // Special-case: /menu/categories prefix is for viewing (GET), but POST/PUT/DELETE
+    // are admin operations that must be authenticated. Only treat GET requests as public.
+    if (isRequestPublic && requestPath.startsWith('/menu/categories') && method !== 'get') {
+      isRequestPublic = false
+    }
+
+    // Special-case: /menu/items prefix is for viewing (GET), but POST/PUT/DELETE/PATCH
+    // are admin operations that must be authenticated. Only treat GET requests as public.
+    if (isRequestPublic && requestPath.startsWith('/menu/items') && method !== 'get') {
+      isRequestPublic = false
+    }
+
+    // Special-case: /menu/restaurant prefix is for viewing (GET), but POST/PUT/DELETE/PATCH
+    // are admin operations that must be authenticated. Only treat GET requests as public.
+    if (isRequestPublic && requestPath.startsWith('/menu/restaurant') && method !== 'get') {
+      isRequestPublic = false
+    }
+
+    // Debug logging for auth issues
+    if (import.meta.env.DEV) {
+      const isAuthRequest = requestPath.includes('/auth') && method === 'post'
+      if (!isRequestPublic || isAuthRequest) {
+        console.log(`[API] ${method.toUpperCase()} ${requestPath}`, {
+          hasStoreToken: !!storeToken,
+          hasSessionToken: !!sessionToken,
+          token: token ? `${token.substring(0, 20)}...` : null,
+          isRequestPublic,
+          willAttachAuth: !!token && !isRequestPublic
+        })
+      }
+    }
+
     // Attach token only when present and the request is not public
     if (token && !isRequestPublic) {
       config.headers.Authorization = `Bearer ${token}`
     } else if (!token && !isRequestPublic) {
       // Prevent sending unauthenticated requests to protected endpoints.
-      const err = new Error('No auth token present')
-      err.isAuthMissing = true
-      // Mark as silent so response interceptor can suppress noisy logs
-      err.silent = true
-      return Promise.reject(err)
-    }
-
-    // Attach token only when present and the request is not public
-    if (token && !isPublicPath) {
-      config.headers.Authorization = `Bearer ${token}`
-    } else if (!token && !isPublicPath) {
-      // Prevent sending unauthenticated requests to protected endpoints.
-      const err = new Error('No auth token present')
-      err.isAuthMissing = true
-      // Mark as silent so response interceptor can suppress noisy logs
-      err.silent = true
-      return Promise.reject(err)
+      // BUT: Only reject if this is NOT an auth request (we don't require token for login/register)
+      if (!requestPath.includes('/auth/') || (requestPath.includes('/auth/') && method !== 'post')) {
+        const err = new Error('No auth token present')
+        err.isAuthMissing = true
+        // Mark as silent so response interceptor can suppress noisy logs
+        err.silent = true
+        if (import.meta.env.DEV) console.warn(`[API] Auth blocked: No token for ${method.toUpperCase()} ${requestPath}`)
+        return Promise.reject(err)
+      }
     }
 
     // If this is a file upload (FormData) increase timeout to avoid client-side
@@ -342,7 +391,7 @@ api.interceptors.response.use(
         return requestUrl
       }
     })()
-    const requestIsPublic = isPublicPath(requestPath)
+    const requestIsPublic = isPublicPath(requestPath, originalRequest?.method)
 
     // Get current token
     const token = useAuthStore.getState().token || authSessionStorage?.getItem('token')
@@ -465,6 +514,8 @@ api.interceptors.response.use(
           if (import.meta.env.DEV) {
             try { console.debug('Request prevented: missing auth token for', originalRequest?.url) } catch (e) {}
           }
+          // Mark as silent to prevent unhandled rejection warnings
+          error.silent = true
           return Promise.reject(error)
         }
 
@@ -487,5 +538,32 @@ api.interceptors.response.use(
       return Promise.reject(error)
   }
 )
+
+/**
+ * Get the WebSocket URL based on the current API URL
+ * Converts http://host:port to ws://host:port
+ * or https://host:port to wss://host:port
+ */
+export const getWebSocketURL = () => {
+  try {
+    // Get the current API base URL
+    const apiUrl = api.defaults?.baseURL || NORMALIZED_API_URL
+    
+    // Parse the URL
+    const url = new URL(apiUrl)
+    
+    // Convert protocol
+    const wsProtocol = url.protocol === 'https:' ? 'wss:' : 'ws:'
+    
+    // Construct WebSocket URL (remove /api suffix if present)
+    const wsUrl = `${wsProtocol}//${url.host}`
+    
+    return wsUrl
+  } catch (e) {
+    if (import.meta.env.DEV) console.warn('Error constructing WebSocket URL:', e && e.message)
+    // Fallback to default
+    return 'ws://localhost:5003'
+  }
+}
 
 export default api

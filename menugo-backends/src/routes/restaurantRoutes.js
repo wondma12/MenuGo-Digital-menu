@@ -27,8 +27,9 @@ const { reviewValidations } = require('../middleware/validationMiddleware');
 
 // Public routes
 router.get('/', getAllRestaurants);
-// Platform admin: pending verifications (must be declared before the ':id' param route)
+// Platform admin: pending verifications (MUST come before '/:id' param route to avoid conflict)
 router.get('/pending-verifications', protect, restrictTo('platform_admin'), getPendingVerifications);
+// Allow customers to view restaurant details
 router.get('/:id', getRestaurantById);
 // Public: create a call request from a customer at a table
 router.post('/:id/calls', createCallRequest);
@@ -44,6 +45,10 @@ router.get('/:id/reviews', (req, res, next) => {
   req.params.restaurantId = req.params.id;
   return getRestaurantReviews(req, res, next);
 });
+
+// Public: table operations (customers need access for QR code ordering and seating)
+router.get('/:id/tables', getTables);
+router.post('/:id/tables', createTable);
 
 // Protected routes
 router.use(protect);
@@ -66,10 +71,6 @@ router.put('/:id/settings', isRestaurantOwner, updateSettings);
 // Platform admin routes
 router.patch('/:id/status', restrictTo('platform_admin'), updateRestaurantStatus);
 router.post('/:id/verify', restrictTo('platform_admin'), verifyRestaurant);
-
-// Table routes
-router.get('/:id/tables', isRestaurantStaff, getTables);
-router.post('/:id/tables', isRestaurantOwner, createTable);
 
 // Reviews (mounted here for frontend convenience) - allow optional auth for customers
 router.post('/:id/reviews', optionalAuth, validate(reviewValidations.create), (req, res, next) => {

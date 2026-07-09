@@ -46,6 +46,7 @@ const CategoryForm = ({ category, onSubmit, onCancel, isLoading }) => {
   }, [category, reset])
 
   const handleIconUpload = async (files) => {
+    if (!files) return // Handle case where FileUpload passes null (e.g., when clearing files)
     if (files[0]) {
       setIsUploading(true)
       try {

@@ -170,27 +170,31 @@ const getRestaurantById = catchAsync(async (req, res) => {
       as: 'restaurant_staff_members',
       include: [{ model: User, as: 'assigned_user', attributes: ['id', 'full_name', 'email', 'avatar_url'] }],
       required: false,
-      limit: 20,
+      // SQLite doesn't support limit in nested includes; remove it
+      // limit: 20,
     },
     { 
       model: MenuCategory, 
       as: 'menu_categories', 
       where: { is_active: true },
       required: false,
-      limit: 50,
+      // SQLite doesn't support limit in nested includes; remove it
+      // limit: 50,
     },
     { 
       model: MenuItem, 
       as: 'restaurant_menu_items', 
       where: { deleted_at: null },
       required: false,
-      limit: 100,
+      // SQLite doesn't support limit in nested includes; remove it
+      // limit: 100,
     },
     { 
       model: Table, 
       as: 'restaurant_tables', 
       required: false,
-      limit: 50,
+      // SQLite doesn't support limit in nested includes; remove it
+      // limit: 50,
     },
   ];
 

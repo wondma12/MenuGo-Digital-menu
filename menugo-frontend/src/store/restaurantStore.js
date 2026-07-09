@@ -21,6 +21,17 @@ const useRestaurantStore = create((set, get) => ({
       set({ restaurants: response.restaurants, isLoading: false, total: response.total })
       return response
     } catch (error) {
+      // Silently ignore auth-missing errors (user not logged in yet)
+      if (error?.isAuthMissing) {
+        set({ isLoading: false })
+        return { restaurants: [], total: 0, active: 0, pending: 0, premium: 0, page: 1, totalPages: 1 }
+      }
+      // Silently ignore server errors (5xx errors - backend not ready or issues)
+      const statusCode = error?.response?.status
+      if (statusCode >= 500) {
+        set({ isLoading: false })
+        return { restaurants: [], total: 0, active: 0, pending: 0, premium: 0, page: 1, totalPages: 1 }
+      }
       set({ error: error.response?.data?.message, isLoading: false })
       throw error
     }
@@ -34,6 +45,17 @@ const useRestaurantStore = create((set, get) => ({
       set({ currentRestaurant: restaurant, restaurant: restaurant, isLoading: false })
       return restaurant
     } catch (error) {
+      // Silently ignore auth-missing errors (user not logged in yet)
+      if (error?.isAuthMissing) {
+        set({ isLoading: false })
+        return null
+      }
+      // Silently ignore server errors (5xx errors - backend not ready or issues)
+      const statusCode = error?.response?.status
+      if (statusCode >= 500) {
+        set({ isLoading: false })
+        return null
+      }
       set({ error: error.response?.data?.message, isLoading: false })
       throw error
     }
