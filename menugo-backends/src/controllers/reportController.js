@@ -1,10 +1,10 @@
-const { Order, DailySalesSummary, MenuItemAnalytics, Restaurant, OrderItem, MenuItem, MenuCategory } = require('../models');
+const { sequelize, Order, DailySalesSummary, MenuItemAnalytics, Restaurant, OrderItem, MenuItem, MenuCategory } = require('../models');
 const { ApiResponse } = require('../utils/apiResponse');
 const { ApiError } = require('../utils/apiError');
 const { catchAsync } = require('../utils/catchAsync');
 const { generateInvoice } = require('../utils/generateInvoice');
 const ExcelJS = require('exceljs');
-const { Op } = require('sequelize');
+const { Op, QueryTypes } = require('sequelize');
 
 // Generate sales report
 const generateSalesReport = catchAsync(async (req, res) => {
@@ -85,22 +85,34 @@ const generateMenuReport = catchAsync(async (req, res) => {
   const startDate = start_date ? new Date(start_date) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
   const endDate = end_date ? new Date(end_date) : new Date();
 
-  const menuPerformance = await MenuItemAnalytics.findAll({
-    where: {
-      restaurant_id: restaurantId,
-      date: { [Op.between]: [startDate, endDate] },
-    },
-    attributes: [
-      'menu_item_id',
-      [sequelize.fn('SUM', sequelize.col('order_count')), 'total_orders'],
-      [sequelize.fn('SUM', sequelize.col('quantity_sold')), 'total_quantity'],
-      [sequelize.fn('SUM', sequelize.col('revenue')), 'total_revenue'],
-      [sequelize.fn('SUM', sequelize.col('view_count')), 'total_views'],
-    ],
-    include: [{ model: MenuItem, as: 'analytics_item' }],
-    group: ['menu_item_id', 'menu_item.id'],
-    order: [[sequelize.literal('total_revenue'), 'DESC']],
-  });
+  const menuPerformance = await sequelize.query(
+    `SELECT
+      m.menu_item_id AS menu_item_id,
+      mi.id AS "analytics_item.id",
+      mi.name AS "analytics_item.name",
+      SUM(m.order_count) AS total_orders,
+      SUM(m.quantity_sold) AS total_quantity,
+      SUM(m.revenue) AS total_revenue,
+      SUM(m.view_count) AS total_views
+    FROM menu_item_analytics m
+    LEFT JOIN menu_items mi
+      ON m.menu_item_id = mi.id
+      AND mi.deleted_at IS NULL
+    WHERE m.restaurant_id = :restaurantId
+      AND m.date BETWEEN :startDate AND :endDate
+    GROUP BY m.menu_item_id, mi.id, mi.name
+    ORDER BY total_revenue DESC`,
+    {
+      replacements: {
+        restaurantId,
+        startDate: startDate.toISOString().slice(0, 10),
+        endDate: endDate.toISOString().slice(0, 10),
+      },
+      type: sequelize.QueryTypes.SELECT,
+      nest: true,
+      raw: true,
+    }
+  );
 
   res.json(ApiResponse.success(menuPerformance, 'Menu performance report generated'));
 });

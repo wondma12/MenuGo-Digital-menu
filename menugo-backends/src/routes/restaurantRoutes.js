@@ -25,8 +25,10 @@ const { createCallRequest } = require('../controllers/customerController');
 const { getRestaurantReviews, createReview } = require('../controllers/reviewController');
 const { reviewValidations } = require('../middleware/validationMiddleware');
 
-// Public routes
+// Public routes - customers can see active/verified restaurants
 router.get('/', getAllRestaurants);
+// Platform admin: get ALL restaurants with advanced filtering (MUST come before '/:id' param route to avoid conflict)
+router.get('/admin/all', protect, restrictTo('platform_admin'), getAllRestaurants);
 // Platform admin: pending verifications (MUST come before '/:id' param route to avoid conflict)
 router.get('/pending-verifications', protect, restrictTo('platform_admin'), getPendingVerifications);
 // Allow customers to view restaurant details

@@ -72,6 +72,25 @@ const removeAuthValue = (key) => {
   }
 }
 
+const getResponsePayload = (response) => {
+  if (!response) return null
+  if (response?.data) {
+    // Handle API wrapper format: { success: true, message: '', data: { ... } }
+    if (response.data?.data !== undefined) {
+      return response.data.data
+    }
+    // Handle wrapped response saved through authService: { success:true, data:{ ... } }
+    if (response.success !== undefined && response.data !== undefined) {
+      return response.data
+    }
+    return response.data
+  }
+  return response
+}
+
+const getAuthResponseUser = (payload) => payload?.user || payload
+const getAuthResponseToken = (payload) => payload?.token || payload?.accessToken || payload?.authToken || null
+
 const useAuthStore = create(
   persist(
     (set, get) => ({

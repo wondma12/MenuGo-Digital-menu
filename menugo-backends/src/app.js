@@ -155,15 +155,15 @@ app.use('/uploads', express.static('uploads'));
 // API routes
 app.use('/api', routes);
 
-// Backwards-compatible alias for OAuth routes: redirect `/auth/*` -> `/api/auth/*`
-// This helps browsers or bookmarks that hit `/auth/google` (without the `/api` prefix).
+// Backwards-compatible alias for OAuth routes: internally rewrite `/auth/*` -> `/api/auth/*`
+// This helps browsers or bookmarks that hit `/auth/google` (without the `/api` prefix)
+// without losing headers or changing the original method.
 app.use((req, res, next) => {
   try {
     if (req.path && req.path.startsWith('/auth/')) {
-      // Preserve query string if present
       const qs = req.originalUrl.includes('?') ? `?${  req.originalUrl.split('?').slice(1).join('?')}` : '';
-      const target = `/api${req.path}${qs}`;
-      return res.redirect(302, target);
+      req.url = `/api${req.path}${qs}`;
+      return next();
     }
   } catch (e) {
     // ignore and continue to next middleware
@@ -191,8 +191,8 @@ try {
       const firstSegment = req.path.split('/')[1];
       if (apiAliases.includes(firstSegment)) {
         const qs = req.originalUrl.includes('?') ? `?${  req.originalUrl.split('?').slice(1).join('?')}` : '';
-        const target = `/api${req.path}${qs}`;
-        return res.redirect(302, target);
+        req.url = `/api${req.path}${qs}`;
+        return next();
       }
     } catch (e) {
       // ignore

@@ -15,7 +15,7 @@ const SubscriptionPlans = () => {
   const [editingPlan, setEditingPlan] = useState(null)
   const queryClient = useQueryClient()
 
-  const { data: plans, isLoading } = useQuery('subscriptionPlans', getSubscriptionPlans)
+  const { data: plans, isLoading, error } = useQuery('subscriptionPlans', getSubscriptionPlans)
 
   const createMutation = useMutation(createPlan, {
     onSuccess: () => {
@@ -50,6 +50,7 @@ const SubscriptionPlans = () => {
   }
 
   if (isLoading) return <Loading />
+  if (error) return <div className="text-red-600">Unable to load subscription plans. Please refresh.</div>
 
   return (
     <div className="relative space-y-6 overflow-visible bg-white p-4 sm:px-6 lg:px-8 font-['Manrope',system-ui,sans-serif] text-slate-900 sm:p-6 lg:p-8">

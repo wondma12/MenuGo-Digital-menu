@@ -38,17 +38,6 @@ const OrderActions = ({ orderId, currentStatus, onRefresh, onClose }) => {
         }
       }
 
-      // Emit new order to kitchen via socket
-      try {
-        const user = JSON.parse(localStorage.getItem('user') || '{}') || {}
-        const restaurantId = user.restaurantId || user.restaurant_id || (user.restaurant && user.restaurant.id) || null
-        if (sendMessage && restaurantId) {
-          sendMessage('emit-new-order', { restaurantId, orderData: orderPayload })
-        }
-      } catch (e) {
-        // swallow socket errors
-      }
-
       toast.success('Order verified and sent to kitchen')
       onRefresh()
       onClose()

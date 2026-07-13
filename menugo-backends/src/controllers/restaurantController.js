@@ -52,6 +52,13 @@ const getAllRestaurants = catchAsync(async (req, res) => {
 
   const where = { deleted_at: null };
   
+  // If user is NOT a platform admin, filter to show only active/verified restaurants
+  const isAdmin = req.user && req.user.role === 'platform_admin';
+  if (!isAdmin) {
+    where.is_active = true;
+    where.is_verified = true;
+  }
+  
   // Status filter
   if (status && status !== 'all') {
     if (status === 'active') {
@@ -968,6 +975,25 @@ const getDashboardStats = catchAsync(async (req, res) => {
 const getPendingVerifications = catchAsync(async (req, res) => {
   const pending = await Restaurant.findAll({
     where: { is_verified: false, is_active: true, deleted_at: null },
+    attributes: [
+      'id',
+      'owner_id',
+      'name',
+      'description',
+      'address',
+      'city',
+      'state',
+      'country',
+      'postal_code',
+      'phone',
+      'email',
+      'is_active',
+      'is_verified',
+      'created_at',
+      'updated_at',
+      'verification_date',
+      'rejection_reason',
+    ],
     include: [
       { model: User, as: 'restaurant_owner', attributes: ['id', 'full_name', 'email', 'phone'] },
     ],

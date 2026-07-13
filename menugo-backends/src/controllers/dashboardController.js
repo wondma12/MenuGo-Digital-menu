@@ -11,11 +11,13 @@ const {
   TableReservation,
   Review,
   MenuItemAnalytics,
+  sequelize,
 } = require('../models');
 const { ApiResponse } = require('../utils/apiResponse');
 const { catchAsync } = require('../utils/catchAsync');
 const { Op } = require('sequelize');
 const { getPopularItems: getPopularItemsFromAnalytics } = require('../services/analyticsService');
+const { buildDateSeries, buildGrowthSeries, toLocalDateString } = require('../utils/dashboardSeries');
 
 // Safe helpers to guard against missing model exports or unexpected runtime issues
 const safeCount = (model, options) => {
@@ -54,15 +56,6 @@ const toDayEnd = (value) => {
   if (Number.isNaN(date.getTime())) return null
   date.setHours(23, 59, 59, 999)
   return date
-}
-
-const toLocalDateString = (value) => {
-  const date = value instanceof Date ? value : new Date(value)
-  if (Number.isNaN(date.getTime())) return ''
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
 }
 
 const toLocalDay = (value, endOfDay = false) => {
@@ -265,41 +258,38 @@ const getPlatformDashboard = catchAsync(async (req, res) => {
     ];
     
     // 9. Generate daily Revenue Data for the requested range (or last 7 days fallback)
-    const revenueData = [];
-    for (let date = new Date(revenueStart); date <= revenueEnd; date.setDate(date.getDate() + 1)) {
-      const dayStart = new Date(date);
-      dayStart.setHours(0, 0, 0, 0);
-
-      const nextDate = new Date(dayStart);
-      nextDate.setDate(nextDate.getDate() + 1);
-      
-      let dailyRevenue = 0;
-      let dailyOrders = 0;
-      
-      try {
-        dailyRevenue = await Order.sum('total_amount', {
-          where: {
-            status: 'completed',
-            created_at: { [Op.between]: [dayStart, nextDate] },
-          },
-        }) || 0;
-        
-        dailyOrders = await Order.count({
-          where: { created_at: { [Op.between]: [dayStart, nextDate] } },
-        }) || 0;
-      } catch (err) {
-        console.error(`Daily data error for ${dayStart}:`, err);
-      }
-      
-      revenueData.push({
-        date: toLocalDateString(dayStart),
-        revenue: dailyRevenue,
-        orders: dailyOrders,
+    let revenueData = [];
+    try {
+      const revenueRows = await Order.findAll({
+        attributes: [
+          [sequelize.fn('DATE', sequelize.col('created_at')), 'date'],
+          [sequelize.fn('SUM', sequelize.col('total_amount')), 'revenue'],
+          [sequelize.fn('COUNT', sequelize.col('id')), 'orders'],
+        ],
+        where: {
+          status: 'completed',
+          created_at: { [Op.between]: [revenueStart, revenueEnd] },
+        },
+        group: [sequelize.fn('DATE', sequelize.col('created_at'))],
+        raw: true,
       });
+
+      revenueData = buildDateSeries(
+        revenueRows.map((row) => ({
+          date: row.date,
+          revenue: Number(row.revenue || 0),
+          orders: Number(row.orders || 0),
+        })),
+        revenueStart,
+        revenueEnd,
+      );
+    } catch (err) {
+      console.error('Daily revenue aggregation error:', err);
+      revenueData = [];
     }
 
-    // 10. Generate monthly growth data for the last 12 months
-    const growthData = [];
+    // 10. Generate monthly growth data for the last 12 months in one query batch
+    let growthData = [];
     try {
       const months = [];
       const now = new Date();
@@ -309,7 +299,7 @@ const getPlatformDashboard = catchAsync(async (req, res) => {
         months.push({ monthStart, monthEnd });
       }
 
-      for (const m of months) {
+      const monthlyRows = await Promise.all(months.map(async (m) => {
         const newCount = await Restaurant.count({
           where: {
             created_at: { [Op.between]: [m.monthStart, m.monthEnd] },
@@ -317,23 +307,17 @@ const getPlatformDashboard = catchAsync(async (req, res) => {
           }
         }).catch(() => 0) || 0;
 
-        const totalCount = await Restaurant.count({
-          where: {
-            created_at: { [Op.lt]: m.monthEnd },
-            deleted_at: null,
-          }
-        }).catch(() => 0) || 0;
-
-        growthData.push({
-          // friendly month label and an ISO start date for frontend parsing
+        return {
           month: m.monthStart.toLocaleString('default', { month: 'short', year: 'numeric' }),
           startDate: toLocalDateString(m.monthStart),
           new_restaurants: newCount,
-          total_restaurants: totalCount,
-        })
-      }
+        };
+      }));
+
+      growthData = buildGrowthSeries(monthlyRows, 0);
     } catch (err) {
-      console.error('Growth data generation error:', err)
+      console.error('Growth data generation error:', err);
+      growthData = [];
     }
     
     // Prepare response stats

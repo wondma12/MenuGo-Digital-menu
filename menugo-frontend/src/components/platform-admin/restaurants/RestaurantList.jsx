@@ -22,13 +22,31 @@ const RestaurantList = () => {
   const [currentPage, setCurrentPage] = useState(1)
   const [showFilters, setShowFilters] = useState(false)
 
-  const { data, isLoading, refetch } = useQuery(
+  const { data, isLoading, error, refetch } = useQuery(
     ['restaurants', currentPage, searchTerm, filters],
     () => getRestaurants({ page: currentPage, search: searchTerm, ...filters }),
     { keepPreviousData: true }
   )
 
   if (isLoading) return <Loading />
+
+  if (error) return (
+    <div className="relative space-y-6 overflow-visible bg-white p-4 text-slate-900 sm:p-6 lg:p-8 font-['Manrope',system-ui,sans-serif]">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_rgba(251,146,60,0.12),transparent_45%),radial-gradient(ellipse_at_bottom_left,_rgba(59,130,246,0.08),transparent_55%)]" />
+      <div className="relative">
+        <div className="rounded-xl border border-red-200 bg-red-50 p-6">
+          <h3 className="text-lg font-semibold text-red-900">Failed to load restaurants</h3>
+          <p className="mt-2 text-red-800">{error?.message || 'Please try again or contact support'}</p>
+          <button
+            onClick={() => refetch()}
+            className="mt-4 inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    </div>
+  )
 
   return (
     <div className="relative space-y-6 overflow-visible bg-white p-4 text-slate-900 sm:p-6 lg:p-8 font-['Manrope',system-ui,sans-serif]">

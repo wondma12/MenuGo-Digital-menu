@@ -1,13 +1,17 @@
 // src/services/kitchenService.js
 const db = require('../config/database');
 const KitchenOrder = require('../models/KitchenOrder');
+const { Order, OrderItem, OrderItemOption, OrderItemModifier, MenuItem, Waiter, User } = require('../models');
 
 class KitchenService {
   async createKitchenOrder(orderData) {
     try {
-      // Ensure required identifiers are present and provide safe fallbacks
-      orderData.order_number = orderData.order_number || String(orderData.order_id || '')
-      orderData.restaurant_id = orderData.restaurant_id || null
+      // Resolve a minimal order payload (e.g. { order_id }) into full kitchen order data
+      orderData = await this.normalizeKitchenOrderPayload(orderData);
+      orderData.order_number = orderData.order_number || String(orderData.order_id || '');
+      orderData.restaurant_id = orderData.restaurant_id || null;
+      orderData.items = Array.isArray(orderData.items) ? orderData.items : [];
+
       // Calculate preparation times
       const itemsWithPrepTime = orderData.items.map(item => ({
         ...item,
@@ -34,6 +38,69 @@ class KitchenService {
     } catch (error) {
       throw error;
     }
+  }
+
+  async normalizeKitchenOrderPayload(orderData) {
+    if (!orderData || !orderData.order_id) return orderData;
+
+    const shouldLoadOrder = (
+      !Array.isArray(orderData.items) ||
+      orderData.items.length === 0 ||
+      !orderData.restaurant_id ||
+      !orderData.order_number
+    );
+
+    if (!shouldLoadOrder) return orderData;
+
+    const order = await Order.findByPk(orderData.order_id, {
+      include: [
+        {
+          model: OrderItem,
+          as: 'items',
+          include: [
+            { model: OrderItemOption, as: 'item_options_selected' },
+            { model: OrderItemModifier, as: 'item_modifiers_selected' },
+            { model: MenuItem, as: 'menu_item' }
+          ]
+        }
+      ]
+    });
+
+    if (!order) return orderData;
+
+    orderData.restaurant_id = orderData.restaurant_id || order.restaurant_id;
+    orderData.order_number = orderData.order_number || order.order_number || String(order.id);
+    orderData.table_number = orderData.table_number || order.table_number;
+    orderData.customer_name = orderData.customer_name || order.customer_name;
+
+    const waiterCandidate = orderData.waiter_id || order.waiter_id || null;
+    if (waiterCandidate) {
+      const waiterRecord = await Waiter.findByPk(waiterCandidate);
+      orderData.waiter_id = waiterRecord ? waiterRecord.user_id : waiterCandidate;
+    } else {
+      orderData.waiter_id = null;
+    }
+
+    orderData.waiter_name = orderData.waiter_name || null;
+    orderData.notes = typeof orderData.notes !== 'undefined' ? orderData.notes : order.special_instructions || null;
+
+    if (!Array.isArray(orderData.items) || orderData.items.length === 0) {
+      orderData.items = (order.items || []).map(it => ({
+        item_id: it.menu_item_id,
+        item_name: it.item_name || (it.menu_item && it.menu_item.name) || null,
+        quantity: it.quantity,
+        preparation_time: (it.menu_item && (it.menu_item.preparation_time || it.menu_item.prep_time)) || it.preparation_time || null,
+        special_instructions: it.special_instructions,
+        modifiers: (it.item_modifiers_selected || []).map(m => ({
+          name: m.modifier_name || m.name,
+          price: typeof m.price_adjustment !== 'undefined' ? m.price_adjustment : (typeof m.price !== 'undefined' ? m.price : 0)
+        })),
+        category: it.menu_item ? (it.menu_item.category_id || it.menu_item.category) : null,
+        image: it.menu_item ? (it.menu_item.image_url || it.menu_item.image) : null,
+      }));
+    }
+
+    return orderData;
   }
 
   calculatePrepTime(item) {

@@ -9,15 +9,39 @@ const createCallRequest = catchAsync(async (req, res) => {
   const restaurantParam = req.params.id;
   const { table_number, call_type = 'service', customer_name = null, notes = null } = req.body;
 
-  // Resolve restaurant by QR identifier or PK
+  const normalizeIdentifier = (value) => {
+    return String(value || '')
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, '-')
+      .replace(/[^a-z0-9-]/g, '')
+  }
+
+  // Resolve restaurant by QR identifier or primary key.
+  // Allow forgiving slug/name resolution for customer-facing identifiers.
   let restaurant = await Restaurant.findOne({ where: { qr_code_identifier: restaurantParam, is_active: true } });
   if (!restaurant) {
     restaurant = await Restaurant.findByPk(restaurantParam);
-    if (restaurant && !restaurant.is_active) {restaurant = null;}
+    if (restaurant && !restaurant.is_active) {
+      restaurant = null
+    }
   }
 
   if (!restaurant) {
-    throw new ApiError(404, 'Restaurant not found');
+    const normalizedParam = normalizeIdentifier(restaurantParam)
+    const candidates = await Restaurant.findAll({ where: { is_active: true } })
+    restaurant = candidates.find((r) => {
+      try {
+        const slug = normalizeIdentifier(r.qr_code_identifier) || normalizeIdentifier(r.name)
+        return slug === normalizedParam || normalizeIdentifier(r.name) === normalizedParam
+      } catch (e) {
+        return false
+      }
+    }) || null
+  }
+
+  if (!restaurant) {
+    throw new ApiError(404, 'Restaurant not found')
   }
 
   if (!table_number) {

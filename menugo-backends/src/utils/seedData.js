@@ -29,15 +29,8 @@ const seedUsers = async (models) => {
       role: USER_ROLES.WAITER,
       is_verified: true,
       email_verified: true,
-    },
-    {
-      email: 'customer@menugo.com',
-      password: 'Customer@123',
-      full_name: 'Sarah Customer',
-      role: USER_ROLES.CUSTOMER,
-      is_verified: true,
-      email_verified: true,
-    },
+    }, 
+   
   ];
   
   for (const user of users) {

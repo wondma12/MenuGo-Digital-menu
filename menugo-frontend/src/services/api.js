@@ -1,35 +1,37 @@
 import axios from 'axios'
 import { useAuthStore } from '../store/authStore'
 
-// Default API base URL.
-// Use the explicit backend URL when provided, otherwise fall back to the local
-// backend port used by this project. Using an absolute URL avoids Vite proxy
-// dependencies and prevents ECONNREFUSED noise when the proxy backend is absent.
-const API_URL = 'http://localhost:5003/api'
+// Default API root URL. Axios should use the backend origin only.
+// Request paths are sent as `/auth/login`, `/restaurants`, etc. so the
+// browser and backend route aliases can handle both `/api`-prefixed and
+// legacy top-level endpoints transparently.
+const API_URL = 'http://localhost:5003'
 
-// Ensure the configured API_URL always includes the `/api` suffix so
-// requests like `api.get('/dashboard/platform')` resolve to
-// `http(s)://host:port/api/dashboard/platform` regardless of how
-// `VITE_API_URL` was provided (with or without trailing `/api`).
+const normalizeApiRootUrl = (url) => {
+  if (!url) return url
+  return String(url).replace(/\/+$/, '').replace(/\/api(\/)?$/, '')
+}
+
 const normalizeApiUrl = (url) => {
   if (!url) return url
-  let normalized = url.replace(/\/$/, '')
+  let normalized = String(url).replace(/\/$/, '')
   if (!/\/api(\/)?$/.test(normalized)) normalized = `${normalized}/api`
   return normalized
 }
 
-const NORMALIZED_API_URL = normalizeApiUrl(API_URL)
-const EXPLICIT_API_URL = null // Disable explicit URL to force auto-detection of working backend port
+const NORMALIZED_API_ROOT_URL = normalizeApiRootUrl(API_URL)
+const EXPLICIT_API_ROOT_URL = normalizeApiRootUrl(import.meta.env.VITE_API_URL || import.meta.env.API_URL || null)
+const initialApiBaseURL = EXPLICIT_API_ROOT_URL || NORMALIZED_API_ROOT_URL
 
 // Fallback ports to try when the configured API is unreachable during local development.
-// Include common local backend ports (5002 and 5003 used by this repo), then other candidates.
+// Include common local backend ports used by this repo, then other candidates.
 const FALLBACK_PORTS = Array.from({ length: 11 }, (_, i) => 5000 + i)
 
 const buildApiCandidates = () => {
   const seen = new Set()
   const add = (u) => {
     if (!u) return
-    const normalized = normalizeApiUrl(u)
+    const normalized = normalizeApiRootUrl(u)
     if (!seen.has(normalized)) {
       seen.add(normalized)
     }
@@ -47,8 +49,17 @@ const buildApiCandidates = () => {
     // ignore - window may not exist in some build-time contexts
   }
 
-  add(NORMALIZED_API_URL)
+  add(NORMALIZED_API_ROOT_URL)
   return Array.from(seen)
+}
+
+const getHealthUrl = (baseUrl) => {
+  try {
+    const base = String(baseUrl || '').replace(/\/+$|\s+$/g, '')
+    return new URL('/health', base).toString()
+  } catch (e) {
+    return `${String(baseUrl || '').replace(/\/$/, '')}/health`
+  }
 }
 
 // Ensure we probe for a working API base once per session before sending
@@ -64,11 +75,11 @@ const ensureApiBaseReady = () => {
     const cached = !shouldIgnoreCache && typeof sessionStorage !== 'undefined' ? sessionStorage.getItem(cacheKey) : null
     const probeTimeout = 800
 
-    if (EXPLICIT_API_URL) {
+    if (EXPLICIT_API_ROOT_URL) {
       try {
-        await axios.get(`${EXPLICIT_API_URL.replace(/\/$/, '')}/health`, { timeout: probeTimeout })
-        api.defaults.baseURL = EXPLICIT_API_URL
-        if (import.meta.env.DEV) console.warn('Using explicit VITE_API_URL baseURL:', EXPLICIT_API_URL)
+        await axios.get(getHealthUrl(EXPLICIT_API_ROOT_URL), { timeout: probeTimeout })
+        api.defaults.baseURL = EXPLICIT_API_ROOT_URL
+        if (import.meta.env.DEV) console.warn('Using explicit VITE_API_URL baseURL:', EXPLICIT_API_ROOT_URL)
         try { if (typeof sessionStorage !== 'undefined') sessionStorage.removeItem(cacheKey) } catch (err) {}
         return
       } catch (e) {
@@ -78,7 +89,7 @@ const ensureApiBaseReady = () => {
 
     if (cached && !shouldIgnoreCache) {
       try {
-        await axios.get(`${cached.replace(/\/$/, '')}/health`, { timeout: probeTimeout })
+        await axios.get(getHealthUrl(cached), { timeout: probeTimeout })
         api.defaults.baseURL = cached
         if (import.meta.env.DEV) console.warn('Using cached API baseURL:', cached)
         return
@@ -91,11 +102,10 @@ const ensureApiBaseReady = () => {
     }
 
     const candidates = buildApiCandidates()
-    const cap = Math.min(candidates.length, 6)
 
-    const probePromises = candidates.slice(0, cap).map((candidate) => {
+    const probePromises = candidates.map((candidate) => {
       const base = candidate.replace(/\/$/, '')
-      const healthUrl = `${base}/health`
+      const healthUrl = getHealthUrl(base)
       return axios.get(healthUrl, { timeout: probeTimeout })
         .then(() => base)
         .catch(() => Promise.reject(base))
@@ -117,21 +127,17 @@ const ensureApiBaseReady = () => {
       if (import.meta.env.DEV) console.warn('Initial probe: no candidate responded')
     }
 
-    api.defaults.baseURL = NORMALIZED_API_URL
-    if (import.meta.env.DEV) console.warn('No candidate responded; using configured NORMALIZED_API_URL:', NORMALIZED_API_URL)
+    api.defaults.baseURL = NORMALIZED_API_ROOT_URL
+    if (import.meta.env.DEV) console.warn('No candidate responded; using configured NORMALIZED_API_ROOT_URL:', NORMALIZED_API_ROOT_URL)
   })()
   return baseProbePromise
 }
 
 const attemptFallback = async (originalRequest) => {
-  // Only attempt automatic fallback for idempotent requests to avoid
-  // re-sending large uploads or mutating POSTs to unknown hosts.
-  const method = (originalRequest && originalRequest.method) ? originalRequest.method.toLowerCase() : 'get'
+  // Allow fallback on network failures for all methods in dev, because the
+  // original attempt never reached a responsive backend. This helps recovery
+  // when the configured API host is stale or the backend has moved ports.
   const requestUrl = String(originalRequest?.url || '')
-  const allowMutationFallback = Boolean(originalRequest && originalRequest._allowBaseFallback)
-  if (!['get', 'head'].includes(method) && !allowMutationFallback) {
-    return Promise.reject(originalRequest._originalError || new Error('Network error: non-idempotent request; not attempting fallback'))
-  }
 
   // Use a small cache so we don't probe repeatedly during a dev session
   const cacheKey = 'menugo_api_base'
@@ -146,14 +152,16 @@ const attemptFallback = async (originalRequest) => {
   }
 
   const candidates = buildApiCandidates()
-  const currentBase = (api.defaults && api.defaults.baseURL) ? api.defaults.baseURL.replace(/\/$/, '') : NORMALIZED_API_URL.replace(/\/$/, '')
+  const currentBase = (api.defaults && api.defaults.baseURL)
+    ? normalizeApiRootUrl(api.defaults.baseURL).replace(/\/$/, '')
+    : NORMALIZED_API_ROOT_URL.replace(/\/$/, '')
 
   // Probe a small set of candidates in parallel for fallback attempts.
   const MAX_PROBES = Math.min(candidates.length, 6)
   const probeCandidates = candidates.slice(0, MAX_PROBES).map((candidate) => {
-    const base = candidate.replace(/\/$/, '')
+    const base = normalizeApiRootUrl(candidate).replace(/\/$/, '')
     if (base === currentBase) return Promise.reject(base)
-    const healthUrl = `${base}/health`
+    const healthUrl = getHealthUrl(base)
     if (import.meta.env.DEV) console.warn('Probing fallback baseURL health:', healthUrl)
     return axios.get(healthUrl, { timeout: 1200 }).then(() => base).catch(() => Promise.reject(base))
   })
@@ -173,18 +181,42 @@ const attemptFallback = async (originalRequest) => {
   }
 
   // restore default and give up
-  api.defaults.baseURL = NORMALIZED_API_URL
+  api.defaults.baseURL = NORMALIZED_API_ROOT_URL
   return Promise.reject(originalRequest._originalError || new Error('All API fallback attempts failed'))
 }
 
   const api = axios.create({
-  baseURL: NORMALIZED_API_URL,
+  baseURL: initialApiBaseURL,
   headers: {
     'Content-Type': 'application/json',
   },
   timeout: 30000,
   withCredentials: true, // Important for cookies/sessions
 })
+
+// Rewrite request paths to ensure `/api` is included when the backend expects it.
+api.interceptors.request.use((config) => {
+  try {
+    const rawUrl = String(config.url || '')
+    const baseUrl = String(api.defaults.baseURL || '')
+    const parsedBase = new URL(baseUrl || window.location.origin)
+    const url = new URL(rawUrl, parsedBase)
+    const path = url.pathname.replace(/\/+/g, '/')
+
+    const isSameOrigin = url.origin === parsedBase.origin
+    const isRelativeRequest = !/^https?:\/\//i.test(rawUrl)
+
+    if (isSameOrigin || isRelativeRequest) {
+      if (!path.startsWith('/api/') && path !== '/api') {
+        url.pathname = `/api${path}`
+        config.url = `${url.pathname}${url.search}`
+      }
+    }
+  } catch (e) {
+    // ignore malformed URL; let axios handle it
+  }
+  return config
+}, (error) => Promise.reject(error))
 
 // Paths that don't require authentication
 const publicPathRules = [
@@ -200,32 +232,40 @@ const publicPathRules = [
   { path: '/menu/items', methods: ['get'], prefix: true },
   { path: '/menu/item', methods: ['get'], prefix: true },
   { path: '/menu/categories', methods: ['get'], prefix: true },
-  { path: '/restaurants', methods: ['get'], prefix: true },
+  { path: '/restaurants', methods: ['get'], exact: true },
+  { path: '/restaurants/:id', methods: ['get'], exact: true },
+  { path: '/restaurants/:id/reviews', methods: ['get'], exact: true },
+  { path: '/restaurants/:id/tables', methods: ['get'], exact: true },
+  { path: '/restaurants/:id/tables/public', methods: ['get'], exact: true },
+  { path: '/restaurants/:id/calls', methods: ['post'], exact: true },
   { path: '/reviews', methods: ['get'], prefix: true },
   { path: '/orders', methods: ['post'], exact: true },
-  { path: '/orders/restaurant', methods: ['get'], prefix: true },
   { path: '/public/contact', methods: ['post'], exact: true },
 ]
 
 const normalizePath = (path) => String(path || '').replace(/\/+$|^\s+|\s+$/g, '')
 
+const pathPatternToRegExp = (path, exact = false) => {
+  const escaped = String(path || '').replace(/[.*+?^${}()|[\\]\\]/g, '\\$&')
+  const pattern = escaped.replace(/\\:([a-zA-Z0-9_]+)/g, '[^/]+')
+  return new RegExp(`^${pattern}${exact ? '$' : '(?:/|$)'}`)
+}
+
 const isPublicPath = (requestPath, method = 'get') => {
-  const normalizedRequestPath = normalizePath(requestPath).replace(/\/$/, '')
+let normalizedRequestPath = normalizePath(requestPath).replace(/\/$/, '')
+    if (normalizedRequestPath.startsWith('/api/')) {
+      normalizedRequestPath = normalizedRequestPath.replace(/^\/api\//, '/')
+    } else if (normalizedRequestPath === '/api') {
+      normalizedRequestPath = '/'
+    }
   const normalizedMethod = String(method || 'get').toLowerCase()
   return publicPathRules.some((rule) => {
     const normalizedRulePath = normalizePath(rule.path).replace(/\/$/, '')
     const methodMatches = !rule.methods || rule.methods.map((m) => String(m).toLowerCase()).includes(normalizedMethod)
     if (!methodMatches) return false
 
-    if (rule.exact) {
-      return normalizedRequestPath === normalizedRulePath
-    }
-
-    if (rule.prefix) {
-      return normalizedRequestPath === normalizedRulePath || normalizedRequestPath.startsWith(`${normalizedRulePath}/`)
-    }
-
-    return normalizedRequestPath === normalizedRulePath || normalizedRequestPath.startsWith(`${normalizedRulePath}/`)
+    const ruleRegex = pathPatternToRegExp(normalizedRulePath, Boolean(rule.exact))
+    return ruleRegex.test(normalizedRequestPath)
   })
 }
 
@@ -253,7 +293,7 @@ api.interceptors.request.use(
       await ensureApiBaseReady()
     } catch (e) {
       // If probe failed, continue — the rest of the code will use the
-      // configured NORMALIZED_API_URL.
+      // configured NORMALIZED_API_ROOT_URL.
       if (import.meta.env.DEV) console.warn('ensureApiBaseReady failed:', e && e.message)
     }
 
@@ -262,28 +302,42 @@ api.interceptors.request.use(
     const sessionToken = authSessionStorage?.getItem('token')
     const token = storeToken || sessionToken
 
+    if (import.meta.env.DEV) {
+      console.log('[API] current baseURL:', api.defaults?.baseURL)
+    }
+
     // Robust public path detection:
     // Try to resolve config.url to an absolute pathname (handles absolute URLs,
     // relative paths, and baseURL variations), then match against known publicPaths.
     let requestPath = config.url || ''
+    let requestUrlObject = null
     try {
       // base may be undefined in some contexts
       const base = (api.defaults && api.defaults.baseURL) ? api.defaults.baseURL : window?.location?.origin
-      const u = new URL(String(config.url), String(base))
-      requestPath = u.pathname || requestPath
+      requestUrlObject = new URL(String(config.url), String(base))
+      requestPath = requestUrlObject.pathname || requestPath
     } catch (e) {
       // ignore – fallback to raw config.url
     }
 
     const method = (config.method || 'get').toLowerCase()
 
-    let isRequestPublic = isPublicPath(requestPath, method)
+    const normalizedRequestPath = normalizePath(requestPath).replace(/\/$/, '').replace(/^\/api/, '')
+
+    let isRequestPublic = isPublicPath(normalizedRequestPath, method)
+
+    // Only public when a table-specific query is provided. This protects
+    // the admin order listing endpoint from being treated as unauthenticated.
+    if (normalizedRequestPath.startsWith('/orders/restaurant') && method === 'get') {
+      const hasTableQuery = requestUrlObject && (requestUrlObject.searchParams.has('table') || requestUrlObject.searchParams.has('table_number'))
+      isRequestPublic = Boolean(hasTableQuery)
+    }
 
     // Special-case: allow public POST to the contact form even though the
     // same pathname is used for the admin GET listing. We only treat the
     // POST as public so unauthenticated users can submit messages, while
     // GET remains protected for admin listing.
-    if (!isRequestPublic && requestPath === '/public/contact' && method === 'post') {
+    if (!isRequestPublic && normalizedRequestPath === '/public/contact' && method === 'post') {
       isRequestPublic = true
     }
 
@@ -421,9 +475,10 @@ api.interceptors.response.use(
           throw new Error('No refresh token available')
         }
 
-        // Use the current api.defaults.baseURL if we've switched; otherwise fall back to configured NORMALIZED_API_URL.
-        const refreshBase = (api.defaults && api.defaults.baseURL) ? api.defaults.baseURL.replace(/\/$/, '') : NORMALIZED_API_URL.replace(/\/$/, '')
-        const response = await axios.post(`${refreshBase}/auth/refresh-token`, {
+        // Use the current api.defaults.baseURL if we've switched; otherwise fall back to configured NORMALIZED_API_ROOT_URL.
+        const refreshBase = (api.defaults && api.defaults.baseURL) ? api.defaults.baseURL.replace(/\/$/, '') : NORMALIZED_API_ROOT_URL.replace(/\/$/, '')
+        const refreshUrl = `${refreshBase}/api/auth/refresh-token`
+        const response = await axios.post(refreshUrl, {
           refreshToken
         })
         
@@ -547,7 +602,7 @@ api.interceptors.response.use(
 export const getWebSocketURL = () => {
   try {
     // Get the current API base URL
-    const apiUrl = api.defaults?.baseURL || NORMALIZED_API_URL
+    const apiUrl = api.defaults?.baseURL || NORMALIZED_API_ROOT_URL
     
     // Parse the URL
     const url = new URL(apiUrl)

@@ -16,20 +16,24 @@ const getSubscriptionPlans = async (req, res) => {
     let plans = [];
     
     try {
-      if (SubscriptionPlan && typeof SubscriptionPlan.findAll === 'function') {
-        plans = await SubscriptionPlan.findAll({
-          where: { is_active: true },
-          order: [['price_monthly', 'ASC']],
-        });
+      if (!SubscriptionPlan || typeof SubscriptionPlan.findAll !== 'function') {
+        throw new Error('SubscriptionPlan model is not available');
       }
+
+      plans = await SubscriptionPlan.findAll({
+        where: { is_active: true },
+        order: [['price_monthly', 'ASC']],
+      });
     } catch (err) {
-      console.error('Database error:', err.message);
+      console.error('Database error in getSubscriptionPlans:', err);
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to retrieve subscription plans',
+        error: err.message || 'Database error',
+        data: [],
+      });
     }
-    
-    if (!plans || plans.length === 0) {
-      plans = DEFAULT_SUBSCRIPTION_PLANS;
-    }
-    
+
     // Ensure all numeric values are numbers, not undefined
     const safePlans = plans.map(plan => ({
       ...plan.toJSON ? plan.toJSON() : plan,
@@ -62,7 +66,6 @@ const createSubscriptionPlan = async (req, res) => {
     
     // Ensure numeric values are numbers
     const newPlan = {
-      id: 'plan_' + Date.now(),
       name: planData.name || 'New Plan',
       tier: planData.tier || 'custom',
       description: planData.description || '',
@@ -71,30 +74,30 @@ const createSubscriptionPlan = async (req, res) => {
       features: planData.features || [],
       limits: planData.limits || {},
       is_active: planData.is_active !== undefined ? planData.is_active : true,
-      created_at: new Date().toISOString(),
+      created_at: new Date(),
+      updated_at: new Date(),
     };
     
     // Try to save to database if model exists
     try {
-      if (SubscriptionPlan && typeof SubscriptionPlan.create === 'function') {
-        const savedPlan = await SubscriptionPlan.create(newPlan);
-        res.status(201).json({
-          success: true,
-          message: 'Subscription plan created',
-          data: savedPlan,
-        });
-        return;
+      if (!SubscriptionPlan || typeof SubscriptionPlan.create !== 'function') {
+        throw new Error('SubscriptionPlan model is not available');
       }
+
+      const savedPlan = await SubscriptionPlan.create(newPlan);
+      return res.status(201).json({
+        success: true,
+        message: 'Subscription plan created',
+        data: savedPlan,
+      });
     } catch (err) {
-      console.error('Database save error:', err.message);
+      console.error('Database save error in createSubscriptionPlan:', err);
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to create subscription plan',
+        error: err.message || 'Database save error',
+      });
     }
-    
-    // Return mock response
-    res.status(201).json({
-      success: true,
-      message: 'Subscription plan created',
-      data: newPlan,
-    });
   } catch (error) {
     console.error('Error in createSubscriptionPlan:', error);
     res.status(500).json({

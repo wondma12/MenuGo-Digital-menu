@@ -3,7 +3,7 @@ const { sequelize } = require('../models');
 const { ApiResponse } = require('../utils/apiResponse');
 const { ApiError } = require('../utils/apiError');
 const { catchAsync } = require('../utils/catchAsync');
-const { Op } = require('sequelize');
+const { Op, QueryTypes } = require('sequelize');
 
 // Dialect helpers: use sqlite's strftime when running on sqlite, otherwise use MySQL functions
 const dialect = sequelize && sequelize.getDialect ? sequelize.getDialect() : (sequelize && sequelize.options && sequelize.options.dialect) || 'mysql';
@@ -225,27 +225,52 @@ const getMenuPerformance = catchAsync(async (req, res) => {
   const startDate = start_date ? toLocalDay(start_date, false) : toLocalDay(new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), false);
   const endDate = end_date ? toLocalDay(end_date, true) : toLocalDay(new Date(), true);
 
-  const topItems = await MenuItemAnalytics.findAll({
-    where: {
-      restaurant_id: restaurantId,
-      date: { [Op.between]: [startDate, endDate] },
-    },
-    attributes: [
-      'menu_item_id',
-      [sequelize.fn('SUM', sequelize.col('order_count')), 'total_orders'],
-      [sequelize.fn('SUM', sequelize.col('quantity_sold')), 'total_quantity'],
-      [sequelize.fn('SUM', sequelize.col('revenue')), 'total_revenue'],
-      [sequelize.fn('SUM', sequelize.col('view_count')), 'total_views'],
-      [sequelize.fn('SUM', sequelize.col('add_to_cart_count')), 'total_adds'],
-    ],
-    // include minimal MenuItem attributes to avoid grouping errors
-    include: [{ model: MenuItem, as: 'analytics_item', attributes: ['id', 'name'] }],
-    group: ['menu_item_id'],
-    order: [[sequelize.literal('total_revenue'), 'DESC']],
-    limit: parseInt(limit),
-  });
+  const topItems = await sequelize.query(
+    `SELECT
+      m.menu_item_id AS menu_item_id,
+      mi.id AS "analytics_item.id",
+      mi.name AS "analytics_item.name",
+      SUM(m.order_count) AS total_orders,
+      SUM(m.quantity_sold) AS total_quantity,
+      SUM(m.revenue) AS total_revenue,
+      SUM(m.view_count) AS total_views,
+      SUM(m.add_to_cart_count) AS total_adds
+    FROM menu_item_analytics m
+    LEFT JOIN menu_items mi
+      ON m.menu_item_id = mi.id
+      AND mi.deleted_at IS NULL
+    WHERE m.restaurant_id = :restaurantId
+      AND m.date BETWEEN :startDate AND :endDate
+    GROUP BY m.menu_item_id, mi.id, mi.name
+    ORDER BY total_revenue DESC
+    LIMIT :limit`,
+    {
+      replacements: {
+        restaurantId,
+        startDate: toLocalDateString(startDate),
+        endDate: toLocalDateString(endDate),
+        limit: parseInt(limit, 10),
+      },
+      type: sequelize.QueryTypes.SELECT,
+      nest: true,
+      raw: true,
+    }
+  );
 
-  // Get category performance
+  const menuData = await sequelize.query(
+    "SELECT m.menu_item_id AS menu_item_id, mi.name AS `analytics_item.name`, SUM(m.order_count) AS total_orders, SUM(m.quantity_sold) AS total_quantity, SUM(m.revenue) AS total_revenue FROM menu_item_analytics m LEFT JOIN menu_items mi ON m.menu_item_id = mi.id AND mi.deleted_at IS NULL WHERE m.restaurant_id = :restaurantId AND m.date BETWEEN :startDate AND :endDate GROUP BY m.menu_item_id, mi.name",
+    {
+      replacements: {
+        restaurantId,
+        startDate: toLocalDateString(startDate),
+        endDate: toLocalDateString(endDate),
+      },
+      type: sequelize.QueryTypes.SELECT,
+      raw: true,
+      nest: true,
+    }
+  );
+
   const categoryPerformance = await MenuItem.findAll({
     where: { restaurant_id: restaurantId, deleted_at: null },
     attributes: [
@@ -259,6 +284,7 @@ const getMenuPerformance = catchAsync(async (req, res) => {
   res.json(ApiResponse.success({
     top_items: topItems,
     category_performance: categoryPerformance,
+    menu_performance: menuData,
   }, 'Menu performance retrieved'));
 });
 
@@ -498,20 +524,30 @@ const exportAnalyticsReport = catchAsync(async (req, res) => {
     order: [['date', 'ASC']],
   });
 
-  const menuData = await MenuItemAnalytics.findAll({
-    where: {
-      restaurant_id: restaurantId,
-      date: { [Op.between]: [startDate, endDate] },
-    },
-    attributes: [
-      'menu_item_id',
-      [sequelize.fn('SUM', sequelize.col('order_count')), 'total_orders'],
-      [sequelize.fn('SUM', sequelize.col('quantity_sold')), 'total_quantity'],
-      [sequelize.fn('SUM', sequelize.col('revenue')), 'total_revenue'],
-    ],
-    group: ['menu_item_id'],
-    include: [{ model: MenuItem, as: 'analytics_item', attributes: ['name'] }],
-  });
+  const menuData = await sequelize.query(
+    `SELECT m.menu_item_id AS menu_item_id,
+      mi.name AS "analytics_item.name",
+      SUM(m.order_count) AS total_orders,
+      SUM(m.quantity_sold) AS total_quantity,
+      SUM(m.revenue) AS total_revenue
+    FROM menu_item_analytics m
+    LEFT JOIN menu_items mi
+      ON m.menu_item_id = mi.id
+      AND mi.deleted_at IS NULL
+    WHERE m.restaurant_id = :restaurantId
+      AND m.date BETWEEN :startDate AND :endDate
+    GROUP BY m.menu_item_id, mi.name`,
+    {
+      replacements: {
+        restaurantId,
+        startDate: toLocalDateString(startDate),
+        endDate: toLocalDateString(endDate),
+      },
+      type: QueryTypes.SELECT,
+      raw: true,
+      nest: true,
+    }
+  );
 
   const hourlyData = await HourlyAnalytics.findAll({
     where: {

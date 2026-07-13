@@ -3,8 +3,31 @@ import api from './api'
 import { useAuthStore } from '../store/authStore'
 
 export const getRestaurants = async (params) => {
-  const response = await api.get('/restaurants', { params })
-  
+  // Call /restaurants/admin/all if user is platform admin and authenticated
+  // Otherwise call public /restaurants endpoint
+  // The backend will handle auth checks and filtering accordingly
+  try {
+    const response = await api.get('/restaurants/admin/all', { params })
+    console.log('[getRestaurants] Admin endpoint response:', response?.data)
+    return handleRestaurantResponse(response)
+  } catch (error) {
+    // If admin endpoint fails (not authenticated), fall back to public endpoint
+    console.warn('[getRestaurants] Admin endpoint failed:', error?.message, error?.response?.status)
+    if (error?.response?.status === 401 || error?.isAuthMissing) {
+      try {
+        const publicResponse = await api.get('/restaurants', { params })
+        console.log('[getRestaurants] Public endpoint response:', publicResponse?.data)
+        return handleRestaurantResponse(publicResponse)
+      } catch (publicError) {
+        console.error('[getRestaurants] Public endpoint also failed:', publicError?.message)
+        throw publicError
+      }
+    }
+    throw error
+  }
+}
+
+const handleRestaurantResponse = (response) => {
   // Unwrap the response to match what the component expects
   const payload = response?.data?.data || response?.data || {}
   

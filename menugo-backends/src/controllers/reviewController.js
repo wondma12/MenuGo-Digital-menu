@@ -4,6 +4,37 @@ const { ApiError } = require('../utils/apiError');
 const { catchAsync } = require('../utils/catchAsync');
 const { Op } = require('sequelize');
 
+const normalizeIdentifier = (value) => {
+  return String(value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, '-')
+    .replace(/[^a-z0-9-]/g, '');
+};
+
+const resolveRestaurantByIdentifier = async (restaurantId) => {
+  let restaurant = await Restaurant.findOne({ where: { qr_code_identifier: restaurantId, is_active: true } });
+  if (!restaurant) {
+    restaurant = await Restaurant.findByPk(restaurantId);
+    if (restaurant && !restaurant.is_active) restaurant = null;
+  }
+
+  if (!restaurant) {
+    const normalizedParam = normalizeIdentifier(restaurantId);
+    const candidates = await Restaurant.findAll({ where: { is_active: true } });
+    restaurant = candidates.find((r) => {
+      try {
+        const slug = normalizeIdentifier(r.qr_code_identifier) || normalizeIdentifier(r.name);
+        return slug === normalizedParam || normalizeIdentifier(r.name) === normalizedParam;
+      } catch (e) {
+        return false;
+      }
+    }) || null;
+  }
+
+  return restaurant;
+};
+
 // Get restaurant reviews
 const getRestaurantReviews = catchAsync(async (req, res) => {
   let { restaurantId } = req.params;
@@ -11,11 +42,7 @@ const getRestaurantReviews = catchAsync(async (req, res) => {
   const offset = (page - 1) * limit;
 
   // Support both slug-style `qr_code_identifier` and UUID primary key values.
-  let restaurant = await Restaurant.findOne({ where: { qr_code_identifier: restaurantId, is_active: true } });
-  if (!restaurant) {
-    restaurant = await Restaurant.findByPk(restaurantId);
-    if (restaurant && !restaurant.is_active) restaurant = null;
-  }
+  let restaurant = await resolveRestaurantByIdentifier(restaurantId);
 
   if (!restaurant) {
     throw new ApiError(404, 'Restaurant not found');
@@ -165,12 +192,7 @@ const createReview = catchAsync(async (req, res) => {
   const safeReviewAttrsForCreate = getSafeReviewAttributes(colsForCreate)
 
   // Resolve restaurant identifier (allow qr_code_identifier slug or UUID PK)
-  let restaurant = await Restaurant.findOne({ where: { qr_code_identifier: restaurantId, is_active: true } });
-  if (!restaurant) {
-    restaurant = await Restaurant.findByPk(restaurantId);
-    if (restaurant && !restaurant.is_active) restaurant = null;
-  }
-
+  let restaurant = await resolveRestaurantByIdentifier(restaurantId);
   if (!restaurant) {
     throw new ApiError(404, 'Restaurant not found');
   }

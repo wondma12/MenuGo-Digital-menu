@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { protect, restrictTo } = require('../middleware/authMiddleware');
+const { protect, restrictTo, optionalAuth } = require('../middleware/authMiddleware');
 const { isRestaurantStaff, isWaiter } = require('../middleware/roleMiddleware');
 const { validate } = require('../middleware/validationMiddleware');
 const { orderValidations } = require('../middleware/validationMiddleware');
@@ -28,12 +28,17 @@ router.get('/restaurant/:restaurantId', (req, res, next) => {
   return next()
 })
 
+// Allow unauthenticated access for order details; the response will still
+// include review metadata when a valid user token is present.
+// Use a strict UUID matcher so `/restaurant/:restaurantId` does not fall through
+// to this route when the public restaurant orders route calls next().
+router.get('/:id([0-9a-fA-F-]{36})', optionalAuth, getOrderById)
+
 // Protected routes
 router.use(protect);
 
 // Restaurant admin routes
 router.get('/restaurant/:restaurantId', isRestaurantStaff, getRestaurantOrders);
-router.get('/:id', getOrderById);
 router.put('/:id/status', validate(orderValidations.updateStatus), updateOrderStatus);
 router.post('/:id/cancel', cancelOrder);
 

@@ -14,6 +14,7 @@ const shouldAlterSchema =
   process.env.DB_SYNC_ALTER === 'true' ||
   process.env.SEQUELIZE_SYNC_ALTER === 'true';
 let server;
+let sequelize;
 let isShuttingDown = false;
 
 // Database connection
@@ -23,7 +24,8 @@ const startServer = async () => {
     // requiring `app` until after the port probe so `process.env.API_URL`
     // is correct for Passport callback generation.
     // eslint-disable-next-line global-require
-    const { sequelize } = require('./models');
+    const db = require('./models');
+    sequelize = db.sequelize;
     // eslint-disable-next-line global-require
     const { initRedis } = require('./config/redis');
     // eslint-disable-next-line global-require
@@ -166,6 +168,24 @@ const startServer = async () => {
               resolved_at DATETIME NULL
             )`,
           );
+
+          creates.push(
+            `CREATE TABLE IF NOT EXISTS subscription_plans (
+              id TEXT PRIMARY KEY,
+              name TEXT NOT NULL,
+              tier TEXT NOT NULL UNIQUE,
+              description TEXT,
+              price_monthly REAL DEFAULT 0,
+              price_yearly REAL DEFAULT 0,
+              features TEXT,
+              limits TEXT,
+              is_active INTEGER DEFAULT 1,
+              stripe_price_monthly_id TEXT,
+              stripe_price_yearly_id TEXT,
+              created_at DATETIME DEFAULT (CURRENT_TIMESTAMP),
+              updated_at DATETIME DEFAULT (CURRENT_TIMESTAMP)
+            )`,
+          );
         } else {
           // MySQL-compatible statements (existing behavior)
           creates.push(
@@ -278,6 +298,24 @@ const startServer = async () => {
               resolved_at DATETIME NULL
             )`,
           );
+
+          creates.push(
+            `CREATE TABLE IF NOT EXISTS subscription_plans (
+              id CHAR(36) NOT NULL PRIMARY KEY,
+              name VARCHAR(255) NOT NULL,
+              tier VARCHAR(50) NOT NULL UNIQUE,
+              description TEXT,
+              price_monthly DECIMAL(10,2) DEFAULT 0,
+              price_yearly DECIMAL(10,2) DEFAULT 0,
+              features JSON,
+              limits JSON,
+              is_active BOOLEAN DEFAULT TRUE,
+              stripe_price_monthly_id VARCHAR(255),
+              stripe_price_yearly_id VARCHAR(255),
+              created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+              updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+            )`,
+          );
         }
 
         for (const stmt of creates) {
@@ -313,6 +351,18 @@ const startServer = async () => {
       }
     } catch (e) {
       // ignore
+    }
+
+    try {
+      const { ensureRestaurantSchema } = require('./utils/ensureRestaurantSchema');
+      const schemaResult = await ensureRestaurantSchema();
+      if (schemaResult && schemaResult.applied && schemaResult.applied.length) {
+        logger.info(`Ensured restaurant columns on startup: ${schemaResult.applied.join(', ')}`);
+      } else if (!schemaResult || schemaResult.skipped) {
+        logger.info('Restaurant schema ensure skipped or table missing');
+      }
+    } catch (schemaEnsureErr) {
+      logger.warn('Could not ensure restaurant columns on startup:', schemaEnsureErr && schemaEnsureErr.message ? schemaEnsureErr.message : schemaEnsureErr);
     }
 
     // Keep destructive schema alteration opt-in to avoid long dev boots and port collisions.
@@ -422,7 +472,12 @@ const startServer = async () => {
             }
             attempts += 1;
             currentPort += 1;
+            process.env.API_URL = `http://localhost:${currentPort}`;
+            if (!process.env.GOOGLE_CALLBACK_URL) {
+              process.env.GOOGLE_CALLBACK_URL = `${process.env.API_URL}/api/auth/google/callback`;
+            }
             logger.warn(`Attempting to listen on fallback port ${currentPort} (attempt ${attempts}/${maxAttemptsFallback})`);
+            logger.info(`Updated API URL to ${process.env.API_URL} for fallback port`);
             server.listen(currentPort);
           };
 
@@ -477,12 +532,24 @@ const gracefulShutdown = () => {
     logger.info('HTTP server closed');
 
     try {
-      await sequelize.close();
-      logger.info('Database connection closed');
-      process.exit(0);
-    } catch (error) {
-      logger.error('Error during shutdown:', error);
-      process.exit(1);
+      if (sequelize && typeof sequelize.close === 'function') {
+        try {
+          await sequelize.close();
+          logger.info('Database connection closed');
+        } catch (closeError) {
+          logger.warn('Database shutdown warning:', closeError && closeError.message ? closeError.message : closeError);
+        }
+      } else {
+        logger.info('No Sequelize instance available during shutdown');
+      }
+    } catch (shutdownError) {
+      logger.warn('Unexpected shutdown error:', shutdownError && shutdownError.message ? shutdownError.message : shutdownError);
+    } finally {
+      try {
+        process.exit(0);
+      } catch (processExitError) {
+        logger.warn('Process exit warning:', processExitError && processExitError.message ? processExitError.message : processExitError);
+      }
     }
   });
 };

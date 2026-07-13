@@ -16,6 +16,19 @@ const getClientUrl = () => String(process.env.CLIENT_URL || 'http://localhost:51
 
 // Register new user
 const register = catchAsync(async (req, res) => {
+  console.log('[DEBUG] authController.register called');
+  console.log('[DEBUG] req.body keys:', Object.keys(req.body || {}));
+  console.log('[DEBUG] req.files keys:', req.files ? Object.keys(req.files) : []);
+  console.log('[DEBUG] req.body sample:', {
+    email: req.body.email,
+    role: req.body.role,
+    restaurant_name: req.body.restaurant_name,
+    subscription_plan: req.body.subscription_plan,
+    restaurant_address: req.body.restaurant_address,
+    restaurant_city: req.body.restaurant_city,
+    restaurant_country: req.body.restaurant_country,
+    restaurant_sub_city: req.body.restaurant_sub_city,
+  });
   const {
     email,
     password,
@@ -70,116 +83,133 @@ const register = catchAsync(async (req, res) => {
 
   // If registering as restaurant admin, create restaurant
   if (isRestaurantAdmin && restaurant_name) {
-    // Calculate subscription end date based on plan type
-    const now = new Date();
-    let subscriptionDays = 30; // default to monthly (30 days)
-    let subscriptionTier = 'monthly';
-    
-    if (subscription_plan === 'six_months') {
-      subscriptionDays = 180;
-      subscriptionTier = 'six_month';
-    } else if (subscription_plan === 'yearly') {
-      subscriptionDays = 365;
-      subscriptionTier = 'yearly';
-    } else if (subscription_plan === 'monthly') {
-      subscriptionDays = 30;
-      subscriptionTier = 'monthly';
-    }
-    
-    const subscriptionEndDate = new Date(now.getTime() + subscriptionDays * 24 * 60 * 60 * 1000);
-    
-    const restaurant = await Restaurant.create({
-      owner_id: user.id,
-      name: restaurant_name,
-      email: normalizedEmail || null,
-      phone: restaurant_phone || phone || null,
-      address: restaurant_address || null,
-      city: restaurant_city || null,
-      country: restaurant_country || null,
-      sub_city: resolvedSubCity,
-      business_license_number: resolvedBusinessLicenseNumber,
-      tin_number: resolvedTinNumber,
-      website: restaurant_website || null,
-      slogan: resolvedSlogan,
-      is_verified: false,
-      subscription_tier: subscriptionTier,
-      subscription_status: 'active',
-      subscription_start_date: now,
-      subscription_end_date: subscriptionEndDate,
-      is_active: true,
-      settings: {
-        auto_accept_orders: false,
-        allow_online_payment: true,
-        allow_cash_payment: true,
-        enable_delivery: false,
-        enable_takeaway: true,
-        table_management: true,
-        order_notifications: true,
-        email_notifications: true,
-        sms_notifications: false,
-        loyalty_program: false,
-        happy_hour: false,
-        business_license: {
-          number: resolvedBusinessLicenseNumber,
-          tin_number: resolvedTinNumber,
-          tinNumber: resolvedTinNumber,
-        },
-      },
-    });
-
-    await RestaurantStaff.create({
-      restaurant_id: restaurant.id,
-      user_id: user.id,
-      role: 'admin',
-      is_active: true,
-    });
-
-    // If files were uploaded with the registration, handle them (business license, logo, banner, coverImage)
     try {
-      const files = req.files || {};
-      // business license may be named businessLicenseDocument or document
-      const licenseFile = (files.businessLicenseDocument && files.businessLicenseDocument[0]) || (files.document && files.document[0]) || null;
-      if (licenseFile) {
-        const uploadResult = await uploadToCloudinary(licenseFile.path, 'menugo/documents');
-        if (uploadResult && uploadResult.url) {
-          const settings = restaurant.settings || {};
-          settings.business_license = {
-            url: uploadResult.url,
-            publicId: uploadResult.publicId || null,
-            uploadedAt: new Date(),
-            originalName: licenseFile.originalname,
-          };
-          try {
-            await restaurant.update({ settings, business_license_url: uploadResult.url });
-          } catch (persistErr) {
-            console.warn('Falling back to settings-only persistence for business license URL:', persistErr && persistErr.message ? persistErr.message : persistErr);
-            await restaurant.update({ settings });
+      // Calculate subscription end date based on plan type
+      const now = new Date();
+      let subscriptionDays = 30; // default to monthly (30 days)
+      let subscriptionTier = 'monthly';
+      
+      if (subscription_plan === 'six_months' || subscription_plan === 'six_month') {
+        subscriptionDays = 180;
+        subscriptionTier = 'six_month';
+      } else if (subscription_plan === 'yearly') {
+        subscriptionDays = 365;
+        subscriptionTier = 'yearly';
+      } else if (subscription_plan === 'monthly') {
+        subscriptionDays = 30;
+        subscriptionTier = 'monthly';
+      }
+      
+      const subscriptionEndDate = new Date(now.getTime() + subscriptionDays * 24 * 60 * 60 * 1000);
+      
+      console.log('[DEBUG] Creating restaurant for user:', user.id, {
+        name: restaurant_name,
+        email: normalizedEmail,
+        city: restaurant_city,
+        country: restaurant_country,
+        sub_city: resolvedSubCity,
+        subscription_tier: subscriptionTier,
+        subscription_end_date: subscriptionEndDate,
+      });
+      
+      const restaurant = await Restaurant.create({
+        owner_id: user.id,
+        name: restaurant_name,
+        email: normalizedEmail || null,
+        phone: restaurant_phone || phone || null,
+        address: restaurant_address || null,
+        city: restaurant_city || null,
+        country: restaurant_country || null,
+        sub_city: resolvedSubCity,
+        business_license_number: resolvedBusinessLicenseNumber,
+        tin_number: resolvedTinNumber,
+        website: restaurant_website || null,
+        slogan: resolvedSlogan,
+        is_verified: false,
+        subscription_tier: subscriptionTier,
+        subscription_status: 'active',
+        subscription_start_date: now,
+        subscription_end_date: subscriptionEndDate,
+        is_active: true,
+        settings: {
+          auto_accept_orders: false,
+          allow_online_payment: true,
+          allow_cash_payment: true,
+          enable_delivery: false,
+          enable_takeaway: true,
+          table_management: true,
+          order_notifications: true,
+          email_notifications: true,
+          sms_notifications: false,
+          loyalty_program: false,
+          happy_hour: false,
+          business_license: {
+            number: resolvedBusinessLicenseNumber,
+            tin_number: resolvedTinNumber,
+            tinNumber: resolvedTinNumber,
+          },
+        },
+      });
+
+      console.log('[DEBUG] Restaurant created successfully:', restaurant.id);
+
+      await RestaurantStaff.create({
+        restaurant_id: restaurant.id,
+        user_id: user.id,
+        role: 'admin',
+        is_active: true,
+      });
+
+      // If files were uploaded with the registration, handle them (business license, logo, banner, coverImage)
+      try {
+        const files = req.files || {};
+        // business license may be named businessLicenseDocument or document
+        const licenseFile = (files.businessLicenseDocument && files.businessLicenseDocument[0]) || (files.document && files.document[0]) || null;
+        if (licenseFile) {
+          const uploadResult = await uploadToCloudinary(licenseFile.path, 'menugo/documents');
+          if (uploadResult && uploadResult.url) {
+            const settings = restaurant.settings || {};
+            settings.business_license = {
+              url: uploadResult.url,
+              publicId: uploadResult.publicId || null,
+              uploadedAt: new Date(),
+              originalName: licenseFile.originalname,
+            };
+            try {
+              await restaurant.update({ settings, business_license_url: uploadResult.url });
+            } catch (persistErr) {
+              console.warn('Falling back to settings-only persistence for business license URL:', persistErr && persistErr.message ? persistErr.message : persistErr);
+              await restaurant.update({ settings });
+            }
           }
         }
-      }
 
-      // Optionally handle logo/banner/coverImage and store URLs on restaurant
-      const logoFile = (files.logo && files.logo[0]) || null;
-      const bannerFile = (files.banner && files.banner[0]) || (files.coverImage && files.coverImage[0]) || null;
-      const updates = {};
-      if (logoFile) {
-        const r = await uploadToCloudinary(logoFile.path, 'menugo/restaurants');
-        if (r && r.url) {
-          updates.logo_url = r.url;
+        // Optionally handle logo/banner/coverImage and store URLs on restaurant
+        const logoFile = (files.logo && files.logo[0]) || null;
+        const bannerFile = (files.banner && files.banner[0]) || (files.coverImage && files.coverImage[0]) || null;
+        const updates = {};
+        if (logoFile) {
+          const r = await uploadToCloudinary(logoFile.path, 'menugo/restaurants');
+          if (r && r.url) {
+            updates.logo_url = r.url;
+          }
         }
-      }
-      if (bannerFile) {
-        const r2 = await uploadToCloudinary(bannerFile.path, 'menugo/restaurants');
-        if (r2 && r2.url) {
-          updates.cover_image_url = r2.url;
+        if (bannerFile) {
+          const r2 = await uploadToCloudinary(bannerFile.path, 'menugo/restaurants');
+          if (r2 && r2.url) {
+            updates.cover_image_url = r2.url;
+          }
         }
+        if (Object.keys(updates).length) {
+          await restaurant.update(updates);
+        }
+      } catch (docErr) {
+        console.error('Failed to upload files during registration:', docErr && docErr.message ? docErr.message : docErr);
+        // non-fatal; proceed with registration
       }
-      if (Object.keys(updates).length) {
-        await restaurant.update(updates);
-      }
-    } catch (docErr) {
-      console.error('Failed to upload files during registration:', docErr && docErr.message ? docErr.message : docErr);
-      // non-fatal; proceed with registration
+    } catch (restaurantErr) {
+      console.error('[ERROR] Failed to create restaurant:', restaurantErr?.message || restaurantErr);
+      throw new ApiError(500, `Restaurant creation failed: ${restaurantErr?.message || 'Unknown error'}`);
     }
   }
 

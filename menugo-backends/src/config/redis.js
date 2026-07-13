@@ -5,9 +5,25 @@ let redisClient = null;
 
 const initRedis = async () => {
   try {
+    // Build Redis URL - gracefully fall back if environment variables are not set
+    let redisUrl = process.env.REDIS_URL;
+    
+    if (!redisUrl) {
+      const host = process.env.REDIS_HOST || 'localhost';
+      const port = process.env.REDIS_PORT || 6379;
+      const password = process.env.REDIS_PASSWORD;
+      
+      if (password) {
+        redisUrl = `redis://:${password}@${host}:${port}`;
+      } else {
+        redisUrl = `redis://${host}:${port}`;
+      }
+    }
+
+    logger.info(`Attempting to connect to Redis at: ${redisUrl.replace(/:[^:]+@/, ':***@')}`);
+
     redisClient = redis.createClient({
-      url: process.env.REDIS_URL || `redis://${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`,
-      password: process.env.REDIS_PASSWORD,
+      url: redisUrl,
       database: process.env.REDIS_DB || 0,
     });
 
@@ -20,9 +36,11 @@ const initRedis = async () => {
     });
 
     await redisClient.connect();
+    logger.info('Redis client initialized successfully');
     return redisClient;
   } catch (error) {
-    logger.error('Failed to connect to Redis:', error);
+    logger.warn('Failed to connect to Redis (this is optional for development):', error?.message || error);
+    // Don't throw - Redis is optional for development
     return null;
   }
 };
