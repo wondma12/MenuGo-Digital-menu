@@ -1,6 +1,15 @@
 // src/models/KitchenOrder.js
 const db = require('../config/database');
-const { format } = require('date-fns');
+
+let format = null;
+try {
+  ({ format } = require('date-fns'));
+} catch (error) {
+  format = (value) => {
+    const date = value instanceof Date ? value : new Date(value);
+    return date.toISOString().slice(0, 10);
+  };
+}
 
 class KitchenOrder {
   // Create new kitchen order and associated items/modifiers
