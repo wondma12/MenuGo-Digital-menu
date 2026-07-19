@@ -21,6 +21,7 @@ const {
   MenuItemAnalytics,
   HourlyAnalytics,
   Review,
+  SupportTicket,
   sequelize,
 } = require('../models');
 const { ApiResponse } = require('../utils/apiResponse');
@@ -28,6 +29,7 @@ const { ApiError } = require('../utils/apiError');
 const { catchAsync } = require('../utils/catchAsync');
 const { generateQRCode, generateQRCodeBase64 } = require('../utils/generateQR');
 const { uploadToCloudinary } = require('../config/cloudinary');
+const { applyUpgradeRequestToRestaurant } = require('../utils/subscriptionUtils');
 const { Op } = require('sequelize');
 
 const normalizeSettingsValue = (value) => {
@@ -128,11 +130,30 @@ const getAllRestaurants = catchAsync(async (req, res) => {
     );
   }
 
+  const upgradeRequestCounts = await SupportTicket.findAll({
+    attributes: [
+      'restaurant_id',
+      [sequelize.fn('COUNT', sequelize.col('id')), 'pending_upgrade_request_count'],
+    ],
+    where: {
+      restaurant_id: { [Op.in]: restaurantIds },
+      status: 'open',
+      category: 'billing',
+    },
+    group: ['restaurant_id'],
+    raw: true,
+  }).catch(() => []);
+
+  const upgradeRequestMap = new Map(
+    upgradeRequestCounts.map((item) => [String(item.restaurant_id), Number(item.pending_upgrade_request_count || 0)])
+  );
+
   const restaurantsWithCounts = rows.map((restaurant) => {
     const plainRestaurant = restaurant.toJSON ? restaurant.toJSON() : restaurant;
     return {
       ...plainRestaurant,
       total_menu_items: menuCountMap.get(String(plainRestaurant.id)) || 0,
+      pending_upgrade_request_count: upgradeRequestMap.get(String(plainRestaurant.id)) || 0,
     };
   });
 
@@ -146,6 +167,10 @@ const getAllRestaurants = catchAsync(async (req, res) => {
   const premiumCount = await Restaurant.count({ 
     where: { subscription_tier: 'monthly', deleted_at: null },
   });
+  const pendingUpgradeRequestsTotal = upgradeRequestCounts.reduce(
+    (sum, item) => sum + Number(item.pending_upgrade_request_count || 0),
+    0
+  );
 
   res.json(ApiResponse.success({
     restaurants: restaurantsWithCounts,
@@ -153,6 +178,7 @@ const getAllRestaurants = catchAsync(async (req, res) => {
     active: activeCount,
     pending: pendingCount,
     premium: premiumCount,
+    pendingUpgradeRequests: pendingUpgradeRequestsTotal,
     page: parseInt(page),
     totalPages: Math.ceil(count / limit),
   }, 'Restaurants retrieved'));
@@ -920,6 +946,24 @@ const updateRestaurantStatus = catchAsync(async (req, res) => {
       }
     } catch (e) {
       console.warn('Failed to cascade activate users for restaurant:', e && e.message ? e.message : e);
+    }
+
+    // Apply any pending billing upgrade if one exists and restaurant is being activated.
+    try {
+      const pendingUpgradeTicket = await SupportTicket.findOne({
+        where: {
+          restaurant_id: id,
+          category: 'billing',
+          status: 'open',
+        },
+        order: [['created_at', 'ASC']],
+      });
+
+      if (pendingUpgradeTicket) {
+        await applyUpgradeRequestToRestaurant(pendingUpgradeTicket, Restaurant);
+      }
+    } catch (upgradeError) {
+      console.warn('Failed to apply pending upgrade request during restaurant activation:', upgradeError?.message || upgradeError);
     }
   }
 

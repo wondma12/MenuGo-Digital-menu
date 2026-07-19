@@ -253,7 +253,16 @@ const useAuthStore = create(
 
       checkAuth: async () => {
         const token = get().token || getAuthValue('token')
-        if (!token) return false
+        if (!token) {
+          set({
+            user: null,
+            token: null,
+            refreshToken: null,
+            isAuthenticated: false,
+            isLoading: false,
+          })
+          return false
+        }
 
         set({ isLoading: true })
         try {

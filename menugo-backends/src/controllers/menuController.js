@@ -289,24 +289,35 @@ const toggleAvailability = catchAsync(async (req, res) => {
 const getCustomerMenu = catchAsync(async (req, res) => {
   const { restaurantId } = req.params;
 
-  // Support both slug-style `qr_code_identifier` and UUID primary key values.
-  let restaurant = await Restaurant.findOne({ where: { qr_code_identifier: restaurantId, is_active: true } });
+  const normalizeIdentifier = (value) => {
+    return (value || '').toString().trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9\-]/g, '');
+  };
 
-  if (!restaurant) {
-    // Fallback: try by primary key (UUID)
-    restaurant = await Restaurant.findByPk(restaurantId);
-    if (restaurant && !restaurant.is_active) restaurant = null;
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+  let restaurant = null;
+
+  // First try an exact identifier match across non-deleted restaurants.
+  if (restaurantId) {
+    restaurant = await Restaurant.findOne({ where: { qr_code_identifier: restaurantId, deleted_at: null } }).catch(() => null);
   }
 
-  // If still not found, attempt a forgiving slug/name lookup
+  // Fallback to UUID primary key lookup.
+  if (!restaurant && restaurantId && uuidRegex.test(restaurantId)) {
+    restaurant = await Restaurant.findByPk(restaurantId).catch(() => null);
+  }
+
+  // If still not found, attempt a forgiving slug/name lookup across all non-deleted restaurants.
   if (!restaurant) {
-    const candidates = await Restaurant.findAll({ where: { is_active: true } }).catch(() => []);
-    const normalize = (s) => (s || '').toString().trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9\-]/g, '');
-    restaurant = candidates.find(r => {
+    const candidates = await Restaurant.findAll({ where: { deleted_at: null } }).catch(() => []);
+    restaurant = candidates.find((candidate) => {
       try {
-        const slug = normalize(r.qr_code_identifier) || normalize(r.name);
-        return slug === normalize(restaurantId) || normalize(r.name) === normalize(restaurantId);
-      } catch (e) { return false; }
+        const normalizedCandidate = normalizeIdentifier(candidate.qr_code_identifier) || normalizeIdentifier(candidate.name);
+        const normalizedLookup = normalizeIdentifier(restaurantId);
+        return normalizedCandidate === normalizedLookup || normalizeIdentifier(candidate.name) === normalizedLookup;
+      } catch (error) {
+        return false;
+      }
     }) || null;
   }
 

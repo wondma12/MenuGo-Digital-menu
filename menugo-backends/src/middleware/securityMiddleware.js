@@ -20,14 +20,28 @@ const securityMiddleware = helmet({
 });
 
 // CORS configuration
+const isLocalhostOrigin = (origin) => {
+  try {
+    const normalizedOrigin = origin.trim();
+    const { hostname } = new URL(normalizedOrigin);
+    const normalizedHostname = hostname.replace(/^\[|\]$/g, '');
+    return ['localhost', '127.0.0.1', '0.0.0.0', '::1', '::ffff:127.0.0.1'].includes(normalizedHostname);
+  } catch (e) {
+    return false;
+  }
+};
+
 const corsMiddleware = cors({
   origin: (origin, callback) => {
-    const allowedOrigins = process.env.CORS_ORIGIN?.split(',') || ['http://localhost:3000', 'http://localhost:3001'];
-    
+    const allowedOrigins = (process.env.CORS_ORIGIN?.split(',').map((value) => value.trim()).filter(Boolean)) || [];
+    const defaultOrigins = ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:5173', 'http://127.0.0.1:3000', 'http://127.0.0.1:3001', 'http://127.0.0.1:5173'];
+    const allAllowedOrigins = [...new Set([...allowedOrigins, ...defaultOrigins])];
+
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
-    
-    if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV !== 'production') {
+
+    const normalizedOrigin = origin.trim();
+    if (allAllowedOrigins.includes(normalizedOrigin) || isLocalhostOrigin(normalizedOrigin) || process.env.NODE_ENV !== 'production') {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));

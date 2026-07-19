@@ -428,10 +428,11 @@ const startServer = async () => {
     server = http.createServer(app);
 
     // Socket.io setup
+    const configuredOrigins = (process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',').map((value) => value.trim()).filter(Boolean) : []);
     const defaultOrigins = process.env.NODE_ENV === 'development'
-      ? ['http://localhost:3000', 'http://localhost:5173', 'http://127.0.0.1:5173']
-      : 'http://localhost:3000';
-    const corsOrigins = process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : defaultOrigins;
+      ? ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:5173', 'http://127.0.0.1:3000', 'http://127.0.0.1:3001', 'http://127.0.0.1:5173']
+      : ['http://localhost:3000'];
+    const corsOrigins = [...new Set([...configuredOrigins, ...defaultOrigins])];
     const io = new Server(server, {
       cors: {
         origin: corsOrigins,

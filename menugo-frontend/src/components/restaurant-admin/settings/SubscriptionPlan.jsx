@@ -1,14 +1,74 @@
-import React from 'react'
-import { useQuery } from 'react-query'
+import React, { useState } from 'react'
+import { useQuery, useMutation } from 'react-query'
 import { CheckIcon } from '@heroicons/react/24/outline'
 import Button from '../../../common/Button'
 import Badge from '../../../common/Badge'
 import Loading from '../../../common/Loading'
+import toast from 'react-hot-toast'
 import { getCurrentSubscription, getAvailablePlans } from '../../../services/subscriptionService'
+import { createSupportTicket, updateTicketStatus } from '../../../services/supportService'
+import { useAuthStore } from '../../../store/authStore'
 
 const SubscriptionPlan = ({ settings }) => {
-  const { data: currentPlan, isLoading: planLoading } = useQuery('currentSubscription', getCurrentSubscription)
+  const restaurantId = useAuthStore((state) => state.user?.restaurant?.id || state.user?.restaurant_id || state.user?.restaurant?._id)
+  const [requestedPlanId, setRequestedPlanId] = useState(null)
+  const [requestedTicketId, setRequestedTicketId] = useState(null)
+
+  const fallbackSubscription = {
+    tier: settings?.subscription_tier || settings?.subscriptionTier || 'monthly',
+    name: settings?.subscription_name || settings?.subscriptionName || settings?.subscription_tier || settings?.subscriptionTier || 'Monthly Plan',
+    billingCycle: settings?.billing_cycle || settings?.billingCycle || settings?.subscription_tier || settings?.subscriptionTier || 'monthly',
+    price: settings?.price_monthly || settings?.priceMonthly || 0,
+    nextBillingDate: settings?.subscription_end_date || settings?.subscriptionEndDate || null,
+  }
+
+  const { data: currentPlan, isLoading: planLoading } = useQuery('currentSubscription', getCurrentSubscription, {
+    initialData: () => fallbackSubscription,
+  })
   const { data: availablePlans, isLoading: plansLoading } = useQuery('availablePlans', getAvailablePlans)
+
+  const getPlanKey = (plan) => {
+    if (!plan) return null
+    return plan.id || plan.tier || plan.name || `${plan.price || plan.priceMonthly || plan.price_monthly || 'unknown'}-${plan.tier || plan.name}`
+  }
+
+  const upgradeMutation = useMutation(
+    async ({ plan }) => {
+      return createSupportTicket({
+        restaurant_id: restaurantId,
+        subject: `Subscription upgrade request: ${plan.name || plan.tier}`,
+        description: `Please review and approve the subscription upgrade request for restaurant ${currentPlan?.name || 'current restaurant'} to the ${plan.name || plan.tier} plan. Requested tier: ${plan.tier || plan.name}. Current plan: ${currentPlan?.name || currentPlan?.tier || 'unknown'}, billing cycle: ${currentPlan?.billingCycle || currentPlan?.billing_cycle || 'monthly'}.`,
+        priority: 'high',
+        category: 'billing',
+      })
+    },
+    {
+      onSuccess: (data, variables) => {
+        // `data` should be the created ticket object from the API
+        const ticket = data || {}
+        setRequestedPlanId(getPlanKey(variables.plan))
+        if (ticket.id) setRequestedTicketId(ticket.id)
+        toast.success('Upgrade request sent to platform admin for verification')
+      },
+      onError: (error) => {
+        toast.error(error?.response?.data?.message || 'Failed to send upgrade request')
+      },
+    }
+  )
+
+  const cancelMutation = useMutation(
+    async ({ ticketId }) => updateTicketStatus({ ticketId, status: 'closed' }),
+    {
+      onSuccess: () => {
+        setRequestedTicketId(null)
+        setRequestedPlanId(null)
+        toast.success('Upgrade request cancelled')
+      },
+      onError: (err) => {
+        toast.error(err?.response?.data?.message || 'Failed to cancel upgrade request')
+      },
+    }
+  )
 
   if (planLoading || plansLoading) return <Loading />
 
@@ -17,8 +77,29 @@ const SubscriptionPlan = ({ settings }) => {
       basic: 'blue',
       premium: 'purple',
       enterprise: 'gold',
+      monthly: 'blue',
+      six_month: 'purple',
+      yearly: 'gold',
     }
     return colors[tier] || 'default'
+  }
+
+  const formatCurrency = (amount) => {
+    if (!amount && amount !== 0) return 'Contact us'
+    return `ETB ${Number(amount).toLocaleString('en-US', { maximumFractionDigits: 2, minimumFractionDigits: 0 })}`
+  }
+
+  const formatDate = (date) => {
+    if (!date) return 'N/A'
+    try {
+      const d = new Date(date)
+      if (d.getTime() === new Date('1970-01-01').getTime() || isNaN(d.getTime())) {
+        return 'N/A'
+      }
+      return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
+    } catch (e) {
+      return 'N/A'
+    }
   }
 
   const normalizeFeatures = (features) => {
@@ -41,6 +122,19 @@ const SubscriptionPlan = ({ settings }) => {
     return []
   }
 
+  // Get the correct price property
+  const getCurrentPrice = (plan) => {
+    return plan?.price || plan?.priceMonthly || plan?.price_monthly || 0
+  }
+
+  const getYearlyPrice = (plan) => {
+    return plan?.priceYearly || plan?.price_yearly || (getCurrentPrice(plan) * 12) || 0
+  }
+
+  const getMonthlyPrice = (plan) => {
+    return plan?.priceMonthly || plan?.price_monthly || plan?.price || 0
+  }
+
   return (
     <div className="space-y-6">
       {/* Current Plan */}
@@ -57,19 +151,22 @@ const SubscriptionPlan = ({ settings }) => {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
           <div>
             <p className="text-sm text-slate-500">Plan</p>
-            <p className="font-semibold text-slate-900">{currentPlan?.name}</p>
+            <p className="font-semibold text-slate-900">{currentPlan?.name || currentPlan?.tier}</p>
           </div>
           <div>
             <p className="text-sm text-slate-500">Billing Cycle</p>
-            <p className="font-semibold text-slate-900">{currentPlan?.billingCycle}</p>
+            <p className="font-semibold text-slate-900">{currentPlan?.billingCycle || currentPlan?.billing_cycle || 'monthly'}</p>
           </div>
           <div>
             <p className="text-sm text-slate-500">Price</p>
-            <p className="font-semibold text-slate-900">${currentPlan?.price}/month</p>
+            <p className="font-semibold text-slate-900">
+              {formatCurrency(getMonthlyPrice(currentPlan))}
+              <span className="text-base font-medium text-slate-500">/month</span>
+            </p>
           </div>
           <div>
             <p className="text-sm text-slate-500">Next Billing</p>
-            <p className="font-semibold text-slate-900">{new Date(currentPlan?.nextBillingDate).toLocaleDateString()}</p>
+            <p className="font-semibold text-slate-900">{formatDate(currentPlan?.nextBillingDate)}</p>
           </div>
         </div>
         <div className="flex gap-3">
@@ -91,10 +188,10 @@ const SubscriptionPlan = ({ settings }) => {
               )}
               <h3 className="text-xl font-bold text-slate-900 capitalize">{plan.tier}</h3>
               <div className="mt-2">
-                <span className="text-3xl font-bold text-slate-900">${plan.priceMonthly}</span>
+                <span className="text-3xl font-bold text-slate-900">{formatCurrency(getMonthlyPrice(plan))}</span>
                 <span className="text-slate-500">/month</span>
               </div>
-              <p className="text-sm text-slate-500 mt-1">or ${plan.priceYearly}/year</p>
+              <p className="text-sm text-slate-500 mt-1">or {formatCurrency(getYearlyPrice(plan))}/year</p>
               <div className="mt-4 space-y-2">
                 {normalizeFeatures(plan.features).slice(0, 5).map((feature, idx) => (
                   <div key={idx} className="flex items-center gap-2 text-sm">
@@ -106,10 +203,31 @@ const SubscriptionPlan = ({ settings }) => {
               <Button
                 className="w-full mt-6"
                 variant={currentPlan?.tier === plan.tier ? 'outline' : 'primary'}
-                disabled={currentPlan?.tier === plan.tier}
+                disabled={currentPlan?.tier === plan.tier || upgradeMutation.isLoading || requestedPlanId === getPlanKey(plan)}
+                onClick={() => {
+                  if (currentPlan?.tier === plan.tier) return
+                  upgradeMutation.mutate({ plan })
+                }}
               >
-                {currentPlan?.tier === plan.tier ? 'Current Plan' : 'Upgrade'}
+                {currentPlan?.tier === plan.tier ? 'Current Plan' : requestedPlanId === getPlanKey(plan) ? 'Request Sent' : 'Upgrade'}
               </Button>
+              {requestedPlanId === getPlanKey(plan) && (
+                <div className="mt-3">
+                  <p className="text-sm text-emerald-600">Upgrade request is pending review by platform admin.</p>
+                  {requestedTicketId && (
+                    <div className="mt-2 flex gap-2">
+                      <Button
+                        className="w-full"
+                        variant="outline"
+                        disabled={cancelMutation.isLoading}
+                        onClick={() => cancelMutation.mutate({ ticketId: requestedTicketId })}
+                      >
+                        {cancelMutation.isLoading ? 'Cancelling...' : 'Cancel Upgrade'}
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           ))}
         </div>

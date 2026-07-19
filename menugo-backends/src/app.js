@@ -43,16 +43,26 @@ app.use(helmet());
 app.use(securityMiddleware);
 
 // CORS configuration
-// Allow explicit origins from CORS_ORIGIN, but also permit any localhost
-// origin (different dev ports like 5173/5174) to ease local development.
-const configuredOrigins = (process.env.CORS_ORIGIN && process.env.CORS_ORIGIN.split(',')) || [];
-const localhostRegex = /^https?:\/\/localhost(?::\d+)?$/;
+// Allow explicit origins from CORS_ORIGIN, but also permit localhost and loopback
+// origins (different dev ports like 5173/3001/3000) to ease local development.
+const configuredOrigins = (process.env.CORS_ORIGIN && process.env.CORS_ORIGIN.split(',').map((value) => value.trim()).filter(Boolean)) || [];
+const isLocalhostOrigin = (origin) => {
+  try {
+    const normalizedOrigin = origin.trim();
+    const { hostname } = new URL(normalizedOrigin);
+    const normalizedHostname = hostname.replace(/^\[|\]$/g, '');
+    return ['localhost', '127.0.0.1', '0.0.0.0', '::1', '::ffff:127.0.0.1'].includes(normalizedHostname);
+  } catch (e) {
+    return false;
+  }
+};
 app.use(cors({
   origin: (origin, cb) => {
     // Allow non-browser requests (e.g., curl) with no origin
     if (!origin) return cb(null, true);
-    if (configuredOrigins.includes(origin)) return cb(null, true);
-    if (localhostRegex.test(origin)) return cb(null, true);
+    const normalizedOrigin = origin.trim();
+    if (configuredOrigins.includes(normalizedOrigin)) return cb(null, true);
+    if (isLocalhostOrigin(normalizedOrigin)) return cb(null, true);
     return cb(new Error('Not allowed by CORS'));
   },
   credentials: true,

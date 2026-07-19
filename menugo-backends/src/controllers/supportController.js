@@ -3,6 +3,7 @@ const { SupportTicket, TicketMessage, User, Restaurant } = require('../models');
 const { ApiResponse } = require('../utils/apiResponse');
 const { ApiError } = require('../utils/apiError');
 const { catchAsync } = require('../utils/catchAsync');
+const { applyUpgradeRequestToRestaurant } = require('../utils/subscriptionUtils');
 const { Op } = require('sequelize');
 
 // Get all support tickets
@@ -138,6 +139,14 @@ const updateTicketStatus = catchAsync(async (req, res) => {
     status,
     resolved_at: status === 'resolved' ? new Date() : ticket.resolved_at,
   });
+
+  if (status === 'resolved') {
+    try {
+      await applyUpgradeRequestToRestaurant(ticket, Restaurant);
+    } catch (upstreamError) {
+      console.warn('Upgrade request resolution did not apply to restaurant:', upstreamError?.message || upstreamError);
+    }
+  }
 
   res.json(ApiResponse.success(ticket, 'Ticket status updated'));
 });

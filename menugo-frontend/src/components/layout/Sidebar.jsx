@@ -3,10 +3,12 @@ import { NavLink, Link } from 'react-router-dom'
 import Avatar from '../common/Avatar'
 import { getPendingVerifications } from '../../services/restaurantService'
 import { getSystemSettings } from '../../services/systemService'
+import { useAuthStore } from '../../store/authStore'
 
 const Sidebar = ({ menuItems = [], onLogout = () => {}, user }) => {
   const [pendingCount, setPendingCount] = useState(0)
   const [platformLogo, setPlatformLogo] = useState(null)
+  const authToken = useAuthStore((state) => state.token)
   const isPlatformAdmin = user?.role === 'platform_admin'
   const logoSrc = isPlatformAdmin
     ? (platformLogo || '/logo.svg')
@@ -19,7 +21,8 @@ const Sidebar = ({ menuItems = [], onLogout = () => {}, user }) => {
     let mounted = true
     const load = async () => {
       try {
-        if (user?.role === 'platform_admin') {
+        const sessionToken = typeof window !== 'undefined' ? window.sessionStorage.getItem('token') : null
+        if (user?.role === 'platform_admin' && (authToken || sessionToken)) {
           const list = await getPendingVerifications()
           if (mounted) setPendingCount(Array.isArray(list) ? list.length : (list?.length || 0))
         }
@@ -32,7 +35,7 @@ const Sidebar = ({ menuItems = [], onLogout = () => {}, user }) => {
 
     const id = setInterval(load, 30000)
     return () => { mounted = false; clearInterval(id) }
-  }, [user])
+  }, [user, authToken])
 
   useEffect(() => {
     let mounted = true

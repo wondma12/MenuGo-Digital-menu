@@ -239,25 +239,32 @@ const publicPathRules = [
   { path: '/restaurants/:id/tables/public', methods: ['get'], exact: true },
   { path: '/restaurants/:id/calls', methods: ['post'], exact: true },
   { path: '/reviews', methods: ['get'], prefix: true },
-  { path: '/orders', methods: ['post'], exact: true },
-  { path: '/public/contact', methods: ['post'], exact: true },
+  { path: '/orders', methods: ['post'], exact: true },  { path: '/coupons/public/restaurant/:restaurantId', methods: ['get'], exact: true },  { path: '/public/contact', methods: ['post'], exact: true },
 ]
 
 const normalizePath = (path) => String(path || '').replace(/\/+$|^\s+|\s+$/g, '')
 
 const pathPatternToRegExp = (path, exact = false) => {
-  const escaped = String(path || '').replace(/[.*+?^${}()|[\\]\\]/g, '\\$&')
-  const pattern = escaped.replace(/\\:([a-zA-Z0-9_]+)/g, '[^/]+')
+  const pattern = String(path || '')
+    .split(/(:[a-zA-Z0-9_]+)/g)
+    .map((segment) => {
+      if (segment.startsWith(':')) {
+        return '[^/]+'
+      }
+      return segment.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&')
+    })
+    .join('')
+
   return new RegExp(`^${pattern}${exact ? '$' : '(?:/|$)'}`)
 }
 
 const isPublicPath = (requestPath, method = 'get') => {
-let normalizedRequestPath = normalizePath(requestPath).replace(/\/$/, '')
-    if (normalizedRequestPath.startsWith('/api/')) {
-      normalizedRequestPath = normalizedRequestPath.replace(/^\/api\//, '/')
-    } else if (normalizedRequestPath === '/api') {
-      normalizedRequestPath = '/'
-    }
+  let normalizedRequestPath = normalizePath(requestPath).replace(/\/$/, '')
+  if (normalizedRequestPath.startsWith('/api/')) {
+    normalizedRequestPath = normalizedRequestPath.replace(/^\/api\//, '/')
+  } else if (normalizedRequestPath === '/api') {
+    normalizedRequestPath = '/'
+  }
   const normalizedMethod = String(method || 'get').toLowerCase()
   return publicPathRules.some((rule) => {
     const normalizedRulePath = normalizePath(rule.path).replace(/\/$/, '')
@@ -329,7 +336,16 @@ api.interceptors.request.use(
     // Only public when a table-specific query is provided. This protects
     // the admin order listing endpoint from being treated as unauthenticated.
     if (normalizedRequestPath.startsWith('/orders/restaurant') && method === 'get') {
-      const hasTableQuery = requestUrlObject && (requestUrlObject.searchParams.has('table') || requestUrlObject.searchParams.has('table_number'))
+      const hasTableQuery = Boolean(
+        requestUrlObject && (
+          requestUrlObject.searchParams.has('table') ||
+          requestUrlObject.searchParams.has('table_number')
+        )
+      ) || Boolean(
+        config.params && (
+          config.params.table || config.params.table_number
+        )
+      )
       isRequestPublic = Boolean(hasTableQuery)
     }
 
@@ -356,6 +372,18 @@ api.interceptors.request.use(
     // Special-case: /menu/restaurant prefix is for viewing (GET), but POST/PUT/DELETE/PATCH
     // are admin operations that must be authenticated. Only treat GET requests as public.
     if (isRequestPublic && requestPath.startsWith('/menu/restaurant') && method !== 'get') {
+      isRequestPublic = false
+    }
+
+    // Special-case: /restaurants/pending-verifications is a protected admin endpoint.
+    // Even though it matches the public /restaurants/:id pattern, it requires platform_admin authentication.
+    if (isRequestPublic && normalizedRequestPath === '/restaurants/pending-verifications' && method === 'get') {
+      isRequestPublic = false
+    }
+
+    // Special-case: /restaurants/admin/all is a protected admin endpoint.
+    // Even though it matches the public /restaurants/:id pattern, it requires platform_admin authentication.
+    if (isRequestPublic && normalizedRequestPath === '/restaurants/admin/all' && method === 'get') {
       isRequestPublic = false
     }
 

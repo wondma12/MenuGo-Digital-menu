@@ -13,6 +13,7 @@ const {
 const { ApiResponse } = require('../utils/apiResponse');
 const { ApiError } = require('../utils/apiError');
 const { catchAsync } = require('../utils/catchAsync');
+const { applyUpgradeRequestToRestaurant } = require('../utils/subscriptionUtils');
 const { Op } = require('sequelize');
 
 // Public homepage summary for marketing pages
@@ -550,6 +551,14 @@ const updateSupportTicket = catchAsync(async (req, res) => {
     resolution_notes: resolution_notes || ticket.resolution_notes,
     resolved_at: status === 'resolved' ? new Date() : ticket.resolved_at,
   });
+
+  if (status === 'resolved') {
+    try {
+      await applyUpgradeRequestToRestaurant(ticket, Restaurant);
+    } catch (upstreamError) {
+      console.warn('Upgrade request resolution did not apply to restaurant:', upstreamError?.message || upstreamError);
+    }
+  }
 
   res.json(ApiResponse.success(ticket, 'Ticket updated'));
 });

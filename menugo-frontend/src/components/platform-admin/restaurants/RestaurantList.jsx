@@ -97,11 +97,12 @@ const RestaurantList = () => {
       </AnimatePresence>
 
       {/* Stats Summary */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-5">
         {[
           { label: 'Total Restaurants', value: data?.total || 0, textClass: 'text-slate-900', borderClass: 'border-l-blue-500' },
           { label: 'Active', value: data?.active || 0, textClass: 'text-emerald-600', borderClass: 'border-l-emerald-500' },
           { label: 'Pending Verification', value: data?.pending || 0, textClass: 'text-amber-600', borderClass: 'border-l-amber-500' },
+          { label: 'Pending Upgrade Requests', value: data?.pendingUpgradeRequests || 0, textClass: 'text-cyan-600', borderClass: 'border-l-cyan-500' },
           { label: 'Premium', value: data?.premium || 0, textClass: 'text-violet-600', borderClass: 'border-l-violet-500' },
         ].map((stat, index) => (
           <motion.div

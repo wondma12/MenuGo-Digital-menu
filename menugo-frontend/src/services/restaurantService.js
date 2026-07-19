@@ -357,8 +357,20 @@ export const getRestaurantStats = async (id) => {
 }
 
 export const getPendingVerifications = async () => {
-  const response = await api.get('/restaurants/pending-verifications')
-  return response?.data?.data || response?.data || []
+  try {
+    // The axios interceptor handles token attachment automatically
+    // from either auth store or sessionStorage, so just make the request
+    const response = await api.get('/restaurants/pending-verifications')
+    return response?.data?.data || response?.data || []
+  } catch (error) {
+    // If auth is missing (401 or no token), return empty array instead of throwing
+    if (error.isAuthMissing || error.response?.status === 401) {
+      return []
+    }
+    // Log other errors but don't crash
+    console.warn('getPendingVerifications error:', error?.message)
+    return []
+  }
 }
 
 export const verifyRestaurant = async (id, status, notes) => {

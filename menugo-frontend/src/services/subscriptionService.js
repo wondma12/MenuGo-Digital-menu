@@ -35,34 +35,36 @@ export const getAvailablePlans = async () => getSubscriptionPlans()
 // Get current subscription for restaurant
 export const getCurrentSubscription = async (restaurantId) => {
   const resolvedRestaurantId = resolveRestaurantId(restaurantId)
+  const authRole = getAuthRole()
 
-  // If no restaurant context is available, return a safe default so the UI renders.
-  if (!resolvedRestaurantId) {
+  const endpoint = resolvedRestaurantId && authRole === 'platform_admin'
+    ? `/platform/subscriptions/restaurant/${resolvedRestaurantId}`
+    : '/platform/subscriptions/current'
+
+  try {
+    const response = await api.get(endpoint)
+    const payload = response?.data?.data || response?.data || {}
+
+    return {
+      ...payload,
+      tier: payload.tier || payload.subscription_tier || payload.current_subscription?.tier,
+      name: payload.name || payload.plan_name || payload.current_subscription?.name || payload.current_subscription?.tier,
+      billingCycle: payload.billingCycle || payload.billing_cycle || payload.subscription_tier || payload.current_subscription?.billing_cycle || payload.current_subscription?.tier,
+      price: payload.price || payload.price_monthly || payload.current_subscription?.price_monthly || payload.current_subscription?.price || 0,
+      nextBillingDate: payload.nextBillingDate || payload.next_billing_date || payload.subscription_end_date || payload.current_subscription?.next_billing_date || payload.current_subscription?.subscription_end_date || null,
+    }
+  } catch (error) {
     const restaurant = useAuthStore.getState()?.user?.restaurant || {}
     return {
       tier: restaurant.subscription_tier || restaurant.subscriptionTier || 'monthly',
-      name: restaurant.subscription_name || restaurant.subscriptionName || 'Monthly Plan',
+      name: restaurant.subscription_name || restaurant.subscriptionName || restaurant.subscription_tier || 'Monthly Plan',
       billingCycle: restaurant.billing_cycle || restaurant.billingCycle || 'monthly',
       price: restaurant.price_monthly || restaurant.priceMonthly || 0,
-      nextBillingDate: restaurant.next_billing_date || restaurant.nextBillingDate || null,
+      nextBillingDate: restaurant.next_billing_date || restaurant.nextBillingDate || restaurant.subscription_end_date || restaurant.subscriptionEndDate || null,
     }
   }
-
-  // Restaurant admins should not call the platform-admin-only subscription route.
-  if (getAuthRole() && getAuthRole() !== 'platform_admin') {
-    const restaurant = useAuthStore.getState()?.user?.restaurant || {}
-    return {
-      tier: restaurant.subscription_tier || restaurant.subscriptionTier || 'monthly',
-      name: restaurant.subscription_name || restaurant.subscriptionName || 'Monthly Plan',
-      billingCycle: restaurant.billing_cycle || restaurant.billingCycle || 'monthly',
-      price: restaurant.price_monthly || restaurant.priceMonthly || 0,
-      nextBillingDate: restaurant.next_billing_date || restaurant.nextBillingDate || null,
-    }
-  }
-
-  const response = await api.get(`/platform/subscriptions/restaurant/${resolvedRestaurantId}`)
-  return response?.data?.data || response?.data || {}
 }
+
 
 // Create subscription for restaurant
 export const createSubscription = async (data) => {

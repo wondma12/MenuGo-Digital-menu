@@ -240,15 +240,63 @@ const getSubscriptionById = async (req, res) => {
 const getRestaurantSubscription = async (req, res) => {
   try {
     const { restaurantId } = req.params;
-    
+
+    if (!restaurantId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Restaurant ID is required',
+        data: null,
+      });
+    }
+
+    const restaurant = await Restaurant.findByPk(restaurantId);
+    if (!restaurant) {
+      return res.status(404).json({
+        success: false,
+        message: 'Restaurant not found',
+        data: null,
+      });
+    }
+
+    let currentPlan = null;
+    try {
+      currentPlan = await SubscriptionPlan.findOne({ where: { tier: restaurant.subscription_tier } });
+    } catch (e) {
+      currentPlan = null;
+    }
+
+    const planName = currentPlan?.name || currentPlan?.tier || restaurant.subscription_tier;
+    const monthlyPrice = currentPlan?.price_monthly || 0;
+    const yearlyPrice = currentPlan?.price_yearly || 0;
+
     res.status(200).json({
       success: true,
       message: 'Restaurant subscription retrieved',
       data: {
-        current_subscription: null,
-        subscription_tier: 'monthly',
-        subscription_status: 'active',
-        subscription_end_date: null,
+        current_subscription: currentPlan
+          ? {
+              id: currentPlan.id,
+              name: planName,
+              tier: currentPlan.tier,
+              description: currentPlan.description,
+              price_monthly: monthlyPrice,
+              price_yearly: yearlyPrice,
+              features: currentPlan.features || [],
+              limits: currentPlan.limits || {},
+              stripe_price_monthly_id: currentPlan.stripe_price_monthly_id,
+              stripe_price_yearly_id: currentPlan.stripe_price_yearly_id,
+            }
+          : null,
+        subscription_tier: restaurant.subscription_tier || 'monthly',
+        subscription_status: restaurant.subscription_status || 'active',
+        subscription_start_date: restaurant.subscription_start_date || null,
+        subscription_end_date: restaurant.subscription_end_date || null,
+        next_billing_date: restaurant.subscription_end_date || null,
+        billing_cycle: restaurant.subscription_tier || 'monthly',
+        plan_name: planName,
+        name: planName,
+        price_monthly: monthlyPrice,
+        price_yearly: yearlyPrice,
       },
     });
   } catch (error) {

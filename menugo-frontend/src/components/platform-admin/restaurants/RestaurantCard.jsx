@@ -76,6 +76,8 @@ const RestaurantCard = ({ restaurant, onUpdate, variant = 'grid' }) => {
     yearly: { label: 'Yearly', color: 'bg-orange-50 text-orange-700 ring-1 ring-orange-100' },
   }[restaurant.subscription_tier] || { label: 'Monthly', color: 'bg-slate-100 text-slate-700 ring-1 ring-slate-200' }
 
+  const hasPendingUpgradeRequest = (restaurant.pending_upgrade_request_count || 0) > 0
+
   const StatusIcon = statusBadge.icon
   const logoSrc = restaurant.logo_url || restaurant.logo || restaurant.logoUrl || '/logo.svg'
   const coverStyle = restaurant.cover_image_url
@@ -203,10 +205,15 @@ const RestaurantCard = ({ restaurant, onUpdate, variant = 'grid' }) => {
               <h3 className="text-lg font-black tracking-tight text-slate-900 group-hover:text-orange-600">
                 {restaurant.name}
               </h3>
-              <div className="mt-1 flex items-center gap-2">
+              <div className="mt-1 flex flex-wrap items-center gap-2">
                 <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${tierBadge.color}`}>
                   {tierBadge.label}
                 </span>
+                {hasPendingUpgradeRequest && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-cyan-50 px-2.5 py-1 text-xs font-semibold text-cyan-700 ring-1 ring-cyan-100">
+                    Pending Upgrade
+                  </span>
+                )}
                 {shouldShowCountdown && timeLeft && (
                   <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${
                     timeLeft.expired

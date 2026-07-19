@@ -5,14 +5,15 @@ import Loading from './Loading'
 import { getEffectiveRole, getRoleHomePath } from '../../utils/authRouting'
 
 const ProtectedRoute = ({ allowedRoles = [] }) => {
-  const { isAuthenticated, user, isLoading } = useAuthStore()
+  const { isAuthenticated, user, isLoading, token } = useAuthStore()
+  const sessionToken = typeof window !== 'undefined' ? window.sessionStorage.getItem('token') : null
+  const hasToken = Boolean(token || sessionToken)
+
   if (isLoading) return <Loading fullScreen />
 
-  // If not authenticated, allow a short restoration window when sessionStorage
-  // contains tokens we expect the app to restore from (prevents flash-logout).
-  if (!isAuthenticated) {
+  // If a token is missing, do not allow access even if persisted auth state says true.
+  if (!isAuthenticated || !hasToken) {
     try {
-      const sessionToken = window?.sessionStorage?.getItem('token')
       const persisted = window?.sessionStorage?.getItem('auth-storage')
       if (sessionToken) return <Loading fullScreen />
       if (persisted) {

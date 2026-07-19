@@ -12,6 +12,7 @@ export default defineConfig(({ mode }) => {
   const apiUrl = env.VITE_API_URL || env.API_URL || 'http://localhost:5003'
   const normalizedApiUrl = normalizeProxyUrl(apiUrl)
   const wsUrl = env.VITE_WS_URL || `${normalizedApiUrl.replace(/^http/, 'ws')}`
+  const devPort = Number.parseInt(env.VITE_PORT || env.PORT || '3002', 10)
 
   return {
     plugins: [react()],
@@ -31,9 +32,10 @@ export default defineConfig(({ mode }) => {
       },
     },
     server: {
-      port: 5173,
-      host: true,
-      open: true,
+      port: devPort,
+      strictPort: false,
+      host: '127.0.0.1',
+      open: false,
       proxy: {
         '/api': {
           target: normalizedApiUrl,
@@ -84,7 +86,7 @@ export default defineConfig(({ mode }) => {
     },
     preview: {
       port: 4173,
-      host: true,
+      host: '127.0.0.1',
     },
     optimizeDeps: {
       include: ['react', 'react-dom', 'react-router-dom', 'axios', 'react-query', 'zustand'],
