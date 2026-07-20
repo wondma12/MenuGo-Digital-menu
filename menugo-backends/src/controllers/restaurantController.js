@@ -31,6 +31,8 @@ const { generateQRCode, generateQRCodeBase64 } = require('../utils/generateQR');
 const { uploadToCloudinary } = require('../config/cloudinary');
 const { applyUpgradeRequestToRestaurant } = require('../utils/subscriptionUtils');
 const { Op } = require('sequelize');
+const { logger } = require('../utils/logger');
+const { sendRestaurantActivatedEmail } = require('../config/email');
 
 const normalizeSettingsValue = (value) => {
   if (!value) return {};
@@ -371,8 +373,12 @@ const createRestaurant = catchAsync(async (req, res) => {
       });
       
       // Send welcome email with temporary password
-      // eslint-disable-next-line no-undef
-      await sendWelcomeEmail(owner_email, owner_name, tempPassword);
+      try {
+        await sendWelcomeEmail(owner_email, owner_name, tempPassword);
+        logger.info(`Welcome email sent to restaurant owner ${owner_email}`);
+      } catch (emailError) {
+        logger.error(`Failed to send welcome email to restaurant owner ${owner_email}:`, emailError && emailError.message ? emailError.message : emailError);
+      }
     }
     
     ownerId = owner.id;
@@ -1071,6 +1077,13 @@ const verifyRestaurant = catchAsync(async (req, res) => {
         const owner = await User.findByPk(restaurant.owner_id);
         if (owner) {
           await owner.update({ is_active: true, is_verified: true });
+        }
+
+        const ownerEmail = owner?.email || restaurant.email || null;
+        const ownerName = owner?.full_name || restaurant.name || 'Restaurant Owner';
+        if (ownerEmail) {
+          await sendRestaurantActivatedEmail(ownerEmail, ownerName, restaurant.name || 'your restaurant');
+          logger.info(`Activation email sent to ${ownerEmail} for restaurant ${restaurant.id}`);
         }
       }
     } catch (ownerErr) {

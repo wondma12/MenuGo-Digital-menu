@@ -59,8 +59,8 @@ export default function PublicHeader() {
                     )}
                   </Link>
 
-          {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center gap-8">
+          {/* Navigation */}
+          <nav className="hidden md:flex items-center gap-6 lg:gap-8 whitespace-nowrap">
             {navLinks.map((link) => (
               <Link
                 key={link.path}
@@ -84,16 +84,16 @@ export default function PublicHeader() {
           </nav>
 
           {/* Desktop CTA Buttons */}
-          <div className="hidden md:flex items-center gap-3">
+          <div className="hidden md:flex items-center gap-2 lg:gap-3">
             <Link
               to="/login"
-              className="rounded-full px-5 py-2 text-sm font-semibold text-slate-700 transition-colors hover:text-orange-600"
+              className="rounded-full px-4 py-2 text-sm font-semibold text-slate-700 transition-colors hover:text-orange-600"
             >
               Sign In
             </Link>
             <Link
-              to="/contact"
-              className="rounded-full bg-orange-600 px-5 py-2 text-sm font-semibold text-white shadow-md transition-all hover:-translate-y-0.5 hover:bg-orange-700 hover:shadow-lg"
+              to="/register"
+              className="rounded-full bg-orange-600 px-4 py-2 text-sm font-semibold text-white shadow-md transition-all hover:-translate-y-0.5 hover:bg-orange-700 hover:shadow-lg"
             >
               Get Started
             </Link>
@@ -124,13 +124,13 @@ export default function PublicHeader() {
             transition={{ duration: 0.3 }}
             className="border-t border-slate-100 bg-white/95 backdrop-blur-md md:hidden"
           >
-            <div className="flex flex-col space-y-3 px-4 py-6">
+            <div className="flex flex-nowrap items-center gap-2 overflow-x-auto px-4 py-6 whitespace-nowrap">
               {navLinks.map((link) => (
                 <Link
                   key={link.path}
                   to={link.path}
                   onClick={() => setMobileMenuOpen(false)}
-                  className={`rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
+                  className={`flex-shrink-0 rounded-full px-3 py-2 text-sm font-semibold transition-colors ${
                     isActive(link.path)
                       ? 'bg-orange-50 text-orange-600'
                       : 'text-slate-600 hover:bg-slate-50 hover:text-orange-600'
@@ -139,18 +139,18 @@ export default function PublicHeader() {
                   {link.label}
                 </Link>
               ))}
-              <div className="flex flex-col gap-2 pt-4">
+              <div className="flex flex-shrink-0 items-center gap-2 pt-0">
                 <Link
                   to="/login"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="rounded-full border border-slate-200 px-4 py-2 text-center text-sm font-semibold text-slate-700 transition-colors hover:border-orange-300 hover:text-orange-600"
+                  className="rounded-full border border-slate-200 px-3 py-2 text-center text-sm font-semibold text-slate-700 transition-colors hover:border-orange-300 hover:text-orange-600"
                 >
                   Sign In
                 </Link>
                 <Link
-                  to="/contact"
+                  to="/register"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="rounded-full bg-orange-600 px-4 py-2 text-center text-sm font-semibold text-white transition-colors hover:bg-orange-700"
+                  className="rounded-full bg-orange-600 px-3 py-2 text-center text-sm font-semibold text-white transition-colors hover:bg-orange-700"
                 >
                   Get Started
                 </Link>

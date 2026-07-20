@@ -67,12 +67,19 @@ export const forgotPassword = async (email) => {
 
 export const resetPassword = async (token, password, confirmPassword = password) => {
   try {
-    const response = await api.post('/auth/reset-password', {
-      token,
+    const normalizedToken = String(token || '').trim()
+    const payload = {
+      token: normalizedToken,
       password,
       newPassword: password,
       confirmPassword,
-    })
+    }
+
+    if (!normalizedToken) {
+      throw new Error('Reset token is required')
+    }
+
+    const response = await api.post('/auth/reset-password', payload)
     return response.data
   } catch (error) {
     console.error('Reset Password Error:', error.response?.data || error.message)

@@ -3,11 +3,18 @@ import { useLocation, useNavigate, Link } from 'react-router-dom'
 import Button from '../common/Button'
 import Alert from '../common/Alert'
 import { resendVerificationEmail, verifyEmail } from '../../services/authService'
+import { useAuthStore } from '../../store/authStore'
 
 const VerifyEmail = () => {
   const location = useLocation()
   const navigate = useNavigate()
-  const email = location.state?.email || ''
+  const authUser = useAuthStore((state) => state.user)
+  const [email, setEmail] = useState(() => {
+    const stateEmail = location.state?.email || ''
+    const queryEmail = new URLSearchParams(location.search).get('email') || ''
+    const storedEmail = typeof window !== 'undefined' ? window.localStorage.getItem('pendingVerificationEmail') : ''
+    return stateEmail || queryEmail || storedEmail || authUser?.email || ''
+  })
   const [isLoading, setIsLoading] = useState(false)
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState(null)
@@ -15,11 +22,22 @@ const VerifyEmail = () => {
 
   // Check if token exists in URL for verification
   useEffect(() => {
+    const stateEmail = location.state?.email || ''
+    const queryEmail = new URLSearchParams(location.search).get('email') || ''
+    const storedEmail = typeof window !== 'undefined' ? window.localStorage.getItem('pendingVerificationEmail') : ''
+    const resolvedEmail = stateEmail || queryEmail || storedEmail || authUser?.email || ''
+    if (resolvedEmail) {
+      setEmail(resolvedEmail)
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem('pendingVerificationEmail', resolvedEmail)
+      }
+    }
+
     const token = new URLSearchParams(location.search).get('token')
     if (token) {
       handleEmailVerification(token)
     }
-  }, [location])
+  }, [location, authUser])
 
   const handleEmailVerification = async (token) => {
     setIsLoading(true)
@@ -37,13 +55,18 @@ const VerifyEmail = () => {
   }
 
   const handleResendEmail = async () => {
-    if (!email) {
+    const resolvedEmail = email || (typeof window !== 'undefined' ? window.localStorage.getItem('pendingVerificationEmail') : '') || authUser?.email || ''
+    if (!resolvedEmail) {
       setError('No email address provided')
       return
     }
+    setEmail(resolvedEmail)
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem('pendingVerificationEmail', resolvedEmail)
+    }
     setIsLoading(true)
     try {
-      await resendVerificationEmail(email)
+      await resendVerificationEmail(resolvedEmail)
       setResendSuccess(true)
       setTimeout(() => setResendSuccess(false), 5000)
     } catch (err) {

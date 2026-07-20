@@ -34,13 +34,18 @@ const ResetPassword = () => {
     setIsLoading(true)
     setError(null)
     try {
-      await resetPassword(token, data.password, data.confirmPassword)
+      const resolvedToken = String(token || '').trim()
+      if (!resolvedToken) {
+        throw new Error('Missing reset token')
+      }
+
+      await resetPassword(resolvedToken, data.password, data.confirmPassword)
       setSuccess(true)
       setTimeout(() => {
         navigate('/login')
       }, 3000)
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to reset password')
+      setError(err.response?.data?.message || err.message || 'Failed to reset password')
     } finally {
       setIsLoading(false)
     }

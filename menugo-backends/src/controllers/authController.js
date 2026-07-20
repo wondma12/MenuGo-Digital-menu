@@ -8,6 +8,7 @@ const { sendWelcomeEmail, sendPasswordResetEmail } = require('../config/email');
 const { ApiResponse } = require('../utils/apiResponse');
 const { ApiError } = require('../utils/apiError');
 const { catchAsync } = require('../utils/catchAsync');
+const { getPasswordResetExpiryMs, getEmailVerificationExpiryMs } = require('../utils/tokenExpiry');
 
 const normalizeEmailInput = (email) => String(email || '').trim().toLowerCase();
 const isAuthLoginDebugEnabled = String(process.env.AUTH_LOGIN_DEBUG || '').toLowerCase() === 'true';
@@ -217,11 +218,11 @@ const register = catchAsync(async (req, res) => {
   const verificationToken = crypto.randomBytes(32).toString('hex');
   await user.update({
     email_verification_token: verificationToken,
-    email_verification_expires: new Date(Date.now() + 24 * 60 * 60 * 1000),
+    email_verification_expires: new Date(Date.now() + getEmailVerificationExpiryMs()),
   });
   // Send welcome email (do not fail registration if email sending errors)
   try {
-    await sendWelcomeEmail(normalizedEmail, full_name);
+    await sendWelcomeEmail(normalizedEmail, full_name, verificationToken);
   } catch (emailErr) {
     console.error('sendWelcomeEmail error (non-fatal):', emailErr && emailErr.message ? emailErr.message : emailErr);
   }
@@ -475,7 +476,7 @@ const forgotPassword = catchAsync(async (req, res) => {
   const resetToken = crypto.randomBytes(32).toString('hex');
   await user.update({
     password_reset_token: resetToken,
-    password_reset_expires: new Date(Date.now() + 1 * 60 * 60 * 1000),
+    password_reset_expires: new Date(Date.now() + getPasswordResetExpiryMs()),
   });
 
   try {

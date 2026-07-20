@@ -37,6 +37,44 @@ let callbackPool = null;
 let usingSqlite = false;
 let getPromiseConnection = null;
 
+const patchSequelizeShutdown = (sequelizeInstance) => {
+  if (!sequelizeInstance || !sequelizeInstance.connectionManager) {
+    return;
+  }
+
+  const connectionManager = sequelizeInstance.connectionManager;
+  if (connectionManager.__menuGoSafeDisconnectPatched) {
+    return;
+  }
+
+  const originalDisconnect = connectionManager.disconnect && connectionManager.disconnect.bind(connectionManager);
+  connectionManager.disconnect = function disconnectSafe(connection) {
+    try {
+      if (!connection || !connection._protocol || typeof connection._protocol !== 'object') {
+        return Promise.resolve();
+      }
+
+      if (connection._protocol._ended) {
+        return Promise.resolve();
+      }
+
+      if (typeof connection.end !== 'function') {
+        return Promise.resolve();
+      }
+
+      if (typeof originalDisconnect === 'function') {
+        return originalDisconnect(connection);
+      }
+
+      return Promise.resolve();
+    } catch (error) {
+      return Promise.resolve();
+    }
+  };
+
+  connectionManager.__menuGoSafeDisconnectPatched = true;
+};
+
 if (useSqliteFallback) {
   // ensure tmp directory exists
   const storageDir = path.join(__dirname, '..', '..', 'tmp');
@@ -183,6 +221,8 @@ if (useSqliteFallback) {
     return Promise.resolve(true);
   };
 }
+
+patchSequelizeShutdown(sequelize);
 
 // Export both Sequelize instance and a minimal db-like object with execute/getConnection/query
 if (usingSqlite) {

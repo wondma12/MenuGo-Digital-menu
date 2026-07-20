@@ -20,7 +20,7 @@
       background-color: #ffffff;
     }
     .header {
-      background-color: #3b82f6;
+      background-color: hsl(9, 91%, 60%);
       padding: 30px;
       text-align: center;
       border-radius: 8px 8px 0 0;
@@ -45,14 +45,14 @@
     .button {
       display: inline-block;
       padding: 12px 24px;
-      background-color: #3b82f6;
+      background-color: #f6da3b;
       color: #ffffff;
       text-decoration: none;
       border-radius: 6px;
       margin-top: 20px;
     }
     .button:hover {
-      background-color: #2563eb;
+      background-color: #eb7b25;
     }
     .feature-box {
       background-color: #f0f9ff;
@@ -79,7 +79,7 @@
     <div class="content">
       <h2>Hello {{name}},</h2>
       
-      <p>Thank you for choosing MenuGo! We're excited to have you on board and help you transform your restaurant's digital presence.</p>
+      <p>Thank you for choosing MenuGo! We're excited to help your restaurant grow with a modern digital experience.</p>
       
       <div class="feature-box">
         <h3>✨ What you can do with MenuGo:</h3>
@@ -92,16 +92,19 @@
         </ul>
       </div>
       
-      <p>To get started, please verify your email address by clicking the button below:</p>
-      
+      {{#if verifyUrl}}
+      <p>Your email verification is still required before your account can be fully activated.</p>
       <div style="text-align: center;">
         <a href="{{verifyUrl}}" class="button">Verify Email Address</a>
       </div>
-      
       <p>Or copy and paste this link into your browser:</p>
       <p style="background-color: #f3f4f6; padding: 10px; border-radius: 4px; word-break: break-all;">
         {{verifyUrl}}
       </p>
+      {{else}}
+      <p>Your restaurant registration is currently being reviewed by our team. Once approved, you'll be able to manage your menu, orders, staff, and customer experience from your dashboard.</p>
+      <p>We will contact you as soon as your restaurant account is verified and ready to go live.</p>
+      {{/if}}
       
       <hr>
       

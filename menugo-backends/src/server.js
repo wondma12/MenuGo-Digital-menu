@@ -523,15 +523,25 @@ const startServer = async () => {
 const gracefulShutdown = () => {
   if (isShuttingDown) {
     return;
-
   }
   isShuttingDown = true;
 
   logger.info('Received shutdown signal, closing server...');
 
-  server.close(async () => {
-    logger.info('HTTP server closed');
+  const closeServer = () => {
+    if (server && typeof server.close === 'function') {
+      server.close(() => {
+        logger.info('HTTP server closed');
+        void shutdownDatabaseAndExit();
+      });
+      return;
+    }
 
+    logger.info('HTTP server was not initialized; skipping server close');
+    void shutdownDatabaseAndExit();
+  };
+
+  const shutdownDatabaseAndExit = async () => {
     try {
       if (sequelize && typeof sequelize.close === 'function') {
         try {
@@ -552,7 +562,9 @@ const gracefulShutdown = () => {
         logger.warn('Process exit warning:', processExitError && processExitError.message ? processExitError.message : processExitError);
       }
     }
-  });
+  };
+
+  closeServer();
 };
 
 process.on('SIGTERM', gracefulShutdown);

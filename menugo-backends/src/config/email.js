@@ -41,17 +41,41 @@ const sendEmail = async (to, subject, template, data) => {
   }
 };
 
-const sendWelcomeEmail = async (email, name) => {
-  return sendEmail(email, 'Welcome to MenuGo!', 'welcome', { name });
+const sendWelcomeEmail = async (email, name, verificationToken = null) => {
+  const clientUrl = process.env.CLIENT_URL || 'http://localhost:3000';
+  const verifyUrl = verificationToken
+    ? `${clientUrl}/verify-email/${verificationToken}`
+    : null;
+
+  return module.exports.sendEmail(email, 'Welcome to MenuGo!', 'welcome', {
+    name,
+    verifyUrl,
+    supportUrl: `${clientUrl}/contact`,
+    unsubscribeUrl: `${clientUrl}/unsubscribe`,
+    privacyUrl: `${clientUrl}/privacy`,
+    termsUrl: `${clientUrl}/terms`,
+  });
 };
 
 const sendPasswordResetEmail = async (email, name, resetToken) => {
   const resetUrl = `${process.env.CLIENT_URL}/reset-password/${resetToken}`;
-  return sendEmail(email, 'Reset Your Password', 'resetPassword', { name, resetUrl });
+  return module.exports.sendEmail(email, 'Reset Your Password', 'resetPassword', { name, resetUrl });
+};
+
+const sendRestaurantActivatedEmail = async (email, name, restaurantName, loginUrl = null) => {
+  const clientUrl = process.env.CLIENT_URL || 'http://localhost:3002';
+  const targetLoginUrl = loginUrl || `${clientUrl}/login`;
+
+  return module.exports.sendEmail(email, 'Your account has been activated', 'restaurantActivated', {
+    name,
+    restaurantName,
+    loginUrl: targetLoginUrl,
+    supportUrl: `${clientUrl}/contact`,
+  });
 };
 
 const sendOrderConfirmationEmail = async (email, name, orderNumber, orderItems, total) => {
-  return sendEmail(email, `Order Confirmation #${orderNumber}`, 'orderConfirmation', {
+  return module.exports.sendEmail(email, `Order Confirmation #${orderNumber}`, 'orderConfirmation', {
     name,
     orderNumber,
     orderItems,
@@ -63,5 +87,6 @@ module.exports = {
   sendEmail,
   sendWelcomeEmail,
   sendPasswordResetEmail,
+  sendRestaurantActivatedEmail,
   sendOrderConfirmationEmail,
 };
