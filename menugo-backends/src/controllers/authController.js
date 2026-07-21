@@ -9,6 +9,7 @@ const { ApiResponse } = require('../utils/apiResponse');
 const { ApiError } = require('../utils/apiError');
 const { catchAsync } = require('../utils/catchAsync');
 const { getPasswordResetExpiryMs, getEmailVerificationExpiryMs } = require('../utils/tokenExpiry');
+const { getClientIp, getUserAgent } = require('../utils/requestInfo');
 
 const normalizeEmailInput = (email) => String(email || '').trim().toLowerCase();
 const isAuthLoginDebugEnabled = String(process.env.AUTH_LOGIN_DEBUG || '').toLowerCase() === 'true';
@@ -248,6 +249,8 @@ const register = catchAsync(async (req, res) => {
     user_id: user.id,
     token,
     refresh_token: refreshToken,
+    ip_address: getClientIp(req),
+    user_agent: getUserAgent(req),
     expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
   });
 
@@ -374,6 +377,8 @@ const login = catchAsync(async (req, res) => {
       user_id: user.id,
       token,
       refresh_token: refreshToken,
+      ip_address: getClientIp(req),
+      user_agent: getUserAgent(req),
       expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
     });
   } catch (sessionErr) {
@@ -443,6 +448,8 @@ const refreshToken = catchAsync(async (req, res) => {
     user_id: session.user_owner.id,
     token,
     refresh_token: refreshToken,
+    ip_address: getClientIp(req),
+    user_agent: getUserAgent(req),
     expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
   });
 

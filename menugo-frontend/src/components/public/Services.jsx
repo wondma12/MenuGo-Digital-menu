@@ -421,8 +421,8 @@ const Services = () => {
       </section>
 
       {/* Extended Capabilities */}
-      <section className="bg-slate-50 py-14 sm:py-16">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+     {/* <section className="bg-slate-50 py-14 sm:py-16">
+        {/* <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="mx-auto mb-8 max-w-3xl text-center">
             <h2 className="text-2xl font-black tracking-tight text-slate-900 md:text-3xl">Advanced capabilities</h2>
             <p className="mt-2 text-sm text-slate-600">Powerful features to elevate your guest experience.</p>
@@ -446,8 +446,9 @@ const Services = () => {
               </motion.div>
             ))}
           </div>
-        </div>
-      </section>
+        </div> */}
+      {/* </section>  */}
+    
 
       {/* Integrations */}
       {/* <section className="bg-white py-14 sm:py-16">
@@ -475,8 +476,8 @@ const Services = () => {
       </section> */}
 
       {/* Testimonials */}
-      <section className="bg-orange-50 py-14 sm:py-16">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      {/* <section className="bg-orange-50 py-14 sm:py-16">
+        {/* <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="mx-auto mb-10 max-w-3xl text-center">
             <h2 className="text-2xl font-black tracking-tight text-slate-900 md:text-3xl">Trusted by restaurant owners</h2>
             <p className="mt-2 text-sm text-slate-700">Real results from real teams.</p>
@@ -511,8 +512,8 @@ const Services = () => {
               </motion.div>
             ))}
           </div>
-        </div>
-      </section>
+        </div> */}
+      {/* </section> */} 
 
       {/* Pricing */}
       <section id="pricing" className="bg-white py-14 sm:py-16">

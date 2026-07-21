@@ -10,6 +10,7 @@ try {
 const { generateToken, generateRefreshToken } = require('../services/tokenService');
 const { UserSession } = require('../models');
 const { ApiError } = require('../utils/apiError');
+const { getClientIp, getUserAgent } = require('../utils/requestInfo');
 
 const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
 
@@ -63,6 +64,8 @@ exports.googleCallback = (req, res, next) => {
         user_id: user.id,
         token,
         refresh_token: refreshToken,
+        ip_address: getClientIp(req),
+        user_agent: getUserAgent(req),
         expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
       });
 
@@ -104,6 +107,8 @@ exports.facebookCallback = (req, res, next) => {
         user_id: user.id,
         token,
         refresh_token: refreshToken,
+        ip_address: getClientIp(req),
+        user_agent: getUserAgent(req),
         expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
       });
 

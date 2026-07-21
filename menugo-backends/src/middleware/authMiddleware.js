@@ -3,6 +3,7 @@ const { User, UserSession, RestaurantStaff } = require('../models');
 const { ApiError } = require('../utils/apiError');
 const { logger } = require('../utils/logger');
 const { restrictTo } = require('./roleMiddleware');
+const { getClientIp } = require('../utils/requestInfo');
 
 // Protect routes - verify JWT token
 const protect = async (req, res, next) => {
@@ -58,6 +59,13 @@ const protect = async (req, res, next) => {
       req.userId = session.user_owner.id;
       req.userRole = session.user_owner.role;
       req.sessionId = session.id;
+      if (!session.ip_address) {
+        try {
+          await session.update({ ip_address: getClientIp(req), user_agent: req.get?.('user-agent') || req.headers?.['user-agent'] || session.user_agent || null });
+        } catch (e) {
+          // ignore backfill failures
+        }
+      }
       return next();
     }
 
@@ -80,6 +88,13 @@ const protect = async (req, res, next) => {
         req.userId = fallback.user_owner.id;
         req.userRole = fallback.user_owner.role;
         req.sessionId = fallback.id;
+        if (!fallback.ip_address) {
+          try {
+            await fallback.update({ ip_address: getClientIp(req), user_agent: req.get?.('user-agent') || req.headers?.['user-agent'] || fallback.user_agent || null });
+          } catch (e) {
+            // ignore backfill failures
+          }
+        }
         return next();
       }
 
@@ -99,6 +114,13 @@ const protect = async (req, res, next) => {
       req.userId = sessionAfter.user_owner.id;
       req.userRole = sessionAfter.user_owner.role;
       req.sessionId = sessionAfter.id;
+      if (!sessionAfter.ip_address) {
+        try {
+          await sessionAfter.update({ ip_address: getClientIp(req), user_agent: req.get?.('user-agent') || req.headers?.['user-agent'] || sessionAfter.user_agent || null });
+        } catch (e) {
+          // ignore backfill failures
+        }
+      }
       return next();
     }
 
