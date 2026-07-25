@@ -1,11 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-    FaEnvelope, FaCheck, FaTrash, FaReply, FaEye, 
-    FaUser, FaCalendarAlt, FaMailBulk, FaInbox,
-    FaSpinner, FaCheckCircle, FaReplyAll, FaSearch,
-    FaFilter, FaTimes, FaArrowLeft, FaArrowRight
-} from 'react-icons/fa';
+import {
+    Mail as FaEnvelope,
+    Check as FaCheck,
+    Trash2 as FaTrash,
+    Reply as FaReply,
+    Eye as FaEye,
+    User as FaUser,
+    CalendarDays as FaCalendarAlt,
+    Mail as FaMailBulk,
+    Inbox as FaInbox,
+    Loader2 as FaSpinner,
+    CheckCircle2 as FaCheckCircle,
+    ReplyAll as FaReplyAll,
+    Search as FaSearch,
+    Filter as FaFilter,
+    X as FaTimes,
+    ArrowLeft as FaArrowLeft,
+    ArrowRight as FaArrowRight,
+} from 'lucide-react';
 import toast from 'react-hot-toast';
 import contactService from '../../../services/contactService';
 
