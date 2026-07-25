@@ -40,14 +40,18 @@ const WaiterLayout = () => {
     return () => window.removeEventListener('resize', handleResize)
   }, [])
 
+  const resolveRestaurantId = (user) => {
+    return user?.restaurant_id || user?.restaurant?.id || user?.restaurantId || user?.staff?.restaurant_id || null
+  }
+
   useEffect(() => {
     let mounted = true
 
     const loadRestaurantBrand = async () => {
       const fallbackName = user?.restaurant?.name || user?.staff?.restaurant_name || 'Restaurant'
-      const fallbackLogo = user?.restaurant?.logo_url || user?.restaurant?.logo || null
+      const fallbackLogo = user?.restaurant?.logo_url || user?.restaurant?.logo || user?.logo || null
 
-      const restaurantId = user?.restaurant_id || user?.restaurant?.id || user?.staff?.restaurant_id
+      const restaurantId = resolveRestaurantId(user)
       if (!restaurantId) {
         if (mounted) {
           setRestaurantBrand({ name: fallbackName, logo: fallbackLogo })

@@ -238,8 +238,13 @@ const getRestaurantById = catchAsync(async (req, res) => {
     // Primary key lookup
     restaurant = await Restaurant.findByPk(paramId, { include: includes });
   } else {
-    // Fallback: allow lookup by qr_code_identifier (slug) for customer-facing identifiers
-    restaurant = await Restaurant.findOne({ where: { qr_code_identifier: paramId, deleted_at: null }, include: includes });
+    // Attempt primary key lookup before falling back to slug-based identifiers.
+    // Some restaurants are stored with numeric or non-UUID primary keys.
+    restaurant = await Restaurant.findByPk(paramId, { include: includes });
+    if (!restaurant) {
+      restaurant = await Restaurant.findOne({ where: { qr_code_identifier: paramId, deleted_at: null }, include: includes });
+    }
+
     // If not found, attempt a more forgiving match: normalize name -> slug and compare
     if (!restaurant) {
       const candidates = await Restaurant.findAll({ where: { deleted_at: null }, include: includes });

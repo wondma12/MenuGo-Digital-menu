@@ -25,7 +25,7 @@ const initialApiBaseURL = EXPLICIT_API_ROOT_URL || NORMALIZED_API_ROOT_URL
 
 // Fallback ports to try when the configured API is unreachable during local development.
 // Include common local backend ports used by this repo, then other candidates.
-const FALLBACK_PORTS = Array.from({ length: 11 }, (_, i) => 5000 + i)
+const FALLBACK_PORTS = Array.from({ length: 21 }, (_, i) => 5000 + i)
 
 const buildApiCandidates = () => {
   const seen = new Set()
@@ -56,9 +56,9 @@ const buildApiCandidates = () => {
 const getHealthUrl = (baseUrl) => {
   try {
     const base = String(baseUrl || '').replace(/\/+$|\s+$/g, '')
-    return new URL('/health', base).toString()
+    return new URL('/api/health', base).toString()
   } catch (e) {
-    return `${String(baseUrl || '').replace(/\/$/, '')}/health`
+    return `${String(baseUrl || '').replace(/\/$/, '')}/api/health`
   }
 }
 
@@ -156,9 +156,9 @@ const attemptFallback = async (originalRequest) => {
     ? normalizeApiRootUrl(api.defaults.baseURL).replace(/\/$/, '')
     : NORMALIZED_API_ROOT_URL.replace(/\/$/, '')
 
-  // Probe a small set of candidates in parallel for fallback attempts.
-  const MAX_PROBES = Math.min(candidates.length, 6)
-  const probeCandidates = candidates.slice(0, MAX_PROBES).map((candidate) => {
+  // Probe every candidate so fallback ports beyond the first few entries are
+  // still discovered when the backend has moved because of port collisions.
+  const probeCandidates = candidates.map((candidate) => {
     const base = normalizeApiRootUrl(candidate).replace(/\/$/, '')
     if (base === currentBase) return Promise.reject(base)
     const healthUrl = getHealthUrl(base)

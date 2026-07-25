@@ -13,6 +13,12 @@ const normalizeTableNumber = (value) => String(value ?? '').trim();
 
 const stripTableNumber = (value) => normalizeTableNumber(value).replace(/[^0-9a-zA-Z]/g, '').toLowerCase();
 
+const normalizeRestaurantIdentifier = (value) => String(value ?? '')
+  .trim()
+  .toLowerCase()
+  .replace(/\s+/g, '-')
+  .replace(/[^a-z0-9-]/g, '');
+
 const resolveTableByNumber = async (restaurantId, tableNumber) => {
   const normalized = normalizeTableNumber(tableNumber);
   if (!normalized) return null;
@@ -58,6 +64,18 @@ const createOrder = catchAsync(async (req, res) => {
   if (!restaurant) {
     restaurant = await Restaurant.findByPk(restaurant_id);
     if (restaurant && !restaurant.is_active) restaurant = null;
+  }
+
+  if (!restaurant && restaurant_id) {
+    const candidates = await Restaurant.findAll({
+      where: { is_active: true, deleted_at: null },
+      attributes: ['id', 'name', 'qr_code_identifier', 'is_active'],
+    });
+    const requestedIdentifier = normalizeRestaurantIdentifier(restaurant_id);
+    restaurant = candidates.find((candidate) => (
+      normalizeRestaurantIdentifier(candidate.qr_code_identifier) === requestedIdentifier ||
+      normalizeRestaurantIdentifier(candidate.name) === requestedIdentifier
+    )) || null;
   }
 
   if (!restaurant) {
@@ -740,7 +758,7 @@ const getOrderById = catchAsync(async (req, res) => {
           { model: MenuItem, as: 'menu_item' },
         ],
       },
-      { model: OrderStatusHistory, as: 'status_history' },
+      { model: OrderStatusHistory, as: 'order_status_history' },
       { model: Waiter, as: 'order_waiter', include: [{ model: User, as: 'user' }] },
     ],
   });
@@ -789,7 +807,7 @@ const getOrderById = catchAsync(async (req, res) => {
     createdAt: o.created_at,
     items,
     itemCount: items.length,
-    statusHistory: o.status_history || [],
+    statusHistory: o.order_status_history || [],
     waiter: o.order_waiter ? (o.order_waiter.user || {}) : null,
     raw: o,
   };
@@ -1163,6 +1181,7 @@ const getWaiterOrders = catchAsync(async (req, res) => {
       orderNumber: o.order_number,
       customerName: o.customer_name,
       tableNumber: o.table_number,
+      tableSection: o.order_table?.section || null,
       totalAmount: parseFloat(o.total_amount || 0),
       subtotal: parseFloat(o.subtotal || 0),
       taxAmount: parseFloat(o.tax_amount || 0),

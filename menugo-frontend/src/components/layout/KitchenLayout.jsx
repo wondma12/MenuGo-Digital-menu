@@ -23,11 +23,16 @@ const KitchenLayout = () => {
     return () => clearInterval(timer);
   }, []);
 
+  const resolveRestaurantId = (user) => {
+    return user?.restaurant_id || user?.restaurant?.id || user?.restaurantId || user?.staff?.restaurant_id || null
+  }
+
   useEffect(() => {
-    if (socket && user?.restaurantId) {
-      socket.emit('join-kitchen', user.restaurantId);
+    const restaurantId = resolveRestaurantId(user)
+    if (socket && restaurantId) {
+      socket.emit('join-kitchen', restaurantId);
       return () => {
-        socket.emit('leave-kitchen', user.restaurantId);
+        socket.emit('leave-kitchen', restaurantId);
       };
     }
   }, [socket, user]);
@@ -39,11 +44,12 @@ const KitchenLayout = () => {
       setBrandLoading(true)
       const fallbackName = user?.restaurant?.name || user?.staff?.restaurant_name || 'Restaurant';
       const fallbackLogo = user?.restaurant?.logo_url || user?.restaurant?.logo || user?.restaurant?.logoUrl || user?.logo || null;
-      const restaurantId = user?.restaurant_id || user?.restaurantId || user?.restaurant?.id || user?.staff?.restaurant_id;
+      const restaurantId = resolveRestaurantId(user);
 
       if (!restaurantId) {
         if (mounted) {
           setRestaurantBrand({ name: fallbackName, logo: fallbackLogo });
+          setBrandLoading(false)
         }
         return;
       }
@@ -55,11 +61,11 @@ const KitchenLayout = () => {
           name: details?.name || fallbackName,
           logo: details?.logoUrl || details?.logo_url || details?.logo || fallbackLogo,
         });
-        setBrandLoading(false)
       } catch (error) {
         if (!mounted) return;
         setRestaurantBrand({ name: fallbackName, logo: fallbackLogo });
-        setBrandLoading(false)
+      } finally {
+        if (mounted) setBrandLoading(false)
       }
     };
 

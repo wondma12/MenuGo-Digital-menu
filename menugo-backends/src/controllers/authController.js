@@ -386,24 +386,27 @@ const login = catchAsync(async (req, res) => {
     throw new ApiError(500, 'Login failed due to server error');
   }
 
-  // Get restaurant info if admin
+  // Attach restaurant and staff info for restaurant admins and staff users.
   let restaurant = null;
-  if (user.role === 'restaurant_admin') {
-    const staff = await RestaurantStaff.findOne({ where: { user_id: user.id } });
-    if (staff) {
-      restaurant = await Restaurant.findByPk(staff.restaurant_id);
-    }
-  }
-
-  // Attach restaurant staff info (if any) so frontend can detect staff roles (chef, waiter, etc.)
   let staff = null;
+
   try {
     const staffRecord = await RestaurantStaff.findOne({ where: { user_id: user.id }, attributes: ['id', 'role', 'restaurant_id', 'permissions', 'is_active'] });
     if (staffRecord) {
       staff = staffRecord && typeof staffRecord.toJSON === 'function' ? staffRecord.toJSON() : staffRecord;
+      if (!restaurant) {
+        restaurant = await Restaurant.findByPk(staff.restaurant_id);
+      }
     }
   } catch (e) {
     staff = null;
+  }
+
+  if (!restaurant && user.role === 'restaurant_admin') {
+    const adminStaff = await RestaurantStaff.findOne({ where: { user_id: user.id } });
+    if (adminStaff) {
+      restaurant = await Restaurant.findByPk(adminStaff.restaurant_id);
+    }
   }
 
   res.json(ApiResponse.success({
@@ -587,22 +590,22 @@ const getMe = catchAsync(async (req, res) => {
   });
 
   let restaurant = null;
-  if (user && user.role === 'restaurant_admin') {
-    const staff = await RestaurantStaff.findOne({ where: { user_id: user.id } });
-    if (staff) {
-      restaurant = await Restaurant.findByPk(staff.restaurant_id);
-    }
-  }
-
-  // Include staff information for the authenticated user so the frontend can route staff-specific UIs
   let staff = null;
   try {
     const staffRecord = await RestaurantStaff.findOne({ where: { user_id: user.id }, attributes: ['id', 'role', 'restaurant_id', 'permissions', 'is_active'] });
     if (staffRecord) {
       staff = staffRecord && typeof staffRecord.toJSON === 'function' ? staffRecord.toJSON() : staffRecord;
+      restaurant = await Restaurant.findByPk(staff.restaurant_id);
     }
   } catch (e) {
     staff = null;
+  }
+
+  if (!restaurant && user && user.role === 'restaurant_admin') {
+    const adminStaff = await RestaurantStaff.findOne({ where: { user_id: user.id } });
+    if (adminStaff) {
+      restaurant = await Restaurant.findByPk(adminStaff.restaurant_id);
+    }
   }
 
   res.json(ApiResponse.success({ user, restaurant, staff }, 'User retrieved'));

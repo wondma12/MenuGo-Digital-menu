@@ -378,7 +378,7 @@ const startServer = async () => {
 
     // Probe for an available port before starting the HTTP server to avoid
     // noisy EADDRINUSE errors and ensure predictable fallback behavior.
-    const findAvailablePort = async (startPort, maxAttempts = 5) => {
+    const findAvailablePort = async (startPort, maxAttempts = 20) => {
       let port = Number(startPort) || 5000;
       for (let i = 0; i < maxAttempts; i += 1) {
         // eslint-disable-next-line no-await-in-loop
@@ -402,7 +402,7 @@ const startServer = async () => {
       return null;
     };
 
-    const maxAttempts = parseInt(process.env.PORT_FALLBACK_ATTEMPTS, 10) || 10;
+    const maxAttempts = parseInt(process.env.PORT_FALLBACK_ATTEMPTS, 10) || 20;
     const available = await findAvailablePort(currentPort, maxAttempts);
     if (!available) {
       logger.error('Port probe failed: no available port found in fallback range.');

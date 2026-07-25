@@ -13,6 +13,7 @@ import { useAudio } from '../../../hooks/useAudio'
 const WaiterOrderList = () => {
   const [filters, setFilters] = useState({ status: 'all', priority: 'all', range: 'all' })
   const [searchTerm, setSearchTerm] = useState('')
+  const [sectionFilter, setSectionFilter] = useState('all')
 
   const { data: orders, isLoading, refetch } = useQuery(
     ['waiterOrders', filters, searchTerm],
@@ -50,12 +51,19 @@ const WaiterOrderList = () => {
 
   if (isLoading) return <Loading />
 
+  const orderList = Array.isArray(orders) ? orders : []
+  const sections = [...new Set(orderList.map((order) => order?.tableSection || order?.table_section || order?.table?.section || order?.raw?.order_table?.section || 'General'))].sort()
+  const visibleOrders = orderList.filter((order) => {
+    const section = order?.tableSection || order?.table_section || order?.table?.section || order?.raw?.order_table?.section || 'General'
+    return sectionFilter === 'all' || section === sectionFilter
+  })
+
   const groupedOrders = {
-    pending: orders?.filter(o => o.status === 'pending') || [],
-    verified: orders?.filter(o => o.status === 'verified') || [],
-    preparing: orders?.filter(o => o.status === 'preparing') || [],
-    ready: orders?.filter(o => o.status === 'ready') || [],
-    completed: orders?.filter(o => o.status === 'completed') || []
+    pending: visibleOrders.filter(o => o.status === 'pending'),
+    verified: visibleOrders.filter(o => o.status === 'verified'),
+    preparing: visibleOrders.filter(o => o.status === 'preparing'),
+    ready: visibleOrders.filter(o => o.status === 'ready'),
+    completed: visibleOrders.filter(o => o.status === 'completed')
   }
 
   const statusTitles = {
@@ -68,7 +76,7 @@ const WaiterOrderList = () => {
 
   // Build a stable sequential mapping for display numbers (1-based)
   const orderIndexMap = {}
-  orders?.forEach((o, i) => { if (o && o.id) orderIndexMap[o.id] = i + 1 })
+  orderList.forEach((o, i) => { if (o && o.id) orderIndexMap[o.id] = i + 1 })
 
   return (
     <div className="relative space-y-6 overflow-visible bg-white p-4 sm:px-6 lg:px-8">
@@ -82,8 +90,16 @@ const WaiterOrderList = () => {
             <h1 className="text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">Waiter Orders </h1>
             <p className="max-w-2xl text-sm text-slate-500 sm:text-base">Search, filter, and move orders through the service line from one polished workspace.</p>
           </div>
-          <div>
-          <OrderFilters filters={filters} onFiltersChange={setFilters} />
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <select
+              value={sectionFilter}
+              onChange={(event) => setSectionFilter(event.target.value)}
+              className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-semibold capitalize text-slate-700 outline-none focus:border-orange-300 focus:ring-2 focus:ring-orange-100"
+            >
+              <option value="all">Filter by section</option>
+              {sections.map((section) => <option key={section} value={section}>{section}</option>)}
+            </select>
+            <OrderFilters filters={filters} onFiltersChange={setFilters} />
           </div>
         </div>
 
@@ -113,13 +129,20 @@ const WaiterOrderList = () => {
         )}
       </div>
 
-      {orders?.length === 0 && (
+      {orderList.length === 0 && (
         <div className="rounded-3xl border border-dashed border-orange-100 bg-gradient-to-br from-white to-orange-50/40 p-8 text-center shadow-sm">
           <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-orange-50 text-orange-500">
             <SearchX className="h-5 w-5" />
           </div>
           <p className="text-base font-semibold text-slate-900">No orders found</p>
           <p className="mt-1 text-sm text-slate-500">Try clearing filters or adjusting your search.</p>
+        </div>
+      )}
+      {orderList.length > 0 && visibleOrders.length === 0 && (
+        <div className="rounded-3xl border border-dashed border-orange-100 bg-orange-50/30 p-8 text-center shadow-sm">
+          <SearchX className="mx-auto h-6 w-6 text-orange-500" />
+          <p className="mt-2 text-base font-semibold text-slate-900">No orders in this section</p>
+          <p className="mt-1 text-sm text-slate-500">Choose another section to see its table orders.</p>
         </div>
       )}
       </div>

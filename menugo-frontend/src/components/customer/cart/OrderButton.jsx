@@ -1,9 +1,7 @@
 import React, { useState } from 'react'
 import { useMutation } from 'react-query'
-import { useNavigate } from 'react-router-dom'
 import jsPDF from 'jspdf'
 import Button from '../../common/Button'
-import ReceiptModal from './ReceiptModal'
 import { createOrder } from '../../../services/orderService'
 import { getPublicTables } from '../../../services/tableService'
 import { getRestaurantDetails } from '../../../services/restaurantService'
@@ -17,7 +15,26 @@ const getItemUnitPrice = (item) => {
   return basePrice + optionsPrice
 }
 
-const downloadCustomerReceipt = ({ data, items, tableNumber, orderType, customerName, specialInstructions, totalAmount, restaurant = {} }) => {
+const loadImageDataUrl = async (src) => {
+  if (!src) return null
+  if (src.startsWith('data:image')) return src
+
+  try {
+    const response = await fetch(src, { mode: 'cors' })
+    if (!response.ok) return null
+    const blob = await response.blob()
+    return await new Promise((resolve) => {
+      const reader = new FileReader()
+      reader.onloadend = () => resolve(reader.result)
+      reader.onerror = () => resolve(null)
+      reader.readAsDataURL(blob)
+    })
+  } catch {
+    return null
+  }
+}
+
+const downloadCustomerReceipt = async ({ data, items, tableNumber, orderType, customerName, specialInstructions, totalAmount, restaurant = {} }) => {
   const orderNumber = data?.order_number || data?.orderNumber || data?.order_id || data?.orderId || 'new-order'
   const doc = new jsPDF({ unit: 'pt', format: 'a4' })
   const pageWidth = doc.internal.pageSize.getWidth()
@@ -55,9 +72,19 @@ const downloadCustomerReceipt = ({ data, items, tableNumber, orderType, customer
     cursorY += lines.length * (fontSize + 4)
   }
 
-  // Header with restaurant info
-  doc.setTextColor(230, 126, 34) // Orange color
-  writeLine(restaurant?.name || 'MenuGo', { fontSize: 24, style: 'bold', align: 'center' })
+  // Header with restaurant branding
+  const logoDataUrl = await loadImageDataUrl(restaurant?.logo || restaurant?.logoUrl || restaurant?.logo_url)
+  if (logoDataUrl) {
+    try {
+      doc.addImage(logoDataUrl, 'PNG', pageWidth / 2 - 28, cursorY, 56, 56)
+      cursorY += 68
+    } catch (error) {
+      console.warn('Receipt logo could not be embedded', error)
+    }
+  }
+
+  doc.setTextColor(230, 126, 34)
+  writeLine(restaurant?.name || restaurant?.restaurant_name || 'MenuGo', { fontSize: 24, style: 'bold', align: 'center' })
   doc.setTextColor(100, 100, 100)
   if (restaurant?.location) writeLine(restaurant.location, { fontSize: 10, align: 'center' })
   if (restaurant?.contact_phone) writeLine(restaurant.contact_phone, { fontSize: 10, align: 'center' })
@@ -71,8 +98,11 @@ const downloadCustomerReceipt = ({ data, items, tableNumber, orderType, customer
   cursorY += 8
 
   // Order details
-  doc.setTextColor(20, 20, 20)
-  writeLine(`ORDER RECEIPT`, { fontSize: 14, style: 'bold' })
+  doc.setFillColor(255, 247, 237)
+  doc.roundedRect(marginX, cursorY, contentWidth, 28, 6, 6, 'F')
+  cursorY += 19
+  doc.setTextColor(194, 65, 12)
+  writeLine('ORDER RECEIPT', { fontSize: 14, style: 'bold', align: 'center' })
   cursorY += 4
   
   writeLine(`Order #: ${orderNumber}`)
@@ -82,7 +112,7 @@ const downloadCustomerReceipt = ({ data, items, tableNumber, orderType, customer
   if (customerName) writeLine(`Customer: ${customerName}`)
   
   cursorY += 8
-  writeLine('─'.repeat(50))
+  writeLine('-'.repeat(50))
   cursorY += 4
   
   // Items header
@@ -119,7 +149,7 @@ const downloadCustomerReceipt = ({ data, items, tableNumber, orderType, customer
   })
 
   cursorY += 6
-  writeLine('─'.repeat(50))
+  writeLine('-'.repeat(50))
   cursorY += 4
 
   // Special instructions
@@ -129,7 +159,7 @@ const downloadCustomerReceipt = ({ data, items, tableNumber, orderType, customer
     doc.setTextColor(20, 20, 20)
     writeLine(specialInstructions, { fontSize: 10 })
     cursorY += 4
-    writeLine('─'.repeat(50))
+    writeLine('-'.repeat(50))
     cursorY += 4
   }
 
@@ -143,22 +173,17 @@ const downloadCustomerReceipt = ({ data, items, tableNumber, orderType, customer
   cursorY += 8
   doc.setTextColor(100, 100, 100)
   writeLine('Thank you for your order!', { fontSize: 11, align: 'center', style: 'italic' })
-  writeLine('Enjoy your meal! 🍽️', { fontSize: 10, align: 'center' })
+  writeLine('Enjoy your meal!', { fontSize: 10, align: 'center' })
 
   doc.save(`MenuGo-Receipt-${orderNumber}.pdf`)
 }
 
 const OrderButton = ({ restaurantId, items, tableNumber, specialInstructions, totalAmount, orderType = 'dine_in', customerName = '', customerPhone = '', customerEmail = '', deliveryAddress = '', restaurant = {}, onSuccess }) => {
   const [isLoading, setIsLoading] = useState(false)
-  const [showReceipt, setShowReceipt] = useState(false)
-  const [lastOrder, setLastOrder] = useState(null)
-  const navigate = useNavigate()
 
   const mutation = useMutation(createOrder, {
-    onSuccess: (data) => {
-      setLastOrder(data)
-      setShowReceipt(true)
-      downloadCustomerReceipt({
+    onSuccess: async (data) => {
+      await downloadCustomerReceipt({
         data,
         items,
         tableNumber,
@@ -168,7 +193,8 @@ const OrderButton = ({ restaurantId, items, tableNumber, specialInstructions, to
         totalAmount,
         restaurant,
       })
-      toast.success('Order placed successfully!')
+      toast.success('Order placed successfully! Receipt downloaded.')
+      onSuccess()
     },
     onError: (error) => {
       const resp = error?.response?.data
@@ -214,18 +240,19 @@ const OrderButton = ({ restaurantId, items, tableNumber, specialInstructions, to
 
     const placeOrder = async () => {
       let resolvedRestaurantId = restaurantId
+      const restaurantDetails = await getRestaurantDetails(restaurantId)
+      resolvedRestaurantId = restaurantDetails?.id || restaurantId
+
       if (orderType === 'dine_in') {
-        const restaurant = await getRestaurantDetails(restaurantId)
-        resolvedRestaurantId = restaurant?.id || restaurantId
         let tables = []
         try {
           tables = await getPublicTables(resolvedRestaurantId)
         } catch (publicTablesError) {
-          tables = Array.isArray(restaurant?.tables) ? restaurant.tables : []
+          tables = Array.isArray(restaurantDetails?.tables) ? restaurantDetails.tables : []
         }
 
         if (!Array.isArray(tables) || tables.length === 0) {
-          tables = Array.isArray(restaurant?.tables) ? restaurant.tables : []
+          tables = Array.isArray(restaurantDetails?.tables) ? restaurantDetails.tables : []
         }
 
         const normalizedTableNumber = String(tableNumber).trim()
@@ -287,23 +314,6 @@ const OrderButton = ({ restaurantId, items, tableNumber, specialInstructions, to
       >
         Place Order
       </Button>
-      {lastOrder && (
-        <ReceiptModal
-          isOpen={showReceipt}
-          onClose={() => {
-            setShowReceipt(false)
-            onSuccess()
-            navigate(`/menu/${restaurantId}`)
-          }}
-          order={lastOrder}
-          restaurant={restaurant}
-          items={items}
-          totalAmount={totalAmount}
-          orderType={orderType}
-          tableNumber={tableNumber}
-          specialInstructions={specialInstructions}
-        />
-      )}
     </>
   )
 }

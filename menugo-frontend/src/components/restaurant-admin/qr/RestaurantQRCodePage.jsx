@@ -1,19 +1,10 @@
-import React, { useMemo, useState } from 'react'
+import React, { useMemo, useRef, useState } from 'react'
 import { useAuthStore } from '../../../store/authStore'
-import { downloadQRCode, generateRestaurantQRCode } from '../../../services/qrService'
-import { getQrTargetUrl, normalizeQrImageSrc } from '../../../utils/qr'
+import { generateRestaurantQRCode } from '../../../services/qrService'
+import { getQrTargetUrl } from '../../../utils/qr'
 import Button from '../../../common/Button'
-
-const triggerBlobDownload = (blob, fileName) => {
-  const link = document.createElement('a')
-  const objectUrl = URL.createObjectURL(blob)
-  link.href = objectUrl
-  link.download = fileName
-  document.body.appendChild(link)
-  link.click()
-  link.remove()
-  URL.revokeObjectURL(objectUrl)
-}
+import QRCode from 'react-qr-code'
+import html2canvas from 'html2canvas'
 
 export default function RestaurantQRCodePage() {
   const { user } = useAuthStore()
@@ -28,16 +19,7 @@ export default function RestaurantQRCodePage() {
   const [qrData, setQrData] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
-
-  const qrImageSrc = useMemo(
-    () => normalizeQrImageSrc(
-      qrData?.qr_image_url ||
-      qrData?.qr_data_url ||
-      qrData?.qr_base64 ||
-      qrData?.qr_code?.qr_image_url
-    ),
-    [qrData]
-  )
+  const welcomeCardRef = useRef(null)
 
   const qrTargetUrl = useMemo(
     () => getQrTargetUrl(qrData) || qrData?.download_url || '',
@@ -45,6 +27,27 @@ export default function RestaurantQRCodePage() {
   )
 
   const restaurant = user?.restaurant || user?.restaurant_data || null
+  const restaurantName =
+    restaurant?.name ||
+    restaurant?.restaurant_name ||
+    user?.restaurant_name ||
+    'Our Restaurant'
+  const restaurantLogo =
+    restaurant?.logo ||
+    restaurant?.logoUrl ||
+    restaurant?.logo_url ||
+    user?.restaurant_logo ||
+    ''
+
+  const renderWelcomeCard = async () => {
+    if (!welcomeCardRef.current) throw new Error('Welcome card is not ready')
+
+    return html2canvas(welcomeCardRef.current, {
+      backgroundColor: '#ffffff',
+      scale: 2,
+      useCORS: true,
+    })
+  }
 
   const handleGenerate = async () => {
     if (!restaurantId?.trim()) {
@@ -71,34 +74,13 @@ export default function RestaurantQRCodePage() {
     setError(null)
 
     try {
-      const blob = await downloadQRCode(qrData)
-      triggerBlobDownload(blob, `restaurant-${restaurantId}-qr.png`)
+      const canvas = await renderWelcomeCard()
+      const link = document.createElement('a')
+      link.download = `restaurant-${restaurantId}-welcome-qr.png`
+      link.href = canvas.toDataURL('image/png')
+      link.click()
     } catch (err) {
-      try {
-        if (!qrImageSrc) throw err
-
-        if (qrImageSrc.startsWith('data:image')) {
-          const link = document.createElement('a')
-          link.href = qrImageSrc
-          link.download = `restaurant-${restaurantId}-qr.png`
-          document.body.appendChild(link)
-          link.click()
-          link.remove()
-          return
-        }
-
-        const imageResponse = await fetch(qrImageSrc)
-        const blob = await imageResponse.blob()
-        triggerBlobDownload(blob, `restaurant-${restaurantId}-qr.png`)
-      } catch (fallbackError) {
-        setError(
-          fallbackError?.response?.data?.message ||
-          fallbackError?.message ||
-          err?.response?.data?.message ||
-          err?.message ||
-          'Download failed'
-        )
-      }
+      setError(err?.message || 'Download failed')
     }
   }
 
@@ -107,32 +89,20 @@ export default function RestaurantQRCodePage() {
 
     setError(null)
 
-    const openPrintWindowWithSrc = (imgSrc) => {
+    try {
+      const canvas = await renderWelcomeCard()
       const printWindow = window.open('', '_blank')
-      if (!printWindow) {
-        setError('Unable to open print window')
-        return
-      }
+      if (!printWindow) throw new Error('Unable to open print window')
 
-      printWindow.document.write('<html><head><title>Print QR</title></head><body style="display:flex;align-items:center;justify-content:center;height:100vh;margin:0">')
-      printWindow.document.write(`<img src="${imgSrc}" alt="Restaurant QR" style="max-width:80%;height:auto" />`)
+      printWindow.document.write('<html><head><title>Restaurant Welcome QR</title><style>@page{margin:0}body{display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0}img{max-width:100%;height:auto}</style></head><body>')
+      printWindow.document.write(`<img src="${canvas.toDataURL('image/png')}" alt="${restaurantName} welcome QR" />`)
       printWindow.document.write('</body></html>')
       printWindow.document.close()
       printWindow.focus()
-      printWindow.print()
-      printWindow.close()
-    }
-
-    try {
-      if (qrImageSrc) {
-        openPrintWindowWithSrc(qrImageSrc)
-        return
+      printWindow.onload = () => {
+        printWindow.print()
+        printWindow.close()
       }
-
-      const blob = await downloadQRCode(qrData)
-      const objectUrl = URL.createObjectURL(blob)
-      openPrintWindowWithSrc(objectUrl)
-      setTimeout(() => URL.revokeObjectURL(objectUrl), 30000)
     } catch (err) {
       setError(err?.response?.data?.message || err?.message || 'Print failed')
     }
@@ -150,7 +120,7 @@ export default function RestaurantQRCodePage() {
             <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-orange-600">Restaurant QR</p>
             <h1 className="text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">Restaurant QR Code</h1>
             <p className="text-sm leading-6 text-slate-500 sm:text-base">
-              Generate, preview, download, and print the menu QR code using the same analytics styling.
+              Create a ready-to-print welcome sign with your restaurant name, logo, and menu QR code.
             </p>
           </div>
 
@@ -185,19 +155,22 @@ export default function RestaurantQRCodePage() {
 
           {qrData && (
             <div className="mt-6 grid gap-6 lg:grid-cols-[auto,1fr] lg:items-start">
-              <div className="inline-flex justify-center rounded-none border border-slate-200 bg-white p-4 shadow-sm">
-                <div className="flex flex-col items-center gap-3">
-                  {restaurant?.logo ? (
-                    <img src={restaurant.logo} alt={restaurant.name || 'Restaurant logo'} className="h-20 w-20 rounded-none object-cover shadow-sm" />
+              <div ref={welcomeCardRef} className="w-full max-w-[390px] border border-slate-300 bg-white p-6 text-center shadow-[0_18px_45px_rgba(15,23,42,0.1)] sm:p-8">
+                <div className="border border-slate-200 p-5 sm:p-7">
+                  {restaurantLogo ? (
+                    <img src={restaurantLogo} alt={`${restaurantName} logo`} crossOrigin="anonymous" className="mx-auto mb-4 h-20 w-20 object-contain" />
                   ) : null}
-
-                  {qrImageSrc ? (
-                    <img src={qrImageSrc} alt="Restaurant QR" className="h-56 w-56 object-contain" />
-                  ) : (
-                    <div className="flex h-56 w-56 items-center justify-center text-sm text-slate-500">
-                      QR generated, but the image preview is unavailable.
-                    </div>
-                  )}
+                  <h2 className="font-serif text-2xl font-semibold uppercase tracking-[0.18em] text-slate-700">{restaurantName}</h2>
+                  <div className="my-4 flex items-center justify-center gap-3 text-slate-400">
+                    <span className="h-px w-10 bg-slate-300" />
+                    <span className="font-serif text-sm italic">Welcome &amp; Enjoy</span>
+                    <span className="h-px w-10 bg-slate-300" />
+                  </div>
+                  <p className="mb-4 font-serif text-base tracking-[0.12em] text-slate-500">Scan to View Our Menu</p>
+                  <div className="mx-auto w-fit border border-slate-200 p-3">
+                    {qrTargetUrl ? <QRCode value={qrTargetUrl} size={190} /> : <div className="h-[190px] w-[190px]" />}
+                  </div>
+                  <p className="mt-5 font-serif text-xs italic tracking-[0.12em] text-slate-400">Fresh · Delicious · Homemade</p>
                 </div>
               </div>
 

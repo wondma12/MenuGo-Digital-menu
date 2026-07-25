@@ -37,6 +37,8 @@ const WaiterOrderCard = ({ order, displayNumber, onRefresh }) => {
     return formatMoney(computeItemsTotal(order.items))
   })()
 
+  const tableSection = order.tableSection ?? order.table_section ?? order.table?.section ?? order.raw?.order_table?.section ?? 'General'
+
   return (
     <>
       <motion.div
@@ -57,7 +59,7 @@ const WaiterOrderCard = ({ order, displayNumber, onRefresh }) => {
                 <User className="h-3.5 w-3.5 text-slate-400" />
                 <span className="truncate">{order.customerName ?? order.customer?.name ?? 'Guest'}</span>
                 <MapPin className="h-3.5 w-3.5 text-slate-400" />
-                <span className="truncate">Table {order.tableNumber ?? order.table_number ?? order.table?.number ?? ''}</span>
+                <span className="truncate">{tableSection} · Table {order.tableNumber ?? order.table_number ?? order.table?.number ?? ''}</span>
               </div>
             </div>
             <OrderStatusBadge status={order.status} />

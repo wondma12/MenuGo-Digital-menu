@@ -161,6 +161,9 @@ const useAuthStore = create(
               // prefer restaurant id from staff if not already set
               userData.restaurant_id = userData.restaurant_id || staffPayload.restaurant_id || (userData.restaurant && userData.restaurant.id)
             }
+            if (userData && userData.restaurant_id && !userData.restaurant) {
+              userData.restaurant = { id: userData.restaurant_id }
+            }
             
             // Store tokens in session storage so restart requires login.
             setAuthValue('token', tokenData)
@@ -291,6 +294,9 @@ const useAuthStore = create(
           if (staffPayload && userData) {
             userData.staff = staffPayload
             userData.restaurant_id = userData.restaurant_id || staffPayload.restaurant_id || (userData.restaurant && userData.restaurant.id)
+          }
+          if (userData && userData.restaurant_id && !userData.restaurant) {
+            userData.restaurant = { id: userData.restaurant_id }
           }
           
           if (userData && userData.id) {
