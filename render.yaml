@@ -7,6 +7,10 @@ services:
     rootDir: menugo-frontend
     buildCommand: npm ci && npm run build
     staticPublishPath: dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
 
   - type: web
     name: menugo-backends
