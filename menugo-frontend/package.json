@@ -10,6 +10,7 @@
     "dev": "vite",
     "start": "vite",
     "build": "vite build",
+    "postbuild": "node ./scripts/postbuild-copy-404.cjs",
     "build:prod": "vite build --mode production",
     "preview": "vite preview",
     "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
