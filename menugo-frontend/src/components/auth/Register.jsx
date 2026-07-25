@@ -52,6 +52,11 @@ const MultiStepRegistration = () => {
     { id: 5, name: "Review", icon: Check, description: "Review & submit" },
   ];
 
+  const floatAnimation = {
+    y: [0, -10, 0],
+    transition: { duration: 3, repeat: Infinity, ease: 'easeInOut' },
+  };
+
   const handleChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     setErrors((prev) => ({ ...prev, [field]: undefined }));
@@ -784,25 +789,38 @@ const MultiStepRegistration = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-orange-50/30 flex flex-col justify-center py-8 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
-      <div className="absolute -top-40 -right-40 h-80 w-80 rounded-full bg-orange-300/20 blur-3xl" />
-      <div className="absolute -bottom-40 -left-40 h-80 w-80 rounded-full bg-blue-300/20 blur-3xl" />
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-orange-50/30 flex flex-col justify-center py-8 sm:py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+      <motion.div
+        animate={{ x: [0, 30, 0], y: [0, -20, 0] }}
+        transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
+        className="absolute -top-40 -right-40 h-96 w-96 rounded-full bg-orange-300/20 blur-3xl"
+      />
+      <motion.div
+        animate={{ x: [0, -20, 0], y: [0, 30, 0] }}
+        transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
+        className="absolute -bottom-40 -left-40 h-96 w-96 rounded-full bg-blue-300/20 blur-3xl"
+      />
+      <motion.div
+        animate={floatAnimation}
+        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-64 w-64 rounded-full bg-purple-300/10 blur-3xl"
+      />
 
-      <div className="mx-auto w-full max-w-md">
+      <div className="mx-auto w-full max-w-md relative z-10">
         <div className="mb-4">
-          <Link to="/" className="inline-flex items-center gap-1 text-sm text-slate-500 hover:text-orange-600 transition-colors">
+          <Link to="/" className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-orange-600 transition-all duration-300 group">
             <ArrowLeft className="h-4 w-4" />
             Back to home
           </Link>
         </div>
 
-        <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border border-slate-100 p-6 sm:p-8">
+        <div className="bg-white/90 backdrop-blur-xl rounded-2xl shadow-2xl border border-slate-100/80 p-6 sm:p-8 relative overflow-hidden">
+          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-orange-400 via-orange-500 to-amber-400" />
           <div className="text-center">
-            <div className="mx-auto h-12 w-12 rounded-full bg-orange-100 flex items-center justify-center">
-              <span className="text-orange-600 font-bold text-xl">MG</span>
+            <div className="mx-auto h-16 w-16 rounded-2xl bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center shadow-lg shadow-orange-500/20">
+              <span className="text-white font-bold text-2xl">MG</span>
             </div>
             <h2 className="mt-4 text-2xl font-extrabold text-slate-900">Create your account</h2>
-            <p className="mt-1 text-sm text-slate-600">Sign up to manage your restaurant and menu</p>
+            <p className="mt-1 text-sm text-slate-500">Sign up to manage your restaurant and menu</p>
           </div>
 
           {/* Step indicator */}
@@ -843,6 +861,7 @@ const MultiStepRegistration = () => {
               onClick={handlePrevious}
               disabled={currentStep === 1}
               variant="secondary"
+              fullWidth
               className="flex items-center gap-1.5"
             >
               <ChevronLeft className="h-4 w-4" />
@@ -854,13 +873,21 @@ const MultiStepRegistration = () => {
                 type="button"
                 onClick={handleSubmit}
                 isLoading={isLoading}
-                className="flex items-center gap-1.5"
+                fullWidth
+                variant="primary"
+                className="flex items-center gap-1.5 bg-gradient-to-r from-orange-600 to-orange-500 hover:shadow-orange-500/30 hover:-translate-y-0.5"
               >
                 {isLoading ? "Submitting..." : "Submit for Verification"}
                 <ChevronRight className="h-4 w-4" />
               </Button>
             ) : (
-              <Button type="button" onClick={handleNext} className="flex items-center gap-1.5">
+              <Button
+                type="button"
+                onClick={handleNext}
+                fullWidth
+                variant="primary"
+                className="flex items-center gap-1.5 bg-gradient-to-r from-orange-600 to-orange-500 hover:shadow-orange-500/30 hover:-translate-y-0.5"
+              >
                 Next
                 <ChevronRight className="h-4 w-4" />
               </Button>
@@ -868,10 +895,14 @@ const MultiStepRegistration = () => {
           </div>
 
           <div className="mt-6 text-center">
-            <p className="text-sm text-slate-600">
+            <p className="text-sm text-slate-500">
               Already have an account?{' '}
-              <Link to="/login" className="font-medium text-orange-600 hover:text-orange-700">
+              <Link
+                to="/login"
+                className="inline-flex items-center gap-1 font-medium text-orange-600 hover:text-orange-700 transition-colors hover:underline"
+              >
                 Sign in
+                <ChevronRight className="h-3.5 w-3.5" />
               </Link>
             </p>
           </div>
