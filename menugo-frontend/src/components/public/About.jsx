@@ -133,14 +133,14 @@ const About = () => {
 
   const milestones = [
     { 
-      year: '2024', 
+      year: '2026', 
       title: 'Started MenuGo', 
       text: 'Built to replace paper menus with a smoother digital flow.', 
       icon: RocketLaunchIcon,
       gradient: 'from-orange-500 to-amber-500',
     },
     { 
-      year: '2025', 
+      year: '2026', 
       title: 'Expanded Workflows', 
       text: 'Added live orders, kitchen visibility, and staff coordination.', 
       icon: ClockIcon,
