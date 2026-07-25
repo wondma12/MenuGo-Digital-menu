@@ -891,6 +891,9 @@ function BackgroundCarousel() {
 
   const [index, setIndex] = useState(0);
   const [hovered, setHovered] = useState(false);
+  const [overlayVisible, setOverlayVisible] = useState(false);
+
+  const showOverlay = hovered || overlayVisible;
 
   useEffect(() => {
     const t = setInterval(() => setIndex((i) => (i + 1) % images.length), 5000);
@@ -919,13 +922,13 @@ function BackgroundCarousel() {
         className="absolute inset-0 flex items-center justify-center bg-black/0 transition-colors duration-300"
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
-        onClick={() => window.location.href = '/contact'}
+        onClick={() => setOverlayVisible((visible) => !visible)}
         style={{ cursor: 'pointer' }}
       >
         <motion.div 
-          className={`pointer-events-auto mx-auto max-w-3xl px-4 text-center transition-opacity duration-200 ${hovered ? 'opacity-100' : 'opacity-0'}`}
+          className={`pointer-events-auto mx-auto max-w-3xl px-4 text-center transition-opacity duration-200 ${showOverlay ? 'opacity-100' : 'opacity-0'}`}
           initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: hovered ? 1 : 0, y: hovered ? 0 : 20 }}
+          animate={{ opacity: showOverlay ? 1 : 0, y: showOverlay ? 0 : 20 }}
           transition={{ duration: 0.3 }}
         >
           <div className="rounded-xl bg-black/60 px-8 py-6 text-white backdrop-blur-sm">
