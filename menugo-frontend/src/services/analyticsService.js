@@ -429,6 +429,7 @@ export const getPublicPlatformSummary = async () => {
         active_restaurants: data.active_restaurants ?? data.activeRestaurants ?? data.restaurants_live ?? data.total_restaurants ?? data.restaurants ?? null,
         restaurants_live: data.restaurants_live ?? data.total_restaurants ?? data.restaurants ?? data.active_restaurants ?? null,
         team_members_enabled: data.team_members_enabled ?? data.teamMembersEnabled ?? data.total_users ?? null,
+        orders_processed: data.orders_processed ?? data.completed_orders ?? data.total_orders ?? data.totalOrders ?? null,
         uptime: data.uptime ?? data.platform_uptime ?? null,
         support: data.support ?? null,
         // keep raw payload for any other UI uses
@@ -454,6 +455,7 @@ export const getPublicPlatformSummary = async () => {
         active_users: stats.active_users ?? stats.activeUsers ?? stats.activeUsersCount ?? stats.active_users_count ?? payload.active_users ?? null,
         active_restaurants: stats.active_restaurants ?? stats.activeRestaurants ?? stats.active_restaurants_count ?? payload.active_restaurants ?? null,
         restaurants_live: stats.total_restaurants ?? stats.restaurants_live ?? payload.total_restaurants ?? null,
+        orders_processed: stats.orders_processed ?? stats.completed_orders ?? stats.total_orders ?? stats.totalOrders ?? payload.total_orders ?? payload.orders ?? null,
         team_members_enabled: payload.team_members_enabled ?? payload.teamMembersEnabled ?? null,
         uptime: stats.platform_health ?? payload.platform_health ?? null,
         support: null,

@@ -164,7 +164,7 @@ const Services = () => {
     active_users: 2300,
     uptime: '99.99%',
     support: '24/7',
-    orders_processed: 0,
+    orders_processed: null,
   });
   const [pricing, setPricing] = useState([]);
   const [plansLoading, setPlansLoading] = useState(true);
@@ -237,9 +237,9 @@ const Services = () => {
         try {
           const dashboard = await getPlatformDashboardData();
           if (!cancelled && dashboard && typeof dashboard === 'object') {
-            const orders = dashboard.totalOrders ?? dashboard.completedOrders ?? dashboard.total_orders ?? dashboard.completed_orders;
-            if (orders !== undefined && orders !== null) {
-              setPlatformSummary((cur) => ({ ...cur, orders_processed: Number(orders) || cur.orders_processed }));
+            const dashboardOrders = Number(dashboard.totalOrders ?? dashboard.completedOrders ?? dashboard.total_orders ?? dashboard.completed_orders ?? 0);
+            if (dashboardOrders > 0) {
+              setPlatformSummary((cur) => ({ ...cur, orders_processed: dashboardOrders }));
             }
           }
         } catch (e) {
@@ -259,7 +259,7 @@ const Services = () => {
   const stats = [
     { value: `${compactNumber(restaurantsCount)}+`, label: 'Restaurants live', icon: BuildingStorefrontIcon, gradient: 'from-orange-500 to-amber-500' },
     { value: `${compactNumber(activeUsersCount)}+`, label: 'Active users', icon: UserGroupIcon, gradient: 'from-blue-500 to-cyan-500' },
-    { value: `${compactNumber(platformSummary.orders_processed)}+`, label: 'Orders processed', icon: ChartBarIcon, gradient: 'from-emerald-500 to-green-500' },
+    { value: `${compactNumber(platformSummary.orders_processed ?? 0)}+`, label: 'Orders processed', icon: ChartBarIcon, gradient: 'from-emerald-500 to-green-500' },
     { value: platformSummary.uptime || '99.99%', label: 'Uptime', icon: ShieldCheckIcon, gradient: 'from-purple-500 to-violet-500' },
     { value: platformSummary.support || '24/7', label: 'Support', icon: AcademicCapIcon, gradient: 'from-rose-500 to-pink-500' },
   ];

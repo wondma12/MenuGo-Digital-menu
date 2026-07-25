@@ -115,7 +115,7 @@ const LoadingSkeleton = ({ className = '' }) => (
 const Home = () => {
   const [platformSummary, setPlatformSummary] = useState({
     restaurants_live: 500,
-    orders_processed: 0,
+    orders_processed: null,
   });
   const [isLoading, setIsLoading] = useState(true);
   const [hoveredCard, setHoveredCard] = useState(null);
@@ -135,7 +135,12 @@ const Home = () => {
       try {
         const summary = await getPublicPlatformSummary();
         if (!cancelled && summary && typeof summary === 'object') {
-          setPlatformSummary((current) => ({ ...current, ...summary }));
+          const summaryOrders = Number(summary.orders_processed ?? summary.completed_orders ?? summary.total_orders ?? summary.totalOrders ?? 0);
+          setPlatformSummary((current) => ({
+            ...current,
+            ...summary,
+            orders_processed: summaryOrders > 0 ? summaryOrders : current.orders_processed,
+          }));
         }
       } catch (e) {
         // ignore
@@ -144,9 +149,9 @@ const Home = () => {
       try {
         const dashboard = await getPlatformDashboardData();
         if (!cancelled && dashboard && typeof dashboard === 'object') {
-          const orders = dashboard.totalOrders ?? dashboard.completedOrders ?? dashboard.total_orders ?? dashboard.completed_orders;
-          if (orders !== undefined && orders !== null) {
-            setPlatformSummary((cur) => ({ ...cur, orders_processed: Number(orders) || cur.orders_processed }));
+          const dashboardOrders = Number(dashboard.totalOrders ?? dashboard.completedOrders ?? dashboard.total_orders ?? dashboard.completed_orders ?? 0);
+          if (dashboardOrders > 0) {
+            setPlatformSummary((cur) => ({ ...cur, orders_processed: dashboardOrders }));
           }
         }
       } catch (e) {
@@ -250,7 +255,7 @@ const Home = () => {
       gradient: 'from-orange-500 to-amber-500',
     },
     { 
-      value: compactNumber(platformSummary.orders_processed), 
+      value: compactNumber(platformSummary.orders_processed ?? 0), 
       label: 'Orders Processed', 
       suffix: '',
       icon: TrophyIcon,
