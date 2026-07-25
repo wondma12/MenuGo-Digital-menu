@@ -224,13 +224,23 @@ try {
   logger.warn('Could not mount legacy /restaurants/:id/calls route alias:', e && e.message);
 }
 
-// Health check
+// Root and health endpoints
+app.get('/', (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: 'MenuGo API is running',
+    docs: '/health',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'production',
+  });
+});
+
 app.get('/health', (req, res) => {
   res.status(200).json({
     status: 'success',
     message: 'Server is running',
     timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV,
+    environment: process.env.NODE_ENV || 'production',
   });
 });
 
