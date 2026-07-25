@@ -4,15 +4,22 @@ const { logger } = require('../utils/logger');
 let redisClient = null;
 
 const initRedis = async () => {
+  const hasRedisConfig = Boolean(process.env.REDIS_URL || process.env.REDIS_HOST || process.env.REDIS_PORT);
+  const redisEnabled = process.env.REDIS_ENABLED === 'true' || hasRedisConfig;
+
+  if (!redisEnabled) {
+    logger.info('Redis not configured; skipping Redis initialization');
+    return null;
+  }
+
   try {
-    // Build Redis URL - gracefully fall back if environment variables are not set
     let redisUrl = process.env.REDIS_URL;
-    
+
     if (!redisUrl) {
       const host = process.env.REDIS_HOST || 'localhost';
       const port = process.env.REDIS_PORT || 6379;
       const password = process.env.REDIS_PASSWORD;
-      
+
       if (password) {
         redisUrl = `redis://:${password}@${host}:${port}`;
       } else {
@@ -25,10 +32,14 @@ const initRedis = async () => {
     redisClient = redis.createClient({
       url: redisUrl,
       database: process.env.REDIS_DB || 0,
+      socket: {
+        connectTimeout: 2000,
+        reconnectStrategy: false,
+      },
     });
 
     redisClient.on('error', (err) => {
-      logger.error('Redis Client Error:', err);
+      logger.warn('Redis unavailable; continuing without cache:', err?.message || err);
     });
 
     redisClient.on('connect', () => {
@@ -39,8 +50,8 @@ const initRedis = async () => {
     logger.info('Redis client initialized successfully');
     return redisClient;
   } catch (error) {
-    logger.warn('Failed to connect to Redis (this is optional for development):', error?.message || error);
-    // Don't throw - Redis is optional for development
+    redisClient = null;
+    logger.warn('Redis unavailable; continuing without cache:', error?.message || error);
     return null;
   }
 };
