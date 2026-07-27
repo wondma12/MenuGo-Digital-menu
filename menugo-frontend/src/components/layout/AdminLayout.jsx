@@ -6,11 +6,13 @@ import { useAuthStore } from '../../store/authStore'
 import Header from './Header'
 import Sidebar from './Sidebar'
 import MobileNav from './MobileNav'
+import { getSystemSettings } from '../../services/systemService'
 import { BarChart2, Store, Users, CreditCard, TrendingUp, HelpCircle, Settings, Phone } from 'lucide-react'
 
 const AdminLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [platformLogo, setPlatformLogo] = useState(null)
   const { user, logout } = useAuthStore()
   const navigate = useNavigate()
 
@@ -26,6 +28,26 @@ const AdminLayout = () => {
     handleResize()
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
+  }, [])
+
+  // Load platform logo from system settings
+  useEffect(() => {
+    const authToken = useAuthStore.getState().token
+    if (!authToken) return
+
+    let mounted = true
+    const loadSettings = async () => {
+      try {
+        const settings = await getSystemSettings()
+        const logo = settings?.platform_logo || settings?.logo || settings?.logo_url || settings?.logoUrl || settings?.branding?.logo
+        if (mounted && logo) setPlatformLogo(logo)
+      } catch (e) {
+        // ignore
+      }
+    }
+
+    loadSettings()
+    return () => { mounted = false }
   }, [])
 
   const handleLogout = async () => {
@@ -85,6 +107,8 @@ const AdminLayout = () => {
         menuItems={menuItems}
         user={user}
         onLogout={handleLogout}
+        brand={{ name: 'MenuGo Platform', logo: platformLogo || '/logo.svg' }}
+        isPlatform={true}
       />
     </div>
   )

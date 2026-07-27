@@ -5,11 +5,12 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { XMarkIcon, ChevronDownIcon, ChevronRightIcon } from '@heroicons/react/24/outline'
 import { BarChart2, Store, Users, CreditCard, TrendingUp, HelpCircle, Settings, Clipboard, QrCode, Database, LogOut, Phone } from 'lucide-react'
 
-const MobileNav = ({ isOpen, onClose, menuItems, user, onLogout, brand }) => {
+const MobileNav = ({ isOpen, onClose, menuItems, user, onLogout, brand, isPlatform = false }) => {
   const [expandedMenus, setExpandedMenus] = useState({})
   const brandName = brand?.name || user?.restaurant?.name || user?.restaurant?.restaurant_name || 'MenuGo'
   const brandLogo = brand?.logo || user?.restaurant?.logo_url || user?.restaurant?.logoUrl || user?.restaurant?.logo || '/logo.svg'
   const userName = user?.fullName || user?.full_name || user?.name || 'Admin User'
+  const menuLabel = isPlatform ? 'Platform menu' : 'Restaurant menu'
 
   const toggleSubmenu = (path) => {
     setExpandedMenus(prev => ({
@@ -56,11 +57,11 @@ const MobileNav = ({ isOpen, onClose, menuItems, user, onLogout, brand }) => {
           
           {/* Drawer */}
           <motion.div
-            initial={{ x: '100%' }}
+            initial={{ x: '-100%' }}
             animate={{ x: 0 }}
-            exit={{ x: '100%' }}
+            exit={{ x: '-100%' }}
             transition={{ type: 'tween', duration: 0.3 }}
-            className="fixed inset-y-0 right-0 z-50 flex w-full max-w-sm flex-col bg-white shadow-2xl"
+            className="fixed inset-y-0 left-0 z-50 flex w-full max-w-sm flex-col bg-white shadow-2xl"
           >
             {/* Header */}
             <div className="flex items-center justify-between border-b border-gray-200 p-4">
@@ -68,7 +69,7 @@ const MobileNav = ({ isOpen, onClose, menuItems, user, onLogout, brand }) => {
                 <img src={brandLogo} alt={brandName} className="h-10 w-10 rounded-lg object-cover" onError={(e) => { e.currentTarget.src = '/logo.svg' }} />
                 <div className="min-w-0">
                   <p className="truncate text-lg font-semibold text-gray-900">{brandName}</p>
-                  <p className="truncate text-sm text-gray-500">Restaurant menu</p>
+                  <p className="truncate text-sm text-gray-500">{menuLabel}</p>
                 </div>
               </div>
               <button
