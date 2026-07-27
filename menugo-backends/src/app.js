@@ -44,30 +44,42 @@ app.use(securityMiddleware);
 
 // CORS configuration
 // Allow explicit origins from CORS_ORIGIN, but also permit localhost and loopback
-// origins (different dev ports like 5173/3001/3000) to ease local development.
+// origins (including common dev ports like 3000/3001/3002/5173) to ease local development.
 const configuredOrigins = (process.env.CORS_ORIGIN && process.env.CORS_ORIGIN.split(',').map((value) => value.trim()).filter(Boolean)) || [];
+const normalizeOrigin = (value) => (typeof value === 'string' ? value.trim().replace(/\/$/, '') : '');
 const isLocalhostOrigin = (origin) => {
   try {
-    const normalizedOrigin = origin.trim();
-    const { hostname } = new URL(normalizedOrigin);
-    const normalizedHostname = hostname.replace(/^\[|\]$/g, '');
-    return ['localhost', '127.0.0.1', '0.0.0.0', '::1', '::ffff:127.0.0.1'].includes(normalizedHostname);
+    const normalizedOrigin = normalizeOrigin(origin);
+    if (!normalizedOrigin) return false;
+    const { protocol, hostname } = new URL(normalizedOrigin);
+    const normalizedHostname = hostname.replace(/^\[|\]$/g, '').toLowerCase();
+    if (!['http:', 'https:'].includes(protocol)) return false;
+    return ['localhost', '127.0.0.1', '0.0.0.0', '::1', '::ffff:127.0.0.1'].includes(normalizedHostname) || normalizedHostname.endsWith('.localhost');
   } catch (e) {
-    return false;
+    return /^(https?:\/\/)?(localhost|127\.0\.0\.1|0\.0\.0\.0|\[::1\]|::1)(:\d+)?(\/.*)?$/i.test(origin || '');
   }
 };
-app.use(cors({
+const isDevelopment = (process.env.NODE_ENV || '').toLowerCase() !== 'production';
+const corsOptions = {
   origin: (origin, cb) => {
     // Allow non-browser requests (e.g., curl) with no origin
     if (!origin) return cb(null, true);
-    const normalizedOrigin = origin.trim();
-    if (configuredOrigins.includes(normalizedOrigin)) return cb(null, true);
-    if (isLocalhostOrigin(normalizedOrigin)) return cb(null, true);
-    return cb(new Error('Not allowed by CORS'));
+
+    const normalizedOrigin = normalizeOrigin(origin);
+    const configuredAllowed = configuredOrigins.map(normalizeOrigin);
+    if (isDevelopment || configuredAllowed.includes(normalizedOrigin) || isLocalhostOrigin(normalizedOrigin)) {
+      return cb(null, true);
+    }
+
+    return cb(null, false);
   },
   credentials: true,
+  methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin', 'X-Access-Token'],
   optionsSuccessStatus: 200,
-}));
+};
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 
 // Body parsing middleware
 // Increase limits to handle larger profile payloads (e.g., richer user objects).
