@@ -42,7 +42,7 @@ const TableManagement = () => {
             </div>
 
             <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
-              <Button onClick={() => setShowModal(true)} icon={PlusIcon} className="w-full sm:w-auto">
+              <Button onClick={() => setShowModal(true)} icon={PlusIcon} className="w-full rounded-none bg-gradient-to-r from-orange-600 to-orange-500 px-4 py-2.5 text-white shadow-lg shadow-orange-600/30 hover:from-orange-700 hover:to-orange-600 sm:w-auto">
                 Add Table
               </Button>
             </div>

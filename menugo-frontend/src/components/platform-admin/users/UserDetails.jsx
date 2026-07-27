@@ -82,7 +82,7 @@ const UserDetails = () => {
       <div className="flex items-center gap-3 mb-6">
         <button
           onClick={() => navigate(`/platform/users/${user.id}/edit`)}
-          className="inline-flex items-center gap-2 rounded-none bg-gradient-to-r from-orange-500 to-blue-500 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:-translate-y-0.5 hover:from-orange-600 hover:to-blue-600"
+          className="inline-flex items-center gap-2 rounded-none bg-gradient-to-r from-orange-600 to-orange-500 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:-translate-y-0.5 hover:from-orange-700 hover:to-orange-600"
         >
           <PencilIcon className="w-4 h-4" />
           Edit User

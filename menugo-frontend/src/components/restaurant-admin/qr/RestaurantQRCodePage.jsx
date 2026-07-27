@@ -134,7 +134,7 @@ export default function RestaurantQRCodePage() {
             />
 
             <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-              <Button onClick={handleGenerate} isLoading={loading} className="w-full rounded-none sm:w-auto">
+              <Button onClick={handleGenerate} isLoading={loading} className="w-full rounded-none bg-gradient-to-r from-orange-600 to-orange-500 px-4 py-2.5 text-white shadow-lg shadow-orange-600/30 hover:from-orange-700 hover:to-orange-600 sm:w-auto">
                 {loading ? 'Generating...' : 'Generate QR'}
               </Button>
 
@@ -190,7 +190,7 @@ export default function RestaurantQRCodePage() {
 
                 <div className="flex flex-wrap gap-3">
                   {qrTargetUrl && (
-                    <Button onClick={() => window.open(qrTargetUrl, '_blank')}>
+                    <Button onClick={() => window.open(qrTargetUrl, '_blank')} className="rounded-none bg-gradient-to-r from-orange-600 to-orange-500 px-4 py-2.5 text-white shadow-lg shadow-orange-600/30 hover:from-orange-700 hover:to-orange-600">
                       Preview Landing Page
                     </Button>
                   )}

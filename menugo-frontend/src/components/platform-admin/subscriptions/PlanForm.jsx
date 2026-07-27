@@ -165,7 +165,7 @@ const PlanForm = ({ initialData, onSubmit, onCancel, isLoading }) => {
 
       <div className="flex justify-end gap-3 pt-4">
         <Button type="button" variant="secondary" onClick={onCancel} className="rounded-none">Cancel</Button>
-        <Button type="submit" isLoading={isLoading} className="rounded-none bg-gradient-to-r from-orange-500 to-blue-500 hover:from-orange-600 hover:to-blue-600">{initialData ? 'Update Plan' : 'Create Plan'}</Button>
+        <Button type="submit" isLoading={isLoading} className="rounded-none bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-700 hover:to-orange-600">{initialData ? 'Update Plan' : 'Create Plan'}</Button>
       </div>
     </form>
   )

@@ -176,7 +176,7 @@ const PlatformProfile = () => {
               </div>
 
               <div className="flex flex-wrap gap-3">
-                <Button onClick={() => navigate('/platform/dashboard')} className="bg-white text-slate-900 hover:bg-slate-100">
+                <Button onClick={() => navigate('/platform/dashboard')} className="rounded-none bg-gradient-to-r from-orange-600 to-orange-500 text-white hover:from-orange-700 hover:to-orange-600 shadow-lg shadow-orange-600/30">
                   Back to Dashboard
                 </Button>
                 <Button onClick={() => navigate('/platform/system/settings')} variant="outline" className="border-slate-300 text-slate-700 hover:bg-slate-50">
@@ -218,7 +218,7 @@ const PlatformProfile = () => {
             </div>
 
             <div className="flex justify-end">
-              <Button type="submit" isLoading={savingProfile || uploadingAvatar || uploadingCover} className="rounded-none bg-gradient-to-r from-orange-500 to-blue-500 text-white">
+              <Button type="submit" isLoading={savingProfile || uploadingAvatar || uploadingCover} className="rounded-none bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-700 hover:to-orange-600 text-white">
                 Save Profile
               </Button>
             </div>
@@ -249,7 +249,7 @@ const PlatformProfile = () => {
                 <Input label="New Password" type="password" value={passwordData.newPassword} onChange={(e) => setPasswordData((current) => ({ ...current, newPassword: e.target.value }))} error={passwordErrors.newPassword} required />
                 <Input label="Confirm New Password" type="password" value={passwordData.confirmPassword} onChange={(e) => setPasswordData((current) => ({ ...current, confirmPassword: e.target.value }))} error={passwordErrors.confirmPassword} required />
                 <div className="flex justify-end pt-2">
-                  <Button type="submit" isLoading={savingPassword} className="rounded-none bg-slate-900 text-white hover:bg-slate-800">
+                  <Button type="submit" isLoading={savingPassword} className="rounded-none bg-gradient-to-r from-orange-600 to-orange-500 text-white hover:from-orange-700 hover:to-orange-600 shadow-lg shadow-orange-600/30">
                     Update Password
                   </Button>
                 </div>

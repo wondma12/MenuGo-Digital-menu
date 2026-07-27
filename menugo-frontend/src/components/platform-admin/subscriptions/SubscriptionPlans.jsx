@@ -62,7 +62,7 @@ const SubscriptionPlans = () => {
             <h1 className="mt-1.5 text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">Subscription Plans</h1>
             <p className="mt-2 text-sm leading-6 text-slate-500 sm:text-base">Manage pricing plans and features</p>
           </div>
-          <Button onClick={() => setShowModal(true)} icon={PlusIcon} className="rounded-none bg-gradient-to-r from-orange-500 to-blue-500 hover:from-orange-600 hover:to-blue-600">
+          <Button onClick={() => setShowModal(true)} icon={PlusIcon} className="rounded-none bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-700 hover:to-orange-600">
             Add Plan
           </Button>
         </div>

@@ -57,7 +57,7 @@ const ExportReport = ({ data, type, dateRange }) => {
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="inline-flex shrink-0 items-center gap-2 rounded-none bg-gradient-to-r from-orange-500 to-blue-500 px-3 py-2 text-xs font-semibold whitespace-nowrap text-white shadow-[0_16px_36px_rgba(59,130,246,0.22)] transition-transform duration-200 hover:-translate-y-0.5"
+        className="inline-flex shrink-0 items-center gap-2 rounded-none bg-gradient-to-r from-orange-600 to-orange-500 px-3 py-2 text-xs font-semibold whitespace-nowrap text-white shadow-lg shadow-orange-600/30 transition-transform duration-200 hover:-translate-y-0.5 hover:from-orange-700 hover:to-orange-600"
       >
         <DocumentArrowDownIcon className="h-3.5 w-3.5" />
         Export Report

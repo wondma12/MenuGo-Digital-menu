@@ -289,7 +289,7 @@ const UserForm = () => {
           <Button type="button" variant="secondary" onClick={() => navigate('/platform/users')} className="rounded-none">
             Cancel
           </Button>
-          <Button type="submit" isLoading={createMutation.isLoading || updateMutation.isLoading} className="rounded-none bg-gradient-to-r from-orange-500 to-blue-500 hover:from-orange-600 hover:to-blue-600">
+          <Button type="submit" isLoading={createMutation.isLoading || updateMutation.isLoading} className="rounded-none bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-700 hover:to-orange-600">
             {isEditing ? 'Update User' : 'Create User'}
           </Button>
         </div>

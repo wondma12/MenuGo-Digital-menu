@@ -321,7 +321,7 @@ const RestaurantCard = ({ restaurant, onUpdate, variant = 'grid' }) => {
   const CardView = () => (
     <div className="overflow-hidden rounded-none border border-slate-100 bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-xl">
       <div
-        className={`relative h-28 sm:h-32 ${!restaurant.cover_image_url ? 'bg-gradient-to-r from-orange-500 to-blue-500' : ''}`}
+        className={`relative h-28 sm:h-32 ${!restaurant.cover_image_url ? 'bg-gradient-to-r from-orange-600 to-orange-500' : ''}`}
         style={coverStyle}
       >
         <div className="absolute -bottom-7 left-4">
@@ -421,7 +421,7 @@ const RestaurantCard = ({ restaurant, onUpdate, variant = 'grid' }) => {
           <button
             onClick={() => navigate(`/platform/restaurants/${restaurant.id}/edit`)}
             title="Edit"
-            className="rounded-none p-2 text-white bg-gradient-to-r from-orange-500 to-blue-500 hover:from-orange-600 hover:to-blue-600"
+            className="rounded-none p-2 text-white bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-700 hover:to-orange-600"
           >
             <PencilIcon className="h-5 w-5" />
           </button>

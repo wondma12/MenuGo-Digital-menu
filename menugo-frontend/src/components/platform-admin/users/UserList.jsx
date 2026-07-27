@@ -171,7 +171,7 @@ const UserList = () => {
           </div>
 
           <div className="flex items-center gap-3">
-            <Button onClick={() => navigate('/platform/users/new')} icon={UserPlusIcon} className="rounded-none bg-gradient-to-r from-orange-500 to-blue-500 hover:from-orange-600 hover:to-blue-600 px-4 py-2">Add User</Button>
+            <Button onClick={() => navigate('/platform/users/new')} icon={UserPlusIcon} className="rounded-none bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-700 hover:to-orange-600 px-4 py-2">Add User</Button>
           </div>
         </div>
       {/* </div> */}

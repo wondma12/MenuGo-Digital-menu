@@ -128,7 +128,7 @@ const GeneralSettings = ({ settings, onSave }) => {
       <Switch label="Maintenance Mode" checked={formData.maintenanceMode} onChange={(checked) => setFormData({ ...formData, maintenanceMode: checked })} />
       <Switch label="Allow New Registrations" checked={formData.allowRegistration} onChange={(checked) => setFormData({ ...formData, allowRegistration: checked })} />
       <div className="flex justify-end">
-        <Button type="submit" icon={CheckIcon} className="bg-orange-600 hover:bg-orange-700 text-white rounded-none px-4 py-2.5 shadow-sm">Save Changes</Button>
+        <Button type="submit" icon={CheckIcon} className="rounded-none bg-gradient-to-r from-orange-600 to-orange-500 px-4 py-2.5 text-white shadow-lg shadow-orange-600/30 hover:from-orange-700 hover:to-orange-600">Save Changes</Button>
       </div>
     </form>
   )
@@ -158,7 +158,7 @@ const EmailSettings = ({ settings, onSave }) => {
       <Input label="From Email" type="email" value={formData.fromEmail} onChange={(e) => setFormData({ ...formData, fromEmail: e.target.value })} />
       <Input label="From Name" value={formData.fromName} onChange={(e) => setFormData({ ...formData, fromName: e.target.value })} />
       <div className="flex justify-end">
-        <Button type="submit" icon={CheckIcon} className="bg-orange-600 hover:bg-orange-700 text-white rounded-none px-4 py-2.5 shadow-sm">Save Changes</Button>
+        <Button type="submit" icon={CheckIcon} className="rounded-none bg-gradient-to-r from-orange-600 to-orange-500 px-4 py-2.5 text-white shadow-lg shadow-orange-600/30 hover:from-orange-700 hover:to-orange-600">Save Changes</Button>
       </div>
     </form>
   )
@@ -184,7 +184,7 @@ const SecuritySettings = ({ settings, onSave }) => {
       <Input label="Password Expiry (days)" type="number" value={formData.passwordExpiryDays} onChange={(e) => setFormData({ ...formData, passwordExpiryDays: parseInt(e.target.value) })} />
       <Switch label="Require Two-Factor Authentication for Admins" checked={formData.twoFactorRequired} onChange={(checked) => setFormData({ ...formData, twoFactorRequired: checked })} />
       <div className="flex justify-end">
-        <Button type="submit" icon={CheckIcon} className="bg-orange-600 hover:bg-orange-700 text-white rounded-none px-4 py-2.5 shadow-sm">Save Changes</Button>
+        <Button type="submit" icon={CheckIcon} className="rounded-none bg-gradient-to-r from-orange-600 to-orange-500 px-4 py-2.5 text-white shadow-lg shadow-orange-600/30 hover:from-orange-700 hover:to-orange-600">Save Changes</Button>
       </div>
     </form>
   )
@@ -234,7 +234,7 @@ const IntegrationSettings = ({ settings, onSave }) => {
         />
       </div>
       <div className="flex justify-end">
-        <Button type="submit" icon={CheckIcon} className="rounded-none bg-orange-600 px-4 py-2.5 text-white shadow-sm hover:bg-orange-700">Save Changes</Button>
+        <Button type="submit" icon={CheckIcon} className="rounded-none bg-gradient-to-r from-orange-600 to-orange-500 px-4 py-2.5 text-white shadow-lg shadow-orange-600/30 hover:from-orange-700 hover:to-orange-600">Save Changes</Button>
       </div>
     </form>
   )

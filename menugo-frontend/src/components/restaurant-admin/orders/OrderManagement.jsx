@@ -241,7 +241,7 @@ const OrderManagement = () => {
               </div>
               <button
                 onClick={handleDownloadExport}
-                className="whitespace-nowrap bg-gradient-to-r from-orange-500 to-blue-500 px-3 py-2 text-sm font-medium text-white transition-colors hover:from-orange-600 hover:to-blue-600"
+                className="whitespace-nowrap bg-gradient-to-r from-orange-600 to-orange-500 px-3 py-2 text-sm font-medium text-white shadow-lg shadow-orange-600/30 transition-colors hover:from-orange-700 hover:to-orange-600"
               >
                 Download
               </button>

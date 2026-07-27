@@ -65,7 +65,7 @@ const CategoryManager = () => {
             <h1 className="text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">Category Management</h1>
             <p className="text-sm leading-6 text-slate-500 sm:text-base">Organize your menu items into categories with an analytics-style workspace.</p>
           </div>
-          <Button onClick={() => setShowModal(true)} icon={PlusIcon} className="w-full rounded-none bg-gradient-to-r from-orange-500 to-blue-500 px-4 py-2.5 text-white shadow-lg shadow-orange-500/20 hover:from-orange-600 hover:to-blue-600 sm:w-auto">
+          <Button onClick={() => setShowModal(true)} icon={PlusIcon} className="w-full rounded-none bg-gradient-to-r from-orange-600 to-orange-500 px-4 py-2.5 text-white shadow-lg shadow-orange-600/30 hover:from-orange-700 hover:to-orange-600 sm:w-auto">
             Add Category
           </Button>
         </div>

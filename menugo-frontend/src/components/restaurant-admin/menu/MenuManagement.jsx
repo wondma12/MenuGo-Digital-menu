@@ -59,7 +59,7 @@ const MenuManagement = () => {
             <p className="text-sm leading-6 text-slate-500 sm:text-base">Design, edit and publish your dishes with an analytics-style workspace.</p>
           </div>
           <div className="relative z-50 w-full sm:w-auto">
-            <Button onClick={() => setShowItemModal(true)} icon={PlusIcon} className="w-full rounded-none bg-gradient-to-r from-orange-500 to-blue-500 px-4 py-2.5 text-white shadow-lg shadow-orange-500/20 hover:from-orange-600 hover:to-blue-600 sm:w-auto">
+            <Button onClick={() => setShowItemModal(true)} icon={PlusIcon} className="w-full rounded-none bg-gradient-to-r from-orange-600 to-orange-500 px-4 py-2.5 text-white shadow-lg shadow-orange-600/30 hover:from-orange-700 hover:to-orange-600 sm:w-auto">
               Add Menu Item
             </Button>
           </div>
