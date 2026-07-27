@@ -109,7 +109,7 @@ export default function RestaurantQRCodePage() {
   }
 
   return (
-    <div className="relative overflow-hidden space-y-6 bg-white p-4 sm:p-6 lg:p-8 font-['Manrope',system-ui,sans-serif] text-slate-900">
+    <div className="relative overflow-x-hidden space-y-6 bg-white p-4 sm:p-6 lg:p-8 font-['Manrope',system-ui,sans-serif] text-slate-900">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(251,146,60,0.12),transparent_35%),radial-gradient(circle_at_bottom_left,_rgba(59,130,246,0.08),transparent_35%)]" />
       <div className="pointer-events-none absolute -left-24 top-24 h-72 w-72 rounded-full bg-orange-300/20 blur-3xl" />
       <div className="pointer-events-none absolute -right-20 top-1/2 h-80 w-80 rounded-full bg-blue-300/20 blur-3xl" />
@@ -133,17 +133,17 @@ export default function RestaurantQRCodePage() {
               placeholder="Enter restaurant ID (or use your account's restaurant)"
             />
 
-            <div className="flex flex-wrap gap-3">
-              <Button onClick={handleGenerate} isLoading={loading} className="rounded-none">
+            <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+              <Button onClick={handleGenerate} isLoading={loading} className="w-full rounded-none sm:w-auto">
                 {loading ? 'Generating...' : 'Generate QR'}
               </Button>
 
               {qrData && (
                 <>
-                  <Button onClick={handleDownload} variant="secondary" className="rounded-none">
+                  <Button onClick={handleDownload} variant="secondary" className="w-full rounded-none sm:w-auto">
                     Download
                   </Button>
-                  <Button onClick={handlePrint} variant="outline" className="rounded-none">
+                  <Button onClick={handlePrint} variant="outline" className="w-full rounded-none sm:w-auto">
                     Print
                   </Button>
                 </>
@@ -154,8 +154,8 @@ export default function RestaurantQRCodePage() {
           </div>
 
           {qrData && (
-            <div className="mt-6 grid gap-6 lg:grid-cols-[auto,1fr] lg:items-start">
-              <div ref={welcomeCardRef} className="w-full max-w-[390px] border border-slate-300 bg-white p-6 text-center shadow-[0_18px_45px_rgba(15,23,42,0.1)] sm:p-8">
+            <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,auto),minmax(0,1fr)] lg:items-start">
+              <div ref={welcomeCardRef} className="w-full max-w-[390px] border border-slate-300 bg-white p-4 text-center shadow-[0_18px_45px_rgba(15,23,42,0.1)] sm:p-8">
                 <div className="border border-slate-200 p-5 sm:p-7">
                   {restaurantLogo ? (
                     <img src={restaurantLogo} alt={`${restaurantName} logo`} crossOrigin="anonymous" className="mx-auto mb-4 h-20 w-20 object-contain" />
@@ -167,8 +167,8 @@ export default function RestaurantQRCodePage() {
                     <span className="h-px w-10 bg-slate-300" />
                   </div>
                   <p className="mb-4 font-serif text-base tracking-[0.12em] text-slate-500">Scan to View Our Menu</p>
-                  <div className="mx-auto w-fit border border-slate-200 p-3">
-                    {qrTargetUrl ? <QRCode value={qrTargetUrl} size={190} /> : <div className="h-[190px] w-[190px]" />}
+                  <div className="mx-auto w-fit max-w-full border border-slate-200 p-3">
+                    {qrTargetUrl ? <QRCode value={qrTargetUrl} size={Math.min(190, window.innerWidth < 640 ? 160 : 190)} /> : <div className="h-[190px] w-[190px]" />}
                   </div>
                   <p className="mt-5 font-serif text-xs italic tracking-[0.12em] text-slate-400">Fresh · Delicious · Homemade</p>
                 </div>

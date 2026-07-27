@@ -54,14 +54,14 @@ const RevenueChart = ({ data }) => {
   }
 
   return (
-    <div className="rounded-3xl border border-orange-100 bg-white p-5 shadow-sm">
-      <div className="flex justify-between items-center mb-4">
+    <div className="rounded-3xl border border-orange-100 bg-white p-4 shadow-sm sm:p-5">
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-orange-600">Revenue</p>
           <h3 className="mt-1 text-lg font-black text-slate-900">Revenue Overview</h3>
           <p className="text-sm text-slate-500">Monthly revenue and order trends</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <span className="rounded-full bg-orange-50 px-2 py-1 text-xs font-semibold text-orange-700 ring-1 ring-orange-100">Revenue</span>
           <span className="rounded-full bg-blue-50 px-2 py-1 text-xs font-semibold text-blue-700 ring-1 ring-blue-100">Orders</span>
         </div>

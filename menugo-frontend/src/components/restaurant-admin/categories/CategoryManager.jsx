@@ -53,7 +53,7 @@ const CategoryManager = () => {
   const totalItems = categoriesWithCounts.reduce((count, category) => count + (category.itemCount || 0), 0)
 
   return (
-    <div className="relative overflow-hidden space-y-6 bg-white p-4 sm:p-6 lg:p-8 font-['Manrope',system-ui,sans-serif] text-slate-900">
+    <div className="relative overflow-x-hidden space-y-6 bg-white p-4 sm:p-6 lg:p-8 font-['Manrope',system-ui,sans-serif] text-slate-900">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(251,146,60,0.12),transparent_35%),radial-gradient(circle_at_bottom_left,_rgba(59,130,246,0.08),transparent_35%)]" />
       <div className="pointer-events-none absolute -left-24 top-24 h-72 w-72 rounded-full bg-orange-300/20 blur-3xl" />
       <div className="pointer-events-none absolute -right-20 top-1/2 h-80 w-80 rounded-full bg-blue-300/20 blur-3xl" />
@@ -65,7 +65,7 @@ const CategoryManager = () => {
             <h1 className="text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">Category Management</h1>
             <p className="text-sm leading-6 text-slate-500 sm:text-base">Organize your menu items into categories with an analytics-style workspace.</p>
           </div>
-          <Button onClick={() => setShowModal(true)} icon={PlusIcon} className="rounded-none bg-gradient-to-r from-orange-500 to-blue-500 px-4 py-2.5 text-white shadow-lg shadow-orange-500/20 hover:from-orange-600 hover:to-blue-600">
+          <Button onClick={() => setShowModal(true)} icon={PlusIcon} className="w-full rounded-none bg-gradient-to-r from-orange-500 to-blue-500 px-4 py-2.5 text-white shadow-lg shadow-orange-500/20 hover:from-orange-600 hover:to-blue-600 sm:w-auto">
             Add Category
           </Button>
         </div>
@@ -82,7 +82,7 @@ const CategoryManager = () => {
             </div>
 
        {/* Drag & Drop Notice */}
-       <div className="mb-4 flex justify-end">
+       <div className="mb-4 flex justify-start sm:justify-end">
         <button
           onClick={() => setIsDragging(!isDragging)}
           className={`flex items-center gap-2 px-3 py-1.5 text-sm ${

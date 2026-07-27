@@ -36,6 +36,10 @@ const RestaurantLayout = () => {
 
   const location = useLocation()
   const isReviewsPage = location?.pathname && location.pathname.startsWith('/admin/reviews')
+  const restaurantBrand = {
+    name: user?.restaurant?.name || user?.restaurant?.restaurant_name || 'MenuGo',
+    logo: user?.restaurant?.logo_url || user?.restaurant?.logoUrl || user?.restaurant?.logo || '/logo.svg',
+  }
 
   const menuItems = [
     { path: '/admin/dashboard', label: 'Dashboard', icon: <BarChart2 className="w-5 h-5" /> },
@@ -95,6 +99,7 @@ const RestaurantLayout = () => {
         menuItems={visibleMenuItems}
         user={user}
         onLogout={handleLogout}
+        brand={restaurantBrand}
       />
     </div>
   )

@@ -4,6 +4,7 @@ import { PencilIcon, TrashIcon, EyeIcon, EyeSlashIcon } from '@heroicons/react/2
 import Avatar from '../../../common/Avatar'
 import Badge from '../../../common/Badge'
 import ConfirmationDialog from '../../../common/ConfirmationDialog'
+import StaffCard from './StaffCard'
 import { updateStaffStatus, deleteStaff } from '../../../services/staffService'
 import toast from 'react-hot-toast'
 
@@ -53,7 +54,7 @@ const StaffList = ({ staff, onEdit, onRefresh }) => {
   return (
     <>
       <div className="mt-6 overflow-hidden rounded-none border border-slate-200 bg-white shadow-[0_16px_40px_rgba(15,23,42,0.06)]">
-        <div className="overflow-x-auto">
+        <div className="hidden overflow-x-auto md:block">
           <table className="w-full">
             <thead className="bg-slate-50">
               <tr>
@@ -143,6 +144,19 @@ const StaffList = ({ staff, onEdit, onRefresh }) => {
               ))}
             </tbody>
           </table>
+        </div>
+
+        <div className="grid gap-4 p-3 sm:p-4 md:hidden">
+          {staff.map((member, index) => (
+            <motion.div
+              key={member.id}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.03 }}
+            >
+              <StaffCard staff={member} onEdit={() => onEdit(member)} onRefresh={onRefresh} />
+            </motion.div>
+          ))}
         </div>
       </div>
 

@@ -53,14 +53,14 @@ const StaffManagement = () => {
   function renderStaffContent() {
     return (
       <>
-        <div className="mb-6 flex flex-col gap-4 rounded-none border border-slate-200 bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.06)] lg:flex-row lg:items-center lg:justify-between">
+        <div className="mb-6 flex flex-col gap-4 rounded-none border border-slate-200 bg-white p-4 shadow-[0_16px_40px_rgba(15,23,42,0.06)] sm:p-5 lg:flex-row lg:items-center lg:justify-between">
           <div className="space-y-2">
             <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-orange-600">Restaurant staff</p>
             <h1 className="text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">Staff Management</h1>
             <p className="text-sm leading-6 text-slate-500 sm:text-base">Manage your restaurant team members with the analytics palette.</p>
           </div>
-          <div className="flex gap-3 items-center">
-            <Button onClick={() => setShowModal(true)} icon={PlusIcon}>
+          <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
+            <Button onClick={() => setShowModal(true)} icon={PlusIcon} className="w-full sm:w-auto">
               Add Staff
             </Button>
           </div>

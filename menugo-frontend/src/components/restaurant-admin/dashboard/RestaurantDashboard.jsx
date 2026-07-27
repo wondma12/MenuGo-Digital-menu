@@ -89,7 +89,7 @@ const RestaurantDashboard = () => {
   ]
 
   return (
-    <div className="relative overflow-hidden space-y-6 bg-white p-4 sm:p-6 lg:p-8 font-['Manrope',system-ui,sans-serif] text-slate-900">
+    <div className="relative overflow-x-hidden space-y-6 bg-white p-4 sm:p-6 lg:p-8 font-['Manrope',system-ui,sans-serif] text-slate-900">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(251,146,60,0.12),transparent_35%),radial-gradient(circle_at_bottom_left,_rgba(59,130,246,0.08),transparent_35%)]" />
       <div className="pointer-events-none absolute -left-24 top-24 h-72 w-72 rounded-full bg-orange-300/20 blur-3xl" />
       <div className="pointer-events-none absolute -right-20 top-1/2 h-80 w-80 rounded-full bg-blue-300/20 blur-3xl" />
@@ -101,16 +101,20 @@ const RestaurantDashboard = () => {
             <h1 className="text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">Restaurant Dashboard</h1>
             <p className="text-sm leading-6 text-slate-500 sm:text-base">Welcome back, {user?.full_name?.split(' ')?.[0] || ''}! Here&apos;s your business overview.</p>
           </div>
-          <div className="relative z-50 flex items-center gap-2">
-            <DateRangePicker value={dateRange} onChange={setDateRange} />
-            <QuickActions restaurantId={restaurantId} />
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-2">
+            <div className="w-full sm:w-auto">
+              <DateRangePicker value={dateRange} onChange={setDateRange} />
+            </div>
+            <div className="w-full sm:w-auto">
+              <QuickActions restaurantId={restaurantId} />
+            </div>
           </div>
         </div>
 
       </div>
 
       {/* Metrics Grid */}
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {metrics.map((metric, index) => (
           <motion.div
             key={metric.title}

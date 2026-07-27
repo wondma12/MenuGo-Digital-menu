@@ -7,8 +7,9 @@ import { BarChart2, Store, Users, CreditCard, TrendingUp, HelpCircle, Settings, 
 
 const MobileNav = ({ isOpen, onClose, menuItems, user, onLogout, brand }) => {
   const [expandedMenus, setExpandedMenus] = useState({})
-  const brandName = brand?.name || 'MenuGo'
-  const brandLogo = brand?.logo || '/logo.svg'
+  const brandName = brand?.name || user?.restaurant?.name || user?.restaurant?.restaurant_name || 'MenuGo'
+  const brandLogo = brand?.logo || user?.restaurant?.logo_url || user?.restaurant?.logoUrl || user?.restaurant?.logo || '/logo.svg'
+  const userName = user?.fullName || user?.full_name || user?.name || 'Admin User'
 
   const toggleSubmenu = (path) => {
     setExpandedMenus(prev => ({
@@ -50,7 +51,7 @@ const MobileNav = ({ isOpen, onClose, menuItems, user, onLogout, brand }) => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-black bg-opacity-50 z-40"
+            className="fixed inset-0 z-40 bg-slate-900/60 backdrop-blur-sm"
           />
           
           {/* Drawer */}
@@ -59,13 +60,16 @@ const MobileNav = ({ isOpen, onClose, menuItems, user, onLogout, brand }) => {
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ type: 'tween', duration: 0.3 }}
-            className="fixed right-0 top-0 h-full w-80 bg-white shadow-xl z-50"
+            className="fixed inset-y-0 right-0 z-50 flex w-full max-w-sm flex-col bg-white shadow-2xl"
           >
             {/* Header */}
-            <div className="flex items-center justify-between p-4 border-b border-gray-200">
-              <div className="flex items-center gap-2">
-                <img src={brandLogo} alt={brandName} className="h-8 w-8 rounded-md object-cover" />
-                <span className="text-xl font-bold text-gray-900 truncate">{brandName}</span>
+            <div className="flex items-center justify-between border-b border-gray-200 p-4">
+              <div className="flex min-w-0 items-center gap-3">
+                <img src={brandLogo} alt={brandName} className="h-10 w-10 rounded-lg object-cover" onError={(e) => { e.currentTarget.src = '/logo.svg' }} />
+                <div className="min-w-0">
+                  <p className="truncate text-lg font-semibold text-gray-900">{brandName}</p>
+                  <p className="truncate text-sm text-gray-500">Restaurant menu</p>
+                </div>
               </div>
               <button
                 onClick={onClose}
@@ -78,14 +82,12 @@ const MobileNav = ({ isOpen, onClose, menuItems, user, onLogout, brand }) => {
             {/* User Info */}
             <div className="p-4 bg-gray-50 border-b border-gray-200">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center">
-                  <span className="text-sm font-medium text-gray-700">
-                    {user?.full_name?.charAt(0) || 'A'}
-                  </span>
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-orange-100 text-sm font-semibold text-orange-700">
+                  <span>{userName.charAt(0).toUpperCase()}</span>
                 </div>
-                <div>
-                  <p className="font-medium text-gray-900">{user?.full_name || 'Admin User'}</p>
-                  <p className="text-sm text-gray-500">{user?.email || 'admin@menugo.com'}</p>
+                <div className="min-w-0">
+                  <p className="truncate font-medium text-gray-900">{userName}</p>
+                  <p className="truncate text-sm text-gray-500">{user?.email || 'admin@menugo.com'}</p>
                 </div>
               </div>
             </div>

@@ -333,21 +333,21 @@ const RestaurantAnalytics = () => {
           <h1 className="text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">Analytics Dashboard</h1>
           <p className="text-sm text-slate-500">Track your restaurant performance</p>
         </div>
-        <div className="relative z-50 flex flex-nowrap items-center gap-2">
-          <DateRangePicker value={dateRange} onChange={setDateRange} />
-          <ExportReport data={data} dateRange={dateRange} className="rounded-none" />
+        <div className="relative z-50 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+          <DateRangePicker value={dateRange} onChange={setDateRange} className="w-full sm:w-auto" />
+          <ExportReport data={data} dateRange={dateRange} className="w-full rounded-none sm:w-auto" />
         </div>
       </div>
 
       {/* Key Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {metrics.map((metric, index) => (
           <motion.div
             key={index}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
-            className={`relative flex h-24 items-center justify-between overflow-hidden rounded-2xl border border-orange-100 border-l-4 bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.06)] ${borderColors[metric.color] || 'border-l-orange-500'}`}
+            className={`relative flex min-h-[96px] items-center justify-between overflow-hidden rounded-2xl border border-orange-100 border-l-4 bg-white p-4 shadow-[0_16px_40px_rgba(15,23,42,0.06)] sm:p-5 ${borderColors[metric.color] || 'border-l-orange-500'}`}
           >
             <div>
               <p className="text-sm text-slate-500">{metric.title}</p>
@@ -363,9 +363,9 @@ const RestaurantAnalytics = () => {
       </div>
 
       {/* <div className="grid grid-cols-1 lg:grid-cols-2 gap-6"> */}
-        <div className="rounded-3xl border border-orange-100 bg-white/95 p-5 shadow-[0_20px_60px_rgba(15,23,42,0.08)]">
-          <h3 className="text-lg font-semibold text-slate-900 mb-4">Revenue Trend</h3>
-          <ResponsiveContainer width="100%" height={300}>
+        <div className="rounded-3xl border border-orange-100 bg-white/95 p-4 shadow-[0_20px_60px_rgba(15,23,42,0.08)] sm:p-5">
+          <h3 className="mb-4 text-lg font-semibold text-slate-900">Revenue Trend</h3>
+          <ResponsiveContainer width="100%" height={280}>
             <AreaChart data={chartRevenueData}>
               <defs>
                 <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
@@ -382,9 +382,9 @@ const RestaurantAnalytics = () => {
           </ResponsiveContainer>
         </div>
 
-        <div className="rounded-3xl border border-orange-100 bg-white/95 p-5 shadow-[0_20px_60px_rgba(15,23,42,0.08)]">
-          <h3 className="text-lg font-semibold text-slate-900 mb-4">Orders Trend</h3>
-          <ResponsiveContainer width="100%" height={300}>
+        <div className="rounded-3xl border border-orange-100 bg-white/95 p-4 shadow-[0_20px_60px_rgba(15,23,42,0.08)] sm:p-5">
+          <h3 className="mb-4 text-lg font-semibold text-slate-900">Orders Trend</h3>
+          <ResponsiveContainer width="100%" height={280}>
             <BarChart data={chartOrdersData} barSize={18} barGap={10}>
               <defs>
                 <linearGradient id="ordersBarGradient" x1="0" y1="0" x2="0" y2="1">
@@ -402,9 +402,9 @@ const RestaurantAnalytics = () => {
         </div>
       {/* </div> */}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="rounded-3xl border border-orange-100 bg-white/95 p-5 shadow-[0_20px_60px_rgba(15,23,42,0.08)]">
-          <h3 className="text-lg font-semibold text-slate-900 mb-4">Order Type Distribution</h3>
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <div className="rounded-3xl border border-orange-100 bg-white/95 p-4 shadow-[0_20px_60px_rgba(15,23,42,0.08)] sm:p-5">
+          <h3 className="mb-4 text-lg font-semibold text-slate-900">Order Type Distribution</h3>
           <ResponsiveContainer width="100%" height={250}>
               <PieChart>
                 {(() => {
@@ -448,9 +448,9 @@ const RestaurantAnalytics = () => {
           </ResponsiveContainer>
         </div>
 
-        <div className="rounded-3xl border border-orange-100 bg-white/95 p-5 shadow-[0_20px_60px_rgba(15,23,42,0.08)]">
-          <h3 className="text-lg font-semibold text-slate-900 mb-4">Peak Hours</h3>
-          <ResponsiveContainer width="100%" height={280}>
+        <div className="rounded-3xl border border-orange-100 bg-white/95 p-4 shadow-[0_20px_60px_rgba(15,23,42,0.08)] sm:p-5">
+          <h3 className="mb-4 text-lg font-semibold text-slate-900">Peak Hours</h3>
+          <ResponsiveContainer width="100%" height={260}>
             <AreaChart data={chartPeakHoursData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
               <defs>
                 <linearGradient id="peakAreaGradient" x1="0" y1="0" x2="0" y2="1">
@@ -488,9 +488,9 @@ const RestaurantAnalytics = () => {
       </div>
 
       {/* Top Categories & Payment Methods */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="rounded-3xl border border-orange-100 bg-white/95 p-5 shadow-[0_20px_60px_rgba(15,23,42,0.08)]">
-          <h3 className="text-lg font-semibold text-slate-900 mb-4">Top Categories</h3>
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <div className="rounded-3xl border border-orange-100 bg-white/95 p-4 shadow-[0_20px_60px_rgba(15,23,42,0.08)] sm:p-5">
+          <h3 className="mb-4 text-lg font-semibold text-slate-900">Top Categories</h3>
           <div className="space-y-3">
             {data?.topCategories?.map((category, index) => (
               <div key={category.name} className="flex items-center justify-between">
@@ -507,8 +507,8 @@ const RestaurantAnalytics = () => {
           </div>
         </div>
 
-        <div className="rounded-3xl border border-orange-100 bg-white/95 p-5 shadow-[0_20px_60px_rgba(15,23,42,0.08)]">
-          <h3 className="text-lg font-semibold text-slate-900 mb-4">Payment Methods</h3>
+        <div className="rounded-3xl border border-orange-100 bg-white/95 p-4 shadow-[0_20px_60px_rgba(15,23,42,0.08)] sm:p-5">
+          <h3 className="mb-4 text-lg font-semibold text-slate-900">Payment Methods</h3>
           <div className="space-y-3">
             {data?.paymentMethods?.map((method, index) => (
               <div key={method.name} className="flex items-center justify-between">

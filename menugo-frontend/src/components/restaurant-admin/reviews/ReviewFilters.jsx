@@ -20,8 +20,8 @@ const ReviewFilters = ({ filters, onFiltersChange }) => {
   const hasActiveFilters = filters.search || filters.rating !== 'all' || filters.status !== 'all' || filters.dateRange
 
   return (
-    <div className="rounded-3xl border border-orange-100 bg-white/95 p-4 mb-6">
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+    <div className="mb-6 rounded-3xl border border-orange-100 bg-white/95 p-4">
+      <div className="flex flex-col gap-4 md:grid md:grid-cols-2 xl:grid-cols-4">
         <div className="relative">
           <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <input
@@ -70,7 +70,7 @@ const ReviewFilters = ({ filters, onFiltersChange }) => {
       </div>
 
       {hasActiveFilters && (
-        <div className="flex justify-end mt-4 pt-3 border-t border-slate-100">
+        <div className="mt-4 flex justify-start border-t border-slate-100 pt-3 sm:justify-end">
           <button onClick={clearFilters} className="text-sm text-orange-600 hover:text-orange-700">
             Clear Filters
           </button>

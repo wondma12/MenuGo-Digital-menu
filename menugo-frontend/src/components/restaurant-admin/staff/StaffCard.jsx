@@ -53,56 +53,67 @@ const StaffCard = ({ staff, onEdit, onRefresh }) => {
   return (
     <>
       <motion.div
-        whileHover={{ y: -4 }}
-        className="flex h-full flex-col overflow-hidden rounded-none border border-slate-200 bg-white shadow-[0_16px_40px_rgba(15,23,42,0.06)] transition-all hover:-translate-y-1 hover:shadow-[0_24px_60px_rgba(15,23,42,0.10)]"
+        whileHover={{ y: -2 }}
+        className="flex h-full flex-col overflow-hidden rounded-none border border-slate-200 bg-white shadow-[0_12px_30px_rgba(15,23,42,0.06)] transition-all hover:-translate-y-1 hover:shadow-[0_20px_40px_rgba(15,23,42,0.10)]"
       >
-        <div className="p-6 flex-1 flex flex-col">
-          <div className="flex items-start justify-between mb-4">
-            <div className="flex items-center gap-3">
+        <div className="flex flex-1 flex-col p-4 sm:p-6">
+          <div className="mb-4 flex items-start justify-between gap-3">
+            <div className="flex min-w-0 items-center gap-3">
               <Avatar src={staff.avatar} name={staff.name} size="xl" />
               <div>
-                <h3 className="font-black tracking-tight text-slate-900">{staff.name}</h3>
+                <h3 className="truncate font-black tracking-tight text-slate-900">{staff.name}</h3>
               </div>
-            </div>
-            <div className="flex gap-1">
-              <button onClick={onEdit} className="rounded-none p-1.5 text-slate-500 hover:bg-orange-50">
-                <PencilIcon className="w-4 h-4" />
-              </button>
-              <button onClick={() => setShowDeleteDialog(true)} className="rounded-none p-1.5 text-slate-500 hover:bg-orange-50">
-                <TrashIcon className="w-4 h-4" />
-              </button>
             </div>
           </div>
 
-          <div className="space-y-2 mb-4">
-            <div className="flex items-center gap-2 text-sm">
+          <div className="mb-4 space-y-2">
+            <div className="flex flex-wrap items-center gap-2 text-sm">
               <Badge variant={roleColors[staff.role]} size="sm">{staff.role}</Badge>
-              <button
-                onClick={handleStatusToggle}
-                className={`text-xs px-2 py-0.5 rounded-none ${
-                  staff.isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'
-                }`}
-              >
-                {staff.isActive ? 'Active' : 'Inactive'}
-              </button>
             </div>
-            
+
             <div className="flex items-center gap-2 text-sm text-slate-600">
               <EnvelopeIcon className="w-4 h-4 text-slate-400" />
               <span className="truncate">{staff.email}</span>
             </div>
-            
+
             <div className="flex items-center gap-2 text-sm text-slate-600">
               <PhoneIcon className="w-4 h-4 text-slate-400" />
               <span>{staff.phone}</span>
             </div>
-            
+
             <div className="flex items-center gap-2 text-sm text-slate-600">
               <ClockIcon className="w-4 h-4 text-slate-400" />
               <span>{staff.shiftStart} - {staff.shiftEnd}</span>
             </div>
           </div>
 
+          <div className="mt-auto rounded-2xl border border-slate-100 bg-slate-50 p-3">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-col gap-1">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Status</span>
+                <button
+                  onClick={handleStatusToggle}
+                  className={`w-fit rounded-none px-2.5 py-1 text-xs font-medium ${
+                    staff.isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'
+                  }`}
+                >
+                  {staff.isActive ? 'Active' : 'Inactive'}
+                </button>
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Actions</span>
+                <div className="flex flex-wrap gap-2">
+                  <button onClick={onEdit} className="rounded-none border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-600 hover:border-orange-200 hover:text-orange-600">
+                    Edit
+                  </button>
+                  <button onClick={() => setShowDeleteDialog(true)} className="rounded-none border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-600 hover:border-orange-200 hover:text-orange-600">
+                    Delete
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div className="border-t border-slate-100 bg-slate-50 p-4 pt-3">

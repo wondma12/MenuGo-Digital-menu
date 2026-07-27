@@ -97,7 +97,7 @@ const WaiterLayout = () => {
     { path: '/waiter/calls', label: 'Calls', icon: <Phone className="h-4 w-4" /> },
   ]
 
-  const mobileMenuItems = menuItems.filter((item) => item.path === '/waiter/orders' || item.path === '/waiter/calls')
+  const mobileMenuItems = menuItems
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-white font-['Manrope',system-ui,sans-serif] text-gray-900">

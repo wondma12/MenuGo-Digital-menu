@@ -51,10 +51,10 @@ const DateRangePicker = ({ value, onChange, className = '' }) => {
     <div className={`relative ${className}`} ref={pickerRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="px-4 py-2 border border-gray-300 rounded-lg flex items-center gap-2 hover:bg-gray-50"
+        className="flex w-full items-center gap-2 rounded-none border border-gray-300 px-4 py-2 text-left hover:bg-gray-50 sm:w-auto"
       >
-        <CalendarIcon className="w-4 h-4 text-gray-400" />
-        <span className="text-sm text-gray-700">{displayValue}</span>
+        <CalendarIcon className="h-4 w-4 flex-shrink-0 text-gray-400" />
+        <span className="truncate text-sm text-gray-700">{displayValue}</span>
       </button>
 
       {isOpen && (

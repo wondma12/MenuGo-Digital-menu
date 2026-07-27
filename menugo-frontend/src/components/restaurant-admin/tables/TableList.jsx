@@ -52,7 +52,7 @@ const TableList = ({ tables = [], onEdit, onRefresh }) => {
         </div>
       </div>
 
-      <div className="overflow-x-auto">
+      <div className="hidden overflow-x-auto md:block">
         <table className="min-w-full divide-y divide-slate-100">
           <thead className="bg-white">
             <tr>
@@ -118,6 +118,56 @@ const TableList = ({ tables = [], onEdit, onRefresh }) => {
             })}
           </tbody>
         </table>
+      </div>
+
+      <div className="space-y-3 p-3 md:hidden">
+        {sortedTables.map((table, index) => {
+          const tableNumber = table.tableNumber ?? table.table_number ?? table.number ?? table.tableNo ?? table.table_no ?? '—'
+          const statusConfig = getStatusConfig(table.status)
+          return (
+            <motion.div
+              key={table.id || index}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.03 }}
+              className="rounded-none border border-slate-100 bg-slate-50 p-4"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="font-semibold text-slate-900">Table {tableNumber}</p>
+                  {table.tableName ? <p className="mt-1 text-sm text-slate-500">{table.tableName}</p> : null}
+                </div>
+                <Badge variant={statusConfig.color} size="sm">
+                  {statusConfig.label}
+                </Badge>
+              </div>
+              <div className="mt-3 flex flex-wrap items-center gap-2 text-sm text-slate-600">
+                <span className="inline-flex items-center gap-1 rounded-none bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700">
+                  <UsersIcon className="h-3.5 w-3.5" />
+                  {table.capacity} persons
+                </span>
+                <span className="text-slate-400">•</span>
+                <span className="capitalize">{table.section || 'General'}</span>
+              </div>
+              <div className="mt-4 flex justify-end gap-2">
+                <button
+                  onClick={() => onEdit(table)}
+                  className="inline-flex items-center justify-center rounded-none px-3 py-2 text-slate-600 hover:bg-orange-50 hover:text-slate-900"
+                  aria-label="Edit table"
+                >
+                  <PencilIcon className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => setDeleteTarget(table)}
+                  className="inline-flex items-center justify-center rounded-none px-3 py-2 text-slate-600 hover:bg-orange-50 hover:text-orange-700"
+                  aria-label="Delete table"
+                >
+                  <TrashIcon className="w-4 h-4" />
+                </button>
+              </div>
+            </motion.div>
+          )
+        })}
       </div>
 
       <ConfirmationDialog

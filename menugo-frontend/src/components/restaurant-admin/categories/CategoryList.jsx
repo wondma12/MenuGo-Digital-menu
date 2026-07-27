@@ -25,7 +25,7 @@ const CategoryList = ({ categories, onEdit, onRefresh }) => {
   return (
     <>
       <div className="overflow-hidden rounded-none bg-white shadow-[0_16px_40px_rgba(15,23,42,0.06)]">
-        <div className="overflow-x-auto">
+        <div className="hidden overflow-x-auto md:block">
           <table className="w-full">
             <thead className="bg-orange-50">
               <tr>
@@ -102,6 +102,58 @@ const CategoryList = ({ categories, onEdit, onRefresh }) => {
               ))}
             </tbody>
           </table>
+        </div>
+        <div className="space-y-3 p-3 md:hidden">
+          {categories.map((category, index) => (
+            <motion.div
+              key={category.id}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.03 }}
+              className="rounded-none border border-slate-100 bg-slate-50 p-4"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  {category.icon ? (
+                    <img src={category.icon} alt={category.name} className="h-10 w-10 rounded-none object-cover" />
+                  ) : (
+                    <div className="flex h-10 w-10 items-center justify-center rounded-none bg-orange-50">
+                      <span className="text-sm text-orange-600">{category.name.charAt(0)}</span>
+                    </div>
+                  )}
+                  <div>
+                    <p className="font-medium text-slate-900">{category.name}</p>
+                    <p className="mt-1 text-sm text-slate-500">{category.description || 'No description'}</p>
+                  </div>
+                </div>
+                <div className={`flex w-fit items-center gap-1 px-2 py-1 text-xs font-medium ${
+                  category.isActive ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'
+                }`}>
+                  {category.isActive ? <EyeIcon className="w-3 h-3" /> : <EyeSlashIcon className="w-3 h-3" />}
+                  {category.isActive ? 'Active' : 'Inactive'}
+                </div>
+              </div>
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <Badge variant="info" size="sm">{category.itemCount || 0} items</Badge>
+              </div>
+              <div className="mt-4 flex items-center justify-end gap-2">
+                <button
+                  onClick={() => onEdit(category)}
+                  className="p-1 text-slate-500 hover:text-orange-600"
+                >
+                  <PencilIcon className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => setDeleteTarget(category)}
+                  className="p-1 text-slate-500 hover:text-rose-600"
+                  disabled={category.itemCount > 0}
+                  title={category.itemCount > 0 ? 'Cannot delete category with items' : ''}
+                >
+                  <TrashIcon className={`w-4 h-4 ${category.itemCount > 0 ? 'opacity-50' : ''}`} />
+                </button>
+              </div>
+            </motion.div>
+          ))}
         </div>
       </div>
 

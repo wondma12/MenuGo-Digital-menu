@@ -46,7 +46,7 @@ const MenuList = ({ items, selectedItems, onSelectItem, onEdit, onRefresh }) => 
   return (
     <>
       <div className="overflow-hidden rounded-none bg-white shadow-[0_16px_40px_rgba(15,23,42,0.06)]">
-        <div className="overflow-x-auto">
+        <div className="hidden overflow-x-auto md:block">
           <table className="w-full">
             <thead className="bg-orange-50">
               <tr>
@@ -172,6 +172,71 @@ const MenuList = ({ items, selectedItems, onSelectItem, onEdit, onRefresh }) => 
               ))}
             </tbody>
           </table>
+        </div>
+        <div className="space-y-3 p-3 md:hidden">
+          {items.map((item, index) => (
+            <motion.div
+              key={item.id}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.02 }}
+              className="rounded-none border border-slate-100 bg-slate-50 p-4"
+            >
+              <div className="flex items-start gap-3">
+                {item.image ? (
+                  <img src={item.image} alt={item.name} className="h-14 w-14 rounded-none object-cover" />
+                ) : (
+                  <div className="flex h-14 w-14 items-center justify-center rounded-none bg-slate-100">
+                    <span className="text-[10px] text-slate-400">No image</span>
+                  </div>
+                )}
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <p className="font-medium text-slate-900">{item.name}</p>
+                      <p className="mt-1 text-xs text-slate-500">{item.description}</p>
+                    </div>
+                    <div className="shrink-0">
+                      <Badge variant={getCategoryColor(item.category)} size="sm">
+                        {item.category}
+                      </Badge>
+                    </div>
+                  </div>
+                  <div className="mt-3 flex flex-wrap items-center gap-2 text-sm text-slate-600">
+                    <span className="font-semibold text-slate-900">{item.price}</span>
+                    {item.discountPrice && <span className="text-xs text-slate-400 line-through">{item.discountPrice}</span>}
+                    <span className="text-slate-300">•</span>
+                    <span>{item.salesCount || 0} orders</span>
+                  </div>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {item.isVegetarian && <Badge variant="success" size="sm">Veg</Badge>}
+                    {item.isVegan && <Badge variant="success" size="sm">Vegan</Badge>}
+                    {item.isGlutenFree && <Badge variant="info" size="sm">GF</Badge>}
+                    {item.spiceLevel > 0 && <Badge variant="warning" size="sm">{'🔥'.repeat(item.spiceLevel)}</Badge>}
+                  </div>
+                </div>
+              </div>
+              <div className="mt-4 flex items-center justify-between gap-2">
+                <div className={`flex items-center gap-1 rounded-none px-2 py-1 text-xs font-medium ${
+                  item.isAvailable ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'
+                }`}>
+                  {item.isAvailable ? <CheckCircleIcon className="w-3 h-3" /> : <XCircleIcon className="w-3 h-3" />}
+                  <span>{item.isAvailable ? 'Available' : 'Unavailable'}</span>
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={() => handleAvailabilityToggle(item)} className={`p-1 ${item.isAvailable ? 'text-slate-500 hover:text-rose-600' : 'text-slate-500 hover:text-emerald-600'}`}>
+                    {item.isAvailable ? <XCircleIcon className="w-4 h-4" /> : <CheckCircleIcon className="w-4 h-4" />}
+                  </button>
+                  <button onClick={() => onEdit(item)} className="p-1 text-slate-500 hover:text-orange-600">
+                    <PencilIcon className="w-4 h-4" />
+                  </button>
+                  <button onClick={() => setDeleteTarget(item)} className="p-1 text-slate-500 hover:text-rose-600">
+                    <TrashIcon className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          ))}
         </div>
       </div>
 

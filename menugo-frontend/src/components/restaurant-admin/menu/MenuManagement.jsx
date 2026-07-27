@@ -46,7 +46,7 @@ const MenuManagement = () => {
   const availableItems = items.filter(i => i.isAvailable).length
 
   return (
-    <div className="relative overflow-hidden space-y-6 bg-white p-4 sm:p-6 lg:p-8 font-['Manrope',system-ui,sans-serif] text-slate-900">
+    <div className="relative overflow-x-hidden space-y-6 bg-white p-4 sm:p-6 lg:p-8 font-['Manrope',system-ui,sans-serif] text-slate-900">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(251,146,60,0.12),transparent_35%),radial-gradient(circle_at_bottom_left,_rgba(59,130,246,0.08),transparent_35%)]" />
       <div className="pointer-events-none absolute -left-24 top-24 h-72 w-72 rounded-full bg-orange-300/20 blur-3xl" />
       <div className="pointer-events-none absolute -right-20 top-1/2 h-80 w-80 rounded-full bg-blue-300/20 blur-3xl" />
@@ -58,8 +58,8 @@ const MenuManagement = () => {
             <h1 className="text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">Menu Management</h1>
             <p className="text-sm leading-6 text-slate-500 sm:text-base">Design, edit and publish your dishes with an analytics-style workspace.</p>
           </div>
-          <div className="relative z-50">
-            <Button onClick={() => setShowItemModal(true)} icon={PlusIcon} className="rounded-none bg-gradient-to-r from-orange-500 to-blue-500 px-4 py-2.5 text-white shadow-lg shadow-orange-500/20 hover:from-orange-600 hover:to-blue-600">
+          <div className="relative z-50 w-full sm:w-auto">
+            <Button onClick={() => setShowItemModal(true)} icon={PlusIcon} className="w-full rounded-none bg-gradient-to-r from-orange-500 to-blue-500 px-4 py-2.5 text-white shadow-lg shadow-orange-500/20 hover:from-orange-600 hover:to-blue-600 sm:w-auto">
               Add Menu Item
             </Button>
           </div>
@@ -78,21 +78,21 @@ const MenuManagement = () => {
       </div>
 
       {/* Search and Filters */}
-      <div className="flex flex-col lg:flex-row gap-4 mb-6 items-start">
+      <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-start">
         <div className="flex-1">
-          <div className="bg-white p-3 flex items-center gap-3 shadow-[0_16px_40px_rgba(15,23,42,0.06)]">
-            <MenuSearch value={searchTerm} onChange={setSearchTerm} />
+          <div className="flex flex-col gap-3 bg-white p-3 shadow-[0_16px_40px_rgba(15,23,42,0.06)] sm:flex-row sm:items-center">
+            <div className="flex-1">
+              <MenuSearch value={searchTerm} onChange={setSearchTerm} />
+            </div>
             <button
               onClick={() => setShowFilters(!showFilters)}
-              className="ml-2 flex h-10 w-36 items-center justify-center gap-2 border border-slate-200 bg-white text-sm text-slate-700 transition-all duration-200 hover:border-orange-200 hover:bg-orange-50 focus:outline-none focus:ring-2 focus:ring-orange-100"
+              className="flex h-10 w-full items-center justify-center gap-2 border border-slate-200 bg-white text-sm text-slate-700 transition-all duration-200 hover:border-orange-200 hover:bg-orange-50 focus:outline-none focus:ring-2 focus:ring-orange-100 sm:w-36"
             >
               <FunnelIcon className="h-5 w-5 text-orange-500" />
               Filters
             </button>
-
           </div>
         </div>
-        
       </div>
 
       {/* Filters Panel */}

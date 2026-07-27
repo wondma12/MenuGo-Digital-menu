@@ -41,8 +41,8 @@ const TableManagement = () => {
               <p className="text-sm leading-6 text-slate-500 sm:text-base">Manage seating, floor layout, and reservations with the analytics palette.</p>
             </div>
 
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-              <Button onClick={() => setShowModal(true)} icon={PlusIcon}>
+            <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
+              <Button onClick={() => setShowModal(true)} icon={PlusIcon} className="w-full sm:w-auto">
                 Add Table
               </Button>
             </div>
@@ -56,7 +56,7 @@ const TableManagement = () => {
   }
 
   return (
-    <div className="relative overflow-hidden bg-slate-50 p-6 font-['Manrope',system-ui,sans-serif] text-slate-900">
+    <div className="relative overflow-x-hidden bg-slate-50 p-4 sm:p-6 font-['Manrope',system-ui,sans-serif] text-slate-900">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(251,146,60,0.12),transparent_35%),radial-gradient(circle_at_bottom_left,_rgba(59,130,246,0.08),transparent_35%)]" />
       <div className="pointer-events-none absolute -left-24 top-24 h-72 w-72 rounded-full bg-orange-300/20 blur-3xl" />
       <div className="pointer-events-none absolute -right-20 top-1/2 h-80 w-80 rounded-full bg-blue-300/20 blur-3xl" />

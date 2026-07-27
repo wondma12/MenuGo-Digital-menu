@@ -53,19 +53,19 @@ const CallCard = ({ call, onClick }) => {
     <motion.div
       whileHover={{ backgroundColor: 'rgba(248,250,252,0.65)' }}
       onClick={onClick}
-      className={`group cursor-pointer border-b border-slate-100 px-4 py-3 transition-all duration-150 last:border-b-0 ${
+      className={`group cursor-pointer border-b border-slate-100 px-4 py-3 transition-all duration-150 last:border-b-0 hover:bg-slate-50 ${
         isPending ? 'bg-orange-50/35' : 'bg-white'
       }`}
     >
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1.1fr_1fr_1fr_auto] sm:items-center">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1.2fr_1fr_0.9fr_0.8fr_auto] sm:items-center">
         <div className="flex min-w-0 items-center gap-3">
-          <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${
+          <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl ${
             isPending ? 'bg-gradient-to-br from-orange-500 to-blue-500 text-white' : 'bg-gradient-to-br from-slate-100 to-white text-slate-600'
           }`}>
           {getCallTypeIcon(call.callType)}
           </div>
           <div className="min-w-0">
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <h3 className="truncate text-sm font-black tracking-tight text-slate-900 sm:text-base">Table {call.tableNumber || '-'}</h3>
               <span className="rounded-full bg-orange-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-orange-700 ring-1 ring-orange-100">
                 {call.section || 'Main Hall'}
@@ -77,7 +77,7 @@ const CallCard = ({ call, onClick }) => {
           </div>
         </div>
 
-        <div className="text-sm font-medium text-slate-700 sm:text-[13px]">
+        <div className="text-sm font-semibold text-slate-700 sm:text-[13px]">
           {getCallTypeLabel(call.callType)}
         </div>
 

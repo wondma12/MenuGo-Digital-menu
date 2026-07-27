@@ -24,24 +24,24 @@ const Tabs = ({ tabs, defaultTab = 0, onChange, className = '' }) => {
   return (
     <div className={className}>
       <div className="border-b border-slate-200">
-        <nav className="flex gap-8" aria-label="Tabs">
+        <nav className="flex gap-1 overflow-x-auto pb-2 sm:gap-4 lg:gap-8" aria-label="Tabs">
           {tabs.map((tab, index) => (
             <button
               key={index}
               onClick={() => handleTabClick(index)}
               className={`
-                pb-4 px-1 text-sm font-medium transition-all duration-200
+                flex shrink-0 items-center whitespace-nowrap px-2 pb-4 text-sm font-medium transition-all duration-200 sm:px-3
                 ${activeTab === index
                   ? 'border-b-2 border-orange-500 text-orange-600'
                   : 'text-slate-500 hover:border-slate-300 hover:text-slate-700'
                 }
               `}
             >
-              {tab.icon && <tab.icon className="w-4 h-4 inline mr-2" />}
+              {tab.icon && <tab.icon className="mr-2 inline h-4 w-4" />}
               {tab.label}
               {tab.count !== undefined && (
                 <span className={`
-                  ml-2 px-2 py-0.5 text-xs rounded-none
+                  ml-2 rounded-none px-2 py-0.5 text-xs
                   ${activeTab === index ? 'bg-orange-50 text-orange-700' : 'bg-slate-100 text-slate-600'}
                 `}>
                   {tab.count}

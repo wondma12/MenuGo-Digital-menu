@@ -32,8 +32,8 @@ const ReviewList = ({ reviews, onRefresh }) => {
 
   return (
     <>
-      <div className="rounded-3xl border border-orange-100 bg-white/95 shadow-[0_18px_40px_rgba(15,23,42,0.08)] overflow-hidden">
-        <div className="overflow-x-auto">
+      <div className="overflow-hidden rounded-3xl border border-orange-100 bg-white/95 shadow-[0_18px_40px_rgba(15,23,42,0.08)]">
+        <div className="hidden overflow-x-auto md:block">
           <table className="w-full">
             <thead className="bg-slate-50">
               <tr>
@@ -105,6 +105,63 @@ const ReviewList = ({ reviews, onRefresh }) => {
               ))}
             </tbody>
           </table>
+        </div>
+
+        <div className="space-y-3 p-3 sm:p-4 md:hidden">
+          {reviews.map((review, index) => (
+            <motion.div
+              key={review.id}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.03 }}
+              className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="font-medium text-slate-900">{review.customerName || 'Anonymous'}</p>
+                  <p className="text-xs text-slate-500">{review.orderId ? `Order #${review.orderId}` : 'Guest'}</p>
+                </div>
+                <Badge variant={getStatusColor(review.status)} size="sm">{review.status}</Badge>
+              </div>
+
+              <div className="mt-3">
+                <RatingStars rating={review.rating} size="sm" />
+              </div>
+
+              <div className="mt-3">
+                <p className="text-sm font-medium text-slate-900">{review.title}</p>
+                <p className="mt-1 text-sm text-slate-500">{review.comment}</p>
+              </div>
+
+              <div className="mt-3 flex items-center justify-between text-xs text-slate-500">
+                <span>{new Date(review.createdAt).toLocaleDateString()}</span>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setSelectedReview(review)}
+                    className="rounded p-1 text-slate-700 hover:bg-slate-50"
+                  >
+                    <EyeIcon className="h-4 w-4" />
+                  </button>
+                  {review.status === 'pending' && (
+                    <>
+                      <button
+                        onClick={() => handleStatusUpdate(review.id, 'approved')}
+                        className="rounded p-1 text-green-600 hover:bg-green-50"
+                      >
+                        <CheckCircleIcon className="h-4 w-4" />
+                      </button>
+                      <button
+                        onClick={() => handleStatusUpdate(review.id, 'rejected')}
+                        className="rounded p-1 text-red-600 hover:bg-red-50"
+                      >
+                        <XCircleIcon className="h-4 w-4" />
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          ))}
         </div>
       </div>
 

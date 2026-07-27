@@ -70,16 +70,16 @@ const ReviewManagement = () => {
 
   function renderReviewsContent(reviewsList) {
     return (
-      <div className="space-y-6  bg-white p-4 px-4 py-6 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center mb-6">
+      <div className="space-y-6 bg-white p-4 px-4 py-6 sm:px-6 lg:px-8">
+        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-2xl font-black text-slate-900">Customer Reviews</h1>
-            <p className="text-sm text-slate-500 mt-1">Manage and respond to customer feedback</p>
+            <p className="mt-1 text-sm text-slate-500">Manage and respond to customer feedback</p>
           </div>
-          <div className="flex items-center gap-3">
-            <div className="text-sm text-slate-600 py-2 px-3">List view</div>
-            <div className="flex items-center ml-3">
-              <label className="text-sm text-slate-600 mr-2">Show all</label>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <div className="px-3 py-2 text-sm text-slate-600">List view</div>
+            <div className="flex items-center sm:ml-3">
+              <label className="mr-2 text-sm text-slate-600">Show all</label>
               <input
                 type="checkbox"
                 checked={showAll}
@@ -91,24 +91,24 @@ const ReviewManagement = () => {
         </div>
 
         {/* Rating Summary */}
-        <div className="rounded-3xl border border-orange-100 bg-white/95 p-6 mb-6 text-slate-900 shadow-[0_18px_40px_rgba(15,23,42,0.12)]">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-            <div className="text-center">
-              <div className="text-5xl font-black text-slate-900">{averageRating}</div>
+        <div className="mb-6 rounded-3xl border border-orange-100 bg-white/95 p-4 text-slate-900 shadow-[0_18px_40px_rgba(15,23,42,0.12)] sm:p-6">
+          <div className="flex flex-col items-center justify-between gap-6 md:flex-row">
+            <div className="text-center md:text-left">
+              <div className="text-4xl font-black text-slate-900 sm:text-5xl">{averageRating}</div>
               <RatingStars rating={parseFloat(averageRating)} size="lg" />
-              <p className="text-sm text-slate-500 mt-1">Based on {totalReviews} reviews</p>
+              <p className="mt-1 text-sm text-slate-500">Based on {totalReviews} reviews</p>
             </div>
-            <div className="flex-1 space-y-2">
+            <div className="w-full flex-1 space-y-2">
               {ratingDistribution.map(({ rating, count }) => (
-                <div key={rating} className="flex items-center gap-3">
-                  <span className="text-sm w-12">{rating} stars</span>
-                  <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
+                <div key={rating} className="flex items-center gap-2 sm:gap-3">
+                  <span className="w-12 text-sm">{rating} stars</span>
+                  <div className="h-2 flex-1 overflow-hidden rounded-full bg-slate-100">
                       <div
                         className="h-full bg-yellow-400 rounded-full"
                         style={{ width: `${totalReviews ? (count / totalReviews) * 100 : 0}%` }}
                       />
                   </div>
-                  <span className="text-sm w-12">{count}</span>
+                  <span className="w-10 text-right text-sm">{count}</span>
                 </div>
               ))}
             </div>

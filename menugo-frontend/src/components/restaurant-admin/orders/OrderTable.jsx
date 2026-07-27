@@ -15,7 +15,7 @@ const OrderTable = ({ orders, onRefresh }) => {
   return (
     <>
       <div className="overflow-hidden rounded-none bg-white shadow-[0_16px_40px_rgba(15,23,42,0.06)]">
-        <div className="overflow-x-auto">
+        <div className="hidden overflow-x-auto md:block">
           <table className="w-full">
             <thead className="bg-orange-50">
               <tr>
@@ -71,6 +71,43 @@ const OrderTable = ({ orders, onRefresh }) => {
               ))}
             </tbody>
           </table>
+        </div>
+
+        <div className="space-y-3 p-3 md:hidden">
+          {orders.map((order, index) => (
+            <motion.div
+              key={order.id}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.02 }}
+              className="rounded-none border border-slate-100 bg-slate-50 p-4"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-sm font-semibold text-slate-900">Order #{index + 1}</p>
+                  <p className="text-sm text-slate-600">{order.customerName || 'Guest'}</p>
+                </div>
+                <OrderStatusBadge status={order.status} />
+              </div>
+              <div className="mt-3 flex flex-wrap items-center gap-2 text-sm text-slate-600">
+                <span>Table {order.tableNumber}</span>
+                <span className="text-slate-300">•</span>
+                <span>{order.itemCount} items</span>
+                <span className="text-slate-300">•</span>
+                <span className="font-semibold text-slate-900">{formatCurrency(order.totalAmount)}</span>
+              </div>
+              <div className="mt-3 text-sm text-slate-500">{formatDate(order.createdAt)}</div>
+              <div className="mt-4 flex items-center justify-between">
+                <span className="text-xs uppercase tracking-wide text-slate-400">Tap to view details</span>
+                <button
+                  onClick={() => setSelectedOrder({ ...order, displayNumber: index + 1 })}
+                  className="rounded-none bg-orange-500 px-3 py-2 text-sm font-medium text-white"
+                >
+                  View
+                </button>
+              </div>
+            </motion.div>
+          ))}
         </div>
       </div>
 

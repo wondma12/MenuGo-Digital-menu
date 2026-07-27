@@ -73,8 +73,8 @@ const OrdersChart = ({ data }) => {
   }
 
   return (
-    <div className="rounded-3xl border border-orange-100 bg-white p-5 shadow-sm">
-      <div className="flex justify-between items-center mb-4">
+    <div className="rounded-3xl border border-orange-100 bg-white p-4 shadow-sm sm:p-5">
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h3 className="text-lg font-semibold text-slate-900">Orders Trend</h3>
           <p className="text-sm text-slate-500">Order volume mapped against the same time window.</p>
