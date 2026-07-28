@@ -78,7 +78,7 @@ const MenuItemModal = ({ item, onClose, restaurantId }) => {
           </div>
         </div>
 
-        <Button onClick={handleAddToCart} fullWidth disabled={item && (item.is_available === false || item.available === false)}>
+        <Button onClick={handleAddToCart} fullWidth disabled={item && (item.is_available === false || item.available === false)} className="rounded-none bg-gradient-to-r from-orange-600 to-orange-500 text-white shadow-lg shadow-orange-600/30 hover:from-orange-700 hover:to-orange-600">
           {item && (item.is_available === false || item.available === false) ? 'Unavailable' : 'Add to Cart'}
         </Button>
       </div>

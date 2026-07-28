@@ -83,7 +83,7 @@ const PaymentSettings = ({ settings }) => {
       </div>
 
       <div className="flex justify-end">
-        <Button onClick={handleSubmit} isLoading={mutation.isLoading}>Save Settings</Button>
+        <Button onClick={handleSubmit} isLoading={mutation.isLoading} className="rounded-none bg-gradient-to-r from-orange-600 to-orange-500 text-white shadow-lg shadow-orange-600/30 hover:from-orange-700 hover:to-orange-600">Save Settings</Button>
       </div>
     </div>
   )

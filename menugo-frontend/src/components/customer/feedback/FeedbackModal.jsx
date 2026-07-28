@@ -95,7 +95,7 @@ const FeedbackModal = ({ show, onClose, order, restaurantId: propRestaurantId, o
 
           <div className="flex gap-3 justify-end">
             <Button variant="outline" type="button" onClick={onClose}>Cancel</Button>
-            <Button type="submit" disabled={mutation.isLoading}>{mutation.isLoading ? 'Sending...' : 'Send Feedback'}</Button>
+            <Button type="submit" disabled={mutation.isLoading} className="rounded-none bg-gradient-to-r from-orange-600 to-orange-500 text-white shadow-lg shadow-orange-600/30 hover:from-orange-700 hover:to-orange-600">{mutation.isLoading ? 'Sending...' : 'Send Feedback'}</Button>
           </div>
         </form>
       </div>

@@ -129,7 +129,7 @@ const MenuItemCard = ({ item, onClick, statusInfo }) => {
 
           {/* Primary action (open details) */}
           {item.isAvailable && (
-            <Link to={`/menu/${restaurantId}/item/${item.id}`} onClick={(e) => e.stopPropagation()} className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-orange-500 to-blue-500 px-4 py-2 text-sm font-semibold text-white transition-all hover:opacity-95 hover:shadow-lg">
+            <Link to={`/menu/${restaurantId}/item/${item.id}`} onClick={(e) => e.stopPropagation()} className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-orange-600 to-orange-500 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-orange-600/30 transition-all hover:from-orange-700 hover:to-orange-600 hover:opacity-95 hover:shadow-xl">
               Details
               <span aria-hidden="true">→</span>
             </Link>

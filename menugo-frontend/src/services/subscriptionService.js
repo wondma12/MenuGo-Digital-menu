@@ -41,16 +41,37 @@ export const getCurrentSubscription = async (restaurantId) => {
     ? `/platform/subscriptions/restaurant/${resolvedRestaurantId}`
     : '/platform/subscriptions/current'
 
+  const resolvePrice = (source) => {
+    const candidates = [
+      source?.price,
+      source?.price_monthly,
+      source?.priceMonthly,
+      source?.monthlyPrice,
+      source?.current_subscription?.price,
+      source?.current_subscription?.price_monthly,
+      source?.current_subscription?.priceMonthly,
+      source?.current_subscription?.monthlyPrice,
+    ]
+
+    for (const value of candidates) {
+      if (value === null || value === undefined || value === '') continue
+      const numericValue = Number(value)
+      if (!Number.isNaN(numericValue)) return numericValue
+    }
+
+    return 0
+  }
+
   try {
     const response = await api.get(endpoint)
     const payload = response?.data?.data || response?.data || {}
 
     return {
       ...payload,
-      tier: payload.tier || payload.subscription_tier || payload.current_subscription?.tier,
-      name: payload.name || payload.plan_name || payload.current_subscription?.name || payload.current_subscription?.tier,
-      billingCycle: payload.billingCycle || payload.billing_cycle || payload.subscription_tier || payload.current_subscription?.billing_cycle || payload.current_subscription?.tier,
-      price: payload.price || payload.price_monthly || payload.current_subscription?.price_monthly || payload.current_subscription?.price || 0,
+      tier: payload.tier || payload.subscription_tier || payload.current_subscription?.tier || payload.current_subscription?.plan_tier,
+      name: payload.name || payload.plan_name || payload.current_subscription?.name || payload.current_subscription?.tier || payload.current_subscription?.plan_tier,
+      billingCycle: payload.billingCycle || payload.billing_cycle || payload.subscription_tier || payload.current_subscription?.billing_cycle || payload.current_subscription?.tier || payload.current_subscription?.plan_tier,
+      price: resolvePrice(payload),
       nextBillingDate: payload.nextBillingDate || payload.next_billing_date || payload.subscription_end_date || payload.current_subscription?.next_billing_date || payload.current_subscription?.subscription_end_date || null,
     }
   } catch (error) {
@@ -59,7 +80,7 @@ export const getCurrentSubscription = async (restaurantId) => {
       tier: restaurant.subscription_tier || restaurant.subscriptionTier || 'monthly',
       name: restaurant.subscription_name || restaurant.subscriptionName || restaurant.subscription_tier || 'Monthly Plan',
       billingCycle: restaurant.billing_cycle || restaurant.billingCycle || 'monthly',
-      price: restaurant.price_monthly || restaurant.priceMonthly || 0,
+      price: resolvePrice(restaurant),
       nextBillingDate: restaurant.next_billing_date || restaurant.nextBillingDate || restaurant.subscription_end_date || restaurant.subscriptionEndDate || null,
     }
   }

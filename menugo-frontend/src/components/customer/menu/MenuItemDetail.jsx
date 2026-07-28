@@ -200,7 +200,7 @@ const MenuItemDetail = () => {
                 onClick={handleAdd}
                 size="sm"
                 fullWidth
-                className="text-sm px-4 py-2.5"
+                className="rounded-none bg-gradient-to-r from-orange-600 to-orange-500 px-4 py-2.5 text-sm text-white shadow-lg shadow-orange-600/30 hover:from-orange-700 hover:to-orange-600"
                 disabled={item.is_available === false || item.available === false || item.isAvailable === false}
               >
                 {item.is_available === false || item.available === false || item.isAvailable === false ? 'Unavailable' : 'Add to Cart'}

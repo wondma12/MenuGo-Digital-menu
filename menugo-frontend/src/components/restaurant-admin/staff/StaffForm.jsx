@@ -114,7 +114,7 @@ const StaffForm = ({ staff, onSubmit, onCancel, isLoading }) => {
 
       <div className="flex justify-end gap-3 border-t border-slate-100 pt-4">
         <Button type="button" variant="secondary" onClick={onCancel} className="rounded-none">Cancel</Button>
-        <Button type="submit" isLoading={isLoading || isUploading} className="rounded-none">
+        <Button type="submit" isLoading={isLoading || isUploading} className="rounded-none bg-gradient-to-r from-orange-600 to-orange-500 text-white shadow-lg shadow-orange-600/30 hover:from-orange-700 hover:to-orange-600">
           {isEditing ? 'Update Staff' : 'Add Staff'}
         </Button>
       </div>

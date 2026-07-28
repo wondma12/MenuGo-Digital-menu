@@ -96,10 +96,10 @@ const FilterDrawer = ({ isOpen, onClose, filters, onApply, categories = [] }) =>
                       <button
                         key={option.value}
                         onClick={() => setLocalFilters({ ...localFilters, spiceLevel: option.value })}
-                        className={`px-3 py-1.5 rounded-full text-sm ${
+                        className={`px-3 py-1.5 rounded-full text-sm transition-all ${
                           localFilters.spiceLevel === option.value
-                            ? 'bg-gradient-to-r from-orange-500 to-blue-500 text-white shadow'
-                            : 'bg-white text-slate-700 border border-slate-200'
+                            ? 'bg-gradient-to-r from-orange-600 to-orange-500 text-white shadow-lg shadow-orange-600/30'
+                            : 'bg-white text-slate-700 border border-slate-200 hover:border-orange-300 hover:text-orange-700'
                         }`}
                       >
                         {option.label}
@@ -140,7 +140,7 @@ const FilterDrawer = ({ isOpen, onClose, filters, onApply, categories = [] }) =>
                 <button onClick={handleReset} className="flex-1 px-4 py-2 border border-slate-200 rounded-lg text-slate-700 hover:bg-slate-50">
                   Reset
                 </button>
-                <button onClick={handleApply} className="flex-1 px-4 py-2 bg-gradient-to-r from-orange-500 to-blue-500 text-white rounded-lg hover:opacity-95">
+                <button onClick={handleApply} className="flex-1 px-4 py-2 rounded-lg bg-gradient-to-r from-orange-600 to-orange-500 text-white shadow-lg shadow-orange-600/30 transition-all hover:from-orange-700 hover:to-orange-600 hover:opacity-95">
                   Apply Filters
                 </button>
               </div>

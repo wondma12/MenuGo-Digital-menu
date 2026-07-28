@@ -124,7 +124,13 @@ const SubscriptionPlan = ({ settings }) => {
 
   // Get the correct price property
   const getCurrentPrice = (plan) => {
-    return plan?.price || plan?.priceMonthly || plan?.price_monthly || 0
+    const candidates = [plan?.price, plan?.priceMonthly, plan?.price_monthly, plan?.monthlyPrice]
+    for (const value of candidates) {
+      if (value === null || value === undefined || value === '') continue
+      const numericValue = Number(value)
+      if (!Number.isNaN(numericValue)) return numericValue
+    }
+    return 0
   }
 
   const getYearlyPrice = (plan) => {
@@ -132,7 +138,24 @@ const SubscriptionPlan = ({ settings }) => {
   }
 
   const getMonthlyPrice = (plan) => {
-    return plan?.priceMonthly || plan?.price_monthly || plan?.price || 0
+    return getCurrentPrice(plan)
+  }
+
+  const getCurrentPlanPrice = () => {
+    const currentPrice = getMonthlyPrice(currentPlan)
+    if (currentPrice > 0) return currentPrice
+
+    const matchingPlan = availablePlans?.find((plan) => {
+      const planKey = getPlanKey(plan)
+      const currentPlanKey = getPlanKey(currentPlan)
+      return planKey && currentPlanKey && planKey === currentPlanKey
+    }) || availablePlans?.find((plan) => {
+      const normalizedPlanTier = (plan?.tier || '').toString().toLowerCase()
+      const normalizedCurrentTier = (currentPlan?.tier || '').toString().toLowerCase()
+      return normalizedPlanTier && normalizedCurrentTier && normalizedPlanTier === normalizedCurrentTier
+    })
+
+    return getMonthlyPrice(matchingPlan)
   }
 
   return (
@@ -160,7 +183,7 @@ const SubscriptionPlan = ({ settings }) => {
           <div>
             <p className="text-sm text-slate-500">Price</p>
             <p className="font-semibold text-slate-900">
-              {formatCurrency(getMonthlyPrice(currentPlan))}
+              {formatCurrency(getCurrentPlanPrice())}
               <span className="text-base font-medium text-slate-500">/month</span>
             </p>
           </div>
@@ -201,7 +224,7 @@ const SubscriptionPlan = ({ settings }) => {
                 ))}
               </div>
               <Button
-                className="w-full mt-6"
+                className={`w-full mt-6 ${currentPlan?.tier === plan.tier ? '' : 'rounded-none bg-gradient-to-r from-orange-600 to-orange-500 text-white shadow-lg shadow-orange-600/30 hover:from-orange-700 hover:to-orange-600'}`}
                 variant={currentPlan?.tier === plan.tier ? 'outline' : 'primary'}
                 disabled={currentPlan?.tier === plan.tier || upgradeMutation.isLoading || requestedPlanId === getPlanKey(plan)}
                 onClick={() => {

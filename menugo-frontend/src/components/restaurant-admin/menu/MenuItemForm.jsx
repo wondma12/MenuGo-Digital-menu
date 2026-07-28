@@ -210,7 +210,7 @@ const MenuItemForm = ({ item, onSuccess, onCancel }) => {
 
       <div className="flex justify-end gap-3 pt-4">
         <Button type="button" variant="secondary" onClick={onCancel}>Cancel</Button>
-        <Button type="submit" isLoading={createMutation.isLoading || updateMutation.isLoading || isUploading}>
+        <Button type="submit" isLoading={createMutation.isLoading || updateMutation.isLoading || isUploading} className="rounded-none bg-gradient-to-r from-orange-600 to-orange-500 text-white shadow-lg shadow-orange-600/30 hover:from-orange-700 hover:to-orange-600">
           {isEditing ? 'Update Item' : 'Create Item'}
         </Button>
       </div>

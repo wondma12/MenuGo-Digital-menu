@@ -13,7 +13,7 @@ const CategoryTabs = ({ categories, selected, onSelect }) => {
             onClick={() => onSelect(category.id)}
             className={`relative px-4 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap ${
               selected === category.id
-                ? 'bg-gradient-to-r from-orange-500 to-blue-500 text-white shadow-lg'
+                ? 'bg-gradient-to-r from-orange-600 to-orange-500 text-white shadow-lg shadow-orange-600/30'
                 : 'bg-white text-slate-600 border border-slate-200 hover:border-slate-300 hover:text-slate-900'
             }`}
           >

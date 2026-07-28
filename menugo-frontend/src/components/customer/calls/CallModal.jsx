@@ -56,7 +56,7 @@ const CallModal = ({ isOpen, onClose, restaurantId }) => {
         </div>
         <div className="flex justify-end gap-2 pt-2">
           <Button onClick={onClose} variant="secondary">Cancel</Button>
-          <Button onClick={handleSend} disabled={sending}>{sending ? 'Sending...' : 'Send to waiter'}</Button>
+          <Button onClick={handleSend} disabled={sending} className="rounded-none bg-gradient-to-r from-orange-600 to-orange-500 text-white shadow-lg shadow-orange-600/30 hover:from-orange-700 hover:to-orange-600">{sending ? 'Sending...' : 'Send to waiter'}</Button>
         </div>
       </div>
     </Modal>

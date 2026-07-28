@@ -310,7 +310,7 @@ const OrderButton = ({ restaurantId, items, tableNumber, specialInstructions, to
         isLoading={isLoading}
         fullWidth
         size="lg"
-        className="mt-6"
+        className="mt-6 rounded-none bg-gradient-to-r from-orange-600 to-orange-500 text-white shadow-lg shadow-orange-600/30 hover:from-orange-700 hover:to-orange-600"
       >
         Place Order
       </Button>

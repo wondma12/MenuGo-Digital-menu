@@ -76,7 +76,7 @@ const CartDrawer = ({ isOpen, onClose, restaurantId }) => {
             {items.length > 0 && (
               <div className="p-4 border-t border-gray-200 space-y-4">
                 <CartSummary subtotal={totalPrice} tax={taxAmount} total={totalAmount} taxRate={taxRate} />
-                <button onClick={handleCheckout} className="w-full py-3 bg-gradient-to-r from-orange-500 to-blue-500 text-white rounded-lg font-semibold hover:opacity-95">
+                <button onClick={handleCheckout} className="w-full py-3 rounded-lg bg-gradient-to-r from-orange-600 to-orange-500 text-white font-semibold shadow-lg shadow-orange-600/30 transition-all hover:from-orange-700 hover:to-orange-600 hover:opacity-95">
                   Proceed to Checkout
                 </button>
               </div>

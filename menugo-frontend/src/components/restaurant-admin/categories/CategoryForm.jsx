@@ -119,7 +119,7 @@ const CategoryForm = ({ category, onSubmit, onCancel, isLoading }) => {
         <Button type="button" variant="secondary" onClick={onCancel} className="rounded-none">
           Cancel
         </Button>
-        <Button type="submit" isLoading={isLoading || isUploading} className="rounded-none bg-gradient-to-r from-orange-500 to-blue-500 text-white hover:from-orange-600 hover:to-blue-600">
+        <Button type="submit" isLoading={isLoading || isUploading} className="rounded-none bg-gradient-to-r from-orange-600 to-orange-500 text-white shadow-lg shadow-orange-600/30 hover:from-orange-700 hover:to-orange-600">
           {isEditing ? 'Update Category' : 'Create Category'}
         </Button>
       </div>

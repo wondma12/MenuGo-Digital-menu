@@ -52,7 +52,7 @@ const UserManagement = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-semibold text-slate-900">Team Members</h3>
-        <Button onClick={() => setShowInviteModal(true)} icon={PlusIcon}>Invite User</Button>
+        <Button onClick={() => setShowInviteModal(true)} icon={PlusIcon} className="rounded-none bg-gradient-to-r from-orange-600 to-orange-500 text-white shadow-lg shadow-orange-600/30 hover:from-orange-700 hover:to-orange-600">Invite User</Button>
       </div>
 
       <div className="bg-white rounded-xl overflow-hidden">
@@ -115,7 +115,7 @@ const UserManagement = () => {
           <Select name="role" label="Role" options={roleOptions} required />
           <div className="flex justify-end gap-3 pt-4">
             <Button type="button" variant="secondary" onClick={() => setShowInviteModal(false)}>Cancel</Button>
-            <Button type="submit" isLoading={inviteMutation.isLoading}>Send Invitation</Button>
+            <Button type="submit" isLoading={inviteMutation.isLoading} className="rounded-none bg-gradient-to-r from-orange-600 to-orange-500 text-white shadow-lg shadow-orange-600/30 hover:from-orange-700 hover:to-orange-600">Send Invitation</Button>
           </div>
         </form>
       </Modal>

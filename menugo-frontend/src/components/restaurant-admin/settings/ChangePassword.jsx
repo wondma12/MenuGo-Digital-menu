@@ -75,7 +75,7 @@ const ChangePassword = () => {
             required
           />
           <div className="flex justify-end pt-4">
-            <Button type="submit" isLoading={mutation.isLoading}>Update Password</Button>
+            <Button type="submit" isLoading={mutation.isLoading} className="rounded-none bg-gradient-to-r from-orange-600 to-orange-500 text-white shadow-lg shadow-orange-600/30 hover:from-orange-700 hover:to-orange-600">Update Password</Button>
           </div>
         </form>
       </div>
