@@ -11,7 +11,7 @@ const buildWsUrl = () => {
   const envUrl = import.meta.env.VITE_WS_URL
   if (envUrl) return envUrl.replace(/\/$/, '')
 
-  const apiBase = (api && api.defaults && api.defaults.baseURL) ? api.defaults.baseURL : (import.meta.env.VITE_API_URL || 'http://localhost:5000')
+  const apiBase = (api && api.defaults && api.defaults.baseURL) ? api.defaults.baseURL : (import.meta.env.VITE_API_URL || import.meta.env.API_URL || '')
   // strip possible trailing /api
   let url = apiBase.replace(/\/api\/?$/, '')
   // socket.io client accepts http/https URLs (not ws://), so ensure http(s) scheme

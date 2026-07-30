@@ -6,14 +6,15 @@ let socket = null
 let listeners = new Map()
 
 // Derive WS URL: prefer explicit VITE_WS_URL, else derive from VITE_API_URL or current origin
-let WS_URL = import.meta.env.VITE_WS_URL
+let WS_URL = import.meta.env.VITE_WS_URL || import.meta.env.WS_URL || ''
 if (!WS_URL) {
   try {
-    const apiUrl = import.meta.env.VITE_API_URL || window.__env?.VITE_API_URL || `${window.location.protocol}//${window.location.hostname}${window.location.port ? `:${window.location.port}` : ''}/api`;
+    const currentOrigin = typeof window !== 'undefined' ? window.location.origin : ''
+    const apiUrl = import.meta.env.VITE_API_URL || import.meta.env.API_URL || currentOrigin || `${window.location.protocol}//${window.location.hostname}${window.location.port ? `:${window.location.port}` : ''}`
     // Convert http(s)://host(:port)/api to ws(s)://host(:port)
     WS_URL = apiUrl.replace(/^http/, 'ws').replace(/\/api\/?$/, '')
   } catch (e) {
-    WS_URL = 'ws://localhost:5000'
+    WS_URL = ''
   }
 }
 
@@ -30,7 +31,7 @@ export const connectWebSocket = () => {
   if (import.meta.env.VITE_WS_URL) candidates.push(import.meta.env.VITE_WS_URL.replace(/\/$/, ''))
   if (import.meta.env.VITE_API_URL) candidates.push(import.meta.env.VITE_API_URL.replace(/^http/, 'ws').replace(/\/$/, '').replace(/\/api$/, ''))
   // fall back to derived WS_URL
-  candidates.push(WS_URL.replace(/\/$/, ''))
+  if (WS_URL) candidates.push(WS_URL.replace(/\/$/, ''))
 
   // Try candidates sequentially until one connects
   const tryConnect = async () => {

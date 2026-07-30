@@ -137,7 +137,7 @@ export const getBaseUrl = () => {
   if (typeof window !== 'undefined') {
     return window.location.origin
   }
-  return import.meta.env.VITE_BASE_URL || 'http://localhost:3000'
+  return import.meta.env.VITE_BASE_URL || '/'
 }
 
 export const groupBy = (array, key) => {

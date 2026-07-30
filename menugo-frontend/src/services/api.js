@@ -1,27 +1,28 @@
 import axios from 'axios'
 import { useAuthStore } from '../store/authStore'
 
-// Default API root URL. Axios should use the backend origin only.
-// Request paths are sent as `/auth/login`, `/restaurants`, etc. so the
-// browser and backend route aliases can handle both `/api`-prefixed and
-// legacy top-level endpoints transparently.
-const API_URL = 'http://localhost:5003'
+// Default API root URL. Axios should prefer an explicit configured API URL,
+// then the current browser origin, and only fall back to localhost in local
+// development when that is truly the intended target.
+const API_URL = import.meta.env.VITE_API_URL || import.meta.env.API_URL || ''
 
 const normalizeApiRootUrl = (url) => {
-  if (!url) return url
-  return String(url).replace(/\/+$/, '').replace(/\/api(\/)?$/, '')
+  if (!url) return ''
+  const normalized = String(url).trim().replace(/\/+$/, '')
+  if (!normalized) return ''
+  return normalized.replace(/\/api$/, '')
 }
 
 const normalizeApiUrl = (url) => {
-  if (!url) return url
-  let normalized = String(url).replace(/\/$/, '')
-  if (!/\/api(\/)?$/.test(normalized)) normalized = `${normalized}/api`
-  return normalized
+  if (!url) return '/api'
+  const normalized = String(url).trim().replace(/\/$/, '')
+  if (!normalized) return '/api'
+  return /\/api$/.test(normalized) ? normalized : `${normalized}/api`
 }
 
-const NORMALIZED_API_ROOT_URL = normalizeApiRootUrl(API_URL)
-const EXPLICIT_API_ROOT_URL = normalizeApiRootUrl(import.meta.env.VITE_API_URL || import.meta.env.API_URL || null)
-const initialApiBaseURL = EXPLICIT_API_ROOT_URL || NORMALIZED_API_ROOT_URL
+const NORMALIZED_API_ROOT_URL = normalizeApiRootUrl(API_URL) || (typeof window !== 'undefined' ? window.location.origin : '')
+const EXPLICIT_API_ROOT_URL = normalizeApiRootUrl(import.meta.env.VITE_API_URL || import.meta.env.API_URL || '')
+const initialApiBaseURL = EXPLICIT_API_ROOT_URL || NORMALIZED_API_ROOT_URL || (typeof window !== 'undefined' ? window.location.origin : '')
 
 // Fallback ports to try when the configured API is unreachable during local development.
 // Include common local backend ports used by this repo, then other candidates.
@@ -41,10 +42,16 @@ const buildApiCandidates = () => {
   if (import.meta.env.API_URL) add(import.meta.env.API_URL)
 
   try {
-    const host = window?.location?.hostname || 'localhost'
-    const proto = window?.location?.protocol || 'http:'
-    FALLBACK_PORTS.forEach((p) => add(`${proto}//${host}:${p}`))
-    FALLBACK_PORTS.forEach((p) => add(`http://localhost:${p}`))
+    if (typeof window !== 'undefined') {
+      add(window.location.origin)
+      const host = window.location.hostname || 'localhost'
+      const proto = window.location.protocol || 'http:'
+      const shouldProbeLocalFallback = import.meta.env.DEV || ['localhost', '127.0.0.1', '::1'].includes(host)
+      if (shouldProbeLocalFallback) {
+        FALLBACK_PORTS.forEach((p) => add(`${proto}//${host}:${p}`))
+        FALLBACK_PORTS.forEach((p) => add(`http://localhost:${p}`))
+      }
+    }
   } catch (e) {
     // ignore - window may not exist in some build-time contexts
   }
@@ -644,8 +651,8 @@ export const getWebSocketURL = () => {
     return wsUrl
   } catch (e) {
     if (import.meta.env.DEV) console.warn('Error constructing WebSocket URL:', e && e.message)
-    // Fallback to default
-    return 'ws://localhost:5003'
+    // Fallback to the current origin instead of a loopback URL.
+    return typeof window !== 'undefined' ? `${window.location.origin}` : 'wss://localhost'
   }
 }
 

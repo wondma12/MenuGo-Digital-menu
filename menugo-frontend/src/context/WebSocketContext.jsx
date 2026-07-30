@@ -21,7 +21,7 @@ export const WebSocketProvider = ({ children }) => {
   useEffect(() => {
     if (!token) return;
 
-    const socketInstance = io(process.env.VITE_WS_URL || 'ws://localhost:5000', {
+    const socketInstance = io(import.meta.env.VITE_WS_URL || import.meta.env.WS_URL || (typeof window !== 'undefined' ? window.location.origin : ''), {
       transports: ['websocket'],
       auth: { token }
     });

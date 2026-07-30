@@ -191,7 +191,10 @@ const RestaurantDetails = () => {
     const normalizedValue = value.trim();
     if (!normalizedValue) return null;
     if (normalizedValue.startsWith('http://') || normalizedValue.startsWith('https://')) return normalizedValue;
-    if (normalizedValue.startsWith('/')) return `http://localhost:5003${normalizedValue}`;
+    if (normalizedValue.startsWith('/')) {
+      const origin = typeof window !== 'undefined' ? window.location.origin : '';
+      return origin ? `${origin}${normalizedValue}` : normalizedValue;
+    }
     return normalizedValue;
   };
 
