@@ -8,7 +8,7 @@ import RestaurantLayout from './components/layout/RestaurantLayout'
 import WaiterLayout from './components/layout/WaiterLayout'
 import CustomerLayout from './components/layout/CustomerLayout'
 import KitchenLayout from './components/layout/KitchenLayout'
-
+import NotFound from './components/landing'
 // Platform Admin Pages
 const PlatformDashboard = React.lazy(() => import('./components/platform-admin/dashboard/PlatformDashboard'))
 const RestaurantList = React.lazy(() => import('./components/platform-admin/restaurants/RestaurantList'))

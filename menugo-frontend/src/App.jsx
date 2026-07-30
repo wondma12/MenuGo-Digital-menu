@@ -94,6 +94,7 @@ import VerifyEmail from './components/auth/VerifyEmail'
 import TwoFactorAuth from './components/auth/TwoFactorAuth'
 
 // Public Pages
+// import Landing from "./components/Landing";
 import Home from './components/public/Home'
 import About from './components/public/About'
 import Services from './components/public/Services'
@@ -243,8 +244,12 @@ function App() {
             theme={theme === 'dark' ? 'dark' : 'light'}
           />
           
+
+
+          
           <Routes>
             {/* Root Route with Role-Based Redirection */}
+            {/* <Route path="/" element={<Landing />} /> */}
             <Route path="/" element={<RootRedirect />} />
 
             {/* Public Routes */}
