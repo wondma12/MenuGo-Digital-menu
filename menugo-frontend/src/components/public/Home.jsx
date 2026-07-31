@@ -40,6 +40,7 @@ import { HeartIcon as HeartSolidIcon } from '@heroicons/react/24/solid';
 import PublicHeader from './PublicHeader';
 import PublicFooter from './PublicFooter';
 import { getPublicPlatformSummary, getPlatformDashboardData } from '../../services/analyticsService';
+import { QrCode, Smartphone, ChefHat, Bell, CreditCard, Star, Quote, ChevronLeft, ChevronRight } from 'lucide-react';
 
 // Custom motion variants
 const containerVariants = {
@@ -119,6 +120,9 @@ const Home = () => {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [hoveredCard, setHoveredCard] = useState(null);
+  const [hoveredStep, setHoveredStep] = useState(null);
+  const [testimonialIndex, setTestimonialIndex] = useState(0);
+  const [testimonialDirection, setTestimonialDirection] = useState(0);
   const containerRef = useRef(null);
   const { scrollYProgress } = useScroll({
     target: containerRef,
@@ -277,62 +281,160 @@ const Home = () => {
     },
   ];
 
+  // How It Works Steps - 6 Step Process
+  const howItWorksSteps = [
+    {
+      icon: QrCode,
+      step: "01",
+      title: "Scan QR Code",
+      description: "Customer scans the unique QR code on their table using their smartphone camera. No app download needed.",
+      color: "from-blue-500 to-cyan-500",
+      bgColor: "bg-blue-50",
+      iconColor: "text-blue-600",
+      gradient: "from-blue-500 to-cyan-500",
+      image: "📱"
+    },
+    {
+      icon: Smartphone,
+      step: "02",
+      title: "Browse & Order",
+      description: "Digital menu appears instantly. Customers browse items, customize orders, and add to cart with ease.",
+      color: "from-purple-500 to-pink-500",
+      bgColor: "bg-purple-50",
+      iconColor: "text-purple-600",
+      gradient: "from-purple-500 to-pink-500",
+      image: "🛒"
+    },
+    {
+      icon: ChefHat,
+      step: "03",
+      title: "Kitchen Receives Order",
+      description: "Order instantly appears on the kitchen display. Chefs can prioritize and track preparation time.",
+      color: "from-orange-500 to-red-500",
+      bgColor: "bg-orange-50",
+      iconColor: "text-orange-600",
+      gradient: "from-orange-500 to-red-500",
+      image: "👨‍🍳"
+    },
+    {
+      icon: Bell,
+      step: "04",
+      title: "Real-Time Updates",
+      description: "Customer receives live updates on order status. Staff gets notified when orders are ready for serving.",
+      color: "from-green-500 to-emerald-500",
+      bgColor: "bg-green-50",
+      iconColor: "text-green-600",
+      gradient: "from-green-500 to-emerald-500",
+      image: "🔔"
+    },
+    {
+      icon: CreditCard,
+      step: "05",
+      title: "Secure Payment",
+      description: "Multiple payment options available. Customers can pay via card, digital wallet, or split the bill.",
+      color: "from-indigo-500 to-violet-500",
+      bgColor: "bg-indigo-50",
+      iconColor: "text-indigo-600",
+      gradient: "from-indigo-500 to-violet-500",
+      image: "💳"
+    },
+    {
+      icon: Star,
+      step: "06",
+      title: "Feedback & Analytics",
+      description: "Collect customer feedback and gain insights. Improve service quality with data-driven decisions.",
+      color: "from-yellow-500 to-amber-500",
+      bgColor: "bg-yellow-50",
+      iconColor: "text-yellow-600",
+      gradient: "from-yellow-500 to-amber-500",
+      image: "⭐"
+    }
+  ];
+
+  // Testimonials Data
   const testimonials = [
     {
-      quote: "MenuGo completely removed friction from our ordering process. Our staff loves it, and customers keep coming back!",
-      name: 'Luca Romano',
-      title: 'Owner, Trattoria Roma',
-      avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=200&q=80',
+      id: 1,
+      name: "Sarah Johnson",
+      role: "Owner, The Italian Place",
+      image: "https://i.pravatar.cc/100?img=1",
       rating: 5,
+      text: "MenuGo transformed our restaurant operations completely. The QR menu system is incredibly intuitive, and our customers love the convenience. We've seen a 40% increase in order efficiency since implementing it.",
+      metrics: { label: "Revenue Increase", value: "+35%" }
     },
     {
-      quote: "The analytics dashboard gave us insights we never had before. We redesigned our menu and saw a 22% increase in average check.",
-      name: 'Priya Patel',
-      title: 'Manager, Spice Route',
-      avatar: 'https://images.unsplash.com/photo-1545996124-1f3a0e9d7b8d?auto=format&fit=crop&w=200&q=80',
+      id: 2,
+      name: "Michael Chen",
+      role: "CEO, Golden Dragon Group",
+      image: "https://i.pravatar.cc/100?img=3",
       rating: 5,
+      text: "Managing multiple locations was always a challenge until we found MenuGo. The centralized dashboard gives us real-time insights across all our restaurants. The analytics have been game-changing for our business decisions.",
+      metrics: { label: "Efficiency Gain", value: "+50%" }
     },
     {
-      quote: "Onboarding took only 48 hours, and the QR codes work perfectly even during Friday rush hours. A game-changer.",
-      name: 'Daniel Kim',
-      title: 'GM, Seoul Eats',
-      avatar: 'https://images.unsplash.com/photo-1547425260-76bcadfb4f2c?auto=format&fit=crop&w=200&q=80',
-      rating: 5,
+      id: 3,
+      name: "Emily Rodriguez",
+      role: "Manager, Fresh Bites Cafe",
+      image: "https://i.pravatar.cc/100?img=5",
+      rating: 4,
+      text: "The staff management features are phenomenal. Scheduling, permissions, and performance tracking have never been easier. Our team productivity has improved significantly, and the support team is incredibly responsive.",
+      metrics: { label: "Time Saved", value: "20hrs/wk" }
     },
+    {
+      id: 4,
+      name: "David Park",
+      role: "Founder, Sushi Master",
+      image: "https://i.pravatar.cc/100?img=8",
+      rating: 5,
+      text: "We tried several restaurant management platforms before MenuGo. None compare to the seamless experience and comprehensive features. The real-time kitchen display system has reduced our order errors by 90%.",
+      metrics: { label: "Error Reduction", value: "-90%" }
+    },
+    {
+      id: 5,
+      name: "Lisa Thompson",
+      role: "Director, Bistro Deluxe",
+      image: "https://i.pravatar.cc/100?img=9",
+      rating: 5,
+      text: "MenuGo's customer feedback system has been invaluable. We're able to address issues in real-time and improve our service quality continuously. Our customer satisfaction scores have never been higher.",
+      metrics: { label: "Customer Satisfaction", value: "4.9/5" }
+    }
   ];
 
-  const integrations = [
-    { name: 'Square', icon: '💰', bgColor: 'bg-emerald-50' },
-    { name: 'Toast', icon: '🍞', bgColor: 'bg-amber-50' },
-    { name: 'Stripe', icon: '💳', bgColor: 'bg-blue-50' },
-    { name: 'Uber Eats', icon: '🛵', bgColor: 'bg-purple-50' },
-    { name: 'Slack', icon: '💬', bgColor: 'bg-indigo-50' },
-    { name: 'Google Maps', icon: '🗺️', bgColor: 'bg-rose-50' },
-  ];
+  // Auto-rotate testimonials
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTestimonialDirection(1);
+      setTestimonialIndex((prev) => (prev + 1) % testimonials.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [testimonials.length]);
 
-  const stepCards = [
-    {
-      step: '01',
-      title: 'Create your account',
-      desc: 'Sign up and add your restaurant details — takes under 2 minutes.',
-      icon: RocketLaunchIcon,
-      gradient: 'from-orange-500 to-amber-500',
+  const handleTestimonialPrevious = () => {
+    setTestimonialDirection(-1);
+    setTestimonialIndex((prev) => (prev - 1 + testimonials.length) % testimonials.length);
+  };
+
+  const handleTestimonialNext = () => {
+    setTestimonialDirection(1);
+    setTestimonialIndex((prev) => (prev + 1) % testimonials.length);
+  };
+
+  const slideVariants = {
+    enter: (direction) => ({
+      x: direction > 0 ? 1000 : -1000,
+      opacity: 0
+    }),
+    center: {
+      zIndex: 1,
+      x: 0,
+      opacity: 1
     },
-    {
-      step: '02',
-      title: 'Upload your menu',
-      desc: 'Add items, prices, and categories. Bulk import from Excel or PDF.',
-      icon: DevicePhoneMobileIcon,
-      gradient: 'from-blue-500 to-cyan-500',
-    },
-    {
-      step: '03',
-      title: 'Print QR codes & go live',
-      desc: 'Download your table QR codes, place them, and start accepting orders.',
-      icon: QrCodeIcon,
-      gradient: 'from-emerald-500 to-green-500',
-    },
-  ];
+    exit: (direction) => ({
+      zIndex: 0,
+      x: direction < 0 ? 1000 : -1000,
+      opacity: 0
+    })
+  };
 
   return (
     <div className="min-h-screen bg-white font-['Manrope',system-ui,sans-serif] text-gray-900 overflow-x-hidden">
@@ -625,170 +727,276 @@ const Home = () => {
           </div>
         </section>
 
-        {/* How It Works - Enhanced */}
-        <section className="bg-white py-16 sm:py-20">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="mx-auto mb-12 max-w-3xl text-center">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-              >
-                <span className="inline-block px-4 py-1 rounded-full bg-blue-100 text-blue-700 text-sm font-semibold mb-3">
-                  Get Started
-                </span>
-                <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 md:text-4xl">
-                  Get started in 3 simple steps
-                </h2>
-                <p className="mt-3 text-lg text-slate-600">
-                  From setup to first order — faster than you think.
-                </p>
-              </motion.div>
-            </div>
+        {/* How It Works - 6 Step Detailed Process */}
+        <section className="bg-white py-16 sm:py-24 relative overflow-hidden">
+          {/* Background decorative elements */}
+          <div className="absolute inset-0 overflow-hidden pointer-events-none">
+            <div className="absolute top-20 left-0 w-72 h-72 bg-orange-500/5 rounded-full mix-blend-multiply filter blur-3xl" />
+            <div className="absolute bottom-20 right-0 w-96 h-96 bg-orange-500/5 rounded-full mix-blend-multiply filter blur-3xl" />
+          </div>
 
-            <div className="grid grid-cols-1 gap-8 md:grid-cols-3 relative">
-              {/* Connecting line */}
-              <div className="hidden md:block absolute top-1/3 left-0 right-0 h-0.5 bg-gradient-to-r from-orange-200 via-blue-200 to-emerald-200 -z-10"></div>
-              
-              {stepCards.map((step, idx) => (
+          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            {/* Section Header */}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+              className="text-center mb-16"
+            >
+              <span className="inline-block px-4 py-2 bg-orange-100 text-orange-700 rounded-full text-sm font-semibold mb-4">
+                How It Works
+              </span>
+              <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-slate-900 mb-6">
+                Simple 6-Step{' '}
+                <span className="bg-gradient-to-r from-orange-600 via-amber-500 to-orange-500 bg-clip-text text-transparent">
+                  Process
+                </span>
+              </h2>
+              <p className="text-xl text-slate-600 max-w-3xl mx-auto">
+                From scanning to payment, experience the seamless journey that makes 
+                MenuGo the preferred choice for modern restaurants.
+              </p>
+            </motion.div>
+
+            {/* Steps Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {howItWorksSteps.map((step, index) => (
                 <motion.div
-                  key={idx}
-                  variants={popIn}
-                  initial="hidden"
-                  whileInView="show"
+                  key={step.step}
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
-                  transition={{ delay: idx * 0.1 }}
+                  transition={{ duration: 0.6, delay: index * 0.1 }}
                   whileHover={{ 
                     y: -8,
+                    scale: 1.02,
                     transition: { type: 'spring', stiffness: 300 },
                   }}
-                  className="relative"
+                  className="group relative rounded-2xl border border-slate-100 bg-white p-6 shadow-sm transition-all hover:shadow-xl overflow-hidden cursor-pointer"
+                  onMouseEnter={() => setHoveredStep(index)}
+                  onMouseLeave={() => setHoveredStep(null)}
                 >
-                  <div className="relative rounded-2xl border border-slate-100 bg-white p-6 shadow-sm transition-all hover:shadow-xl group cursor-pointer">
-                    <div className="mb-4 flex items-center justify-between">
-                      <motion.span 
-                        className={`text-4xl font-black bg-gradient-to-r bg-clip-text text-transparent ${step.gradient}`}
-                        whileHover={{ scale: 1.1 }}
-                      >
+                  <motion.div 
+                    className="absolute inset-0 bg-gradient-to-br from-orange-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"
+                    initial={{ scale: 0 }}
+                    animate={{ scale: hoveredStep === index ? 1 : 0 }}
+                    transition={{ duration: 0.5 }}
+                  />
+
+                  <div className="relative z-10">
+                    {/* Step Number and Icon */}
+                    <div className="flex items-center justify-between mb-4">
+                      <span className="text-5xl font-black bg-gradient-to-r from-orange-600 via-amber-500 to-orange-500 bg-clip-text text-transparent">
                         {step.step}
-                      </motion.span>
-                      <div className={`p-3 rounded-xl bg-gradient-to-r ${step.gradient} shadow-lg`}>
-                        <step.icon className="h-6 w-6 text-white" />
+                      </span>
+                      <div className={`w-14 h-14 rounded-xl ${step.bgColor} flex items-center justify-center transition-colors group-hover:bg-gradient-to-r ${step.color}`}>
+                        <step.icon className={`w-7 h-7 ${step.iconColor} transition-colors group-hover:text-white`} />
                       </div>
                     </div>
-                    <h3 className="text-lg font-bold text-slate-900">{step.title}</h3>
-                    <p className="mt-2 text-sm text-slate-500">{step.desc}</p>
+
+                    {/* Title */}
+                    <h3 className="text-xl font-bold text-slate-900 mb-3 group-hover:text-orange-600 transition-colors">
+                      {step.title}
+                    </h3>
+
+                    {/* Description */}
+                    <p className="text-slate-600 leading-relaxed">
+                      {step.description}
+                    </p>
+
+                    {/* Animated icon indicator */}
+                    <motion.div 
+                      className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity"
+                      initial={{ x: -10 }}
+                      animate={{ x: hoveredStep === index ? 0 : -10 }}
+                    >
+                      <ChevronRightIcon className="h-5 w-5 text-orange-500" />
+                    </motion.div>
                   </div>
                 </motion.div>
               ))}
             </div>
+
+            {/* CTA Button */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="text-center mt-16"
+            >
+              <p className="text-lg text-slate-600 mb-6">
+                Ready to streamline your restaurant operations?
+              </p>
+              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <Link
+                  to="/contact"
+                  className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-orange-600 to-orange-500 text-white rounded-2xl font-semibold text-lg shadow-lg shadow-orange-600/30 transition-all hover:shadow-orange-600/50"
+                >
+                  Get Started Now
+                  <ArrowRightIcon className="h-5 w-5" />
+                </Link>
+              </motion.div>
+            </motion.div>
           </div>
         </section>
 
-        {/* Testimonials with Enhanced Cards */}
-        <section className="bg-gradient-to-br from-slate-50 to-white py-16 sm:py-20">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="mx-auto mb-12 max-w-3xl text-center">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-              >
-                <span className="inline-block px-4 py-1 rounded-full bg-rose-100 text-rose-700 text-sm font-semibold mb-3">
-                  Testimonials
-                </span>
-                <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 md:text-4xl">
-                  Loved by restaurant teams
-                </h2>
-                <p className="mt-3 text-lg text-slate-600">
-                  Real feedback from happy customers.
-                </p>
-              </motion.div>
-            </div>
+        {/* Testimonials Section with Carousel */}
+        <section className="py-16 sm:py-24 bg-gradient-to-b from-white via-orange-50/20 to-white relative overflow-hidden">
+          {/* Background decorative elements */}
+          <div className="absolute inset-0 overflow-hidden pointer-events-none">
+            <div className="absolute top-10 left-10 w-64 h-64 bg-orange-500/5 rounded-full filter blur-3xl" />
+            <div className="absolute bottom-10 right-10 w-64 h-64 bg-orange-500/5 rounded-full filter blur-3xl" />
+          </div>
 
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-              {testimonials.map((t, i) => (
-                <motion.div
-                  key={i}
-                  variants={popIn}
-                  initial="hidden"
-                  whileInView="show"
-                  viewport={{ once: true }}
-                  transition={{ delay: i * 0.08 }}
-                  whileHover={{ 
-                    y: -8,
-                    transition: { type: 'spring', stiffness: 300 },
-                  }}
-                  className="relative rounded-2xl bg-white p-6 shadow-sm transition-all hover:shadow-xl group cursor-pointer"
-                >
-                  <div className="flex gap-0.5 text-amber-400 mb-3">
-                    {[...Array(t.rating)].map((_, idx) => (
-                      <StarIcon key={idx} className="h-4 w-4 fill-current" />
-                    ))}
-                  </div>
-                  <p className="text-sm text-slate-700 leading-relaxed">"{t.quote}"</p>
-                  <div className="mt-4 flex items-center gap-3">
-                    <motion.img 
-                      src={t.avatar} 
-                      alt={t.name} 
-                      className="h-12 w-12 rounded-full object-cover ring-2 ring-orange-200"
-                      whileHover={{ scale: 1.1 }}
-                    />
-                    <div>
-                      <p className="text-sm font-bold text-slate-900">{t.name}</p>
-                      <p className="text-xs text-slate-500">{t.title}</p>
+          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            {/* Section Header */}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="text-center mb-16"
+            >
+              <span className="inline-block px-4 py-2 bg-orange-100 text-orange-700 rounded-full text-sm font-semibold mb-4">
+                Testimonials
+              </span>
+              <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-slate-900 mb-6">
+                Trusted by{' '}
+                <span className="bg-gradient-to-r from-orange-600 via-amber-500 to-orange-500 bg-clip-text text-transparent">
+                  Restaurant Owners
+                </span>
+              </h2>
+              <p className="text-xl text-slate-600 max-w-3xl mx-auto">
+                See what our customers are saying about MenuGo
+              </p>
+            </motion.div>
+
+            {/* Testimonials Carousel */}
+            <div className="max-w-4xl mx-auto relative">
+              <div className="relative overflow-hidden" style={{ minHeight: '400px' }}>
+                <AnimatePresence initial={false} custom={testimonialDirection}>
+                  <motion.div
+                    key={testimonialIndex}
+                    custom={testimonialDirection}
+                    variants={slideVariants}
+                    initial="enter"
+                    animate="center"
+                    exit="exit"
+                    transition={{
+                      x: { type: "spring", stiffness: 300, damping: 30 },
+                      opacity: { duration: 0.2 }
+                    }}
+                    className="absolute w-full"
+                  >
+                    <div className="bg-white rounded-3xl p-8 md:p-12 shadow-2xl border border-slate-100 relative">
+                      {/* Quote Icon */}
+                      <div className="absolute top-6 right-6 text-orange-100">
+                        <Quote className="w-16 h-16" />
+                      </div>
+
+                      <div className="relative">
+                        {/* Rating Stars */}
+                        <div className="flex gap-1 mb-6">
+                          {[...Array(testimonials[testimonialIndex].rating)].map((_, i) => (
+                            <Star key={i} className="w-5 h-5 fill-orange-400 text-orange-400" />
+                          ))}
+                        </div>
+
+                        {/* Testimonial Text */}
+                        <p className="text-xl md:text-2xl text-slate-700 leading-relaxed mb-8 font-light">
+                          "{testimonials[testimonialIndex].text}"
+                        </p>
+
+                        {/* Author and Metrics */}
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+                          <div className="flex items-center gap-4">
+                            <img
+                              src={testimonials[testimonialIndex].image}
+                              alt={testimonials[testimonialIndex].name}
+                              className="w-14 h-14 rounded-2xl object-cover border-2 border-orange-200"
+                            />
+                            <div>
+                              <h4 className="text-lg font-semibold text-slate-900">
+                                {testimonials[testimonialIndex].name}
+                              </h4>
+                              <p className="text-slate-500">
+                                {testimonials[testimonialIndex].role}
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Metrics Badge */}
+                          <div className="bg-gradient-to-br from-orange-50 to-orange-100/50 rounded-2xl px-6 py-3 border border-orange-200">
+                            <p className="text-sm text-slate-600">
+                              {testimonials[testimonialIndex].metrics.label}
+                            </p>
+                            <p className="text-2xl font-bold text-orange-600">
+                              {testimonials[testimonialIndex].metrics.value}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </motion.div>
-              ))}
+                  </motion.div>
+                </AnimatePresence>
+              </div>
+
+              {/* Navigation Controls */}
+              <div className="flex justify-center items-center gap-4 mt-8">
+                <button
+                  onClick={handleTestimonialPrevious}
+                  className="w-12 h-12 rounded-full bg-white border-2 border-slate-200 hover:border-orange-400 hover:bg-orange-50 flex items-center justify-center transition-all duration-300 group"
+                >
+                  <ChevronLeft className="w-5 h-5 text-slate-600 group-hover:text-orange-600 transition-colors" />
+                </button>
+
+                {/* Dots */}
+                <div className="flex gap-2">
+                  {testimonials.map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => {
+                        setTestimonialDirection(index > testimonialIndex ? 1 : -1);
+                        setTestimonialIndex(index);
+                      }}
+                      className={`transition-all duration-300 ${
+                        index === testimonialIndex
+                          ? 'w-8 h-3 bg-orange-500 rounded-full'
+                          : 'w-3 h-3 bg-slate-300 rounded-full hover:bg-slate-400'
+                      }`}
+                    />
+                  ))}
+                </div>
+
+                <button
+                  onClick={handleTestimonialNext}
+                  className="w-12 h-12 rounded-full bg-white border-2 border-slate-200 hover:border-orange-400 hover:bg-orange-50 flex items-center justify-center transition-all duration-300 group"
+                >
+                  <ChevronRight className="w-5 h-5 text-slate-600 group-hover:text-orange-600 transition-colors" />
+                </button>
+              </div>
             </div>
+
+            {/* Trusted By Brands */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="mt-16 pt-10 border-t border-slate-100"
+            >
+              <p className="text-center text-sm font-semibold text-slate-400 uppercase tracking-wider mb-6">
+                Trusted by leading restaurants worldwide
+              </p>
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-6 items-center justify-items-center opacity-40">
+                {['The Italian Place', 'Golden Dragon', 'Fresh Bites', 'Sushi Master', 'Bistro Deluxe'].map((brand) => (
+                  <div key={brand} className="text-lg font-bold text-slate-500 hover:text-slate-700 transition-colors">
+                    {brand}
+                  </div>
+                ))}
+              </div>
+            </motion.div>
           </div>
         </section>
-
-        {/* Integrations Section */}
-        {/* <section className="bg-white py-16 sm:py-20">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="mx-auto mb-12 max-w-3xl text-center">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-              >
-                <span className="inline-block px-4 py-1 rounded-full bg-indigo-100 text-indigo-700 text-sm font-semibold mb-3">
-                  Integrations
-                </span>
-                <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 md:text-4xl">
-                  Works with your favorite tools
-                </h2>
-                <p className="mt-3 text-lg text-slate-600">
-                  Seamlessly connect with the platforms you already use.
-                </p>
-              </motion.div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
-              {integrations.map((integration, idx) => (
-                <motion.div
-                  key={idx}
-                  variants={popIn}
-                  initial="hidden"
-                  whileInView="show"
-                  viewport={{ once: true }}
-                  transition={{ delay: idx * 0.05 }}
-                  whileHover={{ 
-                    y: -4,
-                    scale: 1.05,
-                    transition: { type: 'spring', stiffness: 300 },
-                  }}
-                  className={`${integration.bgColor} rounded-xl p-4 text-center transition-all hover:shadow-lg cursor-pointer`}
-                >
-                  <span className="text-3xl block mb-2">{integration.icon}</span>
-                  <span className="text-sm font-semibold text-slate-700">{integration.name}</span>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </section> */}
 
         {/* CTA Section */}
         <motion.section
@@ -870,7 +1078,7 @@ const Home = () => {
 
       <PublicFooter />
 
-      <style jsx>{`
+      <style>{`
         @keyframes gradient {
           0% { background-position: 0% 50%; }
           50% { background-position: 100% 50%; }

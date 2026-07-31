@@ -22,7 +22,7 @@
   },
   "dependencies": {
     "@headlessui/react": "^1.7.17",
-    "@heroicons/react": "^2.0.18",
+    "@heroicons/react": "^2.2.0",
     "@hookform/resolvers": "^3.3.1",
     "@stripe/stripe-js": "^9.4.0",
     "axios": "^1.4.0",
@@ -30,7 +30,7 @@
     "clsx": "^1.2.1",
     "date-fns": "^2.30.0",
     "file-saver": "^2.0.5",
-    "framer-motion": "^10.14.0",
+    "framer-motion": "^10.18.0",
     "html2canvas": "^1.4.1",
     "html5-qrcode": "^2.3.8",
     "jspdf": "^4.2.1",

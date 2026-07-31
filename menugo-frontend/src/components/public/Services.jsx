@@ -35,6 +35,11 @@ import PublicHeader from './PublicHeader';
 import PublicFooter from './PublicFooter';
 import { getPublicPlatformSummary, getPlatformDashboardData } from '../../services/analyticsService';
 import { staggerContainer, fadeInUp, popIn, hoverLift, heroImage } from '../common/motionVariants';
+import { 
+  QrCode, Smartphone, ChefHat, Bell, CreditCard, Star,
+  BarChart3, Users, Zap, MessageSquare, Shield,
+  Monitor, Tablet, ShoppingCart, Check
+} from 'lucide-react';
 
 // Loading Skeleton Component
 const LoadingSkeleton = ({ className = '' }) => (
@@ -53,6 +58,132 @@ const Services = () => {
   const heroOpacity = useTransform(scrollYProgress, [0, 0.3], [1, 0.8]);
   const heroScale = useTransform(scrollYProgress, [0, 0.3], [1, 0.98]);
   const [hoveredCard, setHoveredCard] = useState(null);
+  const [hoveredStep, setHoveredStep] = useState(null);
+  const [activeFeature, setActiveFeature] = useState(0);
+  const [activeTab, setActiveTab] = useState("customer");
+  const [activeDevice, setActiveDevice] = useState("phone");
+
+  // Features Data
+  const features = [
+    {
+      icon: DevicePhoneMobileIcon,
+      title: "Digital Menu Creation",
+      description: "Create polished menus with images, descriptions, categories, and quick edits.",
+      color: "from-blue-500 to-cyan-500",
+      bgColor: "bg-blue-50",
+      iconColor: "text-blue-600",
+      gradient: "from-blue-500 to-cyan-500",
+      details: ['Drag-and-drop layout', 'Menu sections', 'Image support', 'Easy updates']
+    },
+     {
+      icon: Zap,
+      title: "QR Ordering System",
+      description: 'Generate QR experiences for tables, promotions, and menu access in seconds.',
+      color: "from-orange-500 to-red-500",
+      bgColor: "bg-orange-50",
+      iconColor: "text-orange-600",
+      gradient: "from-orange-500 to-red-500",
+      details: ['Table-specific QR codes', 'Printable QR assets', 'Scan tracking', 'Fast guest access']
+    },
+    {
+      icon: Users,
+      title: "Staff Management",
+      description: "Manage your team efficiently with role-based access, scheduling, and performance tracking.",
+      color: "from-green-500 to-emerald-500",
+      bgColor: "bg-green-50",
+      iconColor: "text-green-600",
+      gradient: "from-green-500 to-emerald-500",
+      details: ["Role permissions", "Shift scheduling", "Performance metrics", "Team communication"]
+    },
+    {
+      icon: BarChart3,
+      title: "Analytics & Insights",
+      description: 'See revenue, sales trends, customer activity, and top items from one dashboard.',
+      color: "from-purple-500 to-pink-500",
+      bgColor: "bg-purple-50",
+      iconColor: "text-purple-600",
+      gradient: "from-purple-500 to-pink-500",
+      details: ['Live dashboards', 'Revenue reports', 'Menu performance', 'Customer trends']
+    },
+    
+   
+    {
+      icon: Zap,
+      title: "Order Management",
+      description: "Streamline your order flow from customer to kitchen. Real-time tracking and automated notifications.",
+      color: "from-orange-500 to-red-500",
+      bgColor: "bg-orange-50",
+      iconColor: "text-orange-600",
+      gradient: "from-orange-500 to-red-500",
+      details: ["Real-time tracking", "Kitchen display", "Order prioritization", "Auto-notifications"]
+    },
+    {
+      icon: Shield,
+      title: "Secure Platform",
+      description: 'Use a stable, secure system with encrypted sessions and reliable access control.',
+      color: "from-indigo-500 to-violet-500",
+      bgColor: "bg-indigo-50",
+      iconColor: "text-indigo-600",
+      gradient: "from-indigo-500 to-violet-500",
+      details: ['Secure sessions', 'Data protection', 'Role permissions', 'Backup friendly']
+    },
+    // {
+    //   icon: GlobeAltIcon,
+    //   title: "Multi-Location",
+    //   description: "Manage multiple restaurant locations from a single dashboard. Consistent experience across all outlets.",
+    //   color: "from-teal-500 to-cyan-500",
+    //   bgColor: "bg-teal-50",
+    //   iconColor: "text-teal-600",
+    //   gradient: "from-teal-500 to-cyan-500",
+    //   details: ["Central dashboard", "Location analytics", "Menu syncing", "Cross-location reports"]
+    // }
+  ];
+
+  // Product Showcase Tabs
+  const tabs = [
+    { id: "customer", label: "For Customers", icon: Users },
+    { id: "staff", label: "For Staff", icon: ChefHat },
+    { id: "owner", label: "For Owners", icon: BarChart3 }
+  ];
+
+  const showcaseContent = {
+    customer: {
+      title: "Seamless Customer Experience",
+      description: "Customers scan, browse, order, and pay - all from their phone. No app download required.",
+      features: [
+        "QR code scanning from table",
+        "Beautiful digital menu with images",
+        "Easy customization of orders",
+        "Multiple payment options",
+        "Real-time order tracking",
+        "Feedback submission"
+      ]
+    },
+    staff: {
+      title: "Efficient Staff Dashboard",
+      description: "Real-time order management, table tracking, and communication tools for your team.",
+      features: [
+        "Instant order notifications",
+        "Kitchen display system",
+        "Table management",
+        "Order prioritization",
+        "Staff communication",
+        "Performance tracking"
+      ]
+    },
+    owner: {
+      title: "Powerful Analytics Dashboard",
+      description: "Get real-time insights into sales, performance, and customer behavior across all locations.",
+      features: [
+        "Real-time revenue tracking",
+        "Customer analytics",
+        "Staff performance metrics",
+        "Menu optimization insights",
+        "Multi-location dashboard",
+        "Exportable reports"
+      ]
+    }
+  };
 
   const services = [
     {
@@ -138,25 +269,86 @@ const Services = () => {
     },
   ];
 
-  const process = [
-    { 
-      icon: BuildingStorefrontIcon, 
-      title: 'Set up your space', 
-      text: 'Add your restaurant, tables, and menu structure.',
-      gradient: 'from-orange-500 to-amber-500',
+  // How It Works Steps - 6 Step Process
+  const howItWorksSteps = [
+    {
+      icon: QrCode,
+      step: "01",
+      title: "Scan QR Code",
+      description: "Customer scans the unique QR code on their table using their smartphone camera. No app download needed.",
+      color: "from-blue-500 to-cyan-500",
+      bgColor: "bg-blue-50",
+      iconColor: "text-blue-600",
+      gradient: "from-blue-500 to-cyan-500",
+      image: "📱"
     },
-    { 
-      icon: QrCodeIcon, 
-      title: 'Go live with QR', 
-      text: 'Place QR codes and let guests access menus instantly.',
-      gradient: 'from-blue-500 to-cyan-500',
+    {
+      icon: Smartphone,
+      step: "02",
+      title: "Browse & Order",
+      description: "Digital menu appears instantly. Customers browse items, customize orders, and add to cart with ease.",
+      color: "from-purple-500 to-pink-500",
+      bgColor: "bg-purple-50",
+      iconColor: "text-purple-600",
+      gradient: "from-purple-500 to-pink-500",
+      image: "🛒"
     },
-    { 
-      icon: TrophyIcon, 
-      title: 'Improve continuously', 
-      text: 'Use analytics to refine service and grow revenue.',
-      gradient: 'from-emerald-500 to-green-500',
+   {
+  icon: MessageSquare,
+  step: "03",
+  title: "Waiter Receives Order",
+  description: "Order instantly appears on the waiter's device. Waiters can view, prioritize, and track order status in real-time.",
+  color: "from-orange-500 to-red-500",
+  bgColor: "bg-orange-50",
+  iconColor: "text-orange-600",
+  gradient: "from-orange-500 to-red-500",
+  image: "💁"
+},
+
+    {
+      icon: ChefHat,
+      step: "04",
+      title: "Kitchen Receives Order",
+      description: "verified Order instantly appears on the kitchen display. Chefs can prioritize and track preparation time.",
+      color: "from-orange-500 to-red-500",
+      bgColor: "bg-orange-50",
+      iconColor: "text-orange-600",
+      gradient: "from-orange-500 to-red-500",
+      image: "👨‍🍳"
     },
+    {
+      icon: Bell,
+      step: "05",
+      title: "Real-Time Updates",
+      description: "Customer receives live updates on order status. Staff gets notified when orders are ready for serving.",
+      color: "from-green-500 to-emerald-500",
+      bgColor: "bg-green-50",
+      iconColor: "text-green-600",
+      gradient: "from-green-500 to-emerald-500",
+      image: "🔔"
+    },
+    // {
+    //   icon: CreditCard,
+    //   step: "05",
+    //   title: "Secure Payment",
+    //   description: "Multiple payment options available. Customers can pay via card, digital wallet, or split the bill.",
+    //   color: "from-indigo-500 to-violet-500",
+    //   bgColor: "bg-indigo-50",
+    //   iconColor: "text-indigo-600",
+    //   gradient: "from-indigo-500 to-violet-500",
+    //   image: "💳"
+    // },
+    {
+      icon: Star,
+      step: "06",
+      title: "Feedback & Analytics",
+      description: "Collect customer feedback and gain insights. Improve service quality with data-driven decisions.",
+      color: "from-yellow-500 to-amber-500",
+      bgColor: "bg-yellow-50",
+      iconColor: "text-yellow-600",
+      gradient: "from-yellow-500 to-amber-500",
+      image: "⭐"
+    }
   ];
 
   const [platformSummary, setPlatformSummary] = useState({
@@ -468,66 +660,301 @@ const Services = () => {
           </div>
         </motion.section>
 
-        {/* How it works - Enhanced */}
-        <motion.section 
-          initial="hidden"
-          whileInView="show"
-          viewport={{ once: true }}
-          variants={staggerContainer}
-          className="bg-gradient-to-b from-white via-orange-50/30 to-white py-12 sm:py-16"
-        >
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="mx-auto mb-10 max-w-3xl text-center">
-              <motion.span 
-                variants={fadeInUp}
-                className="inline-block px-4 py-1 rounded-full bg-orange-100 text-orange-700 text-sm font-semibold mb-3"
-              >
-                How It Works
-              </motion.span>
-              <motion.h2 
-                variants={fadeInUp}
-                className="text-3xl font-black tracking-tight text-slate-900 md:text-4xl"
-              >
-                Get started in 3 simple steps
-              </motion.h2>
-            </div>
+        
+        {/* Features Section */}
+        <section className="py-16 sm:py-24 bg-white relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-96 h-96 bg-orange-500/5 rounded-full -translate-y-1/2 translate-x-1/2" />
+          <div className="absolute bottom-0 left-0 w-96 h-96 bg-orange-500/5 rounded-full translate-y-1/2 -translate-x-1/2" />
 
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-3 relative">
-              {/* Connecting line */}
-              <div className="hidden md:block absolute top-1/3 left-0 right-0 h-0.5 bg-gradient-to-r from-orange-200 via-blue-200 to-emerald-200 -z-10"></div>
-              
-              {process.map((item, index) => (
+          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+              className="text-center mb-16"
+            >
+              <span className="inline-block px-4 py-2 bg-orange-100 text-orange-700 rounded-full text-sm font-semibold mb-4">
+                Powerful Features
+              </span>
+              <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-slate-900 mb-6">
+                Everything You Need to{' '}
+                <span className="bg-gradient-to-r from-orange-600 via-amber-500 to-orange-500 bg-clip-text text-transparent">
+                  Succeed
+                </span>
+              </h2>
+              <p className="text-xl text-slate-600 max-w-3xl mx-auto">
+                Our comprehensive suite of tools is designed to streamline your restaurant 
+                operations and enhance customer experience.
+              </p>
+            </motion.div>
+
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {features.map((feature, index) => (
                 <motion.div
-                  key={item.title}
-                  variants={popIn}
-                  whileHover={{ 
-                    y: -8,
-                    scale: 1.02,
-                    transition: { type: 'spring', stiffness: 300 },
-                  }}
-                  className="relative group"
+                  key={feature.title}
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.5, delay: index * 0.1 }}
+                  onMouseEnter={() => setActiveFeature(index)}
+                  className="group relative"
                 >
-                  <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm transition-all hover:shadow-xl cursor-pointer">
-                    <div className={`inline-block p-3 rounded-xl bg-gradient-to-r ${item.gradient} shadow-lg mb-4`}>
-                      <item.icon className="h-6 w-6 text-white" />
+                  <div className={`relative p-8 rounded-3xl border-2 transition-all duration-300 cursor-pointer
+                    ${activeFeature === index 
+                      ? 'border-orange-400 shadow-2xl shadow-orange-500/10 bg-white scale-105' 
+                      : 'border-slate-100 hover:border-orange-300/30 bg-white hover:shadow-xl'
+                    }`}
+                  >
+                    <div className={`w-14 h-14 rounded-2xl ${feature.bgColor} flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300`}>
+                      <feature.icon className={`w-7 h-7 bg-gradient-to-br ${feature.color} bg-clip-text text-transparent`} />
                     </div>
-                    <h3 className="text-lg font-bold text-slate-900">{item.title}</h3>
-                    <p className="mt-2 text-sm leading-relaxed text-slate-600">{item.text}</p>
-                    <motion.div 
-                      className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity"
-                      initial={{ x: -10 }}
-                      animate={{ x: hoveredCard === `process-${index}` ? 0 : -10 }}
-                    >
-                      <ChevronRightIcon className="h-5 w-5 text-orange-500" />
-                    </motion.div>
+
+                    <h3 className="text-xl font-bold text-slate-900 mb-3 group-hover:text-orange-600 transition-colors">
+                      {feature.title}
+                    </h3>
+                    <p className="text-slate-600 leading-relaxed mb-4">
+                      {feature.description}
+                    </p>
+
+                    <AnimatePresence>
+                      {activeFeature === index && (
+                        <motion.ul
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: "auto" }}
+                          exit={{ opacity: 0, height: 0 }}
+                          transition={{ duration: 0.3 }}
+                          className="space-y-2 pt-4 border-t border-slate-100"
+                        >
+                          {feature.details.map((detail, i) => (
+                            <motion.li
+                              key={detail}
+                              initial={{ opacity: 0, x: -10 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              transition={{ delay: i * 0.1 }}
+                              className="flex items-center gap-2 text-sm text-slate-600"
+                            >
+                              <div className="w-1.5 h-1.5 rounded-full bg-orange-500" />
+                              {detail}
+                            </motion.li>
+                          ))}
+                        </motion.ul>
+                      )}
+                    </AnimatePresence>
+
+                    <button className="mt-6 text-orange-600 font-semibold text-sm flex items-center gap-1 group/btn hover:text-orange-700">
+                      Learn more
+                      <span className="group-hover/btn:translate-x-1 transition-transform">→</span>
+                    </button>
                   </div>
                 </motion.div>
               ))}
             </div>
           </div>
-        </motion.section>
+        </section>
 
-        {/* Core Services - Enhanced Cards */}
+        {/* Product Showcase Section */}
+        <section className="py-16 sm:py-24 bg-gradient-to-b from-white via-orange-50/20 to-white relative overflow-hidden">
+          <div className="absolute inset-0 bg-[linear-gradient(rgba(0,0,0,0.01)_1px,transparent_1px),linear-gradient(90deg,rgba(0,0,0,0.01)_1px,transparent_1px)] bg-[size:4rem_4rem]" />
+
+          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="text-center mb-16"
+            >
+              <span className="inline-block px-4 py-2 bg-orange-100 text-orange-700 rounded-full text-sm font-semibold mb-4">
+                Product Showcase
+              </span>
+              <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-slate-900 mb-6">
+                Designed for{' '}
+                <span className="bg-gradient-to-r from-orange-600 via-amber-500 to-orange-500 bg-clip-text text-transparent">
+                  Everyone
+                </span>
+              </h2>
+              <p className="text-xl text-slate-600 max-w-3xl mx-auto">
+                Beautiful interfaces for customers, staff, and owners
+              </p>
+            </motion.div>
+
+            {/* Tabs */}
+            <div className="flex flex-wrap justify-center gap-3 mb-12">
+              {tabs.map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 flex items-center gap-2 ${
+                    activeTab === tab.id
+                      ? 'bg-gradient-to-r from-orange-600 to-orange-500 text-white shadow-lg shadow-orange-600/25'
+                      : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200'
+                  }`}
+                >
+                  <tab.icon className="w-4 h-4" />
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Content */}
+            <div className="grid lg:grid-cols-2 gap-12 items-center">
+              {/* Image/Visual */}
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={activeTab}
+                  initial={{ opacity: 0, x: -50 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 50 }}
+                  transition={{ duration: 0.5 }}
+                  className="flex justify-center"
+                >
+                  <div className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl border border-slate-200 p-6 mx-auto">
+                    <div className="flex items-center justify-between mb-6">
+                      <h3 className="text-lg font-semibold text-slate-900">
+                        {activeTab === 'customer' ? 'MenuGo App' : activeTab === 'staff' ? 'Staff Dashboard' : 'Analytics Dashboard'}
+                      </h3>
+                      <span className="bg-green-100 text-green-700 text-xs px-3 py-1 rounded-full">Live</span>
+                    </div>
+                    
+                    {activeTab === 'customer' && (
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-3 bg-orange-50 p-4 rounded-xl">
+                          <QrCode className="w-8 h-8 text-orange-600" />
+                          <div>
+                            <p className="font-semibold text-sm text-slate-900">Scan to Order</p>
+                            <p className="text-xs text-slate-500">Table T7 • 2 guests</p>
+                          </div>
+                        </div>
+                        {['Margherita Pizza', 'Caesar Salad', 'Sparkling Water'].map((item, i) => (
+                          <div key={i} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors">
+                            <div>
+                              <p className="font-medium text-sm text-slate-900">{item}</p>
+                              <p className="text-xs text-slate-500">${(12 + i * 3).toFixed(2)}</p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <button className="w-6 h-6 rounded-full bg-slate-200 hover:bg-orange-500 hover:text-white transition-colors">-</button>
+                              <span className="text-sm font-semibold">1</span>
+                              <button className="w-6 h-6 rounded-full bg-slate-200 hover:bg-orange-500 hover:text-white transition-colors">+</button>
+                            </div>
+                          </div>
+                        ))}
+                        <div className="border-t border-slate-200 pt-4">
+                          <div className="flex justify-between text-sm font-semibold">
+                            <span>Total</span>
+                            <span className="text-orange-600">$24.00</span>
+                          </div>
+                          <button className="w-full mt-3 py-3 bg-gradient-to-r from-orange-600 to-orange-500 text-white rounded-xl font-semibold hover:shadow-lg hover:shadow-orange-600/30 transition-all">
+                            Place Order
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {activeTab === 'staff' && (
+                      <div className="space-y-3">
+                        {[
+                          { table: "T7", items: "2x Pizza", time: "5 min", color: "bg-orange-100 text-orange-700" },
+                          { table: "T3", items: "Salad + Drink", time: "2 min", color: "bg-red-100 text-red-700" },
+                          { table: "T12", items: "Pasta", time: "8 min", color: "bg-yellow-100 text-yellow-700" }
+                        ].map((order, i) => (
+                          <div key={i} className="flex items-center gap-4 bg-slate-50 p-4 rounded-xl hover:bg-orange-50 transition-colors">
+                            <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center font-bold text-orange-600">
+                              {order.table}
+                            </div>
+                            <div className="flex-1">
+                              <p className="font-semibold text-sm text-slate-900">{order.items}</p>
+                              <p className="text-xs text-slate-500">{order.time} ago</p>
+                            </div>
+                            <span className={`text-xs px-2 py-1 rounded-full ${order.color}`}>Preparing</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {activeTab === 'owner' && (
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                          <h4 className="font-semibold text-sm text-slate-900">Revenue</h4>
+                          <span className="text-green-600 text-sm font-semibold">+12.5%</span>
+                        </div>
+                        <div className="h-32 bg-slate-50 rounded-xl flex items-end p-4 gap-2">
+                          {[65, 75, 85, 70, 90, 95, 80].map((h, i) => (
+                            <motion.div
+                              key={i}
+                              initial={{ height: 0 }}
+                              whileInView={{ height: `${h}%` }}
+                              className="flex-1 bg-orange-200 rounded-t-lg"
+                            />
+                          ))}
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          {[
+                            { label: "Total Orders", value: "847", color: "text-blue-600" },
+                            { label: "Avg. Value", value: "$42", color: "text-green-600" }
+                          ].map((stat, i) => (
+                            <div key={i} className="bg-slate-50 p-3 rounded-xl">
+                              <p className="text-xs text-slate-500">{stat.label}</p>
+                              <p className={`text-xl font-bold ${stat.color}`}>{stat.value}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </motion.div>
+              </AnimatePresence>
+
+              {/* Content */}
+              <div>
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={activeTab}
+                    initial={{ opacity: 0, x: 50 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -50 }}
+                    transition={{ duration: 0.5 }}
+                  >
+                    <h3 className="text-3xl font-bold text-slate-900 mb-4">
+                      {showcaseContent[activeTab].title}
+                    </h3>
+                    <p className="text-lg text-slate-600 mb-8">
+                      {showcaseContent[activeTab].description}
+                    </p>
+
+                    <div className="space-y-4">
+                      {showcaseContent[activeTab].features.map((feature, index) => (
+                        <motion.div
+                          key={feature}
+                          initial={{ opacity: 0, x: 20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: index * 0.1 }}
+                          className="flex items-center gap-3"
+                        >
+                          <div className="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+                            <Check className="w-4 h-4 text-green-600" />
+                          </div>
+                          <span className="text-slate-700">{feature}</span>
+                        </motion.div>
+                      ))}
+                    </div>
+
+                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                      <Link
+                        to="/contact"
+                        className="mt-8 inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-orange-600 to-orange-500 text-white rounded-2xl font-semibold shadow-lg shadow-orange-600/30 transition-all hover:shadow-orange-600/50"
+                      >
+                        Learn More
+                        <ArrowRightIcon className="h-5 w-5" />
+                      </Link>
+                    </motion.div>
+                  </motion.div>
+                </AnimatePresence>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Core Services - Enhanced Cards
         <section className="bg-white py-16 sm:py-20">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="mx-auto mb-12 max-w-3xl text-center">
@@ -607,9 +1034,9 @@ const Services = () => {
               ))}
             </div>
           </div>
-        </section>
+        </section> */}
 
-        {/* Extended Capabilities */}
+        {/* Extended Capabilities
         <section className="bg-gradient-to-br from-slate-50 to-white py-16 sm:py-20">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="mx-auto mb-12 max-w-3xl text-center">
@@ -656,9 +1083,9 @@ const Services = () => {
               ))}
             </div>
           </div>
-        </section>
+        </section> */}
 
-        {/* Testimonials - Enhanced */}
+        {/* Testimonials - Enhanced
         <section className="bg-white py-16 sm:py-20">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="mx-auto mb-12 max-w-3xl text-center">
@@ -712,7 +1139,7 @@ const Services = () => {
               ))}
             </div>
           </div>
-        </section>
+        </section> */}
 
         {/* Pricing - Enhanced */}
         <section id="pricing" className="bg-gradient-to-br from-slate-50 to-white py-16 sm:py-20">
@@ -930,7 +1357,7 @@ const Services = () => {
 
       <PublicFooter />
 
-      <style jsx>{`
+      <style>{`
         @keyframes gradient {
           0% { background-position: 0% 50%; }
           50% { background-position: 100% 50%; }
