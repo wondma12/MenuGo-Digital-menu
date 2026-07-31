@@ -173,56 +173,91 @@ const Home = () => {
   }, []);
 
   const features = [
-    {
-      icon: DevicePhoneMobileIcon,
-      title: 'Mobile-first Menus',
-      description: 'Blazing-fast menu pages that feel like a native app on any smartphone.',
-      color: 'from-orange-500 to-amber-500',
-      bgColor: 'bg-orange-50',
-      iconColor: 'text-orange-600',
-    },
-    {
-      icon: QrCodeIcon,
-      title: 'Smart QR Flows',
-      description: 'Instant table QR codes with dine-in, takeaway & prepayment modes.',
-      color: 'from-blue-500 to-cyan-500',
-      bgColor: 'bg-blue-50',
-      iconColor: 'text-blue-600',
-    },
-    {
-      icon: PresentationChartLineIcon,
-      title: 'Live Performance Data',
-      description: 'Monitor revenue, popular items & staff performance from one dashboard.',
-      color: 'from-emerald-500 to-green-500',
-      bgColor: 'bg-emerald-50',
-      iconColor: 'text-emerald-600',
-    },
-    {
-      icon: ClockIcon,
-      title: 'Real-time Updates',
-      description: 'Change prices, availability & descriptions — reflected instantly.',
-      color: 'from-purple-500 to-violet-500',
-      bgColor: 'bg-purple-50',
-      iconColor: 'text-purple-600',
-    },
-    {
-      icon: Bars3BottomLeftIcon,
-      title: 'Operational Simplicity',
-      description: 'Clear workflows for waiters, kitchen display & manager oversight.',
-      color: 'from-rose-500 to-pink-500',
-      bgColor: 'bg-rose-50',
-      iconColor: 'text-rose-600',
-    },
-    {
-      icon: ShieldCheckIcon,
-      title: 'Enterprise Security',
-      description: 'GDPR-ready, encrypted payments, and 99.99% uptime SLA.',
-      color: 'from-indigo-500 to-blue-500',
-      bgColor: 'bg-indigo-50',
-      iconColor: 'text-indigo-600',
-    },
-  ];
-
+  {
+    icon: DevicePhoneMobileIcon,
+    title: 'Mobile-first Menus',
+    description: 'Blazing-fast menu pages that feel like a native app on any smartphone. Optimized for speed, accessibility, and seamless browsing across all devices.',
+    color: 'from-orange-500 to-amber-500',
+    bgColor: 'bg-orange-50',
+    iconColor: 'text-orange-600',
+    details: [
+      'Fully responsive design for all screen sizes',
+      'Touch-optimized interface for mobile ordering',
+      'Smooth animations and transitions',
+      'Offline caching for faster loading'
+    ]
+  },
+  {
+    icon: QrCodeIcon,
+    title: 'Smart QR Flows',
+    description: 'Instant table QR codes with dine-in, takeaway & prepayment modes. Generate unique QR codes for every table and streamline the ordering process.',
+    color: 'from-blue-500 to-cyan-500',
+    bgColor: 'bg-blue-50',
+    iconColor: 'text-blue-600',
+    details: [
+      'Table-specific QR codes for accurate order tracking',
+      'Printable QR assets for physical menus',
+      'Real-time scan analytics and tracking',
+      'Customizable QR design with branding'
+    ]
+  },
+  {
+    icon: PresentationChartLineIcon,
+    title: 'Live Performance Data',
+    description: 'Monitor revenue, popular items & staff performance from one dashboard. Make data-driven decisions with real-time insights and comprehensive analytics.',
+    color: 'from-emerald-500 to-green-500',
+    bgColor: 'bg-emerald-50',
+    iconColor: 'text-emerald-600',
+    details: [
+      'Real-time revenue and sales tracking',
+      'Popular items and menu performance analysis',
+      'Staff productivity and efficiency metrics',
+      'Exportable reports and data visualization'
+    ]
+  },
+  {
+    icon: ClockIcon,
+    title: 'Real-time Updates',
+    description: 'Change prices, availability & descriptions — reflected instantly. Keep your menu current without printing costs or delays.',
+    color: 'from-purple-500 to-violet-500',
+    bgColor: 'bg-purple-50',
+    iconColor: 'text-purple-600',
+    details: [
+      'Instant sync across all devices and platforms',
+      'Scheduled updates for special promotions',
+      'Inventory and availability management',
+      'Version history and rollback capabilities'
+    ]
+  },
+  {
+    icon: Bars3BottomLeftIcon,
+    title: 'Operational Simplicity',
+    description: 'Clear workflows for waiters, kitchen display & manager oversight. Reduce complexity and improve team coordination with intuitive tools.',
+    color: 'from-rose-500 to-pink-500',
+    bgColor: 'bg-rose-50',
+    iconColor: 'text-rose-600',
+    details: [
+      'Role-based access for staff and management',
+      'Streamlined order-to-kitchen workflow',
+      'Shift planning and team scheduling',
+      'Activity logs and performance tracking'
+    ]
+  },
+  {
+    icon: ShieldCheckIcon,
+    title: 'Enterprise Security',
+    description: 'GDPR-ready, encrypted payments, and 99.99% uptime SLA. Your data and transactions are protected with enterprise-grade security.',
+    color: 'from-indigo-500 to-blue-500',
+    bgColor: 'bg-indigo-50',
+    iconColor: 'text-indigo-600',
+    details: [
+      'End-to-end encryption for all data',
+      'GDPR and data privacy compliance',
+      'Secure payment processing with PCI compliance',
+      'Regular security audits and penetration testing'
+    ]
+  },
+];
   const advancedFeatures = [
     {
       icon: CreditCardIcon,
@@ -306,10 +341,21 @@ const Home = () => {
       image: "🛒"
     },
     {
+  icon: ChefHat,
+  step: "03",
+  title: "Waiter Receives Order",
+  description: "Order instantly appears on the waiter's device. Waiters can view, prioritize, and track order status in real-time.",
+  color: "from-orange-500 to-red-500",
+  bgColor: "bg-orange-50",
+  iconColor: "text-orange-600",
+  gradient: "from-orange-500 to-red-500",
+  image: "💁"
+},
+    {
       icon: ChefHat,
-      step: "03",
+      step: "04",
       title: "Kitchen Receives Order",
-      description: "Order instantly appears on the kitchen display. Chefs can prioritize and track preparation time.",
+      description: "verified Order instantly appears on the kitchen display. Chefs can prioritize and track preparation time.",
       color: "from-orange-500 to-red-500",
       bgColor: "bg-orange-50",
       iconColor: "text-orange-600",
@@ -318,7 +364,7 @@ const Home = () => {
     },
     {
       icon: Bell,
-      step: "04",
+      step: "05",
       title: "Real-Time Updates",
       description: "Customer receives live updates on order status. Staff gets notified when orders are ready for serving.",
       color: "from-green-500 to-emerald-500",
@@ -327,17 +373,7 @@ const Home = () => {
       gradient: "from-green-500 to-emerald-500",
       image: "🔔"
     },
-    {
-      icon: CreditCard,
-      step: "05",
-      title: "Secure Payment",
-      description: "Multiple payment options available. Customers can pay via card, digital wallet, or split the bill.",
-      color: "from-indigo-500 to-violet-500",
-      bgColor: "bg-indigo-50",
-      iconColor: "text-indigo-600",
-      gradient: "from-indigo-500 to-violet-500",
-      image: "💳"
-    },
+   
     {
       icon: Star,
       step: "06",
