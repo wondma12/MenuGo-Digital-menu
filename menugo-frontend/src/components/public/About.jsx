@@ -101,33 +101,45 @@ const About = () => {
   }, []);
 
   const values = [
-    { 
-      icon: HeartIcon, 
-      title: 'Customer First', 
-      description: 'We design every screen around the real needs of restaurant teams and guests.',
+    {
+      icon: HeartIcon,
+      title: 'Customer First',
+      description: 'Every detail is shaped around the real rhythms of service, from first contact to final payment.',
+      summary: 'We make hospitality tools feel intuitive for guests and teams alike.',
+      bullets: ['Faster guest journeys', 'Less friction during rush hours', 'Experience-first design'],
       gradient: 'from-rose-500 to-pink-500',
       bgColor: 'bg-rose-50',
+      iconColor: 'text-rose-600',
     },
-    { 
-      icon: LightBulbIcon, 
-      title: 'Innovation', 
-      description: 'We keep the platform practical, modern, and easy to adopt in busy environments.',
+    {
+      icon: LightBulbIcon,
+      title: 'Innovation',
+      description: 'We blend practical product thinking with modern experiences that restaurants can adopt quickly.',
+      summary: 'Every release is designed to feel useful, modern, and easy to bring into daily operations.',
+      bullets: ['Fresh product ideas', 'Simple onboarding', 'Built for busy teams'],
       gradient: 'from-amber-500 to-orange-500',
       bgColor: 'bg-amber-50',
+      iconColor: 'text-amber-600',
     },
-    { 
-      icon: UsersIcon, 
-      title: 'Collaboration', 
-      description: 'We build for kitchens, waiters, owners, and diners as one connected system.',
+    {
+      icon: UsersIcon,
+      title: 'Collaboration',
+      description: 'We build for kitchens, waiters, owners, and diners as one connected system that works together.',
+      summary: 'When everyone shares the same flow, service becomes more confident and coordinated.',
+      bullets: ['Shared workflows', 'Clear team communication', 'Connected operations'],
       gradient: 'from-blue-500 to-cyan-500',
       bgColor: 'bg-blue-50',
+      iconColor: 'text-blue-600',
     },
-    { 
-      icon: GlobeAltIcon, 
-      title: 'Global Impact', 
-      description: 'We want to help restaurants everywhere deliver smoother, smarter service.',
+    {
+      icon: GlobeAltIcon,
+      title: 'Global Impact',
+      description: 'We want to help restaurants everywhere deliver smoother, smarter service with flexible digital tools.',
+      summary: 'From local cafés to growing chains, our platform supports hospitality at scale.',
+      bullets: ['Multi-language readiness', 'Scalable for growth', 'Built for modern dining'],
       gradient: 'from-emerald-500 to-green-500',
       bgColor: 'bg-emerald-50',
+      iconColor: 'text-emerald-600',
     },
   ]
 
@@ -581,7 +593,7 @@ const About = () => {
                   Core Values
                 </span>
                 <h2 className="text-3xl font-black tracking-tight text-slate-900 md:text-4xl">What we value</h2>
-                <p className="mt-3 text-lg text-slate-600">These principles shape every product decision and customer interaction.</p>
+                <p className="mt-3 text-lg text-slate-600">These principles guide how we build every experience, from digital menus to order flow and analytics.</p>
               </motion.div>
             </div>
 
@@ -599,19 +611,36 @@ const About = () => {
                     scale: 1.03,
                     transition: { type: 'spring', stiffness: 300 },
                   }}
-                  className="group relative rounded-2xl border border-slate-100 bg-white p-6 text-center shadow-sm transition-all hover:shadow-xl overflow-hidden cursor-pointer"
+                  className="group relative overflow-hidden rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition-all hover:shadow-xl"
                   onMouseEnter={() => setHoveredCard(`value-${index}`)}
                   onMouseLeave={() => setHoveredCard(null)}
                 >
                   <motion.div 
-                    className="absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-5 transition-opacity"
+                    className="absolute inset-0 bg-gradient-to-br opacity-0 transition-opacity group-hover:opacity-100"
                     style={{ backgroundImage: `linear-gradient(to bottom right, ${value.gradient})` }}
                   />
-                  <div className={`relative mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full ${value.bgColor} group-hover:scale-110 transition-transform`}>
-                    <value.icon className="h-8 w-8 text-orange-600" />
+                  <div className="relative z-10">
+                    <div className={`mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl ${value.bgColor} transition-transform group-hover:scale-110`}>
+                      <value.icon className={`h-8 w-8 ${value.iconColor}`} />
+                    </div>
+                    <h3 className="text-lg font-bold text-slate-900">{value.title}</h3>
+                    <p className="mt-3 text-sm leading-relaxed text-slate-600">{value.description}</p>
+                    <p className="mt-3 text-sm font-medium text-slate-700">{value.summary}</p>
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      {value.bullets.map((bullet, bulletIndex) => (
+                        <span
+                          key={bulletIndex}
+                          className="rounded-full border border-slate-200 bg-white/80 px-3 py-1 text-xs font-semibold text-slate-600"
+                        >
+                          {bullet}
+                        </span>
+                      ))}
+                    </div>
+                    <div className="mt-5 inline-flex items-center text-sm font-semibold text-orange-600 transition-colors group-hover:text-orange-700">
+                      Learn more
+                      <ChevronRightIcon className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                    </div>
                   </div>
-                  <h3 className="relative text-lg font-bold text-slate-900">{value.title}</h3>
-                  <p className="relative mt-2 text-sm text-slate-600">{value.description}</p>
                 </motion.div>
               ))}
             </div>
