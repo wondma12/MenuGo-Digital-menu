@@ -47,6 +47,12 @@ export default defineConfig(({ mode }) => {
           rewrite: (path) => path.replace(/^\/api/, '/api'),
           timeout: 120000,
         },
+        '/auth': {
+          target: normalizedApiUrl,
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/auth/, '/auth'),
+          timeout: 120000,
+        },
         '/ws': {
           target: wsUrl,
           ws: true,

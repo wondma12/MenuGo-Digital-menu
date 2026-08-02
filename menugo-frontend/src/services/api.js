@@ -22,9 +22,16 @@ const normalizeApiUrl = (url) => {
 
 const NORMALIZED_API_ROOT_URL = normalizeApiRootUrl(API_URL) || (typeof window !== 'undefined' ? window.location.origin : '')
 const EXPLICIT_API_ROOT_URL = normalizeApiRootUrl(import.meta.env.VITE_API_URL || import.meta.env.API_URL || '')
+const isLocalhostApiUrl = (url) => {
+  if (!url) return false
+  return /^(https?:\/\/)?(localhost|127\.0\.0\.1|0\.0\.0\.0|\[::1\]|::1)(:\d+)?$/i.test(url)
+}
+const shouldUseDevProxy = import.meta.env.DEV && EXPLICIT_API_ROOT_URL && isLocalhostApiUrl(EXPLICIT_API_ROOT_URL)
 // In development prefer relative URLs so Vite's dev server proxy handles /api requests
-// unless an explicit VITE_API_URL is provided by the developer.
-const initialApiBaseURL = EXPLICIT_API_ROOT_URL || (import.meta.env.DEV ? '' : (NORMALIZED_API_ROOT_URL || (typeof window !== 'undefined' ? window.location.origin : '')))
+// when the configured API target is local. Use the explicit API URL directly in
+// production or when it points at a remote service.
+const initialApiBaseURL = shouldUseDevProxy ? '' : EXPLICIT_API_ROOT_URL || (import.meta.env.DEV ? '' : (NORMALIZED_API_ROOT_URL || (typeof window !== 'undefined' ? window.location.origin : '')))
+const EFFECTIVE_API_ROOT_URL = shouldUseDevProxy ? '' : EXPLICIT_API_ROOT_URL
 
 // Fallback ports to try when the configured API is unreachable during local development.
 // Include common local backend ports used by this repo, then other candidates.
@@ -86,6 +93,13 @@ const ensureApiBaseReady = () => {
     const probeTimeout = 800
 
     if (EXPLICIT_API_ROOT_URL) {
+      if (shouldUseDevProxy) {
+        api.defaults.baseURL = ''
+        if (import.meta.env.DEV) console.warn('Using Vite dev proxy for local VITE_API_URL instead of direct backend baseURL')
+        try { if (typeof sessionStorage !== 'undefined') sessionStorage.removeItem(cacheKey) } catch (err) {}
+        return
+      }
+
       try {
         if (isProductionLike) {
           api.defaults.baseURL = EXPLICIT_API_ROOT_URL

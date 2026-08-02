@@ -52,7 +52,7 @@ const storage = multer.diskStorage({
 const fileFilter = (req, file, cb) => {
   // Allow bypass in development for local testing convenience
   if (process.env.ALLOW_DEV_UPLOAD_ANY === 'true') {
-    return cb(null, true)
+    return cb(null, true);
   }
 
   const allowedTypes = /jpeg|jpg|png|gif|webp|pdf|svg|doc|docx/;

@@ -75,17 +75,22 @@ const removeAuthValue = (key) => {
 
 const getResponsePayload = (response) => {
   if (!response) return null
-  if (response?.data) {
-    // Handle API wrapper format: { success: true, message: '', data: { ... } }
-    if (response.data?.data !== undefined) {
-      return response.data.data
-    }
-    // Handle wrapped response saved through authService: { success:true, data:{ ... } }
-    if (response.success !== undefined && response.data !== undefined) {
-      return response.data
-    }
+
+  // Axios response data envelope: { data: { success, message, data } }
+  if (response?.data?.data !== undefined) {
+    return response.data.data
+  }
+
+  // API wrapper object: { success, message, data }
+  if (response?.success !== undefined && response?.data !== undefined) {
     return response.data
   }
+
+  // Raw payload object
+  if (response?.data !== undefined) {
+    return response.data
+  }
+
   return response
 }
 
@@ -119,47 +124,27 @@ const useAuthStore = create(
             
             console.log('Full login response:', response)
             
-            // Extract data from nested response structure
-            // Your backend returns: { success: true, data: { user, token, refreshToken } }
-            let userData = null
-            let tokenData = null
-            let refreshTokenData = null
-            
-            if (response?.data?.user && response?.data?.token) {
-              // Format: { data: { user, token } }
-              userData = response.data.user
-              tokenData = response.data.token
-              refreshTokenData = response.data.refreshToken
-            } else if (response?.user && response?.token) {
-              // Format: { user, token }
-              userData = response.user
-              tokenData = response.token
-              refreshTokenData = response.refreshToken
-            } else if (response?.data) {
-              // Format: { data } where data contains user and token
-              userData = response.data.user || response.data
-              tokenData = response.data.token
-              refreshTokenData = response.data.refreshToken
-            } else {
-              console.error('Unexpected response structure:', response)
-              throw new Error('Invalid response structure from server')
-            }
-            
+            const payload = getResponsePayload(response)
+            const userData = getAuthResponseUser(payload)
+            const tokenData = getAuthResponseToken(payload)
+            const refreshTokenData = payload?.refreshToken || payload?.refresh_token || null
+
             if (!userData || !tokenData) {
+              console.error('Invalid login response payload:', payload)
               throw new Error('Missing user or token in response')
             }
+
             // Attach restaurant payload if provided by the API
-            const restaurantPayload = response?.data?.restaurant || response?.restaurant || response?.data?.data?.restaurant
+            const restaurantPayload = payload?.restaurant
             if (restaurantPayload && userData) {
               userData.restaurant_id = userData.restaurant_id || restaurantPayload.id || restaurantPayload._id
               userData.restaurant = restaurantPayload
             }
 
             // Attach staff payload (chef/waiter) if provided by the API
-            const staffPayload = response?.data?.staff || response?.staff || response?.data?.data?.staff
+            const staffPayload = payload?.staff
             if (staffPayload && userData) {
               userData.staff = staffPayload
-              // prefer restaurant id from staff if not already set
               userData.restaurant_id = userData.restaurant_id || staffPayload.restaurant_id || (userData.restaurant && userData.restaurant.id)
             }
             if (userData && userData.restaurant_id && !userData.restaurant) {
@@ -273,25 +258,16 @@ const useAuthStore = create(
           const response = await getCurrentUser()
           console.log('Check auth response:', response)
           
-          // Extract user from response and attach restaurant if provided
-          let userData = null
-          if (response?.data?.user) {
-            userData = response.data.user
-          } else if (response?.user) {
-            userData = response.user
-          } else if (response?.data) {
-            userData = response.data
-          } else {
-            userData = response
-          }
+          const payload = getResponsePayload(response)
+          const userData = getAuthResponseUser(payload)
 
-          const restaurantPayload = response?.data?.restaurant || response?.restaurant || response?.data?.data?.restaurant
+          const restaurantPayload = payload?.restaurant
           if (restaurantPayload && userData) {
             userData.restaurant_id = userData.restaurant_id || restaurantPayload.id || restaurantPayload._id
             userData.restaurant = restaurantPayload
           }
           // Attach staff payload (chef/waiter) if provided by the API
-          const staffPayload = response?.data?.staff || response?.staff || response?.data?.data?.staff
+          const staffPayload = payload?.staff
           if (staffPayload && userData) {
             userData.staff = staffPayload
             userData.restaurant_id = userData.restaurant_id || staffPayload.restaurant_id || (userData.restaurant && userData.restaurant.id)
@@ -472,21 +448,13 @@ const useAuthStore = create(
         set({ isLoading: true, error: null })
         try {
           const response = await apiVerifyTwoFactor(email, code, backupCode)
-          
-          let userData = null
-          let tokenData = null
-          
-          if (response?.data?.user && response?.data?.token) {
-            userData = response.data.user
-            tokenData = response.data.token
-          } else if (response?.user && response?.token) {
-            userData = response.user
-            tokenData = response.token
-          }
-          
+          const payload = getResponsePayload(response)
+          const userData = getAuthResponseUser(payload)
+          const tokenData = getAuthResponseToken(payload)
+
           if (userData && tokenData) {
             // Attach staff payload if provided
-            const staffPayload = response?.data?.staff || response?.staff || response?.data?.data?.staff
+            const staffPayload = payload?.staff
             if (staffPayload && userData) {
               userData.staff = staffPayload
               userData.restaurant_id = userData.restaurant_id || staffPayload.restaurant_id || (userData.restaurant && userData.restaurant.id)

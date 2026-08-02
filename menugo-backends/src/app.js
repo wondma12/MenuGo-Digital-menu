@@ -174,9 +174,6 @@ if (process.env.NODE_ENV !== 'development') {
 // Static files
 app.use('/uploads', express.static('uploads'));
 
-// API routes
-app.use('/api', routes);
-
 // Backwards-compatible alias for OAuth routes: internally rewrite `/auth/*` -> `/api/auth/*`
 // This helps browsers or bookmarks that hit `/auth/google` (without the `/api` prefix)
 // without losing headers or changing the original method.
@@ -224,6 +221,9 @@ try {
 } catch (e) {
   // ignore mounting errors
 }
+
+// API routes
+app.use('/api', routes);
 
 // Backwards-compatible public alias: some frontends may call /restaurants/:id/calls without the /api prefix.
 // Provide a thin public POST handler that forwards to the same controller used by the /api routes.

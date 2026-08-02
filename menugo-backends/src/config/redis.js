@@ -39,7 +39,8 @@ const initRedis = async () => {
     });
 
     redisClient.on('error', (err) => {
-      logger.warn('Redis unavailable; continuing without cache:', err?.message || err);
+      const message = err?.message || String(err);
+      logger.warn('Redis unavailable; continuing without cache:', message);
     });
 
     redisClient.on('connect', () => {
@@ -51,7 +52,8 @@ const initRedis = async () => {
     return redisClient;
   } catch (error) {
     redisClient = null;
-    logger.warn('Redis unavailable; continuing without cache:', error?.message || error);
+    const message = error?.message || String(error);
+    logger.warn('Redis unavailable; continuing without cache:', message);
     return null;
   }
 };

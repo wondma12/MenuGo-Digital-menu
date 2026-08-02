@@ -9,7 +9,7 @@ services:
     staticPublishPath: dist
 
 
-    
+
   - type: web
     name: menugo-backends
     runtime: node
@@ -20,6 +20,9 @@ services:
     buildCommand: npm ci --omit=dev
     startCommand: NODE_ENV=production npm start
     healthCheckPath: /health
+    envVars:
+      - key: REDIS_ENABLED
+        value: "false"
 
 databases:
   - name: menugo-db
