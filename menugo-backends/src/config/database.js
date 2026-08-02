@@ -60,14 +60,18 @@ const getDatabaseConfig = () => {
 };
 
 const isDev = process.env.NODE_ENV !== 'production';
-const useSqliteFallback = Boolean(
-  isDev && (
-    process.env.SQLITE_DEV_FALLBACK === 'true' ||
-    process.env.DB_DIALECT === 'sqlite' ||
-    process.env.DATABASE_URL === '' ||
-    process.env.DATABASE_URL === undefined
-  )
-);
+const isProductionLike = ['production', 'test'].includes(String(process.env.NODE_ENV || '').toLowerCase()) || Boolean(process.env.RENDER);
+const explicitSqliteDialect = String(process.env.DB_DIALECT || '').toLowerCase() === 'sqlite';
+let useSqliteFallback = false;
+
+if (isDev && !isProductionLike && (process.env.SQLITE_DEV_FALLBACK === 'true' || explicitSqliteDialect)) {
+  try {
+    require('sqlite3');
+    useSqliteFallback = true;
+  } catch (error) {
+    console.warn('[DB] SQLite fallback unavailable, using MySQL instead:', error && error.message ? error.message : error);
+  }
+}
 
 let sequelize;
 let pool = null;
@@ -114,21 +118,28 @@ const patchSequelizeShutdown = (sequelizeInstance) => {
 };
 
 if (useSqliteFallback) {
-  // ensure tmp directory exists
-  const storageDir = path.join(__dirname, '..', '..', 'tmp');
-  if (!fs.existsSync(storageDir)) fs.mkdirSync(storageDir, { recursive: true });
+  try {
+    // ensure tmp directory exists
+    const storageDir = path.join(__dirname, '..', '..', 'tmp');
+    if (!fs.existsSync(storageDir)) fs.mkdirSync(storageDir, { recursive: true });
 
-  const storagePath = path.join(storageDir, 'menugo-dev.sqlite');
+    const storagePath = path.join(storageDir, 'menugo-dev.sqlite');
 
-  sequelize = new Sequelize({
-    dialect: 'sqlite',
-    storage: storagePath,
-    // eslint-disable-next-line no-console
-    logging: shouldLogSql ? console.log : false,
-  });
+    sequelize = new Sequelize({
+      dialect: 'sqlite',
+      storage: storagePath,
+      // eslint-disable-next-line no-console
+      logging: shouldLogSql ? console.log : false,
+    });
 
-  usingSqlite = true;
-} else {
+    usingSqlite = true;
+  } catch (error) {
+    console.warn('[DB] SQLite fallback failed, using MySQL instead:', error && error.message ? error.message : error);
+    useSqliteFallback = false;
+  }
+}
+
+if (!useSqliteFallback) {
   const dbConfig = getDatabaseConfig();
   const dialect = dbConfig.dialect || 'mysql';
   const dbPort = dbConfig.port || (dialect === 'postgres' ? 5432 : 3306);

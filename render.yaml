@@ -20,7 +20,7 @@ services:
     autoDeployTrigger: commit
     rootDir: menugo-backends
     buildCommand: npm ci --omit=dev
-    startCommand: npm start
+    startCommand: NODE_ENV=production npm start
     healthCheckPath: /health
 
 databases:
