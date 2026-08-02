@@ -44,12 +44,10 @@ const commonValidations = {
   // Email
   email: body('email').isEmail().withMessage('Please provide a valid email').normalizeEmail(),
   
-  // Password
+  // Password - require a minimum length but do not enforce mixed-case+digit complexity by default.
   password: body('password')
     .isLength({ min: 6 })
-    .withMessage('Password must be at least 6 characters long')
-    .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
-    .withMessage('Password must contain at least one uppercase letter, one lowercase letter, and one number'),
+    .withMessage('Password must be at least 6 characters long'),
   
   // Phone
   phone: body('phone').optional().isMobilePhone().withMessage('Please provide a valid phone number'),
@@ -88,9 +86,6 @@ const authValidations = {
       }
       if (String(nextPassword).length < 6) {
         throw new Error('Password must be at least 6 characters long');
-      }
-      if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(String(nextPassword))) {
-        throw new Error('Password must contain at least one uppercase letter, one lowercase letter, and one number');
       }
       return true;
     }),

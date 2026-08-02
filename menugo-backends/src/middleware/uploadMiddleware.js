@@ -42,9 +42,9 @@ const storage = multer.diskStorage({
     cb(null, folder);
   },
   filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const uniqueSuffix = `${Date.now()  }-${  Math.round(Math.random() * 1E9)}`;
     const ext = path.extname(file.originalname);
-    cb(null, file.fieldname + '-' + uniqueSuffix + ext);
+    cb(null, `${file.fieldname  }-${  uniqueSuffix  }${ext}`);
   },
 });
 

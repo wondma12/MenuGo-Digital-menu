@@ -49,6 +49,27 @@ const normalizeSettingsValue = (value) => {
   return {};
 };
 
+const normalizeBooleanValue = (value) => {
+  if (typeof value === 'boolean') return value;
+  if (typeof value === 'number') return value === 1;
+  if (typeof value !== 'string') return undefined;
+
+  const normalized = value.trim().toLowerCase();
+  if (['true', '1', 'yes', 'approved', 'accept', 'accepted', 'enabled', 'enable'].includes(normalized)) {
+    return true;
+  }
+  if (['false', '0', 'no', 'rejected', 'reject', 'denied', 'disabled', 'disable'].includes(normalized)) {
+    return false;
+  }
+  return undefined;
+};
+
+const normalizeVerificationPayload = (payload = {}) => {
+  const is_verified = normalizeBooleanValue(payload.is_verified ?? payload.isVerified ?? payload.status ?? payload.approved);
+  const rejection_reason = payload.rejection_reason ?? payload.rejectionReason ?? payload.notes ?? null;
+  return { is_verified, rejection_reason };
+};
+
 // Get all restaurants (platform admin)
 const getAllRestaurants = catchAsync(async (req, res) => {
   const { page = 1, limit = 20, status, tier, country, search } = req.query;
@@ -1061,7 +1082,12 @@ const getPendingVerifications = catchAsync(async (req, res) => {
 // Verify restaurant (platform admin)
 const verifyRestaurant = catchAsync(async (req, res) => {
   const { id } = req.params;
-  const { is_verified, rejection_reason } = req.body;
+  const payload = { ...req.query, ...req.body };
+  const { is_verified, rejection_reason } = normalizeVerificationPayload(payload);
+
+  if (typeof is_verified === 'undefined') {
+    throw new ApiError(400, 'is_verified is required and must be a boolean or an approval status');
+  }
 
   const restaurant = await Restaurant.findByPk(id);
   if (!restaurant) {
