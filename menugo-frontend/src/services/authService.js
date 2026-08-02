@@ -89,7 +89,10 @@ export const resetPassword = async (token, password, confirmPassword = password)
 
 export const verifyEmail = async (token) => {
   try {
-    const response = await api.post('/auth/verify-email', { token })
+    // Backend exposes a GET endpoint for token-based verification at /auth/verify-email/:token
+    const normalizedToken = String(token || '').trim()
+    if (!normalizedToken) throw new Error('Verification token is required')
+    const response = await api.get(`/auth/verify-email/${encodeURIComponent(normalizedToken)}`)
     return response.data
   } catch (error) {
     console.error('Verify Email Error:', error.response?.data || error.message)

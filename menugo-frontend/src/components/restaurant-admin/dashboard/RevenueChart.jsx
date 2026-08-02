@@ -10,12 +10,13 @@ import {
   ResponsiveContainer,
   Legend,
 } from 'recharts'
-import { format, isValid, parseISO } from 'date-fns'
+import { format } from 'date-fns'
 import { formatPrice, formatPriceShort } from '../../../utils/currency'
+import { safeParseDate } from '../../../utils/dateUtils'
 
 const shouldShowTickLabel = (value) => {
-  const parsed = typeof value === 'string' ? (isValid(parseISO(value)) ? parseISO(value) : new Date(value)) : new Date(value)
-  if (!isValid(parsed)) return true
+  const parsed = safeParseDate(value)
+  if (!parsed) return true
   const day = parsed.getDate()
   const lastDayOfMonth = new Date(parsed.getFullYear(), parsed.getMonth() + 1, 0).getDate()
   return day % 2 === 0 || day === lastDayOfMonth
@@ -25,8 +26,8 @@ const RevenueChart = ({ data }) => {
   const normalized = (Array.isArray(data) ? data : []).map(d => ({
     label: (() => {
       const raw = d.name || d.label || d.month || d.date || d.period || ''
-      const parsed = typeof raw === 'string' ? (isValid(parseISO(raw)) ? parseISO(raw) : new Date(raw)) : new Date(raw)
-      if (isValid(parsed)) return format(parsed, 'MMM d')
+      const parsed = safeParseDate(raw)
+      if (parsed) return format(parsed, 'MMM d')
       return String(raw)
     })(),
     revenue: Number(d.revenue ?? d.total_revenue ?? d.amount ?? d.value ?? 0),

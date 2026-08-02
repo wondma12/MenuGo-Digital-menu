@@ -9,11 +9,12 @@ import {
   ResponsiveContainer,
   LabelList,
 } from 'recharts'
-import { format, isValid, parseISO } from 'date-fns'
+import { format } from 'date-fns'
+import { safeParseDate } from '../../../utils/dateUtils'
 
 const shouldShowTickLabel = (value) => {
-  const parsed = typeof value === 'string' ? (isValid(parseISO(value)) ? parseISO(value) : new Date(value)) : new Date(value)
-  if (!isValid(parsed)) return true
+  const parsed = safeParseDate(value)
+  if (!parsed) return true
   const day = parsed.getDate()
   const lastDayOfMonth = new Date(parsed.getFullYear(), parsed.getMonth() + 1, 0).getDate()
   return day % 2 === 0 || day === lastDayOfMonth
@@ -21,8 +22,8 @@ const shouldShowTickLabel = (value) => {
 
 const formatChartLabel = (value) => {
   try {
-    const parsed = typeof value === 'string' ? (isValid(parseISO(value)) ? parseISO(value) : new Date(value)) : new Date(value)
-    if (!isValid(parsed)) return String(value || '')
+    const parsed = safeParseDate(value)
+    if (!parsed) return String(value || '')
     return format(parsed, 'MMM d')
   } catch (e) {
     return String(value || '')
@@ -32,14 +33,14 @@ const formatChartLabel = (value) => {
 const normalize = (data) => (Array.isArray(data) ? data : []).map(d => ({
   dateKey: (() => {
     const raw = d.date || d.period || d.period_start || d.label || d.name || ''
-    const parsed = typeof raw === 'string' ? (isValid(parseISO(raw)) ? parseISO(raw) : new Date(raw)) : new Date(raw)
-    if (isValid(parsed)) return format(parsed, 'yyyy-MM-dd')
+    const parsed = safeParseDate(raw)
+    if (parsed) return format(parsed, 'yyyy-MM-dd')
     return String(raw)
   })(),
   label: (() => {
     const raw = d.date || d.period || d.period_start || d.label || d.name || ''
-    const parsed = typeof raw === 'string' ? (isValid(parseISO(raw)) ? parseISO(raw) : new Date(raw)) : new Date(raw)
-    if (isValid(parsed)) return format(parsed, 'MMM d')
+    const parsed = safeParseDate(raw)
+    if (parsed) return format(parsed, 'MMM d')
     return String(raw)
   })(),
   orders: Number(d.orders ?? d.total_orders ?? d.count ?? d.order_count ?? 0),

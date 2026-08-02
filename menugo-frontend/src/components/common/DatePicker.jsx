@@ -1,10 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { CalendarIcon } from '@heroicons/react/24/outline'
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, isToday, isValid } from 'date-fns'
+import { safeParseDate } from '../../utils/dateUtils'
 
 const DatePicker = ({ selected, onChange, label, error, className = '', placeholder = 'Select date' }) => {
   const [isOpen, setIsOpen] = useState(false)
-  const parseDate = (d) => d ? new Date(d) : null
+  const parseDate = safeParseDate
   const initMonth = (() => {
     const cand = parseDate(selected) || new Date()
     return isValid(cand) ? cand : new Date()

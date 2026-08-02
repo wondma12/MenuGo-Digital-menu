@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { useLocation, useNavigate, Link } from 'react-router-dom'
+import { useLocation, useNavigate, Link, useParams } from 'react-router-dom'
 import Button from '../common/Button'
 import Alert from '../common/Alert'
 import { resendVerificationEmail, verifyEmail } from '../../services/authService'
@@ -9,6 +9,7 @@ const VerifyEmail = () => {
   const location = useLocation()
   const navigate = useNavigate()
   const authUser = useAuthStore((state) => state.user)
+  const params = useParams()
   const [email, setEmail] = useState(() => {
     const stateEmail = location.state?.email || ''
     const queryEmail = new URLSearchParams(location.search).get('email') || ''
@@ -33,7 +34,10 @@ const VerifyEmail = () => {
       }
     }
 
-    const token = new URLSearchParams(location.search).get('token')
+    // Support token in route param (/verify-email/:token) or query string (?token=...)
+    const paramToken = params?.token
+    const queryToken = new URLSearchParams(location.search).get('token')
+    const token = paramToken || queryToken
     if (token) {
       handleEmailVerification(token)
     }
@@ -42,11 +46,14 @@ const VerifyEmail = () => {
   const handleEmailVerification = async (token) => {
     setIsLoading(true)
     try {
-      await verifyEmail(token)
+      const resp = await verifyEmail(token)
       setSuccess(true)
+      // If backend indicates we should show the welcome landing, navigate there
+      const showWelcome = resp?.data?.showWelcome || resp?.showWelcome || false
       setTimeout(() => {
-        navigate('/login')
-      }, 3000)
+        if (showWelcome) navigate('/welcome')
+        else navigate('/login')
+      }, 1500)
     } catch (err) {
       setError(err.response?.data?.message || 'Verification failed')
     } finally {

@@ -22,7 +22,9 @@ const normalizeApiUrl = (url) => {
 
 const NORMALIZED_API_ROOT_URL = normalizeApiRootUrl(API_URL) || (typeof window !== 'undefined' ? window.location.origin : '')
 const EXPLICIT_API_ROOT_URL = normalizeApiRootUrl(import.meta.env.VITE_API_URL || import.meta.env.API_URL || '')
-const initialApiBaseURL = EXPLICIT_API_ROOT_URL || NORMALIZED_API_ROOT_URL || (typeof window !== 'undefined' ? window.location.origin : '')
+// In development prefer relative URLs so Vite's dev server proxy handles /api requests
+// unless an explicit VITE_API_URL is provided by the developer.
+const initialApiBaseURL = EXPLICIT_API_ROOT_URL || (import.meta.env.DEV ? '' : (NORMALIZED_API_ROOT_URL || (typeof window !== 'undefined' ? window.location.origin : '')))
 
 // Fallback ports to try when the configured API is unreachable during local development.
 // Include common local backend ports used by this repo, then other candidates.
@@ -200,6 +202,10 @@ const attemptFallback = async (originalRequest) => {
   return Promise.reject(originalRequest._originalError || new Error('All API fallback attempts failed'))
 }
 
+// Throttle fallback attempts to avoid aggressive probing during network outages
+let _lastFallbackAttemptAt = 0
+const FALLBACK_THROTTLE_MS = 5000
+
   const api = axios.create({
   baseURL: initialApiBaseURL,
   timeout: 30000,
@@ -251,6 +257,7 @@ const publicPathRules = [
   { path: '/auth/forgot-password', methods: ['post'], exact: true },
   { path: '/auth/reset-password', methods: ['post'], exact: true },
   { path: '/auth/verify-email', methods: ['post'], exact: true },
+  { path: '/auth/verify-email', methods: ['get'], prefix: true },
   { path: '/platform/public-summary', methods: ['get'], prefix: true },
   { path: '/platform/subscriptions/plans', methods: ['get'], exact: true },
   { path: '/menu/restaurant', methods: ['get'], prefix: true },
@@ -632,13 +639,20 @@ api.interceptors.response.use(
         // Attempt to auto-detect the running backend by trying fallback ports/hosts.
         // Ensure we only try fallback once per request to avoid recursion. Limit
         // fallback attempts to avoid noisy console logs in dev.
+        const now = Date.now()
         if (originalRequest && !originalRequest._retryFallback) {
-          originalRequest._retryFallback = true
-          try {
-            return await attemptFallback(originalRequest)
-          } catch (fallbackErr) {
+          // Throttle fallback attempts to avoid repeated probes
+          if (now - _lastFallbackAttemptAt < FALLBACK_THROTTLE_MS) {
+            if (import.meta.env.DEV) console.debug('Skipping fallback probe due to throttle')
+          } else {
+            _lastFallbackAttemptAt = now
+            originalRequest._retryFallback = true
+            try {
+              return await attemptFallback(originalRequest)
+            } catch (fallbackErr) {
               if (import.meta.env.DEV) console.warn('API fallback exhausted:', fallbackErr.message || fallbackErr)
-            // fall through to reject original error
+              // fall through to reject original error
+            }
           }
         }
       }

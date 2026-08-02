@@ -402,13 +402,15 @@ const startServer = async () => {
       return null;
     };
 
-    const maxAttempts = parseInt(process.env.PORT_FALLBACK_ATTEMPTS, 10) || 20;
-    const available = await findAvailablePort(currentPort, maxAttempts);
-    if (!available) {
-      logger.error('Port probe failed: no available port found in fallback range.');
-      process.exit(1);
+    const requestedPort = Number.parseInt(process.env.PORT, 10) || currentPort;
+    const preferredPort = Number.isFinite(requestedPort) && requestedPort > 0 ? requestedPort : currentPort;
+    const portToUse = await findAvailablePort(preferredPort, 1);
+    if (!portToUse) {
+      logger.warn(`Preferred port ${preferredPort} is unavailable; falling back to the current port ${currentPort}`);
+      currentPort = preferredPort;
+    } else {
+      currentPort = portToUse;
     }
-    currentPort = available;
 
     // Ensure process.env.API_URL reflects the chosen port before loading the
     // express app so modules that generate absolute URLs (Passport callbacks)

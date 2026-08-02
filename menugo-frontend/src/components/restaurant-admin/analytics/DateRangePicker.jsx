@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { CalendarIcon } from '@heroicons/react/24/outline'
 import { format } from 'date-fns'
+import { safeParseDate } from '../../../utils/dateUtils'
 
 const DateRangePicker = ({ value, onChange, className = '' }) => {
   const [isOpen, setIsOpen] = useState(false)
@@ -43,9 +44,13 @@ const DateRangePicker = ({ value, onChange, className = '' }) => {
     setIsOpen(false)
   }
 
-  const displayValue = value?.start && value?.end
-    ? `${format(value.start, 'MMM dd, yyyy')} - ${format(value.end, 'MMM dd, yyyy')}`
-    : 'Select date range'
+  const displayValue = (() => {
+    const start = safeParseDate(value?.start)
+    const end = safeParseDate(value?.end)
+    return start && end
+      ? `${format(start, 'MMM dd, yyyy')} - ${format(end, 'MMM dd, yyyy')}`
+      : 'Select date range'
+  })()
 
   return (
     <div className={`relative ${className}`} ref={pickerRef}>

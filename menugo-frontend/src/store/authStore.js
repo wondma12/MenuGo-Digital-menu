@@ -17,6 +17,7 @@ import {
 } from '../services/authService'
 
 let pendingLoginRequest = null
+let _authRetryCount = 0
 
 // Safe sessionStorage wrapper with in-memory fallback.
 const createSafeSessionStorage = () => {
@@ -338,19 +339,28 @@ const useAuthStore = create(
           }
 
           // For transient/network errors, keep the token to avoid logging the
-          // user out on refresh. Clear loading and schedule one retry.
+          // user out on refresh. Clear loading and schedule a limited retry with backoff.
           set({ isLoading: false })
-          // Schedule a single retry in 2s
           try {
-            setTimeout(() => {
-              // only retry if a token still exists
-              const stillToken = get().token || getAuthValue('token')
-              if (stillToken) {
-                get().checkAuth()
+            const stillToken = get().token || getAuthValue('token')
+            if (stillToken && (!error.response || !error.response.status)) {
+              // Network or transient error: retry with exponential backoff up to 3 attempts
+              if (_authRetryCount < 3) {
+                const delay = 2000 * Math.pow(2, _authRetryCount)
+                _authRetryCount += 1
+                if (import.meta.env.DEV) console.warn(`Network error during checkAuth, retry #${_authRetryCount} in ${delay}ms`)
+                setTimeout(() => {
+                  // only retry if a token still exists
+                  const still = get().token || getAuthValue('token')
+                  if (still) get().checkAuth()
+                }, delay)
+              } else {
+                if (import.meta.env.DEV) console.warn('checkAuth retries exhausted')
+                _authRetryCount = 0
               }
-            }, 2000)
+            }
           } catch (e) {
-            // ignore
+            // ignore scheduling errors
           }
           return false
         }

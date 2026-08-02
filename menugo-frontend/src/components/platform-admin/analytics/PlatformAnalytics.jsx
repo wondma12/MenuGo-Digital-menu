@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { useQuery } from 'react-query'
 import { motion } from 'framer-motion'
-import { format, differenceInCalendarDays, isValid, parseISO, startOfMonth, endOfMonth, eachDayOfInterval } from 'date-fns'
+import { format, differenceInCalendarDays, isValid, startOfMonth, endOfMonth, eachDayOfInterval } from 'date-fns'
 import {
   LineChart,
   Line,
@@ -25,6 +25,7 @@ import ExportReport from './ExportReport'
 import Loading from '../../../common/Loading'
 import { getPlatformDashboardData } from '../../../services/analyticsService'
 import { formatPrice } from '../../../utils/currency'
+import { safeParseDate } from '../../../utils/dateUtils'
 
 const shortNumber = (value) => {
   if (value === null || value === undefined || Number.isNaN(Number(value))) return '0'
@@ -57,8 +58,8 @@ const getChartDateFormat = (dateRange) => {
 const formatChartLabel = (value, dateRange) => {
   if (!value) return ''
 
-  const parsed = typeof value === 'string' ? (isValid(parseISO(value)) ? parseISO(value) : new Date(value)) : new Date(value)
-  if (isValid(parsed)) {
+  const parsed = safeParseDate(value)
+  if (parsed) {
     return format(parsed, getChartDateFormat(dateRange))
   }
 
@@ -69,10 +70,8 @@ const formatChartLabel = (value, dateRange) => {
 const shouldShowTickLabel = (value) => {
   if (!value) return true
   try {
-    const parsed = typeof value === 'string' && value.length === 10 && /\d{4}-\d{2}-\d{2}/.test(value)
-      ? parseISO(value)
-      : (isValid(parseISO(value)) ? parseISO(value) : new Date(value))
-    if (!isValid(parsed)) return true
+    const parsed = safeParseDate(value)
+    if (!parsed) return true
     const day = parsed.getDate()
     const lastDay = new Date(parsed.getFullYear(), parsed.getMonth() + 1, 0).getDate()
     return day % 2 === 0 || day === lastDay
@@ -89,13 +88,13 @@ const normalizeChartSeries = (series, dateRange, fillDaily = false) => {
 
   const buildPoint = (item = {}, fallbackDate = null) => {
     const rawDate = item.date || item.label || item.period || item.month || item.day || item.time || fallbackDate || ''
-    const parsed = typeof rawDate === 'string' ? (isValid(parseISO(rawDate)) ? parseISO(rawDate) : new Date(rawDate)) : new Date(rawDate)
-    const dateKey = isValid(parsed) ? format(parsed, 'yyyy-MM-dd') : String(rawDate)
+    const parsed = safeParseDate(rawDate)
+    const dateKey = parsed ? format(parsed, 'yyyy-MM-dd') : String(rawDate)
 
     return {
       ...item,
       dateKey,
-      label: isValid(parsed) ? format(parsed, getChartDateFormat(dateRange)) : String(rawDate),
+      label: parsed ? format(parsed, getChartDateFormat(dateRange)) : String(rawDate),
       revenue: Number(item.revenue || item.total_revenue || item.amount || item.value || 0),
       orders: Number(item.orders || item.total_orders || 0),
       new: Number(item.new || item.new_restaurants || item.newRestaurants || 0),

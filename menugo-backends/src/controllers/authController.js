@@ -554,13 +554,17 @@ const verifyEmail = catchAsync(async (req, res) => {
     throw new ApiError(400, 'Invalid or expired verification token');
   }
 
+  // Mark both email_verified and is_verified so the user account becomes active
+  // (especially useful for restaurant_admin users who need to complete onboarding)
   await user.update({
     email_verified: true,
+    is_verified: true,
     email_verification_token: null,
     email_verification_expires: null,
   });
 
-  res.json(ApiResponse.success(null, 'Email verified successfully'));
+  // Respond with a flag that tells the frontend to show the welcome landing
+  return res.json(ApiResponse.success({ showWelcome: true }, 'Email verified successfully'));
 });
 
 // Change password

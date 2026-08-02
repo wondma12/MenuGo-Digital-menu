@@ -92,6 +92,7 @@ import ForgotPassword from './components/auth/ForgotPassword'
 import ResetPassword from './components/auth/ResetPassword'
 import VerifyEmail from './components/auth/VerifyEmail'
 import TwoFactorAuth from './components/auth/TwoFactorAuth'
+import WelcomeLanding from './components/auth/WelcomeLanding'
 
 // Public Pages
 // import Landing from "./components/Landing";
@@ -268,6 +269,7 @@ function App() {
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password/:token" element={<ResetPassword />} />
             <Route path="/verify-email/:token" element={<VerifyEmail />} />
+            <Route path="/welcome" element={<WelcomeLanding />} />
             <Route path="/2fa" element={<TwoFactorAuth />} />
             <Route path="/profile" element={<ProfileRedirect />} />
             

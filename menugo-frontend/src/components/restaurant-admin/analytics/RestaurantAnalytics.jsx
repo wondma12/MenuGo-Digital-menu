@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { useQuery } from 'react-query'
 import { motion } from 'framer-motion'
-import { format, isValid, parseISO, startOfMonth, endOfMonth, eachDayOfInterval } from 'date-fns'
+import { format, startOfMonth, endOfMonth, eachDayOfInterval } from 'date-fns'
 import {
   ArrowTrendingUpIcon,
   ArrowTrendingDownIcon,
@@ -115,9 +115,9 @@ const RestaurantAnalytics = () => {
 
     const byDate = new Map(source.map((item) => {
       const raw = item.date || item.period || item.period_start || item.period_end || item.label || ''
-      const parsed = typeof raw === 'string' ? (isValid(parseISO(raw)) ? parseISO(raw) : new Date(raw)) : new Date(raw)
-      const key = isValid(parsed) ? format(parsed, 'yyyy-MM-dd') : String(raw)
-      return [key, { ...item, date: isValid(parsed) ? format(parsed, 'MMM d') : String(raw), dateKey: key }]
+      const parsed = safeParseDate(raw)
+      const key = parsed ? format(parsed, 'yyyy-MM-dd') : String(raw)
+      return [key, { ...item, date: parsed ? format(parsed, 'MMM d') : String(raw), dateKey: key }]
     }))
 
     if (!start || !end || !isValid(start) || !isValid(end)) {
@@ -238,8 +238,8 @@ const RestaurantAnalytics = () => {
     const keys = (Array.isArray(series) ? series : []).map(s => s.dateKey || s.date)
     let ticks = keys.filter((value) => {
       try {
-        const parsed = typeof value === 'string' ? (isValid(parseISO(value)) ? parseISO(value) : new Date(value)) : new Date(value)
-        if (!isValid(parsed)) return true
+        const parsed = safeParseDate(value)
+        if (!parsed) return true
         const day = parsed.getDate()
         const lastDayOfMonth = new Date(parsed.getFullYear(), parsed.getMonth() + 1, 0).getDate()
         return day % 2 === 0 || day === lastDayOfMonth
@@ -374,7 +374,7 @@ const RestaurantAnalytics = () => {
                 </linearGradient>
               </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                <XAxis dataKey="dateKey" stroke="#475569" tick={{ fill: '#475569', fontSize: 12 }} tickLine={false} ticks={revenueTicks} tickFormatter={(v) => { try { const p = isValid(parseISO(v)) ? parseISO(v) : new Date(v); return isValid(p) ? format(p, 'MMM d') : String(v) } catch(e) { return String(v) } }} />
+                <XAxis dataKey="dateKey" stroke="#475569" tick={{ fill: '#475569', fontSize: 12 }} tickLine={false} ticks={revenueTicks} tickFormatter={(v) => { try { const p = safeParseDate(v); return p ? format(p, 'MMM d') : String(v) } catch(e) { return String(v) } }} />
                 <YAxis stroke="#475569" tick={{ fill: '#475569', fontSize: 12 }} tickFormatter={formatCurrencyTick} />
                 <Tooltip content={<RevenueTooltip />} />
                 <Area type="monotone" dataKey="revenue" stroke="#f97316" strokeWidth={2} fill="url(#revenueGradient)" />
@@ -393,7 +393,7 @@ const RestaurantAnalytics = () => {
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-              <XAxis dataKey="dateKey" stroke="#475569" tick={{ fill: '#475569', fontSize: 12 }} tickLine={false} ticks={ordersTicks} tickFormatter={(v) => { try { const p = isValid(parseISO(v)) ? parseISO(v) : new Date(v); return isValid(p) ? format(p, 'MMM d') : String(v) } catch(e) { return String(v) } }} />
+              <XAxis dataKey="dateKey" stroke="#475569" tick={{ fill: '#475569', fontSize: 12 }} tickLine={false} ticks={ordersTicks} tickFormatter={(v) => { try { const p = safeParseDate(v); return p ? format(p, 'MMM d') : String(v) } catch(e) { return String(v) } }} />
               <YAxis stroke="#475569" tick={{ fill: '#475569', fontSize: 12 }} />
               <Tooltip content={<OrdersTooltip />} />
               <Bar dataKey="orders" fill="url(#ordersBarGradient)" radius={[10, 10, 0, 0]} />
