@@ -27,6 +27,7 @@ const initialApiBaseURL = EXPLICIT_API_ROOT_URL || NORMALIZED_API_ROOT_URL || (t
 // Fallback ports to try when the configured API is unreachable during local development.
 // Include common local backend ports used by this repo, then other candidates.
 const FALLBACK_PORTS = Array.from({ length: 21 }, (_, i) => 5000 + i)
+const isProductionLike = Boolean(import.meta.env.PROD || import.meta.env.VITE_APP_ENV === 'production' || (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1'))
 
 const buildApiCandidates = () => {
   const seen = new Set()
@@ -46,7 +47,7 @@ const buildApiCandidates = () => {
       add(window.location.origin)
       const host = window.location.hostname || 'localhost'
       const proto = window.location.protocol || 'http:'
-      const shouldProbeLocalFallback = import.meta.env.DEV || ['localhost', '127.0.0.1', '::1'].includes(host)
+      const shouldProbeLocalFallback = import.meta.env.DEV || (!isProductionLike && ['localhost', '127.0.0.1', '::1'].includes(host))
       if (shouldProbeLocalFallback) {
         FALLBACK_PORTS.forEach((p) => add(`${proto}//${host}:${p}`))
         FALLBACK_PORTS.forEach((p) => add(`http://localhost:${p}`))
@@ -77,13 +78,20 @@ const ensureApiBaseReady = () => {
   if (baseProbePromise) return baseProbePromise
   baseProbePromise = (async () => {
     const cacheKey = 'menugo_api_base'
-    // Force fresh detection in development to avoid stale cached ports
+    // In production, use the configured API target directly and avoid probing localhost ports.
     const shouldIgnoreCache = import.meta.env.DEV || new URLSearchParams(window.location.search).has('fresh')
     const cached = !shouldIgnoreCache && typeof sessionStorage !== 'undefined' ? sessionStorage.getItem(cacheKey) : null
     const probeTimeout = 800
 
     if (EXPLICIT_API_ROOT_URL) {
       try {
+        if (isProductionLike) {
+          api.defaults.baseURL = EXPLICIT_API_ROOT_URL
+          if (import.meta.env.DEV) console.warn('Using explicit VITE_API_URL baseURL:', EXPLICIT_API_ROOT_URL)
+          try { if (typeof sessionStorage !== 'undefined') sessionStorage.removeItem(cacheKey) } catch (err) {}
+          return
+        }
+
         await axios.get(getHealthUrl(EXPLICIT_API_ROOT_URL), { timeout: probeTimeout })
         api.defaults.baseURL = EXPLICIT_API_ROOT_URL
         if (import.meta.env.DEV) console.warn('Using explicit VITE_API_URL baseURL:', EXPLICIT_API_ROOT_URL)
