@@ -60,7 +60,14 @@ const getDatabaseConfig = () => {
 };
 
 const isDev = process.env.NODE_ENV !== 'production';
-const useSqliteFallback = isDev && process.env.SQLITE_DEV_FALLBACK === 'true';
+const useSqliteFallback = Boolean(
+  isDev && (
+    process.env.SQLITE_DEV_FALLBACK === 'true' ||
+    process.env.DB_DIALECT === 'sqlite' ||
+    process.env.DATABASE_URL === '' ||
+    process.env.DATABASE_URL === undefined
+  )
+);
 
 let sequelize;
 let pool = null;
