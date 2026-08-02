@@ -419,6 +419,12 @@ api.interceptors.request.use(
       isRequestPublic = false
     }
 
+    // Special-case: /restaurants/:id/verify and /restaurants/:id/status are protected admin actions.
+    // These paths may look similar to public restaurant detail routes but must always require auth.
+    if (isRequestPublic && method !== 'get' && /^\/restaurants\/[^/]+\/(verify|status)$/.test(normalizedRequestPath)) {
+      isRequestPublic = false
+    }
+
     // Debug logging for auth issues
     if (import.meta.env.DEV) {
       const isAuthRequest = requestPath.includes('/auth') && method === 'post'

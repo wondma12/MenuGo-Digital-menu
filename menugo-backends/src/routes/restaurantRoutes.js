@@ -72,7 +72,7 @@ router.put('/:id/settings', isRestaurantOwner, updateSettings);
 
 // Platform admin routes
 router.patch('/:id/status', restrictTo('platform_admin'), updateRestaurantStatus);
-router.post('/:id/verify', restrictTo('platform_admin'), verifyRestaurant);
+router.post('/:id/verify', protect, restrictTo('platform_admin'), validate(restaurantValidations.verifyRestaurantValidation), verifyRestaurant);
 
 // Reviews (mounted here for frontend convenience) - allow optional auth for customers
 router.post('/:id/reviews', optionalAuth, validate(reviewValidations.create), (req, res, next) => {
