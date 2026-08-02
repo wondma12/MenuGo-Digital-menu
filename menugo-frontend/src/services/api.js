@@ -202,15 +202,25 @@ const attemptFallback = async (originalRequest) => {
 
   const api = axios.create({
   baseURL: initialApiBaseURL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
   timeout: 30000,
   withCredentials: true, // Important for cookies/sessions
 })
 
 // Rewrite request paths to ensure `/api` is included when the backend expects it.
 api.interceptors.request.use((config) => {
+  // Ensure JSON Content-Type by default, but do NOT overwrite when sending
+  // FormData so the browser can set the multipart boundary automatically.
+  try {
+    const isFormData = (typeof FormData !== 'undefined') && (config.data instanceof FormData)
+    const headerKeys = config.headers ? Object.keys(config.headers).map(k => k.toLowerCase()) : []
+    const hasContentType = headerKeys.includes('content-type') || headerKeys.includes('Content-Type')
+    if (!isFormData && !hasContentType) {
+      config.headers = config.headers || {}
+      config.headers['Content-Type'] = 'application/json'
+    }
+  } catch (e) {
+    // ignore environment issues
+  }
   try {
     const rawUrl = String(config.url || '')
     const baseUrl = String(api.defaults.baseURL || '')
