@@ -40,7 +40,7 @@ const initRedis = async () => {
 
     redisClient.on('error', (err) => {
       const message = err?.message || String(err);
-      logger.warn('Redis unavailable; continuing without cache:', message);
+      logger.warn('Redis unavailable; continuing without cache', { message });
     });
 
     redisClient.on('connect', () => {
@@ -53,7 +53,7 @@ const initRedis = async () => {
   } catch (error) {
     redisClient = null;
     const message = error?.message || String(error);
-    logger.warn('Redis unavailable; continuing without cache:', message);
+    logger.warn('Redis unavailable; continuing without cache', { message });
     return null;
   }
 };
@@ -66,7 +66,7 @@ const cacheData = async (key, data, ttl = 3600) => {
     await redisClient.setEx(key, ttl, JSON.stringify(data));
     return true;
   } catch (error) {
-    logger.error('Redis cache error:', error);
+    logger.error('Redis cache error', { error: String(error) });
     return false;
   }
 };
@@ -77,7 +77,7 @@ const getCachedData = async (key) => {
     const data = await redisClient.get(key);
     return data ? JSON.parse(data) : null;
   } catch (error) {
-    logger.error('Redis get error:', error);
+    logger.error('Redis get error', { error: String(error) });
     return null;
   }
 };
@@ -91,7 +91,7 @@ const clearCache = async (pattern) => {
     }
     return true;
   } catch (error) {
-    logger.error('Redis clear cache error:', error);
+    logger.error('Redis clear cache error', { error: String(error) });
     return false;
   }
 };

@@ -25,7 +25,8 @@ const initRedis = async () => {
     });
 
     redisClient.on('error', (err) => {
-      logger.warn('Redis unavailable; continuing without cache:', err?.message || err);
+      const message = err?.message || String(err);
+      logger.warn('Redis unavailable; continuing without cache', { message });
     });
 
     redisClient.on('connect', () => {
@@ -36,7 +37,8 @@ const initRedis = async () => {
     return redisClient;
   } catch (error) {
     redisClient = null;
-    logger.warn('Redis unavailable; continuing without cache:', error?.message || error);
+    const message = error?.message || String(error);
+    logger.warn('Redis unavailable; continuing without cache', { message });
     return null;
   }
 };
@@ -51,7 +53,7 @@ const setCache = async (key, data, ttl = 3600) => {
     await redisClient.setEx(key, ttl, JSON.stringify(data));
     return true;
   } catch (error) {
-    logger.error('Redis set cache error:', error);
+    logger.error('Redis set cache error', { error: String(error) });
     return false;
   }
 };
@@ -63,7 +65,7 @@ const getCache = async (key) => {
     const data = await redisClient.get(key);
     return data ? JSON.parse(data) : null;
   } catch (error) {
-    logger.error('Redis get cache error:', error);
+    logger.error('Redis get cache error', { error: String(error) });
     return null;
   }
 };
@@ -75,7 +77,7 @@ const deleteCache = async (key) => {
     await redisClient.del(key);
     return true;
   } catch (error) {
-    logger.error('Redis delete cache error:', error);
+    logger.error('Redis delete cache error', { error: String(error) });
     return false;
   }
 };
@@ -90,7 +92,7 @@ const clearCachePattern = async (pattern) => {
     }
     return true;
   } catch (error) {
-    logger.error('Redis clear cache pattern error:', error);
+    logger.error('Redis clear cache pattern error', { error: String(error) });
     return false;
   }
 };
@@ -121,7 +123,7 @@ const incrementRateLimit = async (key, windowMs = 60 * 1000) => {
     const ttl = await redisClient.ttl(key);
     return { count, ttl };
   } catch (error) {
-    logger.error('Redis rate limit error:', error);
+    logger.error('Redis rate limit error', { error: String(error) });
     return { count: 0, ttl: 0 };
   }
 };

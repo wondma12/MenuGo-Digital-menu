@@ -11,7 +11,9 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   const apiUrl = env.VITE_API_URL || env.API_URL || 'http://localhost:5003'
   const normalizedApiUrl = normalizeProxyUrl(apiUrl)
-  const wsUrl = env.VITE_WS_URL || `${normalizedApiUrl.replace(/^http/, 'ws')}`
+  // Prefer 127.0.0.1 instead of localhost for proxy targets to avoid IPv6/localhost resolution issues
+  const finalApiUrl = normalizedApiUrl && normalizedApiUrl.replace(/^http:\/\/localhost/i, 'http://127.0.0.1')
+  const wsUrl = env.VITE_WS_URL || `${(finalApiUrl || normalizedApiUrl).replace(/^http/, 'ws')}`
   const devPort = Number.parseInt(env.VITE_PORT || env.PORT || '3002', 10)
 
   return {
@@ -42,25 +44,48 @@ export default defineConfig(({ mode }) => {
       open: false,
       proxy: {
         '/api': {
-          target: normalizedApiUrl,
+          target: finalApiUrl || normalizedApiUrl,
           changeOrigin: true,
           rewrite: (path) => path.replace(/^\/api/, '/api'),
           timeout: 120000,
+          // Provide clearer console errors when proxying fails
+          onError: (err, req, res) => {
+            // eslint-disable-next-line no-console
+            console.error('Vite proxy /api error ->', err && err.message ? err.message : err);
+            try {
+              if (!res.headersSent) {
+                res.writeHead && res.writeHead(502);
+                res.end && res.end('Bad gateway');
+              }
+            } catch (e) {
+              // ignore
+            }
+          },
         },
         '/auth': {
-          target: normalizedApiUrl,
+          target: finalApiUrl || normalizedApiUrl,
           changeOrigin: true,
           rewrite: (path) => path.replace(/^\/auth/, '/auth'),
           timeout: 120000,
+          onError: (err, req, res) => {
+            // eslint-disable-next-line no-console
+            console.error('Vite proxy /auth error ->', err && err.message ? err.message : err);
+            try { if (!res.headersSent) { res.writeHead && res.writeHead(502); res.end && res.end('Bad gateway'); } } catch (e) {}
+          },
         },
         '/ws': {
           target: wsUrl,
           ws: true,
         },
         '/uploads': {
-          target: normalizedApiUrl,
+          target: finalApiUrl || normalizedApiUrl,
           changeOrigin: true,
           timeout: 120000,
+          onError: (err, req, res) => {
+            // eslint-disable-next-line no-console
+            console.error('Vite proxy /uploads error ->', err && err.message ? err.message : err);
+            try { if (!res.headersSent) { res.writeHead && res.writeHead(502); res.end && res.end('Bad gateway'); } } catch (e) {}
+          },
         },
       },
     },
