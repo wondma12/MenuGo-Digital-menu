@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { useQuery } from 'react-query'
 import { motion } from 'framer-motion'
-import { format, startOfMonth, endOfMonth, eachDayOfInterval } from 'date-fns'
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isValid } from 'date-fns'
 import {
   ArrowTrendingUpIcon,
   ArrowTrendingDownIcon,
@@ -34,6 +34,7 @@ import { useNavigate } from 'react-router-dom'
 import Loading from '../../../common/Loading'
 import { getRestaurantAnalytics } from '../../../services/analyticsService'
 import { formatPrice } from '../../../utils/currency'
+import { safeParseDate } from '../../../utils/dateUtils'
 
 const COLORS = ['#3b82f6', '#f97316', '#10b981', '#eab308', '#ef4444', '#8b5cf6']
 
