@@ -21,7 +21,8 @@ const queryClient = new QueryClient({
   },
 })
 
-// Clear stale service workers in development so the browser doesn't keep old bundles/assets alive.
+// Clear stale service workers before registration so the browser doesn't keep
+// serving an old broken bundle after a production deploy.
 if ('serviceWorker' in navigator) {
   if (import.meta.env.DEV) {
     navigator.serviceWorker.getRegistrations().then((registrations) => {
@@ -30,7 +31,7 @@ if ('serviceWorker' in navigator) {
       })
     })
   } else if (import.meta.env.PROD) {
-    registerSW()
+    registerSW().catch(() => {})
   }
 }
 

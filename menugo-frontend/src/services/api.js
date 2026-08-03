@@ -1,21 +1,5 @@
 import axios from 'axios'
 
-// Access the auth store lazily so api.js does not create a circular import
-// with authService -> api -> authStore during module initialization.
-const getAuthStore = async () => {
-  const mod = await import('../store/authStore')
-  return mod.useAuthStore
-}
-
-const getAuthStoreState = async () => {
-  try {
-    const store = await getAuthStore()
-    return store.getState()
-  } catch (e) {
-    return { token: null, refreshToken: null }
-  }
-}
-
 // Default API root URL. Axios should prefer an explicit configured API URL,
 // then the current browser origin, and only fall back to localhost in local
 // development when that is truly the intended target.
@@ -387,11 +371,11 @@ api.interceptors.request.use(
       if (import.meta.env.DEV) console.warn('ensureApiBaseReady failed:', e && e.message)
     }
 
-    // Get token from store or session storage (try both sources)
-    const authState = await getAuthStoreState()
-    const storeToken = authState?.token
+    // Prefer the persisted session token instead of importing the auth store.
+    // This avoids the circular dependency between authService -> api -> authStore.
     const sessionToken = authSessionStorage?.getItem('token')
-    const token = storeToken || sessionToken
+    const persistedLocalToken = typeof window !== 'undefined' ? window.localStorage.getItem('auth_token') : null
+    const token = sessionToken || persistedLocalToken
 
     if (import.meta.env.DEV) {
       console.log('[API] current baseURL:', api.defaults?.baseURL)
@@ -565,9 +549,10 @@ api.interceptors.response.use(
     })()
     const requestIsPublic = isPublicPath(requestPath, originalRequest?.method)
 
-    // Get current token
-    const authState = await getAuthStoreState()
-    const token = authState?.token || authSessionStorage?.getItem('token')
+    // Get current token from the persisted session/local storage.
+    const sessionToken = authSessionStorage?.getItem('token')
+    const persistedLocalToken = typeof window !== 'undefined' ? window.localStorage.getItem('auth_token') : null
+    const token = sessionToken || persistedLocalToken
     
     // Handle 401 Unauthorized
     if (error.response?.status === 401 && token && !requestIsPublic && !originalRequest?._retry) {
@@ -587,8 +572,8 @@ api.interceptors.response.use(
       isRefreshing = true
       
       try {
-        // Attempt to refresh token
-        const refreshToken = authState?.refreshToken || authSessionStorage?.getItem('refreshToken')
+        // Attempt to refresh token from persisted storage
+        const refreshToken = authSessionStorage?.getItem('refreshToken') || (typeof window !== 'undefined' ? window.localStorage.getItem('refreshToken') : null)
 
         if (!refreshToken) {
           throw new Error('No refresh token available')
@@ -614,15 +599,7 @@ api.interceptors.response.use(
         }
         
         if (newToken) {
-          // Update store with new tokens
-          const authStore = await getAuthStore()
-          authStore.setState({ 
-            token: newToken, 
-            refreshToken: newRefreshToken,
-            isAuthenticated: true 
-          })
-          
-          // Update session auth storage
+          // Update persisted auth storage so the next request uses the fresh token.
           if (authSessionStorage) {
             try {
               authSessionStorage.setItem('token', newToken)
@@ -636,6 +613,16 @@ api.interceptors.response.use(
                 if (import.meta.env.DEV) console.warn('authSessionStorage.setItem refreshToken failed:', e && e.message)
               }
             }
+          }
+          try {
+            if (typeof window !== 'undefined' && window.localStorage) {
+              window.localStorage.setItem('auth_token', JSON.stringify(newToken))
+              if (newRefreshToken) {
+                window.localStorage.setItem('refreshToken', JSON.stringify(newRefreshToken))
+              }
+            }
+          } catch (e) {
+            if (import.meta.env.DEV) console.warn('localStorage token update failed:', e && e.message)
           }
           
           // Update failed requests queue
@@ -652,9 +639,17 @@ api.interceptors.response.use(
         console.error('Token refresh failed:', refreshError)
         processQueue(refreshError, null)
         
-        // Clear auth state
-        const authStore = await getAuthStore()
-        authStore.getState().logout()
+        // Clear auth state in storage and redirect to login if not already there.
+        try {
+          authSessionStorage?.removeItem('token')
+          authSessionStorage?.removeItem('refreshToken')
+          if (typeof window !== 'undefined') {
+            window.localStorage.removeItem('auth_token')
+            window.localStorage.removeItem('refreshToken')
+          }
+        } catch (e) {
+          if (import.meta.env.DEV) console.warn('Storage reset failed:', e && e.message)
+        }
         
         // Redirect to login if not already there
         if (window.location.pathname !== '/login') {
