@@ -3,6 +3,27 @@ const { logger } = require('../utils/logger');
 
 let redisClient = null;
 
+const isRedisEnabled = () => {
+  const explicitEnabled = process.env.REDIS_ENABLED === 'true' || process.env.REDIS_ENABLED === '1';
+  const hasRedisUrl = Boolean(process.env.REDIS_URL);
+  const hasRedisHost = Boolean(process.env.REDIS_HOST);
+  const hasRedisPort = Boolean(process.env.REDIS_PORT);
+
+  if (explicitEnabled || hasRedisUrl) return true;
+
+  if (process.env.NODE_ENV === 'production') {
+    return Boolean(
+      hasRedisHost &&
+      hasRedisPort &&
+      process.env.REDIS_HOST !== 'localhost' &&
+      process.env.REDIS_HOST !== '127.0.0.1' &&
+      process.env.REDIS_HOST !== '::1'
+    );
+  }
+
+  return Boolean(hasRedisHost && hasRedisPort);
+};
+
 const formatError = (err) => {
   if (!err) return null;
   if (typeof AggregateError !== 'undefined' && err instanceof AggregateError) {
@@ -22,11 +43,10 @@ const formatError = (err) => {
 
 // Initialize Redis client
 const initRedis = async () => {
-  const hasRedisConfig = Boolean(process.env.REDIS_URL || process.env.REDIS_HOST || process.env.REDIS_PORT);
-  const redisEnabled = process.env.REDIS_ENABLED === 'true' || hasRedisConfig;
+  const redisEnabled = isRedisEnabled();
 
   if (!redisEnabled) {
-    logger.info('Redis not configured; skipping Redis initialization');
+    logger.info('Redis not configured for this environment; skipping Redis initialization');
     return null;
   }
 
