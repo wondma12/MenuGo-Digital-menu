@@ -1,5 +1,20 @@
 import axios from 'axios'
-import { useAuthStore } from '../store/authStore'
+
+// Access the auth store lazily so api.js does not create a circular import
+// with authService -> api -> authStore during module initialization.
+const getAuthStore = async () => {
+  const mod = await import('../store/authStore')
+  return mod.useAuthStore
+}
+
+const getAuthStoreState = async () => {
+  try {
+    const store = await getAuthStore()
+    return store.getState()
+  } catch (e) {
+    return { token: null, refreshToken: null }
+  }
+}
 
 // Default API root URL. Axios should prefer an explicit configured API URL,
 // then the current browser origin, and only fall back to localhost in local
@@ -373,7 +388,8 @@ api.interceptors.request.use(
     }
 
     // Get token from store or session storage (try both sources)
-    const storeToken = useAuthStore.getState().token
+    const authState = await getAuthStoreState()
+    const storeToken = authState?.token
     const sessionToken = authSessionStorage?.getItem('token')
     const token = storeToken || sessionToken
 
@@ -550,7 +566,8 @@ api.interceptors.response.use(
     const requestIsPublic = isPublicPath(requestPath, originalRequest?.method)
 
     // Get current token
-    const token = useAuthStore.getState().token || authSessionStorage?.getItem('token')
+    const authState = await getAuthStoreState()
+    const token = authState?.token || authSessionStorage?.getItem('token')
     
     // Handle 401 Unauthorized
     if (error.response?.status === 401 && token && !requestIsPublic && !originalRequest?._retry) {
@@ -571,7 +588,7 @@ api.interceptors.response.use(
       
       try {
         // Attempt to refresh token
-        const refreshToken = useAuthStore.getState().refreshToken || authSessionStorage?.getItem('refreshToken')
+        const refreshToken = authState?.refreshToken || authSessionStorage?.getItem('refreshToken')
 
         if (!refreshToken) {
           throw new Error('No refresh token available')
@@ -598,7 +615,8 @@ api.interceptors.response.use(
         
         if (newToken) {
           // Update store with new tokens
-          useAuthStore.setState({ 
+          const authStore = await getAuthStore()
+          authStore.setState({ 
             token: newToken, 
             refreshToken: newRefreshToken,
             isAuthenticated: true 
@@ -635,7 +653,8 @@ api.interceptors.response.use(
         processQueue(refreshError, null)
         
         // Clear auth state
-        useAuthStore.getState().logout()
+        const authStore = await getAuthStore()
+        authStore.getState().logout()
         
         // Redirect to login if not already there
         if (window.location.pathname !== '/login') {
