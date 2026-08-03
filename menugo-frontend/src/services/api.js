@@ -4,7 +4,22 @@ import { useAuthStore } from '../store/authStore'
 // Default API root URL. Axios should prefer an explicit configured API URL,
 // then the current browser origin, and only fall back to localhost in local
 // development when that is truly the intended target.
-const API_URL = import.meta.env.VITE_API_URL || import.meta.env.API_URL || ''
+const DEFAULT_PRODUCTION_API_ROOT_URL = 'https://menugo-digital-menu-api-gh9m.onrender.com'
+
+const resolveApiUrl = () => {
+  const explicit = String(import.meta.env.VITE_API_URL || import.meta.env.API_URL || '').trim()
+  if (explicit && !isLocalhostApiUrl(explicit)) {
+    return explicit
+  }
+
+  if (isProductionLike) {
+    return DEFAULT_PRODUCTION_API_ROOT_URL
+  }
+
+  return explicit
+}
+
+const API_URL = resolveApiUrl()
 
 const normalizeApiRootUrl = (url) => {
   if (!url) return ''
