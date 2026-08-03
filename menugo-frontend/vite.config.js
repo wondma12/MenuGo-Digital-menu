@@ -1,6 +1,7 @@
 import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
+import fs from 'fs'
 
 const normalizeProxyUrl = (url) => {
   if (!url) return url
@@ -9,7 +10,21 @@ const normalizeProxyUrl = (url) => {
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
-  const apiUrl = env.VITE_API_URL || env.API_URL || 'http://localhost:5003'
+  // Allow explicit env override via VITE_API_URL or API_URL. If not provided,
+  // attempt to read the backend runtime URL written by the backend server
+  // to `runtime_api_url.txt` at the repo root (convenience for local dev).
+  let apiUrl = env.VITE_API_URL || env.API_URL || ''
+  if (!apiUrl) {
+    try {
+      const possible = path.resolve(__dirname, '..', 'runtime_api_url.txt')
+      if (fs.existsSync(possible)) {
+        apiUrl = fs.readFileSync(possible, 'utf8').trim()
+      }
+    } catch (e) {
+      // ignore
+    }
+  }
+  if (!apiUrl) apiUrl = 'http://localhost:5003'
   const normalizedApiUrl = normalizeProxyUrl(apiUrl)
   // Prefer 127.0.0.1 instead of localhost for proxy targets to avoid IPv6/localhost resolution issues
   const finalApiUrl = normalizedApiUrl && normalizedApiUrl.replace(/^http:\/\/localhost/i, 'http://127.0.0.1')

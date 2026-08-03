@@ -501,6 +501,18 @@ const startServer = async () => {
       logger.info(`Server running on port ${currentPort}`);
       logger.info(`Environment: ${process.env.NODE_ENV}`);
       logger.info(`API URL: ${process.env.API_URL}`);
+      // Write runtime API URL to a file so frontend dev server can pick it up
+      try {
+        // Write to repository root 'runtime_api_url.txt'
+        // __dirname -> menugo-backends/src, go up two levels to repo root
+        const fs = require('fs');
+        const path = require('path');
+        const outPath = path.resolve(__dirname, '..', '..', 'runtime_api_url.txt');
+        fs.writeFileSync(outPath, process.env.API_URL, { encoding: 'utf8' });
+        logger.info(`Wrote runtime API URL to ${outPath}`);
+      } catch (writeErr) {
+        logger.warn('Could not write runtime API URL file:', writeErr && writeErr.message ? writeErr.message : writeErr);
+      }
       // If a static GOOGLE_CALLBACK_URL is configured and does not match
       // the runtime API URL, warn the developer so they can update the
       // registered redirect URI in Google Cloud Console or adjust .env.

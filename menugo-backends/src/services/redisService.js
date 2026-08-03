@@ -3,6 +3,23 @@ const { logger } = require('../utils/logger');
 
 let redisClient = null;
 
+const formatError = (err) => {
+  if (!err) return null;
+  if (typeof AggregateError !== 'undefined' && err instanceof AggregateError) {
+    try {
+      const inner = Array.from(err.errors || []).map(e => (e && (e.message || String(e))) || String(e));
+      return inner.length ? inner.join(' | ') : (err.message || String(err));
+    } catch (e) {
+      return err.message || String(err);
+    }
+  }
+  if (err && Array.isArray(err.errors)) {
+    const inner = err.errors.map(e => (e && (e.message || String(e))) || String(e));
+    return inner.length ? inner.join(' | ') : (err.message || String(err));
+  }
+  return err.message || String(err);
+};
+
 // Initialize Redis client
 const initRedis = async () => {
   const hasRedisConfig = Boolean(process.env.REDIS_URL || process.env.REDIS_HOST || process.env.REDIS_PORT);
@@ -25,8 +42,8 @@ const initRedis = async () => {
     });
 
     redisClient.on('error', (err) => {
-      const message = err?.message || String(err);
-      logger.warn('Redis unavailable; continuing without cache', { message });
+      const message = formatError(err);
+      logger.warn('Redis unavailable; continuing without cache', { name: err && err.name, message, stack: err && err.stack });
     });
 
     redisClient.on('connect', () => {
@@ -37,8 +54,8 @@ const initRedis = async () => {
     return redisClient;
   } catch (error) {
     redisClient = null;
-    const message = error?.message || String(error);
-    logger.warn('Redis unavailable; continuing without cache', { message });
+    const message = formatError(error);
+    logger.warn('Redis unavailable; continuing without cache', { name: error && error.name, message, stack: error && error.stack });
     return null;
   }
 };
