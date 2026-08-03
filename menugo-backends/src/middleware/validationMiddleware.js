@@ -117,6 +117,19 @@ const restaurantValidations = {
     body('is_active').optional().isBoolean(),
     body('is_verified').optional().isBoolean(),
   ],
+  // Validation for platform admin verifying or rejecting a restaurant
+  verifyRestaurantValidation: [
+    // Ensure a verification flag or equivalent approval status is provided
+    body().custom((_, { req }) => {
+      const payload = { ...(req.query || {}), ...(req.body || {}) };
+      const hasFlag = ['is_verified', 'isVerified', 'status', 'approved'].some((k) => typeof payload[k] !== 'undefined');
+      if (!hasFlag) {
+        throw new Error('is_verified is required and must be a boolean or an approval status');
+      }
+      return true;
+    }),
+    body('rejection_reason').optional().isString(),
+  ],
 };
 
 // Menu validations

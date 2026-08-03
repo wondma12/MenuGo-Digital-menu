@@ -258,7 +258,14 @@ api.interceptors.request.use((config) => {
       }
     }
   } catch (e) {
-    // ignore malformed URL; let axios handle it
+    // If the URL parser fails, fall back to conservative path rewriting
+    const rawUrl = String(config.url || '')
+    if (rawUrl.startsWith('/') && !rawUrl.startsWith('/api/') && rawUrl !== '/api') {
+      config.url = `/api${rawUrl}`
+      if (import.meta.env.DEV) {
+        console.warn(`[API] Fallback rewrite applied to request URL: ${config.url}`)
+      }
+    }
   }
   return config
 }, (error) => Promise.reject(error))
