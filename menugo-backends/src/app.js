@@ -47,8 +47,11 @@ app.use(securityMiddleware);
 // origins (including common dev ports like 3000/3001/3002/5173) to ease local development.
 const configuredOrigins = (process.env.CORS_ORIGIN && process.env.CORS_ORIGIN.split(',').map((value) => value.trim()).filter(Boolean)) || [];
 const defaultAllowedOrigins = [
-  'https://menugo-digital-menu-jgz2.onrender.com',
-  'https://menugo-digital-menu-api-gh9m.onrender.com',
+
+  'http://localhost:3002',
+  'http://localhost:5003',
+  // 'https://menugo-digital-menu-jgz2.onrender.com',
+  // 'https://menugo-digital-menu-api-gh9m.onrender.com',
 ];
 const allowedOrigins = Array.from(new Set([...configuredOrigins, ...defaultAllowedOrigins]));
 const normalizeOrigin = (value) => (typeof value === 'string' ? value.trim().replace(/\/$/, '') : '');

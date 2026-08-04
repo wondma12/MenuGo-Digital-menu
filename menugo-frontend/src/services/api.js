@@ -5,6 +5,13 @@ import axios from 'axios'
 // development when that is truly the intended target.
 const DEFAULT_PRODUCTION_API_ROOT_URL = 'https://menugo-digital-menu-api-gh9m.onrender.com'
 
+const isLocalhostApiUrl = (url) => {
+  if (!url) return false
+  return /^(https?:\/\/)?(localhost|127\.0\.0\.1|0\.0\.0\.0|\[::1\]|::1)(:\d+)?$/i.test(url)
+}
+
+const isProductionLike = Boolean(import.meta.env.PROD || import.meta.env.VITE_APP_ENV === 'production' || (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1'))
+
 const resolveApiUrl = () => {
   const explicit = String(import.meta.env.VITE_API_URL || import.meta.env.API_URL || '').trim()
   if (explicit && !isLocalhostApiUrl(explicit)) {
@@ -36,10 +43,6 @@ const normalizeApiUrl = (url) => {
 
 const NORMALIZED_API_ROOT_URL = normalizeApiRootUrl(API_URL) || (typeof window !== 'undefined' ? window.location.origin : '')
 const EXPLICIT_API_ROOT_URL = normalizeApiRootUrl(import.meta.env.VITE_API_URL || import.meta.env.API_URL || '')
-const isLocalhostApiUrl = (url) => {
-  if (!url) return false
-  return /^(https?:\/\/)?(localhost|127\.0\.0\.1|0\.0\.0\.0|\[::1\]|::1)(:\d+)?$/i.test(url)
-}
 const shouldUseDevProxy = import.meta.env.DEV && EXPLICIT_API_ROOT_URL && isLocalhostApiUrl(EXPLICIT_API_ROOT_URL)
 // In development prefer relative URLs so Vite's dev server proxy handles /api requests
 // when the configured API target is local. Use the explicit API URL directly in
@@ -50,7 +53,6 @@ const EFFECTIVE_API_ROOT_URL = shouldUseDevProxy ? '' : EXPLICIT_API_ROOT_URL
 // Fallback ports to try when the configured API is unreachable during local development.
 // Include common local backend ports used by this repo, then other candidates.
 const FALLBACK_PORTS = Array.from({ length: 21 }, (_, i) => 5000 + i)
-const isProductionLike = Boolean(import.meta.env.PROD || import.meta.env.VITE_APP_ENV === 'production' || (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1'))
 
 const buildApiCandidates = () => {
   const seen = new Set()
