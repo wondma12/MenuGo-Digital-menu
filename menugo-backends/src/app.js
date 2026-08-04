@@ -43,17 +43,19 @@ app.use(helmet());
 app.use(securityMiddleware);
 
 // CORS configuration
-// Allow explicit origins from CORS_ORIGIN, but also permit localhost and loopback
-// origins (including common dev ports like 3000/3001/3002/5173) to ease local development.
+// Allow explicit origins from CORS_ORIGIN, frontend/runtime URLs, localhost and
+// Render-hosted frontend deployments so production browsers can read API responses.
 const configuredOrigins = (process.env.CORS_ORIGIN && process.env.CORS_ORIGIN.split(',').map((value) => value.trim()).filter(Boolean)) || [];
 const defaultAllowedOrigins = [
-
+  process.env.FRONTEND_URL,
+  process.env.CLIENT_URL,
   'http://localhost:3002',
   'http://localhost:5003',
-  // 'https://menugo-digital-menu-jgz2.onrender.com',
-  // 'https://menugo-digital-menu-api-gh9m.onrender.com',
+  'https://menugo-digital-menu-jgz2.onrender.com',
+  'https://menugo-saas-digital-menu-mipr.onrender.com',
+  'https://menugo-digital-menu-api-gh9m.onrender.com',
 ];
-const allowedOrigins = Array.from(new Set([...configuredOrigins, ...defaultAllowedOrigins]));
+const allowedOrigins = Array.from(new Set([...configuredOrigins, ...defaultAllowedOrigins].filter(Boolean)));
 const normalizeOrigin = (value) => (typeof value === 'string' ? value.trim().replace(/\/$/, '') : '');
 const isLocalhostOrigin = (origin) => {
   try {
@@ -75,7 +77,8 @@ const corsOptions = {
 
     const normalizedOrigin = normalizeOrigin(origin);
     const configuredAllowed = allowedOrigins.map(normalizeOrigin);
-    if (isDevelopment || configuredAllowed.includes(normalizedOrigin) || isLocalhostOrigin(normalizedOrigin)) {
+    const isRenderOrigin = /^https:\/\/[a-z0-9-]+\.onrender\.com$/i.test(normalizedOrigin);
+    if (isDevelopment || configuredAllowed.includes(normalizedOrigin) || isLocalhostOrigin(normalizedOrigin) || isRenderOrigin) {
       return cb(null, true);
     }
 
