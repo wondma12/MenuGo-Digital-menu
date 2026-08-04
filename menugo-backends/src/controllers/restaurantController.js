@@ -35,7 +35,9 @@ const { logger } = require('../utils/logger');
 const { sendRestaurantActivatedEmail } = require('../config/email');
 
 const normalizeSettingsValue = (value) => {
-  if (!value) return {};
+  if (!value) {
+    return {};
+  }
   if (typeof value === 'string') {
     try {
       return JSON.parse(value);
@@ -50,9 +52,15 @@ const normalizeSettingsValue = (value) => {
 };
 
 const normalizeBooleanValue = (value) => {
-  if (typeof value === 'boolean') return value;
-  if (typeof value === 'number') return value === 1;
-  if (typeof value !== 'string') return undefined;
+  if (typeof value === 'boolean') {
+    return value;
+  }
+  if (typeof value === 'number') {
+    return value === 1;
+  }
+  if (typeof value !== 'string') {
+    return undefined;
+  }
 
   const normalized = value.trim().toLowerCase();
   if (['true', '1', 'yes', 'approved', 'accept', 'accepted', 'enabled', 'enable'].includes(normalized)) {
@@ -149,7 +157,7 @@ const getAllRestaurants = catchAsync(async (req, res) => {
     }).catch(() => []);
 
     menuCountMap = new Map(
-      menuCounts.map((item) => [String(item.restaurant_id), Number(item.total_menu_items || 0)])
+      menuCounts.map((item) => [String(item.restaurant_id), Number(item.total_menu_items || 0)]),
     );
   }
 
@@ -168,7 +176,7 @@ const getAllRestaurants = catchAsync(async (req, res) => {
   }).catch(() => []);
 
   const upgradeRequestMap = new Map(
-    upgradeRequestCounts.map((item) => [String(item.restaurant_id), Number(item.pending_upgrade_request_count || 0)])
+    upgradeRequestCounts.map((item) => [String(item.restaurant_id), Number(item.pending_upgrade_request_count || 0)]),
   );
 
   const restaurantsWithCounts = rows.map((restaurant) => {
@@ -192,7 +200,7 @@ const getAllRestaurants = catchAsync(async (req, res) => {
   });
   const pendingUpgradeRequestsTotal = upgradeRequestCounts.reduce(
     (sum, item) => sum + Number(item.pending_upgrade_request_count || 0),
-    0
+    0,
   );
 
   res.json(ApiResponse.success({
@@ -274,9 +282,13 @@ const getRestaurantById = catchAsync(async (req, res) => {
         try {
           const slug = normalize(r.qr_code_identifier) || normalize(r.name);
           return slug === normalize(paramId) || normalize(r.name) === normalize(paramId);
-        } catch (e) { return false; }
+        } catch (e) {
+          return false; 
+        }
       }) || null;
-      if (restaurant && restaurant.toJSON) restaurant = Restaurant.build(restaurant.toJSON(), { isNewRecord: false });
+      if (restaurant && restaurant.toJSON) {
+        restaurant = Restaurant.build(restaurant.toJSON(), { isNewRecord: false });
+      }
     }
   }
 
@@ -402,7 +414,7 @@ const createRestaurant = catchAsync(async (req, res) => {
       try {
         await sendWelcomeEmail(owner_email, owner_name, {
           temporaryPassword: tempPassword,
-          loginUrl: `${process.env.FRONTEND_URL || process.env.CLIENT_URL || 'http://localhost:5173'}/login`,
+          loginUrl: `${process.env.FRONTEND_URL || process.env.CLIENT_URL || 'https://menugo-saas-digital-menu-mipr.onrender.com/'}/login`,
         });
         logger.info(`Welcome email sent to restaurant owner ${owner_email}`);
       } catch (emailError) {
@@ -418,7 +430,7 @@ const createRestaurant = catchAsync(async (req, res) => {
 
   // Generate unique QR code identifier
   const qrIdentifier = `${name.toLowerCase().replace(/\s/g, '-')}-${Date.now()}`;
-  const qrUrl = `${process.env.CLIENT_URL || 'http://localhost:3000'}/menu/${qrIdentifier}`;
+  const qrUrl = `${process.env.CLIENT_URL || 'https://menugo-saas-digital-menu-mipr.onrender.com/'}/menu/${qrIdentifier}`;
   
   let qrCloudinaryUrl = null;
   try {
@@ -577,10 +589,18 @@ const updateRestaurant = catchAsync(async (req, res) => {
   const normalizedTinNumber = updates.tin_number || updates.tinNumber || null;
   const normalizedSlogan = updates.restaurant_slogan || updates.slogan || updates.description || null;
 
-  if (normalizedSubCity) updates.sub_city = normalizedSubCity;
-  if (normalizedBusinessLicenseNumber) updates.business_license_number = normalizedBusinessLicenseNumber;
-  if (normalizedTinNumber) updates.tin_number = normalizedTinNumber;
-  if (normalizedSlogan) updates.slogan = normalizedSlogan;
+  if (normalizedSubCity) {
+    updates.sub_city = normalizedSubCity;
+  }
+  if (normalizedBusinessLicenseNumber) {
+    updates.business_license_number = normalizedBusinessLicenseNumber;
+  }
+  if (normalizedTinNumber) {
+    updates.tin_number = normalizedTinNumber;
+  }
+  if (normalizedSlogan) {
+    updates.slogan = normalizedSlogan;
+  }
 
   if (normalizedBusinessLicenseNumber || normalizedTinNumber || updates.settings?.business_license?.number || updates.settings?.business_license?.tin_number || updates.settings?.business_license?.tinNumber) {
     const existingSettings = normalizeSettingsValue(restaurant.settings);
@@ -792,8 +812,12 @@ const deleteRestaurant = catchAsync(async (req, res) => {
       }
 
       const menuItemModifierAssignmentWhere = [];
-      if (menuItemIds.length) menuItemModifierAssignmentWhere.push({ menu_item_id: { [Op.in]: menuItemIds } });
-      if (menuModifierIds.length) menuItemModifierAssignmentWhere.push({ modifier_id: { [Op.in]: menuModifierIds } });
+      if (menuItemIds.length) {
+        menuItemModifierAssignmentWhere.push({ menu_item_id: { [Op.in]: menuItemIds } });
+      }
+      if (menuModifierIds.length) {
+        menuItemModifierAssignmentWhere.push({ modifier_id: { [Op.in]: menuModifierIds } });
+      }
 
       // Build destroy operations covering more dependent tables (order children, tickets, waiter-related, subscriptions, notifications, etc.)
       const destroyOps = [
@@ -1140,12 +1164,22 @@ const updateSettings = catchAsync(async (req, res) => {
 
   const updatedSettings = { ...restaurant.settings, ...settings };
 
-  const topLevelUpdates = {}
-  if (typeof settings?.taxRate !== 'undefined') topLevelUpdates.tax_rate = settings.taxRate === '' || settings.taxRate === null ? null : Number(settings.taxRate)
-  if (typeof settings?.serviceCharge !== 'undefined') topLevelUpdates.service_charge = settings.serviceCharge === '' || settings.serviceCharge === null ? null : Number(settings.serviceCharge)
-  if (typeof settings?.taxInclusive !== 'undefined') topLevelUpdates.tax_inclusive = Boolean(settings.taxInclusive)
-  if (typeof settings?.serviceChargeType !== 'undefined') topLevelUpdates.service_charge_type = String(settings.serviceChargeType)
-  if (typeof settings?.applyTaxToDelivery !== 'undefined') topLevelUpdates.apply_tax_to_delivery = Boolean(settings.applyTaxToDelivery)
+  const topLevelUpdates = {};
+  if (typeof settings?.taxRate !== 'undefined') {
+    topLevelUpdates.tax_rate = settings.taxRate === '' || settings.taxRate === null ? null : Number(settings.taxRate);
+  }
+  if (typeof settings?.serviceCharge !== 'undefined') {
+    topLevelUpdates.service_charge = settings.serviceCharge === '' || settings.serviceCharge === null ? null : Number(settings.serviceCharge);
+  }
+  if (typeof settings?.taxInclusive !== 'undefined') {
+    topLevelUpdates.tax_inclusive = Boolean(settings.taxInclusive);
+  }
+  if (typeof settings?.serviceChargeType !== 'undefined') {
+    topLevelUpdates.service_charge_type = String(settings.serviceChargeType);
+  }
+  if (typeof settings?.applyTaxToDelivery !== 'undefined') {
+    topLevelUpdates.apply_tax_to_delivery = Boolean(settings.applyTaxToDelivery);
+  }
 
   await restaurant.update({
     settings: updatedSettings,
@@ -1215,13 +1249,23 @@ const updateSettingsSection = catchAsync(async (req, res) => {
   const merged = { ...sectionValue, ...incoming };
   existing[section] = merged;
 
-  const topLevelUpdates = {}
+  const topLevelUpdates = {};
   if (section === 'taxes' || section === 'tax') {
-    if (typeof incoming.taxRate !== 'undefined') topLevelUpdates.tax_rate = incoming.taxRate === '' || incoming.taxRate === null ? null : Number(incoming.taxRate)
-    if (typeof incoming.serviceCharge !== 'undefined') topLevelUpdates.service_charge = incoming.serviceCharge === '' || incoming.serviceCharge === null ? null : Number(incoming.serviceCharge)
-    if (typeof incoming.taxInclusive !== 'undefined') topLevelUpdates.tax_inclusive = Boolean(incoming.taxInclusive)
-    if (typeof incoming.serviceChargeType !== 'undefined') topLevelUpdates.service_charge_type = String(incoming.serviceChargeType)
-    if (typeof incoming.applyTaxToDelivery !== 'undefined') topLevelUpdates.apply_tax_to_delivery = Boolean(incoming.applyTaxToDelivery)
+    if (typeof incoming.taxRate !== 'undefined') {
+      topLevelUpdates.tax_rate = incoming.taxRate === '' || incoming.taxRate === null ? null : Number(incoming.taxRate);
+    }
+    if (typeof incoming.serviceCharge !== 'undefined') {
+      topLevelUpdates.service_charge = incoming.serviceCharge === '' || incoming.serviceCharge === null ? null : Number(incoming.serviceCharge);
+    }
+    if (typeof incoming.taxInclusive !== 'undefined') {
+      topLevelUpdates.tax_inclusive = Boolean(incoming.taxInclusive);
+    }
+    if (typeof incoming.serviceChargeType !== 'undefined') {
+      topLevelUpdates.service_charge_type = String(incoming.serviceChargeType);
+    }
+    if (typeof incoming.applyTaxToDelivery !== 'undefined') {
+      topLevelUpdates.apply_tax_to_delivery = Boolean(incoming.applyTaxToDelivery);
+    }
   }
 
   await restaurant.update({ settings: existing, ...topLevelUpdates });
