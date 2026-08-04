@@ -35,6 +35,11 @@ const RestaurantDetails = () => {
     }
   );
 
+  const [showPreview, setShowPreview] = useState(false)
+  const [previewSrc, setPreviewSrc] = useState(null)
+  const [previewLoading, setPreviewLoading] = useState(false)
+  const [previewError, setPreviewError] = useState(null)
+
   // Extract restaurant data from response (handle multiple possible formats)
   const restaurant = data?.data?.data || data?.data || data;
 
@@ -202,7 +207,7 @@ const RestaurantDetails = () => {
 
   const businessLicenseHref = resolveDocumentHref(businessLicenseDoc);
   const hasBusinessLicenseInfo = Boolean(businessLicenseNumber || tinNumber || businessLicenseHref);
-  const [showPreview, setShowPreview] = useState(false)
+  
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
@@ -402,7 +407,29 @@ const RestaurantDetails = () => {
                       <button
                         onClick={(e) => {
                           e.preventDefault();
-                          setShowPreview(true)
+                          // load preview: try to fetch and create object URL for reliable embedding
+                          const handlePreview = async () => {
+                            setPreviewError(null)
+                            setPreviewLoading(true)
+                            try {
+                              // Prefer server-side proxy to avoid CORS / X-Frame-Options blocking.
+                              const proxyUrl = `/api/preview?url=${encodeURIComponent(businessLicenseHref)}`
+                              // Lightweight HEAD to verify availability without streaming the entire file
+                              const head = await fetch(proxyUrl, { method: 'HEAD' })
+                              if (!head.ok) throw new Error('Preview not available')
+                              const contentType = head.headers.get('content-type') || ''
+                              setPreviewSrc({ url: proxyUrl, contentType })
+                              setShowPreview(true)
+                            } catch (err) {
+                              // Fallback: show original href in iframe and allow download
+                              setPreviewError('Preview not available due to cross-origin restrictions or network error. You can download the document.')
+                              setPreviewSrc({ url: businessLicenseHref, contentType: '' })
+                              setShowPreview(true)
+                            } finally {
+                              setPreviewLoading(false)
+                            }
+                          }
+                          handlePreview()
                         }}
                         className="text-primary-600 hover:underline"
                       >
@@ -444,16 +471,39 @@ const RestaurantDetails = () => {
       >
         {businessLicenseHref && (
           <div className="space-y-4">
-            {businessLicenseHref.match(/\.(jpg|jpeg|png|gif)$/i) ? (
-              <img src={businessLicenseHref} alt="Business License" className="w-full rounded-lg" />
+            {previewLoading ? (
+              <div className="p-8 text-center text-gray-500">Loading preview...</div>
+            ) : previewError ? (
+              <div className="p-4 bg-yellow-50 rounded">
+                <p className="text-sm text-yellow-700">{previewError}</p>
+              </div>
+            ) : previewSrc ? (
+              previewSrc.contentType.match(/image\//i) ? (
+                <img src={previewSrc.url} alt="Business License" className="w-full rounded-lg" />
+              ) : (
+                <iframe src={previewSrc.url} className="w-full h-[600px] rounded-lg" title="Business License Preview" />
+              )
             ) : (
-              <iframe src={businessLicenseHref} className="w-full h-[600px] rounded-lg" title="Business License Preview" />
+              // fallback
+              businessLicenseHref.match(/\.(jpg|jpeg|png|gif)$/i) ? (
+                <img src={businessLicenseHref} alt="Business License" className="w-full rounded-lg" />
+              ) : (
+                <iframe src={businessLicenseHref} className="w-full h-[600px] rounded-lg" title="Business License Preview" />
+              )
             )}
             <div className="flex justify-end gap-3">
               <a href={businessLicenseHref} download target="_blank" rel="noopener noreferrer" className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700">
                 Download
               </a>
-              <button onClick={() => setShowPreview(false)} className="px-4 py-2 bg-gray-100 rounded-lg">
+              <button onClick={() => {
+                setShowPreview(false)
+                // revoke object URL if we created one
+                try {
+                  if (previewSrc && previewSrc.url && previewSrc.url.startsWith('blob:')) URL.revokeObjectURL(previewSrc.url)
+                } catch (e) { /* ignore */ }
+                setPreviewSrc(null)
+                setPreviewError(null)
+              }} className="px-4 py-2 bg-gray-100 rounded-lg">
                 Close
               </button>
             </div>

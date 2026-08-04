@@ -25,6 +25,7 @@ const supportRoutes = require('./supportRoutes');
 const contactRoutes = require('./contactRoutes');
 const systemRoutes = require('./systemRoutes');
 const uploadRoutes = require('./uploadRoutes');
+const previewRoutes = require('./previewRoutes');
 const kitchenRoutes = require('./kitchenRoutes');  // Make sure this line exists
 // Mount routes
 router.use('/auth', authRoutes);
@@ -50,6 +51,7 @@ router.use('/support', supportRoutes);  // Make sure this line exists
 router.use('/public/contact', contactRoutes);
 router.use('/system', systemRoutes);  // Make sure this line exists
 router.use('/upload', uploadRoutes);
+router.use('/preview', previewRoutes);
 // Health check
 router.get('/health', (req, res) => {
   res.status(200).json({ status: 'success', message: 'Server is running' });

@@ -2,6 +2,9 @@ import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
 import fs from 'fs'
+import axios from 'axios'
+import http from 'http'
+import https from 'https'
 
 const normalizeProxyUrl = (url) => {
   if (!url) return url
@@ -105,14 +108,46 @@ export default defineConfig(async ({ mode }) => {
           changeOrigin: true,
           rewrite: (path) => path.replace(/^\/api/, '/api'),
           timeout: 120000,
-          // Provide clearer console errors when proxying fails
-          onError: (err, req, res) => {
+          // Provide clearer console errors when proxying fails and attempt alternatives
+          onError: async (err, req, res) => {
             // eslint-disable-next-line no-console
             console.error('Vite proxy /api error ->', err && err.message ? err.message : err);
             try {
               if (!res.headersSent) {
-                res.writeHead && res.writeHead(502);
-                res.end && res.end('Bad gateway');
+                // Try alternative backend candidates synchronously: runtime_api_url.txt then fallback ports
+                const runtimeUrlPath = path.resolve(__dirname, '..', 'runtime_api_url.txt')
+                let runtimeCandidate = ''
+                try { if (fs.existsSync(runtimeUrlPath)) runtimeCandidate = fs.readFileSync(runtimeUrlPath, 'utf8').trim() } catch (e) { runtimeCandidate = '' }
+                const fallbackPorts = [5003, 5004, 5000, 5001, 5002, 5005]
+                const candidates = []
+                if (finalApiUrl) candidates.push(finalApiUrl)
+                if (runtimeCandidate) candidates.push(runtimeCandidate)
+                for (const p of fallbackPorts) {
+                  candidates.push(`http://127.0.0.1:${p}`)
+                  candidates.push(`http://localhost:${p}`)
+                }
+
+                const proxiedUrl = req.originalUrl || req.url || ''
+                for (const target of candidates) {
+                  if (!target) continue
+                  const full = `${target.replace(/\/$/, '')}${proxiedUrl}`
+                  try {
+                    // eslint-disable-next-line no-await-in-loop
+                    const upstream = await axios.request({ url: full, method: req.method || 'GET', responseType: 'stream', timeout: 8000, validateStatus: () => true, httpAgent: new http.Agent({ keepAlive: true }), httpsAgent: new https.Agent({ keepAlive: true }) })
+                    if (upstream && upstream.status >= 200 && upstream.status < 400 && upstream.data) {
+                      // Pipe headers and stream back
+                      Object.entries(upstream.headers || {}).forEach(([k, v]) => { try { res.setHeader(k, v) } catch (e) {} })
+                      res.statusCode = upstream.status
+                      upstream.data.pipe(res)
+                      return
+                    }
+                  } catch (e) {
+                    // try next candidate
+                  }
+                }
+
+                res.writeHead && res.writeHead(502)
+                res.end && res.end('Bad gateway')
               }
             } catch (e) {
               // ignore
