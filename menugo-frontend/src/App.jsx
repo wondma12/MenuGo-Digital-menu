@@ -132,6 +132,10 @@ function App() {
   const RootRedirect = () => {
     try {
       const params = new URLSearchParams(window.location.search)
+      const redirectTarget = params.get('redirect')
+      if (redirectTarget) {
+        return <Navigate to={redirectTarget} replace />
+      }
       const restaurantParam = params.get('restaurant')
       if (restaurantParam) return <Navigate to={`/menu/${restaurantParam}`} replace />
     } catch (err) {

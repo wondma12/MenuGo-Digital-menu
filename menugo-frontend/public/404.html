@@ -1,20 +1,28 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>MenuGo</title>
-    <style>
-      body { font-family: Arial, sans-serif; margin: 0; min-height: 100vh; display: grid; place-items: center; background: #fff7ed; color: #7c2d12; }
-      main { text-align: center; padding: 2rem; }
-      a { color: #ea580c; text-decoration: none; }
-    </style>
-  </head>
-  <body>
-    <main>
-      <h1>MenuGo</h1>
-      <p>The page you requested could not be found.</p>
-      <p><a href="/">Go back home</a></p>
-    </main>
-  </body>
-</html>
+  <!doctype html>
+  <html lang="en">
+    <head>
+      <meta charset="UTF-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <title>MenuGo</title>
+      <script>
+        (function () {
+          try {
+            var target = window.location.pathname + window.location.search + window.location.hash;
+            if (target && target !== '/' && target !== '/404.html') {
+              var nextUrl = '/?redirect=' + encodeURIComponent(target);
+              window.location.replace(nextUrl);
+            }
+          } catch (error) {
+            window.location.replace('/');
+          }
+        })();
+      </script>
+    </head>
+    <body>
+      <noscript>
+        <p>This application requires JavaScript. Please enable JavaScript and reopen the page.</p>
+      </noscript>
+    </body>
+  </html>
