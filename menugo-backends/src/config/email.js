@@ -11,7 +11,7 @@ const SMTP_SECURE = process.env.SMTP_SECURE === 'true';
 const SMTP_USER = process.env.SMTP_USER || '';
 const SMTP_PASS = process.env.SMTP_PASS || '';
 
-const transporter = nodemailer.createTransport({
+let transporter = nodemailer.createTransport({
   host: SMTP_HOST || undefined,
   port: SMTP_PORT,
   secure: SMTP_SECURE,
@@ -19,6 +19,33 @@ const transporter = nodemailer.createTransport({
   // Ensure TLS SNI uses the configured host when connecting by IP fallback later
   tls: { servername: SMTP_HOST || undefined },
 });
+
+// Proactively prefer IPv4 when possible to avoid ENETUNREACH on platforms
+// without IPv6 routing. We attempt a DNS lookup for an IPv4 address at
+// startup and, if found, recreate the transporter to connect directly to
+// the IPv4 address while preserving SNI via `tls.servername`.
+(async () => {
+  try {
+    if (SMTP_HOST) {
+      const lookup = await dns.lookup(SMTP_HOST, { family: 4 });
+      if (lookup && lookup.address) {
+        logger.info(`Using IPv4 SMTP address ${lookup.address} for host ${SMTP_HOST}`);
+        transporter = nodemailer.createTransport({
+          host: lookup.address,
+          port: SMTP_PORT,
+          secure: SMTP_SECURE,
+          auth: SMTP_USER ? { user: SMTP_USER, pass: SMTP_PASS } : undefined,
+          tls: { servername: SMTP_HOST }, // preserve SNI
+        });
+      }
+    }
+  } catch (e) {
+    // Non-fatal: keep the original transporter and rely on per-send fallback
+    logger.warn('IPv4 SMTP lookup failed at startup, will fallback on send-time when necessary:', e && e.message ? e.message : e);
+  }
+})()
+  .catch(() => {})
+;
 
 const DEFAULT_PUBLIC_FRONTEND_URL = 'https://menugo-digital-menu-jgz2.onrender.com';
 
