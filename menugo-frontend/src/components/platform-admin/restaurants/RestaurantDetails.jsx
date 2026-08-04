@@ -1,11 +1,12 @@
 // src/components/platform-admin/restaurants/RestaurantDetails.jsx
-import React from 'react';
+import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from 'react-query';
 import { getRestaurantDetails } from '../../../services/restaurantService';
 import Loading from '../../common/Loading';
 import Skeleton from '../../common/Skeleton';
 import Alert from '../../common/Alert';
+import Modal from '../../../common/Modal'
 import { 
   BuildingOfficeIcon, 
   MapPinIcon, 
@@ -201,6 +202,7 @@ const RestaurantDetails = () => {
 
   const businessLicenseHref = resolveDocumentHref(businessLicenseDoc);
   const hasBusinessLicenseInfo = Boolean(businessLicenseNumber || tinNumber || businessLicenseHref);
+  const [showPreview, setShowPreview] = useState(false)
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
@@ -396,14 +398,20 @@ const RestaurantDetails = () => {
             <div className="md:col-span-2">
               <p className="text-sm text-gray-600">Business License Document</p>
               {businessLicenseHref ? (
-                <div className="flex flex-wrap gap-4 mt-1">
-                  <a href={businessLicenseHref} target="_blank" rel="noopener noreferrer" className="text-primary-600 hover:underline">
-                    View document
-                  </a>
-                  <a href={businessLicenseHref} target="_blank" rel="noopener noreferrer" download className="text-primary-600 hover:underline">
-                    Download document
-                  </a>
-                </div>
+                    <div className="flex flex-wrap gap-4 mt-1">
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          setShowPreview(true)
+                        }}
+                        className="text-primary-600 hover:underline"
+                      >
+                        View document
+                      </button>
+                      <a href={businessLicenseHref} target="_blank" rel="noopener noreferrer" download className="text-primary-600 hover:underline">
+                        Download document
+                      </a>
+                    </div>
               ) : (
                 <p className="font-medium text-gray-700">No file uploaded</p>
               )}
@@ -427,8 +435,35 @@ const RestaurantDetails = () => {
           Go Back
         </button>
       </div>
+      {/* Document Preview Modal */}
+      <Modal
+        isOpen={showPreview}
+        onClose={() => setShowPreview(false)}
+        title="Business License Preview"
+        size="lg"
+      >
+        {businessLicenseHref && (
+          <div className="space-y-4">
+            {businessLicenseHref.match(/\.(jpg|jpeg|png|gif)$/i) ? (
+              <img src={businessLicenseHref} alt="Business License" className="w-full rounded-lg" />
+            ) : (
+              <iframe src={businessLicenseHref} className="w-full h-[600px] rounded-lg" title="Business License Preview" />
+            )}
+            <div className="flex justify-end gap-3">
+              <a href={businessLicenseHref} download target="_blank" rel="noopener noreferrer" className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700">
+                Download
+              </a>
+              <button onClick={() => setShowPreview(false)} className="px-4 py-2 bg-gray-100 rounded-lg">
+                Close
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 };
+
+RestaurantDetails.displayName = 'RestaurantDetails'
 
 export default RestaurantDetails;
