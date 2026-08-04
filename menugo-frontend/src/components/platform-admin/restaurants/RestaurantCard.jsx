@@ -16,6 +16,7 @@ import {
   EllipsisVerticalIcon,
 } from '@heroicons/react/24/outline'
 import { updateRestaurantStatus, deleteRestaurant, verifyRestaurant } from '../../../services/restaurantService'
+import { useAuthStore } from '../../../store/authStore'
 import ConfirmationDialog from '../../common/ConfirmationDialog'
 import Dropdown from '../../common/Dropdown'
 
@@ -109,7 +110,9 @@ const RestaurantCard = ({ restaurant, onUpdate, variant = 'grid' }) => {
       toast.success('Restaurant verified successfully')
       onUpdate?.()
     } catch (error) {
-      toast.error('Failed to verify restaurant')
+      const serverMessage = error?.response?.data?.message || error?.message || 'Failed to verify restaurant'
+      console.error('Verify restaurant error:', error)
+      toast.error(serverMessage)
     } finally {
       setIsLoading(false)
       setShowVerifyDialog(false)
@@ -163,7 +166,7 @@ const RestaurantCard = ({ restaurant, onUpdate, variant = 'grid' }) => {
       icon: ShieldCheckIcon,
       onClick: () => setShowVerifyDialog(true),
       danger: false,
-      hidden: !restaurant.is_active || restaurant.is_verified,
+      hidden: !restaurant.is_active || restaurant.is_verified || useAuthStore.getState()?.user?.role !== 'platform_admin',
     },
     {
       label: 'Delete',
@@ -297,7 +300,7 @@ const RestaurantCard = ({ restaurant, onUpdate, variant = 'grid' }) => {
           >
             {restaurant.is_active ? <XCircleIcon className="h-4 w-4" /> : <CheckCircleIcon className="h-4 w-4" />}
           </button>
-          {(!restaurant.is_verified && restaurant.is_active) && (
+          {(!restaurant.is_verified && restaurant.is_active && useAuthStore.getState()?.user?.role === 'platform_admin') && (
             <button
               onClick={() => setShowVerifyDialog(true)}
               title="Verify"

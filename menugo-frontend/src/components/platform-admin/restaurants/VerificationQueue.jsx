@@ -26,8 +26,10 @@ const VerificationQueue = () => {
       refetch()
       setShowDetails(false)
     },
-    onError: () => {
-      toast.error('Failed to verify restaurant')
+    onError: (error) => {
+      const serverMessage = error?.response?.data?.message || error?.message || 'Failed to verify restaurant'
+      console.error('Verify mutation error:', error)
+      toast.error(serverMessage)
     },
   })
 
