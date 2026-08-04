@@ -11,41 +11,41 @@ const SMTP_SECURE = process.env.SMTP_SECURE === 'true';
 const SMTP_USER = process.env.SMTP_USER || '';
 const SMTP_PASS = process.env.SMTP_PASS || '';
 
+const DEFAULT_SMTP_TIMEOUT = 20000; // 20s
+
+// DEBUG: verify nodemailer import shape during module init
+// (debug log removed)
+
+const createTransportForHost = (host) => {
+  return nodemailer.createTransport({
+    host: host || undefined,
+    port: SMTP_PORT,
+    secure: SMTP_SECURE,
+    auth: SMTP_USER ? { user: SMTP_USER, pass: SMTP_PASS } : undefined,
+    // Ensure TLS SNI uses the configured host when connecting by IP fallback later
+    tls: { servername: SMTP_HOST || undefined, rejectUnauthorized: true },
+    // Timeouts to fail fast on unreachable networks
+    connectionTimeout: DEFAULT_SMTP_TIMEOUT,
+    greetingTimeout: DEFAULT_SMTP_TIMEOUT,
+    socketTimeout: DEFAULT_SMTP_TIMEOUT,
+  })
+}
+
+// Create a default transporter immediately (do not rely on the async resolver to finish)
 let transporter = nodemailer.createTransport({
   host: SMTP_HOST || undefined,
   port: SMTP_PORT,
   secure: SMTP_SECURE,
   auth: SMTP_USER ? { user: SMTP_USER, pass: SMTP_PASS } : undefined,
-  // Ensure TLS SNI uses the configured host when connecting by IP fallback later
-  tls: { servername: SMTP_HOST || undefined },
-});
+  tls: { servername: SMTP_HOST || undefined, rejectUnauthorized: true },
+  connectionTimeout: DEFAULT_SMTP_TIMEOUT,
+  greetingTimeout: DEFAULT_SMTP_TIMEOUT,
+  socketTimeout: DEFAULT_SMTP_TIMEOUT,
+})
 
-// Proactively prefer IPv4 when possible to avoid ENETUNREACH on platforms
-// without IPv6 routing. We attempt a DNS lookup for an IPv4 address at
-// startup and, if found, recreate the transporter to connect directly to
-// the IPv4 address while preserving SNI via `tls.servername`.
-(async () => {
-  try {
-    if (SMTP_HOST) {
-      const lookup = await dns.lookup(SMTP_HOST, { family: 4 });
-      if (lookup && lookup.address) {
-        logger.info(`Using IPv4 SMTP address ${lookup.address} for host ${SMTP_HOST}`);
-        transporter = nodemailer.createTransport({
-          host: lookup.address,
-          port: SMTP_PORT,
-          secure: SMTP_SECURE,
-          auth: SMTP_USER ? { user: SMTP_USER, pass: SMTP_PASS } : undefined,
-          tls: { servername: SMTP_HOST }, // preserve SNI
-        });
-      }
-    }
-  } catch (e) {
-    // Non-fatal: keep the original transporter and rely on per-send fallback
-    logger.warn('IPv4 SMTP lookup failed at startup, will fallback on send-time when necessary:', e && e.message ? e.message : e);
-  }
-})()
-  .catch(() => {})
-;
+// NOTE: Startup IPv4 probing is intentionally disabled to avoid network
+// operations during module import. Per-send fallback and IPv4 retries are
+// handled by `sendEmail` itself to make the module safe to require.
 
 const DEFAULT_PUBLIC_FRONTEND_URL = 'https://menugo-digital-menu-jgz2.onrender.com';
 
@@ -149,41 +149,56 @@ const sendEmail = async (to, subject, template, data) => {
       replyTo: data?.replyTo || process.env.EMAIL_REPLY_TO || process.env.EMAIL_FROM || process.env.SMTP_USER,
     };
 
-    try {
-      const info = await transporter.sendMail(mailOptions);
-      logger.info(`Email sent to ${to}: ${info.messageId}`);
-      return info;
-    } catch (error) {
-      // If the environment cannot reach the resolved IPv6 address (common on some hosts),
-      // try resolving the SMTP host to an IPv4 address and retry using that IP.
-      logger.error('Email send error:', error);
+    // Attempt to send with retries and IPv4 fallbacks when network errors occur
+    const maxAttempts = 3
+    const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 
-      const shouldRetryIPv4 = error && (error.code === 'ENETUNREACH' || error.errno === -101 || /ENETUNREACH|EHOSTUNREACH|EADDRNOTAVAIL/i.test(String(error.message || '')));
-      if (shouldRetryIPv4 && SMTP_HOST) {
+    let lastErr = null
+
+    // Build list of candidate transports: current transporter first, then resolved IPv4 addresses
+    const candidates = []
+    candidates.push({ name: 'default', transport: transporter })
+
+    if (SMTP_HOST) {
+      try {
+        const addrs = await dns.resolve4(SMTP_HOST).catch(() => [])
+        for (const addr of addrs) {
+          candidates.push({ name: `ipv4:${addr}`, transport: createTransportForHost(addr) })
+        }
+      } catch (e) {
+        // ignore
+      }
+    }
+
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      for (const cand of candidates) {
         try {
-          const lookup = await dns.lookup(SMTP_HOST, { family: 4 });
-          if (lookup && lookup.address) {
-            logger.info(`Retrying email send via IPv4 address ${lookup.address} for host ${SMTP_HOST}`);
-            const fallbackTransport = nodemailer.createTransport({
-              host: lookup.address,
-              port: SMTP_PORT,
-              secure: SMTP_SECURE,
-              auth: SMTP_USER ? { user: SMTP_USER, pass: SMTP_PASS } : undefined,
-              tls: { servername: SMTP_HOST }, // preserve SNI
-            });
-
-            const info2 = await fallbackTransport.sendMail(mailOptions);
-            logger.info(`Email sent to ${to} (via IPv4 ${lookup.address}): ${info2.messageId}`);
-            return info2;
+          logger.info(`Attempt ${attempt}: sending email to ${to} via ${cand.name}`)
+          const info = await cand.transport.sendMail(mailOptions)
+          logger.info(`Email sent to ${to} via ${cand.name}: ${info.messageId}`)
+          return info
+        } catch (error) {
+          lastErr = error
+          logger.warn(`Email send attempt ${attempt} via ${cand.name} failed: ${error && error.message ? error.message : error}`)
+          // On network timeout or unreachable errors, continue to next candidate
+          if (error && /ENETUNREACH|EHOSTUNREACH|EADDRNOTAVAIL|ETIMEDOUT|ECONNREFUSED/i.test(String(error.code || error.errno || error.message || ''))) {
+            // try next candidate immediately
+            continue
           }
-        } catch (lookupErr) {
-          logger.error('IPv4 fallback lookup/send failed:', lookupErr && lookupErr.message ? lookupErr.message : lookupErr);
+          // For other errors (auth, invalid address), no point retrying this candidate
         }
       }
 
-      // If we couldn't recover, rethrow the original error so callers can handle it
-      throw error;
+      // Exponential backoff before next round
+      const delay = 500 * Math.pow(2, attempt - 1)
+      logger.info(`Waiting ${delay}ms before next email retry round`)
+      await sleep(delay)
     }
+
+    // All attempts failed
+    logger.error('Email send failed after retries:', lastErr && (lastErr.message || lastErr))
+    throw lastErr || new Error('Email send failed')
+    
   } catch (error) {
     logger.error('Email send error (outer):', error && error.message ? error.message : error);
     throw error;
