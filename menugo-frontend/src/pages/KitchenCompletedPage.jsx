@@ -24,11 +24,24 @@ const KitchenCompletedPage = () => {
   const [paginationMeta, setPaginationMeta] = useState({ page: 1, limit: 20, total: 0, pages: 0 })
 
   useEffect(() => {
-    const user = JSON.parse(localStorage.getItem('user')) || {}
-    const id = user.restaurantId || user.restaurant_id || (user.restaurant && user.restaurant.id) || null
-    const params = new URLSearchParams(location.search)
-    const qId = params.get('restaurantId')
-    setRestaurantId(qId || id)
+    try {
+      const raw = localStorage.getItem('user')
+      let user = {}
+      if (raw) {
+        try {
+          const { safeParseJSON } = require('../components/common/../../utils/helpers')
+          user = safeParseJSON(raw) || JSON.parse(raw)
+        } catch (e) {
+          user = {}
+        }
+      }
+      const id = user.restaurantId || user.restaurant_id || (user.restaurant && user.restaurant.id) || null
+      const params = new URLSearchParams(location.search)
+      const qId = params.get('restaurantId')
+      setRestaurantId(qId || id)
+    } catch (e) {
+      setRestaurantId(null)
+    }
   }, [location.search])
 
   const handleDateChange = (field) => (e) => {

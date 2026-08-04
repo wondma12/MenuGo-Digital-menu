@@ -51,8 +51,13 @@ const RestaurantAnalytics = () => {
       try {
         const raw = localStorage.getItem('user')
         if (raw) {
-          const parsed = JSON.parse(raw)
-          if (parsed) return parsed.restaurant_id?.id || parsed.restaurant_id || parsed.restaurant?.id || parsed.restaurant || parsed.restaurant?._id || parsed._id
+          try {
+            const { safeParseJSON } = require('../../../utils/helpers')
+            const parsed = safeParseJSON(raw) || JSON.parse(raw)
+            if (parsed) return parsed.restaurant_id?.id || parsed.restaurant_id || parsed.restaurant?.id || parsed.restaurant || parsed.restaurant?._id || parsed._id
+          } catch (err) {
+            // ignore
+          }
         }
       } catch (e) {
         // ignore

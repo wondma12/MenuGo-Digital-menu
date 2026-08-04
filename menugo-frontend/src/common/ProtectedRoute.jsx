@@ -2,6 +2,7 @@
 import { Navigate, Outlet } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 import { getEffectiveRole, getRoleHomePath } from '../utils/authRouting';
+import { safeParseJSON } from '../utils/helpers'
 
 const ProtectedRoute = ({ allowedRoles = [] }) => {
   const { isAuthenticated, user, isLoading } = useAuthStore();
@@ -28,12 +29,18 @@ const ProtectedRoute = ({ allowedRoles = [] }) => {
       )
 
       if (persisted) {
-        const parsed = JSON.parse(persisted)
-        if (parsed && (parsed.token || parsed.isAuthenticated)) return (
-          <div className="min-h-screen flex items-center justify-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600"></div>
-          </div>
-        )
+        try {
+          // persisted may be a serialized object or a raw token string
+          // Use safeParseJSON to avoid throwing on raw token strings
+          const parsed = safeParseJSON(persisted)
+          if (parsed && (parsed.token || parsed.isAuthenticated)) return (
+            <div className="min-h-screen flex items-center justify-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600"></div>
+            </div>
+          )
+        } catch (e) {
+          // ignore parsing issues
+        }
       }
     } catch (e) {
       // ignore storage access

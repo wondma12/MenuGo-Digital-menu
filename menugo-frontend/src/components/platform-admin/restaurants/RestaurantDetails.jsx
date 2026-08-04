@@ -120,9 +120,10 @@ const RestaurantDetails = () => {
     if (!rawSettings) return {};
     if (typeof rawSettings === 'string') {
       try {
-        return JSON.parse(rawSettings);
+        const parsed = require('../../../utils/helpers').safeParseJSON(rawSettings)
+        return parsed || {}
       } catch (error) {
-        return {};
+        return {}
       }
     }
     return rawSettings;

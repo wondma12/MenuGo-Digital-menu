@@ -20,7 +20,8 @@ const PlanCard = ({ plan, onEdit, onDelete }) => {
     if (Array.isArray(features)) return features
     if (typeof features === 'string') {
       try {
-        const parsed = JSON.parse(features)
+        const { safeParseJSON } = require('../../../utils/helpers')
+        const parsed = safeParseJSON(features)
         if (Array.isArray(parsed)) return parsed
       } catch (e) {
         // ignore

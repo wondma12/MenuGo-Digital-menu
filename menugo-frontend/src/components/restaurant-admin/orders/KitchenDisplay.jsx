@@ -14,7 +14,12 @@ const KitchenDisplay = ({ orders, onRefresh }) => {
   const [previousCount, setPreviousCount] = useState(0)
   const [autoStart, setAutoStart] = useState(() => {
     try {
-      return JSON.parse(localStorage.getItem('kitchen:autoStart') || 'false')
+      const raw = localStorage.getItem('kitchen:autoStart')
+      if (!raw) return false
+      const { safeParseJSON } = require('../../../utils/helpers')
+      const parsed = safeParseJSON(raw)
+      if (typeof parsed === 'boolean') return parsed
+      return JSON.parse(raw)
     } catch (e) {
       return false
     }

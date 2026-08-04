@@ -23,7 +23,8 @@ const normalizeFeatures = (features) => {
   if (Array.isArray(features)) return features.length ? features : ['']
   if (typeof features === 'string') {
     try {
-      const parsed = JSON.parse(features)
+      const { safeParseJSON } = require('../../../utils/helpers')
+      const parsed = safeParseJSON(features)
       if (Array.isArray(parsed)) return parsed.length ? parsed : ['']
     } catch (e) {
       // ignore parse failures
