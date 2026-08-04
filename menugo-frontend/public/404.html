@@ -1,28 +1,28 @@
 <!doctype html>
 <html lang="en">
-  <!doctype html>
-  <html lang="en">
-    <head>
-      <meta charset="UTF-8" />
-      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <title>MenuGo</title>
-      <script>
-        (function () {
-          try {
-            var target = window.location.pathname + window.location.search + window.location.hash;
-            if (target && target !== '/' && target !== '/404.html') {
-              var nextUrl = '/?redirect=' + encodeURIComponent(target);
-              window.location.replace(nextUrl);
-            }
-          } catch (error) {
-            window.location.replace('/');
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MenuGo</title>
+    <script>
+      (function () {
+        try {
+          var target = window.location.pathname + window.location.search + window.location.hash;
+          if (target && target !== '/' && target !== '/404.html') {
+            window.location.replace('/?redirect=' + encodeURIComponent(target));
+            return;
           }
-        })();
-      </script>
-    </head>
-    <body>
-      <noscript>
-        <p>This application requires JavaScript. Please enable JavaScript and reopen the page.</p>
-      </noscript>
-    </body>
-  </html>
+        } catch (error) {
+          // fall through to root redirect below
+        }
+
+        window.location.replace('/');
+      })();
+    </script>
+  </head>
+  <body>
+    <noscript>
+      <p>This application requires JavaScript. Please enable JavaScript and reopen the page.</p>
+    </noscript>
+  </body>
+</html>
