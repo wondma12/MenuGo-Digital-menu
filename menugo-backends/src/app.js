@@ -51,9 +51,8 @@ const defaultAllowedOrigins = [
   process.env.CLIENT_URL,
   'http://localhost:3002',
   'http://localhost:5003',
-  'https://menugo-digital-menu-jgz2.onrender.com',
   'https://menugo-saas-digital-menu-mipr.onrender.com',
-  'https://menugo-digital-menu-api-gh9m.onrender.com',
+  'https://menugo-saas-digital-menu-api.onrender.com',
 ];
 const allowedOrigins = Array.from(new Set([...configuredOrigins, ...defaultAllowedOrigins].filter(Boolean)));
 const normalizeOrigin = (value) => (typeof value === 'string' ? value.trim().replace(/\/$/, '') : '');

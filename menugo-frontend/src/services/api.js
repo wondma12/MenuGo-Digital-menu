@@ -12,6 +12,25 @@ const isLocalhostApiUrl = (url) => {
 
 const isProductionLike = Boolean(import.meta.env.PROD || import.meta.env.VITE_APP_ENV === 'production' || (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1'))
 
+const normalizeStoredToken = (value) => {
+  if (!value) return null
+
+  const raw = String(value).trim()
+  if (!raw) return null
+
+  try {
+    const parsed = JSON.parse(raw)
+    if (typeof parsed === 'string') return parsed.trim() || null
+    if (parsed && typeof parsed === 'object') {
+      return String(parsed.token || parsed.accessToken || parsed.authToken || '').trim() || null
+    }
+  } catch (e) {
+    // Stored value is already a plain token string.
+  }
+
+  return raw.replace(/^"(.+)"$/, '$1').replace(/^'(.+)'$/, '$1') || null
+}
+
 const resolveApiUrl = () => {
   const explicit = String(import.meta.env.VITE_API_URL || import.meta.env.API_URL || '').trim()
   if (explicit && !isLocalhostApiUrl(explicit)) {
@@ -375,8 +394,8 @@ api.interceptors.request.use(
 
     // Prefer the persisted session token instead of importing the auth store.
     // This avoids the circular dependency between authService -> api -> authStore.
-    const sessionToken = authSessionStorage?.getItem('token')
-    const persistedLocalToken = typeof window !== 'undefined' ? window.localStorage.getItem('auth_token') : null
+    const sessionToken = normalizeStoredToken(authSessionStorage?.getItem('token'))
+    const persistedLocalToken = typeof window !== 'undefined' ? normalizeStoredToken(window.localStorage.getItem('auth_token')) : null
     const token = sessionToken || persistedLocalToken
 
     if (import.meta.env.DEV) {
@@ -575,7 +594,7 @@ api.interceptors.response.use(
       
       try {
         // Attempt to refresh token from persisted storage
-        const refreshToken = authSessionStorage?.getItem('refreshToken') || (typeof window !== 'undefined' ? window.localStorage.getItem('refreshToken') : null)
+        const refreshToken = normalizeStoredToken(authSessionStorage?.getItem('refreshToken')) || (typeof window !== 'undefined' ? normalizeStoredToken(window.localStorage.getItem('refreshToken')) : null)
 
         if (!refreshToken) {
           throw new Error('No refresh token available')
@@ -618,9 +637,9 @@ api.interceptors.response.use(
           }
           try {
             if (typeof window !== 'undefined' && window.localStorage) {
-              window.localStorage.setItem('auth_token', JSON.stringify(newToken))
+              window.localStorage.setItem('auth_token', newToken)
               if (newRefreshToken) {
-                window.localStorage.setItem('refreshToken', JSON.stringify(newRefreshToken))
+                window.localStorage.setItem('refreshToken', newRefreshToken)
               }
             }
           } catch (e) {
