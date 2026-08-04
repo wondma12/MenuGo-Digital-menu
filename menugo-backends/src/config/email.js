@@ -4,6 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const { logger } = require('../utils/logger');
 const dns = require('dns').promises;
+const axios = require('axios');
 
 const SMTP_HOST = String(process.env.SMTP_HOST || '').trim();
 const SMTP_PORT = parseInt(process.env.SMTP_PORT) || (process.env.SMTP_SECURE === 'true' ? 465 : 587);
@@ -11,7 +12,7 @@ const SMTP_SECURE = process.env.SMTP_SECURE === 'true';
 const SMTP_USER = process.env.SMTP_USER || '';
 const SMTP_PASS = process.env.SMTP_PASS || '';
 
-const DEFAULT_SMTP_TIMEOUT = 20000; // 20s
+const DEFAULT_SMTP_TIMEOUT = parseInt(process.env.SMTP_TIMEOUT_MS, 10) || 20000; // 20s default, override with env
 
 // DEBUG: verify nodemailer import shape during module init
 // (debug log removed)
@@ -176,10 +177,14 @@ const sendEmail = async (to, subject, template, data) => {
           logger.info(`Attempt ${attempt}: sending email to ${to} via ${cand.name}`)
           const info = await cand.transport.sendMail(mailOptions)
           logger.info(`Email sent to ${to} via ${cand.name}: ${info.messageId}`)
+          // Close IPv4-created transports to avoid resource leakage
+          try { if (cand.name.startsWith('ipv4:') && typeof cand.transport.close === 'function') cand.transport.close() } catch (e) { /* ignore */ }
           return info
         } catch (error) {
           lastErr = error
           logger.warn(`Email send attempt ${attempt} via ${cand.name} failed: ${error && error.message ? error.message : error}`)
+          // Close per-candidate transport if it was created for this attempt
+          try { if (cand.name.startsWith('ipv4:') && typeof cand.transport.close === 'function') cand.transport.close() } catch (e) { /* ignore */ }
           // On network timeout or unreachable errors, continue to next candidate
           if (error && /ENETUNREACH|EHOSTUNREACH|EADDRNOTAVAIL|ETIMEDOUT|ECONNREFUSED/i.test(String(error.code || error.errno || error.message || ''))) {
             // try next candidate immediately
@@ -195,8 +200,40 @@ const sendEmail = async (to, subject, template, data) => {
       await sleep(delay)
     }
 
-    // All attempts failed
+    // All attempts failed; try HTTP API fallback (SendGrid) if configured
     logger.error('Email send failed after retries:', lastErr && (lastErr.message || lastErr))
+
+    const sendgridKey = process.env.SENDGRID_API_KEY || process.env.SENDGRID_KEY
+    if (sendgridKey) {
+      try {
+        logger.info('Attempting SendGrid HTTP fallback')
+        const fromEmail = (process.env.EMAIL_FROM || process.env.SMTP_USER || 'no-reply@menugo.local')
+        const payload = {
+          personalizations: [{ to: [{ email: to }], subject }],
+          from: { email: fromEmail, name: (process.env.EMAIL_FROM_NAME || 'MenuGo') },
+          content: [
+            { type: 'text/plain', value: mailOptions.text || '' },
+            { type: 'text/html', value: mailOptions.html || '' },
+          ],
+          reply_to: mailOptions.replyTo ? { email: mailOptions.replyTo } : undefined,
+        }
+
+        const sgResp = await axios.post('https://api.sendgrid.com/v3/mail/send', payload, {
+          headers: { Authorization: `Bearer ${sendgridKey}`, 'Content-Type': 'application/json' },
+          timeout: DEFAULT_SMTP_TIMEOUT,
+        })
+
+        if (sgResp && (sgResp.status === 202 || sgResp.status === 200)) {
+          logger.info(`SendGrid fallback accepted for ${to}`)
+          return { messageId: `sendgrid-${Date.now()}` }
+        }
+        lastErr = new Error(`SendGrid fallback failed with status ${sgResp.status}`)
+      } catch (sgErr) {
+        lastErr = sgErr
+        logger.warn('SendGrid fallback failed:', sgErr && (sgErr.message || sgErr))
+      }
+    }
+
     throw lastErr || new Error('Email send failed')
     
   } catch (error) {
