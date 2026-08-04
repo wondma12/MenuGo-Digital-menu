@@ -3,15 +3,21 @@ const handlebars = require('handlebars');
 const fs = require('fs');
 const path = require('path');
 const { logger } = require('../utils/logger');
+const dns = require('dns').promises;
+
+const SMTP_HOST = String(process.env.SMTP_HOST || '').trim();
+const SMTP_PORT = parseInt(process.env.SMTP_PORT) || (process.env.SMTP_SECURE === 'true' ? 465 : 587);
+const SMTP_SECURE = process.env.SMTP_SECURE === 'true';
+const SMTP_USER = process.env.SMTP_USER || '';
+const SMTP_PASS = process.env.SMTP_PASS || '';
 
 const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: parseInt(process.env.SMTP_PORT),
-  secure: process.env.SMTP_SECURE === 'true',
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
+  host: SMTP_HOST || undefined,
+  port: SMTP_PORT,
+  secure: SMTP_SECURE,
+  auth: SMTP_USER ? { user: SMTP_USER, pass: SMTP_PASS } : undefined,
+  // Ensure TLS SNI uses the configured host when connecting by IP fallback later
+  tls: { servername: SMTP_HOST || undefined },
 });
 
 const DEFAULT_PUBLIC_FRONTEND_URL = 'https://menugo-digital-menu-jgz2.onrender.com';
@@ -116,11 +122,43 @@ const sendEmail = async (to, subject, template, data) => {
       replyTo: data?.replyTo || process.env.EMAIL_REPLY_TO || process.env.EMAIL_FROM || process.env.SMTP_USER,
     };
 
-    const info = await transporter.sendMail(mailOptions);
-    logger.info(`Email sent to ${to}: ${info.messageId}`);
-    return info;
+    try {
+      const info = await transporter.sendMail(mailOptions);
+      logger.info(`Email sent to ${to}: ${info.messageId}`);
+      return info;
+    } catch (error) {
+      // If the environment cannot reach the resolved IPv6 address (common on some hosts),
+      // try resolving the SMTP host to an IPv4 address and retry using that IP.
+      logger.error('Email send error:', error);
+
+      const shouldRetryIPv4 = error && (error.code === 'ENETUNREACH' || error.errno === -101 || /ENETUNREACH|EHOSTUNREACH|EADDRNOTAVAIL/i.test(String(error.message || '')));
+      if (shouldRetryIPv4 && SMTP_HOST) {
+        try {
+          const lookup = await dns.lookup(SMTP_HOST, { family: 4 });
+          if (lookup && lookup.address) {
+            logger.info(`Retrying email send via IPv4 address ${lookup.address} for host ${SMTP_HOST}`);
+            const fallbackTransport = nodemailer.createTransport({
+              host: lookup.address,
+              port: SMTP_PORT,
+              secure: SMTP_SECURE,
+              auth: SMTP_USER ? { user: SMTP_USER, pass: SMTP_PASS } : undefined,
+              tls: { servername: SMTP_HOST }, // preserve SNI
+            });
+
+            const info2 = await fallbackTransport.sendMail(mailOptions);
+            logger.info(`Email sent to ${to} (via IPv4 ${lookup.address}): ${info2.messageId}`);
+            return info2;
+          }
+        } catch (lookupErr) {
+          logger.error('IPv4 fallback lookup/send failed:', lookupErr && lookupErr.message ? lookupErr.message : lookupErr);
+        }
+      }
+
+      // If we couldn't recover, rethrow the original error so callers can handle it
+      throw error;
+    }
   } catch (error) {
-    logger.error('Email send error:', error);
+    logger.error('Email send error (outer):', error && error.message ? error.message : error);
     throw error;
   }
 };
