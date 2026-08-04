@@ -2,6 +2,7 @@ import React from 'react'
 import { Navigate, Outlet } from 'react-router-dom'
 import { useAuthStore } from '../../store/authStore'
 import Loading from './Loading'
+import { safeParseJSON } from '../../utils/helpers'
 import { getEffectiveRole, getRoleHomePath } from '../../utils/authRouting'
 
 const ProtectedRoute = ({ allowedRoles = [] }) => {
@@ -13,16 +14,16 @@ const ProtectedRoute = ({ allowedRoles = [] }) => {
 
   // If a token is missing, do not allow access even if persisted auth state says true.
   if (!isAuthenticated || !hasToken) {
-    try {
-      const persisted = window?.sessionStorage?.getItem('auth-storage')
-      if (sessionToken) return <Loading fullScreen />
-      if (persisted) {
-        const parsed = JSON.parse(persisted)
-        if (parsed && (parsed.token || parsed.isAuthenticated)) return <Loading fullScreen />
+      try {
+        const persisted = window?.sessionStorage?.getItem('auth-storage')
+        if (sessionToken) return <Loading fullScreen />
+        if (persisted) {
+          const parsed = safeParseJSON(persisted)
+          if (parsed && (parsed.token || parsed.isAuthenticated)) return <Loading fullScreen />
+        }
+      } catch (e) {
+        // ignore parse/storage errors and fall through to redirect
       }
-    } catch (e) {
-      // ignore parse/storage errors and fall through to redirect
-    }
 
     return <Navigate to="/login" replace />
   }

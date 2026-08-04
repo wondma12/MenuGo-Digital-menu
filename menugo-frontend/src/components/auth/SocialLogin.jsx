@@ -75,11 +75,12 @@ const SocialLogin = () => {
 
       let parsedUser = null
       if (userParam) {
-        try {
-          parsedUser = JSON.parse(userParam)
-        } catch (parseError) {
+        // Avoid attempting to parse JWTs or non-JSON strings.
+        const { safeParseJSON } = await import('../../utils/helpers')
+        parsedUser = safeParseJSON(userParam)
+        if (!parsedUser) {
           try {
-            parsedUser = JSON.parse(decodeURIComponent(userParam))
+            parsedUser = safeParseJSON(decodeURIComponent(userParam))
           } catch (decodeError) {
             console.warn('Ignoring malformed OAuth user payload:', decodeError)
           }

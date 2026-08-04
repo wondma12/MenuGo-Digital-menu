@@ -67,6 +67,23 @@ export const sleep = (ms) => {
   return new Promise(resolve => setTimeout(resolve, ms))
 }
 
+export const safeParseJSON = (value) => {
+  if (value === null || value === undefined) return null
+  if (typeof value !== 'string') {
+    try { return JSON.parse(JSON.stringify(value)) } catch { return null }
+  }
+  const s = value.trim()
+  // Quick heuristics: only attempt to parse when it looks like JSON (object/array/string)
+  if (!(s.startsWith('{') || s.startsWith('[') || s.startsWith('"') || s.startsWith("'"))) {
+    return null
+  }
+  try {
+    return JSON.parse(s)
+  } catch (e) {
+    return null
+  }
+}
+
 export const getInitials = (name) => {
   if (!name) return '?'
   return name
