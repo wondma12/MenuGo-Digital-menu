@@ -223,7 +223,7 @@ const register = catchAsync(async (req, res) => {
   });
   // Send welcome email (do not fail registration if email sending errors)
   try {
-    await sendWelcomeEmail(normalizedEmail, full_name, verificationToken);
+    await sendWelcomeEmail(normalizedEmail, full_name, { verificationToken });
   } catch (emailErr) {
     console.error('sendWelcomeEmail error (non-fatal):', emailErr && emailErr.message ? emailErr.message : emailErr);
   }

@@ -8,23 +8,65 @@ const normalizeProxyUrl = (url) => {
   return url.replace(/\/api\/?$/, '').replace(/\/$/, '')
 }
 
-export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, process.cwd(), '')
-  // Allow explicit env override via VITE_API_URL or API_URL. If not provided,
-  // attempt to read the backend runtime URL written by the backend server
-  // to `runtime_api_url.txt` at the repo root (convenience for local dev).
-  let apiUrl = env.VITE_API_URL || env.API_URL || ''
-  if (!apiUrl) {
-    try {
-      const possible = path.resolve(__dirname, '..', 'runtime_api_url.txt')
-      if (fs.existsSync(possible)) {
-        apiUrl = fs.readFileSync(possible, 'utf8').trim()
-      }
-    } catch (e) {
-      // ignore
+const probeHealth = async (baseUrl, timeoutMs = 900) => {
+  if (!baseUrl) return false
+  try {
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), timeoutMs)
+    const healthUrl = new URL('/api/health', baseUrl).toString()
+    const response = await fetch(healthUrl, { signal: controller.signal })
+    clearTimeout(timer)
+    return response.ok
+  } catch (error) {
+    return false
+  }
+}
+
+const uniqueCandidates = (values) => {
+  const seen = new Set()
+  return values.filter((value) => {
+    if (!value) return false
+    const normalized = normalizeProxyUrl(value)
+    if (!normalized || seen.has(normalized)) return false
+    seen.add(normalized)
+    return true
+  })
+}
+
+const resolveBackendUrl = async (env) => {
+  const configuredUrl = normalizeProxyUrl(env.VITE_API_URL || env.API_URL || '')
+  const runtimeUrlPath = path.resolve(__dirname, '..', 'runtime_api_url.txt')
+  let runtimeUrl = ''
+
+  try {
+    if (fs.existsSync(runtimeUrlPath)) {
+      runtimeUrl = normalizeProxyUrl(fs.readFileSync(runtimeUrlPath, 'utf8').trim())
+    }
+  } catch (error) {
+    runtimeUrl = ''
+  }
+
+  const fallbackPorts = [5003, 5004, 5000, 5001, 5002, 5005]
+  const fallbackUrls = fallbackPorts.flatMap((port) => [`http://127.0.0.1:${port}`, `http://localhost:${port}`])
+  const candidates = uniqueCandidates([
+    configuredUrl,
+    runtimeUrl,
+    ...fallbackUrls,
+    'http://127.0.0.1:5000',
+  ])
+
+  for (const candidate of candidates) {
+    if (await probeHealth(candidate)) {
+      return candidate
     }
   }
-  if (!apiUrl) apiUrl = 'http://localhost:5003'
+
+  return configuredUrl || runtimeUrl || 'http://127.0.0.1:5000'
+}
+
+export default defineConfig(async ({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), '')
+  const apiUrl = await resolveBackendUrl(env)
   const normalizedApiUrl = normalizeProxyUrl(apiUrl)
   // Prefer 127.0.0.1 instead of localhost for proxy targets to avoid IPv6/localhost resolution issues
   const finalApiUrl = normalizedApiUrl && normalizedApiUrl.replace(/^http:\/\/localhost/i, 'http://127.0.0.1')

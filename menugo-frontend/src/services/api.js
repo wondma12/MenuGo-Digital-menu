@@ -468,7 +468,7 @@ api.interceptors.request.use(
       const isAuthRequest = requestPath.includes('/auth') && method === 'post'
       if (!isRequestPublic || isAuthRequest) {
         console.log(`[API] ${method.toUpperCase()} ${requestPath}`, {
-          hasStoreToken: !!storeToken,
+          hasPersistedLocalToken: !!persistedLocalToken,
           hasSessionToken: !!sessionToken,
           token: token ? `${token.substring(0, 20)}...` : null,
           isRequestPublic,

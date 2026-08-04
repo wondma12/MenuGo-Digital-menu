@@ -22,7 +22,7 @@ import Button from '../common/Button';
 import Alert from '../common/Alert';
 import { toast } from 'react-toastify';
 import SocialLogin from './SocialLogin';
-import { getRoleHomePath } from '../../utils/authRouting';
+import { getEffectiveRole, getRoleHomePath } from '../../utils/authRouting';
 
 // Animation variants
 const containerVariants = {
@@ -69,7 +69,7 @@ const schema = yup.object({
 
 const Login = () => {
   const navigate = useNavigate();
-  const { login, isLoading, error, clearError, checkAuth } = useAuthStore();
+  const { login, isLoading, error, clearError, checkAuth, isAuthenticated } = useAuthStore();
   const [showError, setShowError] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -99,6 +99,32 @@ const Login = () => {
       clearError();
     };
   }, [clearError]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const redirectIfAuthenticated = async () => {
+      try {
+        const sessionToken = typeof window !== 'undefined' ? window.sessionStorage.getItem('token') : null;
+        if (!sessionToken && !isAuthenticated) return;
+
+        const isReady = isAuthenticated || await checkAuth();
+        if (cancelled || !isReady) return;
+
+        const currentUser = useAuthStore.getState().user;
+        const targetPath = getRoleHomePath(getEffectiveRole(currentUser));
+        navigate(targetPath, { replace: true });
+      } catch (error) {
+        // Stay on login when auth cannot be confirmed.
+      }
+    };
+
+    redirectIfAuthenticated();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [checkAuth, isAuthenticated, navigate]);
 
   // Handle token returned from OAuth redirects
   useEffect(() => {
@@ -167,7 +193,7 @@ const Login = () => {
 
           const userRole = srcUser?.staff?.role || srcUser?.role || parsed?.staff?.role || parsed?.role || null;
           const redirectPath = getRoleHomePath(userRole);
-          navigate(redirectPath);
+          navigate(redirectPath, { replace: true });
         }, 1000);
       } else {
         setLoginAttempts(prev => prev + 1);

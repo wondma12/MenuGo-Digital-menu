@@ -3,86 +3,123 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Welcome to MenuGo</title>
+  <title>Welcome to {{appName}}</title>
   <style>
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      font-family: Arial, Helvetica, sans-serif;
       line-height: 1.6;
-      color: #333;
+      color: #1f2937;
       margin: 0;
       padding: 0;
-      background-color: #f4f4f4;
+      background-color: #f3f4f6;
     }
     .container {
       max-width: 600px;
       margin: 0 auto;
-      padding: 20px;
-      background-color: #ffffff;
+      padding: 24px 16px 32px;
     }
     .header {
-      background-color: hsl(9, 91%, 60%);
-      padding: 30px;
+      background: linear-gradient(135deg, #f97316 0%, #fb923c 50%, #facc15 100%);
+      padding: 34px 28px;
       text-align: center;
-      border-radius: 8px 8px 0 0;
+      border-radius: 20px 20px 0 0;
+      color: #ffffff;
     }
     .header h1 {
-      color: #ffffff;
       margin: 0;
-      font-size: 28px;
+      font-size: 30px;
+      line-height: 1.2;
     }
     .content {
       padding: 30px;
-      background-color: #ffffff;
+      background: #ffffff;
+      border-left: 1px solid #e5e7eb;
+      border-right: 1px solid #e5e7eb;
     }
     .footer {
-      background-color: #f4f4f4;
-      padding: 20px;
+      background-color: #111827;
+      padding: 18px 20px;
       text-align: center;
       font-size: 12px;
-      color: #666;
-      border-radius: 0 0 8px 8px;
+      color: #d1d5db;
+      border-radius: 0 0 20px 20px;
     }
     .button {
       display: inline-block;
       padding: 12px 24px;
-      background-color: #f6da3b;
+      background-color: #f97316;
       color: #ffffff;
       text-decoration: none;
-      border-radius: 6px;
-      margin-top: 20px;
+      border-radius: 999px;
+      margin-top: 18px;
+      font-weight: 700;
     }
-    .button:hover {
-      background-color: #eb7b25;
+    .button-secondary {
+      display: inline-block;
+      padding: 12px 20px;
+      background-color: #ffffff;
+      color: #f97316;
+      border: 1px solid #f97316;
+      text-decoration: none;
+      border-radius: 999px;
+      margin-top: 12px;
+      font-weight: 700;
     }
     .feature-box {
-      background-color: #f0f9ff;
-      padding: 15px;
-      border-radius: 8px;
-      margin: 20px 0;
+      background: #fff7ed;
+      padding: 18px;
+      border-radius: 16px;
+      margin: 22px 0;
+      border: 1px solid #fed7aa;
     }
     h2 {
-      color: #1e40af;
+      color: #111827;
     }
     hr {
       border: none;
       border-top: 1px solid #e5e7eb;
-      margin: 20px 0;
+      margin: 24px 0;
+    }
+    .pill {
+      display: inline-block;
+      padding: 6px 12px;
+      border-radius: 999px;
+      background: #fee2e2;
+      color: #991b1b;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      margin-bottom: 16px;
+    }
+    .detail-card {
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-radius: 14px;
+      padding: 16px;
+      margin: 18px 0;
+      word-break: break-word;
+    }
+    .small {
+      color: #6b7280;
+      font-size: 13px;
     }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="header">
+      <div style="font-size:14px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;opacity:0.9;">{{appName}}</div>
       <h1>Welcome to MenuGo! 🎉</h1>
     </div>
     
     <div class="content">
+      <div class="pill">Restaurant onboarding</div>
       <h2>Hello {{name}},</h2>
       
-      <p>Thank you for choosing MenuGo! We're excited to help your restaurant grow with a modern digital experience.</p>
+      <p>Thank you for choosing MenuGo. We're excited to help your restaurant grow with a modern digital experience.</p>
       
       <div class="feature-box">
-        <h3>✨ What you can do with MenuGo:</h3>
+        <h3 style="margin-top:0;">✨ What you can do with MenuGo:</h3>
         <ul>
           <li>📱 Create beautiful digital menus accessible via QR codes</li>
           <li>📊 Track orders and analytics in real-time</li>
@@ -94,16 +131,29 @@
       
       {{#if verifyUrl}}
       <p>Your email verification is still required before your account can be fully activated.</p>
-      <div style="text-align: center;">
+      <div style="text-align:center;">
         <a href="{{verifyUrl}}" class="button">Verify Email Address</a>
       </div>
-      <p>Or copy and paste this link into your browser:</p>
-      <p style="background-color: #f3f4f6; padding: 10px; border-radius: 4px; word-break: break-all;">
-        {{verifyUrl}}
-      </p>
+      <div class="detail-card">
+        <div class="small">Or copy and paste this verification link into your browser:</div>
+        <div>{{verifyUrl}}</div>
+      </div>
+      {{/if}}
+
+      {{#if temporaryPassword}}
+      <div class="detail-card">
+        <div class="small">Your temporary password</div>
+        <div style="font-size:18px;font-weight:700;color:#111827;letter-spacing:0.04em;">{{temporaryPassword}}</div>
+      </div>
+      <p>Please sign in with the temporary password above, then change it after your first login.</p>
+      <div style="text-align:center;">
+        <a href="{{loginUrl}}" class="button">Sign in to your account</a>
+      </div>
       {{else}}
-      <p>Your restaurant registration is currently being reviewed by our team. Once approved, you'll be able to manage your menu, orders, staff, and customer experience from your dashboard.</p>
-      <p>We will contact you as soon as your restaurant account is verified and ready to go live.</p>
+      <p>Your restaurant registration is being prepared for activation. Once verification is complete, you'll be able to manage your menu, orders, staff, and customer experience from your dashboard.</p>
+      <div style="text-align:center;">
+        <a href="{{onboardingUrl}}" class="button">Start your onboarding</a>
+      </div>
       {{/if}}
       
       <hr>
@@ -117,7 +167,7 @@
         <li><strong>Go live!</strong> - Place QR codes on tables and start accepting orders</li>
       </ol>
       
-      <p>If you need any assistance, our support team is here to help 24/7. Simply reply to this email or visit our <a href="{{supportUrl}}">support center</a>.</p>
+      <p>If you need any assistance, our support team is here to help. Simply reply to this email or visit our <a href="{{supportUrl}}">support center</a>.</p>
       
       <p>Best regards,<br>
       <strong>The MenuGo Team</strong></p>

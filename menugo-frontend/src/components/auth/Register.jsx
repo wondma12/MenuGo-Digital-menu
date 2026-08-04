@@ -11,13 +11,13 @@ import {
   Check,
   ChevronLeft,
   ChevronRight,
-  Upload,
   Globe,
   Home,
   ArrowLeft,
 } from "lucide-react";
 import Button from "../common/Button";
 import Input from "../common/Input";
+import FileUpload from "../common/FileUpload";
 import { useNavigate, Link } from 'react-router-dom';
 import { register as registerUser } from '../../services/authService';
 import { toast } from 'react-toastify';
@@ -348,40 +348,24 @@ const MultiStepRegistration = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-slate-700">Brand Logo (Optional)</label>
-                  <div className="mt-1 rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 p-4 text-center transition-colors hover:border-orange-300 hover:bg-orange-50/30">
-                    <Upload className="mx-auto mb-2 h-6 w-6 text-slate-400" />
-                    <p className="text-xs text-slate-600">Click to upload or drag and drop</p>
-                    <p className="text-[11px] text-slate-500">PNG, JPG up to 2MB</p>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => handleFileChange("logo", e.target.files[0])}
-                      className="hidden"
-                      id="logo-upload"
-                    />
-                    <label htmlFor="logo-upload" className="mt-2 inline-block cursor-pointer rounded-full bg-white px-3 py-1 text-xs font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-100">
-                      Choose File
-                    </label>
-                  </div>
+                  <FileUpload
+                    onFileSelect={(file) => handleFileChange('logo', file)}
+                    accept={{ 'image/*': ['.png', '.jpg', '.jpeg', '.webp'] }}
+                    maxSize={2 * 1024 * 1024}
+                    label="Click to upload or drag and drop"
+                    className="mt-1"
+                  />
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-slate-700">Banner Image (Optional)</label>
-                  <div className="mt-1 rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 p-4 text-center transition-colors hover:border-orange-300 hover:bg-orange-50/30">
-                    <Upload className="mx-auto mb-2 h-6 w-6 text-slate-400" />
-                    <p className="text-xs text-slate-600">Click to upload or drag and drop</p>
-                    <p className="text-[11px] text-slate-500">PNG, JPG up to 2MB</p>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => handleFileChange("banner", e.target.files[0])}
-                      className="hidden"
-                      id="banner-upload"
-                    />
-                    <label htmlFor="banner-upload" className="mt-2 inline-block cursor-pointer rounded-full bg-white px-3 py-1 text-xs font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-100">
-                      Choose File
-                    </label>
-                  </div>
+                  <FileUpload
+                    onFileSelect={(file) => handleFileChange('banner', file)}
+                    accept={{ 'image/*': ['.png', '.jpg', '.jpeg', '.webp'] }}
+                    maxSize={2 * 1024 * 1024}
+                    label="Click to upload or drag and drop"
+                    className="mt-1"
+                  />
                 </div>
               </div>
             </div>
@@ -703,21 +687,18 @@ const MultiStepRegistration = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-slate-700">Business License Document *</label>
-                  <div className="mt-1 rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 p-4 text-center transition-colors hover:border-orange-300 hover:bg-orange-50/30">
-                    <FileText className="mx-auto mb-2 h-6 w-6 text-slate-400" />
-                    <p className="text-xs text-slate-600">Upload legal document (PDF, DOC, or image)</p>
-                    <p className="text-[11px] text-slate-500">Max file size: 5MB</p>
-                    <input
-                      type="file"
-                      accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
-                      onChange={(e) => handleFileChange("businessLicenseDocument", e.target.files[0])}
-                      className="hidden"
-                      id="license-upload"
-                    />
-                    <label htmlFor="license-upload" className="mt-2 inline-block cursor-pointer rounded-full bg-white px-3 py-1 text-xs font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-100">
-                      Choose File
-                    </label>
-                  </div>
+                  <FileUpload
+                    onFileSelect={(file) => handleFileChange('businessLicenseDocument', file)}
+                    accept={{
+                      'application/pdf': ['.pdf'],
+                      'application/msword': ['.doc'],
+                      'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
+                      'image/*': ['.png', '.jpg', '.jpeg', '.webp'],
+                    }}
+                    maxSize={5 * 1024 * 1024}
+                    label="Upload legal document (PDF, DOC, or image)"
+                    className="mt-1"
+                  />
                   {errors.businessLicenseDocument && <p className="mt-1 text-xs text-red-600">{errors.businessLicenseDocument}</p>}
                 </div>
               </div>

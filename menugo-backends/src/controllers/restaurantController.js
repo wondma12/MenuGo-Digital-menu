@@ -400,7 +400,10 @@ const createRestaurant = catchAsync(async (req, res) => {
       
       // Send welcome email with temporary password
       try {
-        await sendWelcomeEmail(owner_email, owner_name, tempPassword);
+        await sendWelcomeEmail(owner_email, owner_name, {
+          temporaryPassword: tempPassword,
+          loginUrl: `${process.env.FRONTEND_URL || process.env.CLIENT_URL || 'http://localhost:5173'}/login`,
+        });
         logger.info(`Welcome email sent to restaurant owner ${owner_email}`);
       } catch (emailError) {
         logger.error(`Failed to send welcome email to restaurant owner ${owner_email}:`, emailError && emailError.message ? emailError.message : emailError);
