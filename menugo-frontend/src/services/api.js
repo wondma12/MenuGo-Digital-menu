@@ -3,7 +3,7 @@ import axios from 'axios'
 // Default API root URL. Axios should prefer an explicit configured API URL,
 // then the current browser origin, and only fall back to localhost in local
 // development when that is truly the intended target.
-const DEFAULT_PRODUCTION_API_ROOT_URL = 'https://menugo-digital-menu-api-gh9m.onrender.com'
+const DEFAULT_PRODUCTION_API_ROOT_URL = 'https://menugo-saas-digital-menu-api.onrender.com'
 
 const isLocalhostApiUrl = (url) => {
   if (!url) return false
