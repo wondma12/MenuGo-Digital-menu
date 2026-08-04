@@ -1331,13 +1331,14 @@ const createTable = catchAsync(async (req, res) => {
         qrCloudinaryUrl = uploadResult.url;
       }
 
-      const [newQr] = await QRCode.upsert({
-        restaurant_id: id,
-        identifier: qrIdentifier,
-        url: qrUrl,
-        qr_image_url: qrCloudinaryUrl,
-        is_active: true,
-      });
+      let newQr = null
+      const existingQrRecord = await QRCode.findOne({ where: { restaurant_id: id, identifier: qrIdentifier } })
+      if (existingQrRecord) {
+        await existingQrRecord.update({ url: qrUrl, qr_image_url: qrCloudinaryUrl, is_active: true })
+        newQr = existingQrRecord
+      } else {
+        newQr = await QRCode.create({ restaurant_id: id, identifier: qrIdentifier, url: qrUrl, qr_image_url: qrCloudinaryUrl, is_active: true })
+      }
 
       qrCodeRecord = newQr;
       await restaurant.update({ qr_code_identifier: qrIdentifier, qr_code_url: qrCloudinaryUrl });
@@ -1356,13 +1357,14 @@ const createTable = catchAsync(async (req, res) => {
           qrCloudinaryUrl = uploadResult.url;
         }
 
-        const [newQr] = await QRCode.upsert({
-          restaurant_id: id,
-          identifier: qrIdentifier,
-          url: qrUrl,
-          qr_image_url: qrCloudinaryUrl,
-          is_active: true,
-        });
+        let newQr = null
+        const existingQrRecord = await QRCode.findOne({ where: { restaurant_id: id, identifier: qrIdentifier } })
+        if (existingQrRecord) {
+          await existingQrRecord.update({ url: qrUrl, qr_image_url: qrCloudinaryUrl, is_active: true })
+          newQr = existingQrRecord
+        } else {
+          newQr = await QRCode.create({ restaurant_id: id, identifier: qrIdentifier, url: qrUrl, qr_image_url: qrCloudinaryUrl, is_active: true })
+        }
 
         qrCodeRecord = newQr;
         await restaurant.update({ qr_code_url: qrCloudinaryUrl });
