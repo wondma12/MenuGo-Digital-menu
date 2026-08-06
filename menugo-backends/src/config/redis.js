@@ -5,22 +5,26 @@ let redisClient = null;
 
 const isRedisEnabled = () => {
   const explicitEnabled = process.env.REDIS_ENABLED === 'true' || process.env.REDIS_ENABLED === '1';
+  const explicitDisabled = process.env.REDIS_ENABLED === 'false' || process.env.REDIS_ENABLED === '0';
   const hasRedisUrl = Boolean(process.env.REDIS_URL);
   const hasRedisHost = Boolean(process.env.REDIS_HOST);
   const hasRedisPort = Boolean(process.env.REDIS_PORT);
 
-  if (explicitEnabled || hasRedisUrl) return true;
+  if (explicitDisabled) return false;
+  if (explicitEnabled) return true;
+
+  const bindsToLocalhost = (value) => /^(localhost|127\.0\.0\.1|\[::1\]|::1)$/i.test(String(value || '').trim());
+  const redisUrlIsLocal = hasRedisUrl && /^(redis:\/\/)(:?[^@]*@)?(localhost|127\.0\.0\.1|\[::1\]|::1)(:\d+)?/i.test(process.env.REDIS_URL);
 
   if (process.env.NODE_ENV === 'production') {
-    return Boolean(
-      hasRedisHost &&
-      hasRedisPort &&
-      process.env.REDIS_HOST !== 'localhost' &&
-      process.env.REDIS_HOST !== '127.0.0.1' &&
-      process.env.REDIS_HOST !== '::1'
-    );
+    if (redisUrlIsLocal) return false;
+    if (hasRedisHost && hasRedisPort && !bindsToLocalhost(process.env.REDIS_HOST)) {
+      return true;
+    }
+    return false;
   }
 
+  if (hasRedisUrl) return true;
   return Boolean(hasRedisHost && hasRedisPort);
 };
 
