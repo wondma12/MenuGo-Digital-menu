@@ -30,7 +30,8 @@ const { catchAsync } = require('../utils/catchAsync');
 const { generateQRCode, generateQRCodeBase64 } = require('../utils/generateQR');
 const { uploadToCloudinary } = require('../config/cloudinary');
 const { applyUpgradeRequestToRestaurant } = require('../utils/subscriptionUtils');
-const { Op } = require('sequelize');
+const SequelizePkg = require('sequelize');
+const { Op } = SequelizePkg;
 const { logger } = require('../utils/logger');
 const { sendRestaurantActivatedEmail } = require('../config/email');
 
@@ -685,7 +686,8 @@ const deleteRestaurant = catchAsync(async (req, res) => {
     throw new ApiError(403, 'You do not have permission to delete this restaurant');
   }
 
-  // Use a transaction when performing destructive operations
+  // Perform dependent cleanup operations in isolated transactions so schema drift
+  // or missing columns on one cleanup step does not abort the whole restaurant deletion.
   const t = await sequelize.transaction();
   try {
     if (req.user.role === 'platform_admin') {
@@ -726,7 +728,7 @@ const deleteRestaurant = catchAsync(async (req, res) => {
       let couponIds = [];
       try {
         if (Coupon) {
-          const coupons = await Coupon.findAll({ where: { restaurant_id: id }, attributes: ['id'], transaction: t });
+          const coupons = await Coupon.findAll({ where: { restaurant_id: id }, attributes: ['id'] });
           couponIds = coupons.map(c => c.id);
         }
       } catch (e) {
@@ -737,7 +739,7 @@ const deleteRestaurant = catchAsync(async (req, res) => {
       // Collect orders and order-items for the restaurant so we can remove order children safely
       let orderIds = [];
       try {
-        const orders = Order ? await Order.findAll({ where: { restaurant_id: id }, attributes: ['id'], transaction: t }) : [];
+        const orders = Order ? await Order.findAll({ where: { restaurant_id: id }, attributes: ['id'] }) : [];
         orderIds = orders.map(o => o.id);
       } catch (e) {
         console.warn('Ignoring order lookup error during restaurant hard-delete cleanup:', e.message || e);
@@ -746,7 +748,7 @@ const deleteRestaurant = catchAsync(async (req, res) => {
 
       let orderItemIds = [];
       try {
-        const orderItems = (OrderItem && orderIds.length) ? await OrderItem.findAll({ where: { order_id: { [Op.in]: orderIds } }, attributes: ['id'], transaction: t }) : [];
+        const orderItems = (OrderItem && orderIds.length) ? await OrderItem.findAll({ where: { order_id: { [Op.in]: orderIds } }, attributes: ['id'] }) : [];
         orderItemIds = orderItems.map(oi => oi.id);
       } catch (e) {
         console.warn('Ignoring orderItem lookup error during restaurant hard-delete cleanup:', e.message || e);
@@ -757,7 +759,7 @@ const deleteRestaurant = catchAsync(async (req, res) => {
       let waiterIds = [];
       let waiterUserIds = [];
       try {
-        const waiters = Waiter ? await Waiter.findAll({ where: { restaurant_id: id }, attributes: ['id', 'user_id'], transaction: t }) : [];
+        const waiters = Waiter ? await Waiter.findAll({ where: { restaurant_id: id }, attributes: ['id', 'user_id'] }) : [];
         waiterIds = waiters.map(w => w.id);
         waiterUserIds = waiters.map(w => w.user_id).filter(Boolean);
       } catch (e) {
@@ -770,7 +772,7 @@ const deleteRestaurant = catchAsync(async (req, res) => {
       let staffIds = [];
       let staffUserIds = [];
       try {
-        const staffMembers = RestaurantStaff ? await RestaurantStaff.findAll({ where: { restaurant_id: id }, attributes: ['id', 'user_id'], transaction: t }) : [];
+        const staffMembers = RestaurantStaff ? await RestaurantStaff.findAll({ where: { restaurant_id: id }, attributes: ['id', 'user_id'] }) : [];
         staffIds = staffMembers.map(s => s.id);
         staffUserIds = staffMembers.map(s => s.user_id).filter(Boolean);
       } catch (e) {
@@ -784,7 +786,7 @@ const deleteRestaurant = catchAsync(async (req, res) => {
       // Collect support tickets so we can delete messages
       let ticketIds = [];
       try {
-        const tickets = SupportTicket ? await SupportTicket.findAll({ where: { restaurant_id: id }, attributes: ['id'], transaction: t }) : [];
+        const tickets = SupportTicket ? await SupportTicket.findAll({ where: { restaurant_id: id }, attributes: ['id'] }) : [];
         ticketIds = tickets.map(tt => tt.id);
       } catch (e) {
         console.warn('Ignoring support ticket lookup error during restaurant hard-delete cleanup:', e.message || e);
@@ -795,7 +797,7 @@ const deleteRestaurant = catchAsync(async (req, res) => {
       let menuItemIds = [];
       let menuModifierIds = [];
       try {
-        const menuItems = MenuItem ? await MenuItem.findAll({ where: { restaurant_id: id }, attributes: ['id'], transaction: t }) : [];
+        const menuItems = MenuItem ? await MenuItem.findAll({ where: { restaurant_id: id }, attributes: ['id'] }) : [];
         menuItemIds = menuItems.map(m => m.id);
       } catch (e) {
         console.warn('Ignoring menu item lookup error during restaurant hard-delete cleanup:', e.message || e);
@@ -803,7 +805,7 @@ const deleteRestaurant = catchAsync(async (req, res) => {
       }
 
       try {
-        const modifiers = MenuItemModifier ? await MenuItemModifier.findAll({ where: { restaurant_id: id }, attributes: ['id'], transaction: t }) : [];
+        const modifiers = MenuItemModifier ? await MenuItemModifier.findAll({ where: { restaurant_id: id }, attributes: ['id'] }) : [];
         menuModifierIds = modifiers.map(m => m.id);
       } catch (e) {
         console.warn('Ignoring menu item modifier lookup error during restaurant hard-delete cleanup:', e.message || e);
@@ -818,103 +820,415 @@ const deleteRestaurant = catchAsync(async (req, res) => {
         menuItemModifierAssignmentWhere.push({ modifier_id: { [Op.in]: menuModifierIds } });
       }
 
+      const isMissingTableOrColumnError = (err) => {
+        const msg = (err && (err.original && err.original.message)) || err.message || '';
+        return /doesn't exist|does not exist|Unknown table|ER_NO_SUCH_TABLE|Unknown column|no such column|ER_BAD_FIELD_ERROR/i.test(msg);
+      };
+
+      const tableColumnCache = {};
+
+      const getTableColumns = async (tableName) => {
+        if (!tableName) {
+          return null;
+        }
+
+        if (tableColumnCache[tableName]) {
+          return tableColumnCache[tableName];
+        }
+
+        try {
+          if (sequelize.getQueryInterface && typeof sequelize.getQueryInterface().describeTable === 'function') {
+            const description = await sequelize.getQueryInterface().describeTable(tableName);
+            const columns = Object.keys(description || {});
+            tableColumnCache[tableName] = columns;
+            return columns;
+          }
+
+          if (SequelizePkg.QueryTypes && typeof sequelize.query === 'function') {
+            const [results] = await sequelize.query(
+              `SELECT column_name FROM information_schema.columns WHERE table_schema = current_schema() AND table_name = :tableName`,
+              {
+                replacements: { tableName },
+                type: SequelizePkg.QueryTypes.SELECT,
+              }
+            );
+            const columns = Array.isArray(results) ? results.map((row) => row.column_name) : [];
+            tableColumnCache[tableName] = columns;
+            return columns;
+          }
+
+          tableColumnCache[tableName] = null;
+          return null;
+        } catch (e) {
+          if (isMissingTableOrColumnError(e) || /relation .* does not exist/i.test((e.message || ''))) {
+            tableColumnCache[tableName] = null;
+            return null;
+          }
+          throw e;
+        }
+      };
+
+      const tableHasColumns = async (tableName, requiredColumns = []) => {
+        if (!tableName || !requiredColumns.length) {
+          return true;
+        }
+
+        const columns = await getTableColumns(tableName);
+        if (!Array.isArray(columns)) {
+          return false;
+        }
+
+        return requiredColumns.every((column) => columns.includes(column));
+      };
+
+      const getModelTableName = (model) => {
+        if (!model) {
+          return null;
+        }
+        if (typeof model.getTableName === 'function') {
+          const tableName = model.getTableName();
+          return typeof tableName === 'string' ? tableName : tableName.tableName || null;
+        }
+        return model.tableName || null;
+      };
+
+      const executeDestroyOp = async (opInfo) => {
+        if (!opInfo || typeof opInfo.fn !== 'function') {
+          return null;
+        }
+
+        if (opInfo.model && opInfo.requiredColumns && opInfo.requiredColumns.length) {
+          const tableName = getModelTableName(opInfo.model);
+          if (!(await tableHasColumns(tableName, opInfo.requiredColumns))) {
+            console.warn(`Skipping ${opInfo.name} destroy op because required columns are missing from table ${tableName}:`, opInfo.requiredColumns.join(', '));
+            return null;
+          }
+        }
+
+        try {
+          return await opInfo.fn(t);
+        } catch (e) {
+          if (isMissingTableOrColumnError(e)) {
+            console.warn(`Skipping ${opInfo.name} destroy op due to missing table/column:`, (e.original && e.original.message) || e.message || e);
+            return null;
+          }
+          throw e;
+        }
+      };
+
       // Build destroy operations covering more dependent tables (order children, tickets, waiter-related, subscriptions, notifications, etc.)
       const destroyOps = [
         // Order-related children (options/modifiers) - use collected orderItemIds/orderIds
-        (OrderItemOption && orderItemIds.length) ? OrderItemOption.destroy({ where: { order_item_id: { [Op.in]: orderItemIds } }, force: true, transaction: t }) : Promise.resolve(),
-        (OrderItemModifier && orderItemIds.length) ? OrderItemModifier.destroy({ where: { order_item_id: { [Op.in]: orderItemIds } }, force: true, transaction: t }) : Promise.resolve(),
-        (OrderItem && orderIds.length) ? OrderItem.destroy({ where: { order_id: { [Op.in]: orderIds } }, force: true, transaction: t }) : Promise.resolve(),
-        (OrderStatusHistory && orderIds.length) ? OrderStatusHistory.destroy({ where: { order_id: { [Op.in]: orderIds } }, force: true, transaction: t }) : Promise.resolve(),
-        (OrderVerificationAttempt && orderIds.length) ? OrderVerificationAttempt.destroy({ where: { order_id: { [Op.in]: orderIds } }, force: true, transaction: t }) : Promise.resolve(),
-        (OrderRejectionReason && orderIds.length && OrderRejectionReason.rawAttributes && OrderRejectionReason.rawAttributes.order_id) ? OrderRejectionReason.destroy({ where: { order_id: { [Op.in]: orderIds } }, force: true, transaction: t }) : Promise.resolve(),
+        {
+          name: 'OrderItemOption',
+          model: OrderItemOption,
+          requiredColumns: ['order_item_id'],
+          fn: (transaction) => (OrderItemOption && orderItemIds.length) ? OrderItemOption.destroy({ where: { order_item_id: { [Op.in]: orderItemIds } }, force: true, transaction }) : Promise.resolve(),
+        },
+        {
+          name: 'OrderItemModifier',
+          model: OrderItemModifier,
+          requiredColumns: ['order_item_id'],
+          fn: (transaction) => (OrderItemModifier && orderItemIds.length) ? OrderItemModifier.destroy({ where: { order_item_id: { [Op.in]: orderItemIds } }, force: true, transaction }) : Promise.resolve(),
+        },
+        {
+          name: 'OrderItem',
+          model: OrderItem,
+          requiredColumns: ['order_id'],
+          fn: (transaction) => (OrderItem && orderIds.length) ? OrderItem.destroy({ where: { order_id: { [Op.in]: orderIds } }, force: true, transaction }) : Promise.resolve(),
+        },
+        {
+          name: 'OrderStatusHistory',
+          model: OrderStatusHistory,
+          requiredColumns: ['order_id'],
+          fn: (transaction) => (OrderStatusHistory && orderIds.length) ? OrderStatusHistory.destroy({ where: { order_id: { [Op.in]: orderIds } }, force: true, transaction }) : Promise.resolve(),
+        },
+        {
+          name: 'OrderVerificationAttempt',
+          model: OrderVerificationAttempt,
+          requiredColumns: ['order_id'],
+          fn: (transaction) => (OrderVerificationAttempt && orderIds.length) ? OrderVerificationAttempt.destroy({ where: { order_id: { [Op.in]: orderIds } }, force: true, transaction }) : Promise.resolve(),
+        },
+        {
+          name: 'OrderRejectionReason',
+          model: OrderRejectionReason,
+          requiredColumns: ['order_id'],
+          fn: (transaction) => (OrderRejectionReason && orderIds.length && OrderRejectionReason.rawAttributes && OrderRejectionReason.rawAttributes.order_id) ? OrderRejectionReason.destroy({ where: { order_id: { [Op.in]: orderIds } }, force: true, transaction }) : Promise.resolve(),
+        },
         // Coupon usages connected to orders
-        (CouponUsage && orderIds.length) ? CouponUsage.destroy({ where: { order_id: { [Op.in]: orderIds } }, force: true, transaction: t }) : Promise.resolve(),
+        {
+          name: 'CouponUsageByOrder',
+          model: CouponUsage,
+          requiredColumns: ['order_id'],
+          fn: (transaction) => (CouponUsage && orderIds.length) ? CouponUsage.destroy({ where: { order_id: { [Op.in]: orderIds } }, force: true, transaction }) : Promise.resolve(),
+        },
         // Notifications and waiter notifications tied to orders
-        (Notification && orderIds.length) ? Notification.destroy({ where: { order_id: { [Op.in]: orderIds } }, force: true, transaction: t }) : Promise.resolve(),
-        (WaiterNotification && orderIds.length) ? WaiterNotification.destroy({ where: { order_id: { [Op.in]: orderIds } }, force: true, transaction: t }) : Promise.resolve(),
+        {
+          name: 'Notification',
+          model: Notification,
+          requiredColumns: ['order_id'],
+          fn: (transaction) => (Notification && orderIds.length) ? Notification.destroy({ where: { order_id: { [Op.in]: orderIds } }, force: true, transaction }) : Promise.resolve(),
+        },
+        {
+          name: 'WaiterNotification',
+          model: WaiterNotification,
+          requiredColumns: ['order_id'],
+          fn: (transaction) => (WaiterNotification && orderIds.length) ? WaiterNotification.destroy({ where: { order_id: { [Op.in]: orderIds } }, force: true, transaction }) : Promise.resolve(),
+        },
         // Waiter related order feedback/tips/commissions
-        (WaiterFeedback && orderIds.length) ? WaiterFeedback.destroy({ where: { order_id: { [Op.in]: orderIds } }, force: true, transaction: t }) : Promise.resolve(),
-        (WaiterTip && orderIds.length) ? WaiterTip.destroy({ where: { order_id: { [Op.in]: orderIds } }, force: true, transaction: t }) : Promise.resolve(),
-        (WaiterCommission && orderIds.length) ? WaiterCommission.destroy({ where: { order_id: { [Op.in]: orderIds } }, force: true, transaction: t }) : Promise.resolve(),
+        {
+          name: 'WaiterFeedback',
+          model: WaiterFeedback,
+          requiredColumns: ['order_id'],
+          fn: (transaction) => (WaiterFeedback && orderIds.length) ? WaiterFeedback.destroy({ where: { order_id: { [Op.in]: orderIds } }, force: true, transaction }) : Promise.resolve(),
+        },
+        {
+          name: 'WaiterTip',
+          model: WaiterTip,
+          requiredColumns: ['order_id'],
+          fn: (transaction) => (WaiterTip && orderIds.length) ? WaiterTip.destroy({ where: { order_id: { [Op.in]: orderIds } }, force: true, transaction }) : Promise.resolve(),
+        },
+        {
+          name: 'WaiterCommission',
+          model: WaiterCommission,
+          requiredColumns: ['order_id'],
+          fn: (transaction) => (WaiterCommission && orderIds.length) ? WaiterCommission.destroy({ where: { order_id: { [Op.in]: orderIds } }, force: true, transaction }) : Promise.resolve(),
+        },
 
         // Order records themselves
-        (Order && orderIds.length) ? Order.destroy({ where: { id: { [Op.in]: orderIds } }, force: true, transaction: t }) : Promise.resolve(),
+        {
+          name: 'Order',
+          model: Order,
+          requiredColumns: ['id'],
+          fn: (transaction) => (Order && orderIds.length) ? Order.destroy({ where: { id: { [Op.in]: orderIds } }, force: true, transaction }) : Promise.resolve(),
+        },
 
         // Table-related history/assignments/reservations
-        (TableAssignment) ? TableAssignment.destroy({ where: { restaurant_id: id }, force: true, transaction: t }) : Promise.resolve(),
-        (TableReservation) ? TableReservation.destroy({ where: { restaurant_id: id }, force: true, transaction: t }) : Promise.resolve(),
-        (TableStatusHistory) ? TableStatusHistory.destroy({ where: { restaurant_id: id }, force: true, transaction: t }) : Promise.resolve(),
+        {
+          name: 'TableAssignment',
+          model: TableAssignment,
+          requiredColumns: ['restaurant_id'],
+          fn: (transaction) => (TableAssignment) ? TableAssignment.destroy({ where: { restaurant_id: id }, force: true, transaction }) : Promise.resolve(),
+        },
+        {
+          name: 'TableReservation',
+          model: TableReservation,
+          requiredColumns: ['restaurant_id'],
+          fn: (transaction) => (TableReservation) ? TableReservation.destroy({ where: { restaurant_id: id }, force: true, transaction }) : Promise.resolve(),
+        },
+        {
+          name: 'TableStatusHistory',
+          model: TableStatusHistory,
+          requiredColumns: ['restaurant_id'],
+          fn: (transaction) => (TableStatusHistory) ? TableStatusHistory.destroy({ where: { restaurant_id: id }, force: true, transaction }) : Promise.resolve(),
+        },
 
         // QR code scans and QR codes
-        (QRCodeScan) ? QRCodeScan.destroy({ where: { restaurant_id: id }, force: true, transaction: t }) : Promise.resolve(),
-        (QRCode) ? QRCode.destroy({ where: { restaurant_id: id }, force: true, transaction: t }) : Promise.resolve(),
+        {
+          name: 'QRCodeScan',
+          model: QRCodeScan,
+          requiredColumns: ['restaurant_id'],
+          fn: (transaction) => (QRCodeScan) ? QRCodeScan.destroy({ where: { restaurant_id: id }, force: true, transaction }) : Promise.resolve(),
+        },
+        {
+          name: 'QRCode',
+          model: QRCode,
+          requiredColumns: ['restaurant_id'],
+          fn: (transaction) => (QRCode) ? QRCode.destroy({ where: { restaurant_id: id }, force: true, transaction }) : Promise.resolve(),
+        },
 
         // Coupon and coupon usages by coupon id
-        (CouponUsage && couponIds.length > 0) ? CouponUsage.destroy({ where: { coupon_id: { [Op.in]: couponIds } }, force: true, transaction: t }) : Promise.resolve(),
-        (Coupon) ? Coupon.destroy({ where: { restaurant_id: id }, force: true, transaction: t }) : Promise.resolve(),
+        {
+          name: 'CouponUsageByCoupon',
+          model: CouponUsage,
+          requiredColumns: ['coupon_id'],
+          fn: (transaction) => (CouponUsage && couponIds.length > 0) ? CouponUsage.destroy({ where: { coupon_id: { [Op.in]: couponIds } }, force: true, transaction }) : Promise.resolve(),
+        },
+        {
+          name: 'Coupon',
+          model: Coupon,
+          requiredColumns: ['restaurant_id'],
+          fn: (transaction) => (Coupon) ? Coupon.destroy({ where: { restaurant_id: id }, force: true, transaction }) : Promise.resolve(),
+        },
 
         // Inventory
-        (InventoryTransaction) ? InventoryTransaction.destroy({ where: { restaurant_id: id }, force: true, transaction: t }) : Promise.resolve(),
-        (InventoryItem) ? InventoryItem.destroy({ where: { restaurant_id: id }, force: true, transaction: t }) : Promise.resolve(),
+        {
+          name: 'InventoryTransaction',
+          model: InventoryTransaction,
+          requiredColumns: ['restaurant_id'],
+          fn: (transaction) => (InventoryTransaction) ? InventoryTransaction.destroy({ where: { restaurant_id: id }, force: true, transaction }) : Promise.resolve(),
+        },
+        {
+          name: 'InventoryItem',
+          model: InventoryItem,
+          requiredColumns: ['restaurant_id'],
+          fn: (transaction) => (InventoryItem) ? InventoryItem.destroy({ where: { restaurant_id: id }, force: true, transaction }) : Promise.resolve(),
+        },
 
         // Analytics and reviews
-        (DailySalesSummary) ? DailySalesSummary.destroy({ where: { restaurant_id: id }, force: true, transaction: t }) : Promise.resolve(),
-        (MenuItemAnalytics) ? MenuItemAnalytics.destroy({ where: { restaurant_id: id }, force: true, transaction: t }) : Promise.resolve(),
-        (HourlyAnalytics) ? HourlyAnalytics.destroy({ where: { restaurant_id: id }, force: true, transaction: t }) : Promise.resolve(),
-        (Review) ? Review.destroy({ where: { restaurant_id: id }, force: true, transaction: t }) : Promise.resolve(),
+        {
+          name: 'DailySalesSummary',
+          model: DailySalesSummary,
+          requiredColumns: ['restaurant_id'],
+          fn: (transaction) => (DailySalesSummary) ? DailySalesSummary.destroy({ where: { restaurant_id: id }, force: true, transaction }) : Promise.resolve(),
+        },
+        {
+          name: 'MenuItemAnalytics',
+          model: MenuItemAnalytics,
+          requiredColumns: ['restaurant_id'],
+          fn: (transaction) => (MenuItemAnalytics) ? MenuItemAnalytics.destroy({ where: { restaurant_id: id }, force: true, transaction }) : Promise.resolve(),
+        },
+        {
+          name: 'HourlyAnalytics',
+          model: HourlyAnalytics,
+          requiredColumns: ['restaurant_id'],
+          fn: (transaction) => (HourlyAnalytics) ? HourlyAnalytics.destroy({ where: { restaurant_id: id }, force: true, transaction }) : Promise.resolve(),
+        },
+        {
+          name: 'Review',
+          model: Review,
+          requiredColumns: ['restaurant_id'],
+          fn: (transaction) => (Review) ? Review.destroy({ where: { restaurant_id: id }, force: true, transaction }) : Promise.resolve(),
+        },
 
         // Menu structures and options/modifiers
-        (MenuItemOption && menuItemIds.length) ? MenuItemOption.destroy({ where: { menu_item_id: { [Op.in]: menuItemIds } }, force: true, transaction: t }) : Promise.resolve(),
-        (MenuItemOptionGroup) ? MenuItemOptionGroup.destroy({ where: { restaurant_id: id }, force: true, transaction: t }) : Promise.resolve(),
-        (MenuItemModifierAssignment && menuItemModifierAssignmentWhere.length) ? MenuItemModifierAssignment.destroy({ where: { [Op.or]: menuItemModifierAssignmentWhere }, force: true, transaction: t }) : Promise.resolve(),
-        (MenuItemModifier && menuModifierIds.length) ? MenuItemModifier.destroy({ where: { id: { [Op.in]: menuModifierIds } }, force: true, transaction: t }) : Promise.resolve(),
-        (MenuItem) ? MenuItem.destroy({ where: { restaurant_id: id }, force: true, transaction: t }) : Promise.resolve(),
-        (MenuCategory) ? MenuCategory.destroy({ where: { restaurant_id: id }, force: true, transaction: t }) : Promise.resolve(),
+        {
+          name: 'MenuItemOption',
+          model: MenuItemOption,
+          requiredColumns: ['menu_item_id'],
+          fn: (transaction) => (MenuItemOption && menuItemIds.length) ? MenuItemOption.destroy({ where: { menu_item_id: { [Op.in]: menuItemIds } }, force: true, transaction }) : Promise.resolve(),
+        },
+        {
+          name: 'MenuItemOptionGroup',
+          model: MenuItemOptionGroup,
+          requiredColumns: ['restaurant_id'],
+          fn: (transaction) => (MenuItemOptionGroup) ? MenuItemOptionGroup.destroy({ where: { restaurant_id: id }, force: true, transaction }) : Promise.resolve(),
+        },
+        {
+          name: 'MenuItemModifierAssignment',
+          model: MenuItemModifierAssignment,
+          requiredColumns: ['menu_item_id', 'modifier_id'],
+          fn: (transaction) => (MenuItemModifierAssignment && menuItemModifierAssignmentWhere.length) ? MenuItemModifierAssignment.destroy({ where: { [Op.or]: menuItemModifierAssignmentWhere }, force: true, transaction }) : Promise.resolve(),
+        },
+        {
+          name: 'MenuItemModifier',
+          model: MenuItemModifier,
+          requiredColumns: ['id'],
+          fn: (transaction) => (MenuItemModifier && menuModifierIds.length) ? MenuItemModifier.destroy({ where: { id: { [Op.in]: menuModifierIds } }, force: true, transaction }) : Promise.resolve(),
+        },
+        {
+          name: 'MenuItem',
+          model: MenuItem,
+          requiredColumns: ['restaurant_id'],
+          fn: (transaction) => (MenuItem) ? MenuItem.destroy({ where: { restaurant_id: id }, force: true, transaction }) : Promise.resolve(),
+        },
+        {
+          name: 'MenuCategory',
+          model: MenuCategory,
+          requiredColumns: ['restaurant_id'],
+          fn: (transaction) => (MenuCategory) ? MenuCategory.destroy({ where: { restaurant_id: id }, force: true, transaction }) : Promise.resolve(),
+        },
 
         // Restaurant staff and waiter related records
-        (RestaurantStaff) ? RestaurantStaff.destroy({ where: { restaurant_id: id }, force: true, transaction: t }) : Promise.resolve(),
-        (WaiterActivityLog && waiterIds.length) ? WaiterActivityLog.destroy({ where: { waiter_id: { [Op.in]: waiterIds } }, force: true, transaction: t }) : Promise.resolve(),
-        (StaffActivityLog && staffIds.length) ? StaffActivityLog.destroy({ where: { staff_id: { [Op.in]: staffIds } }, force: true, transaction: t }) : Promise.resolve(),
-        (WaiterShift && waiterIds.length) ? WaiterShift.destroy({ where: { waiter_id: { [Op.in]: waiterIds } }, force: true, transaction: t }) : Promise.resolve(),
-        (WaiterPerformance && waiterIds.length) ? WaiterPerformance.destroy({ where: { waiter_id: { [Op.in]: waiterIds } }, force: true, transaction: t }) : Promise.resolve(),
-        (WaiterRealtimeStatus && waiterIds.length) ? WaiterRealtimeStatus.destroy({ where: { waiter_id: { [Op.in]: waiterIds } }, force: true, transaction: t }) : Promise.resolve(),
-        (Waiter) ? Waiter.destroy({ where: { restaurant_id: id }, force: true, transaction: t }) : Promise.resolve(),
+        {
+          name: 'RestaurantStaff',
+          model: RestaurantStaff,
+          requiredColumns: ['restaurant_id'],
+          fn: (transaction) => (RestaurantStaff) ? RestaurantStaff.destroy({ where: { restaurant_id: id }, force: true, transaction }) : Promise.resolve(),
+        },
+        {
+          name: 'WaiterActivityLog',
+          model: WaiterActivityLog,
+          requiredColumns: ['waiter_id'],
+          fn: (transaction) => (WaiterActivityLog && waiterIds.length) ? WaiterActivityLog.destroy({ where: { waiter_id: { [Op.in]: waiterIds } }, force: true, transaction }) : Promise.resolve(),
+        },
+        {
+          name: 'StaffActivityLog',
+          model: StaffActivityLog,
+          requiredColumns: ['staff_id'],
+          fn: (transaction) => (StaffActivityLog && staffIds.length) ? StaffActivityLog.destroy({ where: { staff_id: { [Op.in]: staffIds } }, force: true, transaction }) : Promise.resolve(),
+        },
+        {
+          name: 'WaiterShift',
+          model: WaiterShift,
+          requiredColumns: ['waiter_id'],
+          fn: (transaction) => (WaiterShift && waiterIds.length) ? WaiterShift.destroy({ where: { waiter_id: { [Op.in]: waiterIds } }, force: true, transaction }) : Promise.resolve(),
+        },
+        {
+          name: 'WaiterPerformance',
+          model: WaiterPerformance,
+          requiredColumns: ['waiter_id'],
+          fn: (transaction) => (WaiterPerformance && waiterIds.length) ? WaiterPerformance.destroy({ where: { waiter_id: { [Op.in]: waiterIds } }, force: true, transaction }) : Promise.resolve(),
+        },
+        {
+          name: 'WaiterRealtimeStatus',
+          model: WaiterRealtimeStatus,
+          requiredColumns: ['waiter_id'],
+          fn: (transaction) => (WaiterRealtimeStatus && waiterIds.length) ? WaiterRealtimeStatus.destroy({ where: { waiter_id: { [Op.in]: waiterIds } }, force: true, transaction }) : Promise.resolve(),
+        },
+        {
+          name: 'Waiter',
+          model: Waiter,
+          requiredColumns: ['restaurant_id'],
+          fn: (transaction) => (Waiter) ? Waiter.destroy({ where: { restaurant_id: id }, force: true, transaction }) : Promise.resolve(),
+        },
 
         // Support tickets and messages
-        (TicketMessage && ticketIds.length) ? TicketMessage.destroy({ where: { ticket_id: { [Op.in]: ticketIds } }, force: true, transaction: t }) : Promise.resolve(),
-        (SupportTicket) ? SupportTicket.destroy({ where: { restaurant_id: id }, force: true, transaction: t }) : Promise.resolve(),
+        {
+          name: 'TicketMessage',
+          model: TicketMessage,
+          requiredColumns: ['ticket_id'],
+          fn: (transaction) => (TicketMessage && ticketIds.length) ? TicketMessage.destroy({ where: { ticket_id: { [Op.in]: ticketIds } }, force: true, transaction }) : Promise.resolve(),
+        },
+        {
+          name: 'SupportTicket',
+          model: SupportTicket,
+          requiredColumns: ['restaurant_id'],
+          fn: (transaction) => (SupportTicket) ? SupportTicket.destroy({ where: { restaurant_id: id }, force: true, transaction }) : Promise.resolve(),
+        },
 
         // Subscriptions / invoices
-        (Invoice) ? Invoice.destroy({ where: { restaurant_id: id }, force: true, transaction: t }) : Promise.resolve(),
-        (Subscription) ? Subscription.destroy({ where: { restaurant_id: id }, force: true, transaction: t }) : Promise.resolve(),
+        {
+          name: 'Invoice',
+          model: Invoice,
+          requiredColumns: ['restaurant_id'],
+          fn: (transaction) => (Invoice) ? Invoice.destroy({ where: { restaurant_id: id }, force: true, transaction }) : Promise.resolve(),
+        },
+        {
+          name: 'Subscription',
+          model: Subscription,
+          requiredColumns: ['restaurant_id'],
+          fn: (transaction) => (Subscription) ? Subscription.destroy({ where: { restaurant_id: id }, force: true, transaction }) : Promise.resolve(),
+        },
 
         // Push tokens are scoped to users; delete tokens for staff/waiter/user IDs if available
-        (PushNotificationToken && pushTokenUserIds.length) ? PushNotificationToken.destroy({ where: { user_id: { [Op.in]: pushTokenUserIds } }, force: true, transaction: t }) : Promise.resolve(),
+        {
+          name: 'PushNotificationToken',
+          model: PushNotificationToken,
+          requiredColumns: ['user_id'],
+          fn: (transaction) => (PushNotificationToken && pushTokenUserIds.length) ? PushNotificationToken.destroy({ where: { user_id: { [Op.in]: pushTokenUserIds } }, force: true, transaction }) : Promise.resolve(),
+        },
 
         // Table records themselves
-        (Table) ? Table.destroy({ where: { restaurant_id: id }, force: true, transaction: t }) : Promise.resolve(),
+        {
+          name: 'Table',
+          model: Table,
+          requiredColumns: ['restaurant_id'],
+          fn: (transaction) => (Table) ? Table.destroy({ where: { restaurant_id: id }, force: true, transaction }) : Promise.resolve(),
+        },
 
         // Restaurant settings
-        (RestaurantSetting) ? RestaurantSetting.destroy({ where: { restaurant_id: id }, force: true, transaction: t }) : Promise.resolve(),
+        {
+          name: 'RestaurantSetting',
+          model: RestaurantSetting,
+          requiredColumns: ['restaurant_id'],
+          fn: (transaction) => (RestaurantSetting) ? RestaurantSetting.destroy({ where: { restaurant_id: id }, force: true, transaction }) : Promise.resolve(),
+        },
       ];
 
-      // Run destroy operations; execute sequentially so we can skip missing-table errors
+      // Run destroy operations sequentially one-by-one so a missing-column/table error does not abort the outer transaction.
       for (const op of destroyOps) {
-        try {
-          // Some entries in destroyOps may be Promise.resolve() placeholders
-          if (op && typeof op.then === 'function') {
-            await op;
-          }
-        } catch (e) {
-          // Ignore errors caused by missing tables/columns in the database (dev/test environments)
-          const msg = (e && (e.original && e.original.message)) || e.message || '';
-          if (/doesn't exist|does not exist|Unknown table|ER_NO_SUCH_TABLE|Unknown column|no such column|ER_BAD_FIELD_ERROR/i.test(msg)) {
-            console.warn('Skipping destroy op due to missing table/column:', msg);
-            continue;
-          }
-          // Re-throw other errors
-          throw e;
-        }
+        await executeDestroyOp(op);
       }
 
       // Finally hard-delete the restaurant record
