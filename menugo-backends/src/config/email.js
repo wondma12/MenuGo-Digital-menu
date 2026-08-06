@@ -17,32 +17,50 @@ const DEFAULT_SMTP_TIMEOUT = parseInt(process.env.SMTP_TIMEOUT_MS, 10) || 20000;
 // DEBUG: verify nodemailer import shape during module init
 // (debug log removed)
 
-const createTransportForHost = (host) => {
-  return nodemailer.createTransport({
-    host: host || undefined,
-    port: SMTP_PORT,
-    secure: SMTP_SECURE,
-    auth: SMTP_USER ? { user: SMTP_USER, pass: SMTP_PASS } : undefined,
-    // Ensure TLS SNI uses the configured host when connecting by IP fallback later
-    tls: { servername: SMTP_HOST || undefined, rejectUnauthorized: true },
-    // Timeouts to fail fast on unreachable networks
-    connectionTimeout: DEFAULT_SMTP_TIMEOUT,
-    greetingTimeout: DEFAULT_SMTP_TIMEOUT,
-    socketTimeout: DEFAULT_SMTP_TIMEOUT,
-  })
-}
-
-// Create a default transporter immediately (do not rely on the async resolver to finish)
-let transporter = nodemailer.createTransport({
-  host: SMTP_HOST || undefined,
-  port: SMTP_PORT,
-  secure: SMTP_SECURE,
+const createTransportConfig = (host, port = SMTP_PORT, secure = SMTP_SECURE) => ({
+  host: host || undefined,
+  port,
+  secure,
   auth: SMTP_USER ? { user: SMTP_USER, pass: SMTP_PASS } : undefined,
-  tls: { servername: SMTP_HOST || undefined, rejectUnauthorized: true },
+  tls: {
+    servername: SMTP_HOST || undefined,
+    rejectUnauthorized: process.env.SMTP_REJECT_UNAUTHORIZED !== 'false',
+    minVersion: 'TLSv1.2',
+  },
+  requireTLS: !secure,
+  ignoreTLS: false,
+  family: 4,
   connectionTimeout: DEFAULT_SMTP_TIMEOUT,
   greetingTimeout: DEFAULT_SMTP_TIMEOUT,
   socketTimeout: DEFAULT_SMTP_TIMEOUT,
-})
+});
+
+const createTransportForHost = (host, port = SMTP_PORT, secure = SMTP_SECURE) => {
+  return nodemailer.createTransport(createTransportConfig(host, port, secure));
+};
+
+const createGmailServiceTransport = () => {
+  if (!SMTP_HOST.includes('gmail') && !SMTP_HOST.includes('google')) {
+    return null;
+  }
+  if (!SMTP_USER || !SMTP_PASS) {
+    return null;
+  }
+
+  return nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: SMTP_USER,
+      pass: SMTP_PASS,
+    },
+    connectionTimeout: DEFAULT_SMTP_TIMEOUT,
+    greetingTimeout: DEFAULT_SMTP_TIMEOUT,
+    socketTimeout: DEFAULT_SMTP_TIMEOUT,
+  });
+};
+
+// Create a default transporter immediately (do not rely on the async resolver to finish)
+const transporter = nodemailer.createTransport(createTransportConfig(SMTP_HOST));
 
 // NOTE: Startup IPv4 probing is intentionally disabled to avoid network
 // operations during module import. Per-send fallback and IPv4 retries are
@@ -56,10 +74,14 @@ const isLocalhostUrl = (url) => /^(https?:\/\/)?(localhost|127\.0\.0\.1|0\.0\.0\
 
 const getClientUrl = () => {
   const frontendUrl = normalizeUrl(process.env.FRONTEND_URL);
-  if (frontendUrl && !isLocalhostUrl(frontendUrl)) return frontendUrl;
+  if (frontendUrl && !isLocalhostUrl(frontendUrl)) {
+    return frontendUrl;
+  }
 
   const configuredClientUrl = normalizeUrl(process.env.CLIENT_URL);
-  if (configuredClientUrl && !isLocalhostUrl(configuredClientUrl)) return configuredClientUrl;
+  if (configuredClientUrl && !isLocalhostUrl(configuredClientUrl)) {
+    return configuredClientUrl;
+  }
 
   return DEFAULT_PUBLIC_FRONTEND_URL;
 };
@@ -151,63 +173,78 @@ const sendEmail = async (to, subject, template, data) => {
     };
 
     // Attempt to send with retries and IPv4 fallbacks when network errors occur
-    const maxAttempts = 3
-    const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
+    const maxAttempts = 3;
+    const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-    let lastErr = null
+    let lastErr = null;
 
     // Build list of candidate transports: current transporter first, then resolved IPv4 addresses
-    const candidates = []
-    candidates.push({ name: 'default', transport: transporter })
+    const candidates = [];
+    const gmailTransport = createGmailServiceTransport();
+    if (gmailTransport) {
+      candidates.push({ name: 'gmail', transport: gmailTransport });
+    }
+
+    candidates.push({ name: 'default', transport: transporter });
 
     if (SMTP_HOST) {
       try {
-        const addrs = await dns.resolve4(SMTP_HOST).catch(() => [])
+        const addrs = await dns.resolve4(SMTP_HOST).catch(() => []);
         for (const addr of addrs) {
-          candidates.push({ name: `ipv4:${addr}`, transport: createTransportForHost(addr) })
+          candidates.push({ name: `ipv4:${addr}`, transport: createTransportForHost(addr) });
         }
-      } catch (e) {
-        // ignore
+        if (SMTP_PORT !== 465 || !SMTP_SECURE) {
+          candidates.push({ name: `secure-465`, transport: createTransportForHost(SMTP_HOST, 465, true) })
+        }      } catch (e) {
+        logger.warn('SMTP DNS resolve failed, skipping IPv4 fallback:', e && e.message ? e.message : e);
       }
     }
 
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
       for (const cand of candidates) {
         try {
-          logger.info(`Attempt ${attempt}: sending email to ${to} via ${cand.name}`)
-          const info = await cand.transport.sendMail(mailOptions)
-          logger.info(`Email sent to ${to} via ${cand.name}: ${info.messageId}`)
+          logger.info(`Attempt ${attempt}: sending email to ${to} via ${cand.name}`);
+          const info = await cand.transport.sendMail(mailOptions);
+          logger.info(`Email sent to ${to} via ${cand.name}: ${info.messageId}`);
           // Close IPv4-created transports to avoid resource leakage
-          try { if (cand.name.startsWith('ipv4:') && typeof cand.transport.close === 'function') cand.transport.close() } catch (e) { /* ignore */ }
-          return info
+          try {
+            if (cand.name.startsWith('ipv4:') && typeof cand.transport.close === 'function') {
+              cand.transport.close();
+            } 
+          } catch (e) { /* ignore */ }
+          return info;
         } catch (error) {
-          lastErr = error
-          logger.warn(`Email send attempt ${attempt} via ${cand.name} failed: ${error && error.message ? error.message : error}`)
+          lastErr = error;
+          logger.warn(`Email send attempt ${attempt} via ${cand.name} failed: ${error && error.message ? error.message : error}`);
           // Close per-candidate transport if it was created for this attempt
-          try { if (cand.name.startsWith('ipv4:') && typeof cand.transport.close === 'function') cand.transport.close() } catch (e) { /* ignore */ }
+          try {
+            if (cand.name.startsWith('ipv4:') && typeof cand.transport.close === 'function') {
+              cand.transport.close();
+            } 
+          } catch (e) { /* ignore */ }
           // On network timeout or unreachable errors, continue to next candidate
           if (error && /ENETUNREACH|EHOSTUNREACH|EADDRNOTAVAIL|ETIMEDOUT|ECONNREFUSED/i.test(String(error.code || error.errno || error.message || ''))) {
             // try next candidate immediately
-            continue
+            continue;
           }
           // For other errors (auth, invalid address), no point retrying this candidate
         }
       }
 
       // Exponential backoff before next round
-      const delay = 500 * Math.pow(2, attempt - 1)
-      logger.info(`Waiting ${delay}ms before next email retry round`)
-      await sleep(delay)
+      const delay = 500 * Math.pow(2, attempt - 1);
+      logger.info(`Waiting ${delay}ms before next email retry round`);
+      await sleep(delay);
     }
 
     // All attempts failed; try HTTP API fallback (SendGrid) if configured
-    logger.error('Email send failed after retries:', lastErr && (lastErr.message || lastErr))
+    logger.error('Email send failed after retries:', lastErr && (lastErr.message || lastErr));
 
-    const sendgridKey = process.env.SENDGRID_API_KEY || process.env.SENDGRID_KEY
+    const sendgridKey = process.env.SENDGRID_API_KEY || process.env.SENDGRID_KEY;
     if (sendgridKey) {
       try {
-        logger.info('Attempting SendGrid HTTP fallback')
-        const fromEmail = (process.env.EMAIL_FROM || process.env.SMTP_USER || 'no-reply@menugo.local')
+        logger.info('Attempting SendGrid HTTP fallback');
+        const fromEmail = (process.env.EMAIL_FROM || process.env.SMTP_USER || 'no-reply@menugo.local');
         const payload = {
           personalizations: [{ to: [{ email: to }], subject }],
           from: { email: fromEmail, name: (process.env.EMAIL_FROM_NAME || 'MenuGo') },
@@ -216,25 +253,25 @@ const sendEmail = async (to, subject, template, data) => {
             { type: 'text/html', value: mailOptions.html || '' },
           ],
           reply_to: mailOptions.replyTo ? { email: mailOptions.replyTo } : undefined,
-        }
+        };
 
         const sgResp = await axios.post('https://api.sendgrid.com/v3/mail/send', payload, {
           headers: { Authorization: `Bearer ${sendgridKey}`, 'Content-Type': 'application/json' },
           timeout: DEFAULT_SMTP_TIMEOUT,
-        })
+        });
 
         if (sgResp && (sgResp.status === 202 || sgResp.status === 200)) {
-          logger.info(`SendGrid fallback accepted for ${to}`)
-          return { messageId: `sendgrid-${Date.now()}` }
+          logger.info(`SendGrid fallback accepted for ${to}`);
+          return { messageId: `sendgrid-${Date.now()}` };
         }
-        lastErr = new Error(`SendGrid fallback failed with status ${sgResp.status}`)
+        lastErr = new Error(`SendGrid fallback failed with status ${sgResp.status}`);
       } catch (sgErr) {
-        lastErr = sgErr
-        logger.warn('SendGrid fallback failed:', sgErr && (sgErr.message || sgErr))
+        lastErr = sgErr;
+        logger.warn('SendGrid fallback failed:', sgErr && (sgErr.message || sgErr));
       }
     }
 
-    throw lastErr || new Error('Email send failed')
+    throw lastErr || new Error('Email send failed');
     
   } catch (error) {
     logger.error('Email send error (outer):', error && error.message ? error.message : error);

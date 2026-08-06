@@ -37,6 +37,9 @@ const createTransporter = async () => {
             refreshToken: process.env.GOOGLE_REFRESH_TOKEN,
             accessToken: accessToken ? accessToken.token : undefined,
           },
+          connectionTimeout: parseInt(process.env.SMTP_TIMEOUT_MS, 10) || 20000,
+          greetingTimeout: parseInt(process.env.SMTP_TIMEOUT_MS, 10) || 20000,
+          socketTimeout: parseInt(process.env.SMTP_TIMEOUT_MS, 10) || 20000,
         });
       } catch (err) {
         logger.error('Failed to obtain Gmail access token, falling back to SMTP username/password', err && err.message ? err.message : err);
@@ -52,6 +55,14 @@ const createTransporter = async () => {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS,
       },
+      tls: {
+        minVersion: 'TLSv1.2',
+        rejectUnauthorized: process.env.SMTP_REJECT_UNAUTHORIZED !== 'false',
+      },
+      family: 4,
+      connectionTimeout: parseInt(process.env.SMTP_TIMEOUT_MS, 10) || 20000,
+      greetingTimeout: parseInt(process.env.SMTP_TIMEOUT_MS, 10) || 20000,
+      socketTimeout: parseInt(process.env.SMTP_TIMEOUT_MS, 10) || 20000,
     });
   }
 
