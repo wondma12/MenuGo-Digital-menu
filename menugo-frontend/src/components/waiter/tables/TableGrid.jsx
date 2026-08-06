@@ -1,4 +1,4 @@
-import React from 'react'
+
 import { motion } from 'framer-motion'
 import WaiterTableCard from './WaiterTableCard'
 import TableStatusBadge from './TableStatusBadge'

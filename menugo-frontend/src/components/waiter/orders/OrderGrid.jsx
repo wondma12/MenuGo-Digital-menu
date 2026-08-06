@@ -1,4 +1,4 @@
-import React from 'react'
+
 import { motion } from 'framer-motion'
 import { Clock, Check, Activity } from 'lucide-react'
 import WaiterOrderCard from './WaiterOrderCard'

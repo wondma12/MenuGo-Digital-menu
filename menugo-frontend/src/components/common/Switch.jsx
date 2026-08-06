@@ -1,4 +1,4 @@
-import React from 'react'
+
 import { motion } from 'framer-motion'
 
 const Switch = ({ checked, onChange, label, disabled = false, className = '' }) => {

@@ -1,5 +1,5 @@
 // src/components/kitchen/KitchenOrderCard.jsx
-import React, { useState, useEffect } from 'react';
+import {useState, useEffect} from 'react'
 import KitchenTimer from './KitchenTimer';
 import { Clock } from 'lucide-react'
 import KitchenStatusBadge from './KitchenStatusBadge';

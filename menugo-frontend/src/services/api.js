@@ -149,7 +149,7 @@ const ensureApiBaseReady = () => {
       if (shouldUseDevProxy) {
         api.defaults.baseURL = ''
         if (import.meta.env.DEV) console.warn('Using Vite dev proxy for local VITE_API_URL instead of direct backend baseURL')
-        try { if (typeof sessionStorage !== 'undefined') sessionStorage.removeItem(cacheKey) } catch (err) {}
+        try { if (typeof sessionStorage !== 'undefined') sessionStorage.removeItem(cacheKey) } catch (err) { if (import.meta.env.DEV) console.warn('sessionStorage.removeItem failed:', err && err.message) }
         return
       }
 
@@ -157,14 +157,14 @@ const ensureApiBaseReady = () => {
         if (isProductionLike) {
           api.defaults.baseURL = EXPLICIT_API_ROOT_URL
           if (import.meta.env.DEV) console.warn('Using explicit VITE_API_URL baseURL:', EXPLICIT_API_ROOT_URL)
-          try { if (typeof sessionStorage !== 'undefined') sessionStorage.removeItem(cacheKey) } catch (err) {}
+          try { if (typeof sessionStorage !== 'undefined') sessionStorage.removeItem(cacheKey) } catch (err) { if (import.meta.env.DEV) console.warn('sessionStorage.removeItem failed:', err && err.message) }
           return
         }
 
         await axios.get(getHealthUrl(EXPLICIT_API_ROOT_URL), { timeout: probeTimeout })
         api.defaults.baseURL = EXPLICIT_API_ROOT_URL
         if (import.meta.env.DEV) console.warn('Using explicit VITE_API_URL baseURL:', EXPLICIT_API_ROOT_URL)
-        try { if (typeof sessionStorage !== 'undefined') sessionStorage.removeItem(cacheKey) } catch (err) {}
+        try { if (typeof sessionStorage !== 'undefined') sessionStorage.removeItem(cacheKey) } catch (err) { if (import.meta.env.DEV) console.warn('sessionStorage.removeItem failed:', err && err.message) }
         return
       } catch (e) {
         if (import.meta.env.DEV) console.warn('Explicit VITE_API_URL failed probe:', e && e.message)
@@ -179,10 +179,10 @@ const ensureApiBaseReady = () => {
         return
       } catch (e) {
         if (import.meta.env.DEV) console.warn('Cached api base failed probe, clearing cache:', e && e.message)
-        try { sessionStorage.removeItem(cacheKey) } catch (err) {}
+        try { sessionStorage.removeItem(cacheKey) } catch (err) { if (import.meta.env.DEV) console.warn('sessionStorage.removeItem failed:', err && err.message) }
       }
     } else if (typeof sessionStorage !== 'undefined' && !shouldIgnoreCache) {
-      try { sessionStorage.removeItem(cacheKey) } catch (err) {}
+      try { sessionStorage.removeItem(cacheKey) } catch (err) { if (import.meta.env.DEV) console.warn('sessionStorage.removeItem failed:', err && err.message) }
     }
 
     const candidates = buildApiCandidates()
@@ -257,7 +257,7 @@ const attemptFallback = async (originalRequest) => {
       if (typeof sessionStorage !== 'undefined') {
         try { sessionStorage.setItem(cacheKey, winner) } catch (e) { if (import.meta.env.DEV) console.warn('sessionStorage.setItem failed while caching api base:', e && e.message) }
       }
-    } catch (e) {}
+    } catch (e) { if (import.meta.env.DEV) console.warn('sessionStorage.removeItem failed while clearing cache:', e && e.message) }
     if (import.meta.env.DEV) console.warn('Using API fallback baseURL:', winner)
     return await api(originalRequest)
   } catch (err) {
@@ -412,8 +412,11 @@ api.interceptors.request.use(
 
     // Prefer the persisted session token instead of importing the auth store.
     // This avoids the circular dependency between authService -> api -> authStore.
+    // Also accept tokens stored under `localStorage.token` (used by AuthContext)
     const sessionToken = normalizeStoredToken(authSessionStorage?.getItem('token'))
-    const persistedLocalToken = typeof window !== 'undefined' ? normalizeStoredToken(window.localStorage.getItem('auth_token')) : null
+    const persistedLocalToken = typeof window !== 'undefined'
+      ? normalizeStoredToken(window.localStorage.getItem('auth_token') || window.localStorage.getItem('token'))
+      : null
     const token = sessionToken || persistedLocalToken
 
     if (import.meta.env.DEV) {
@@ -507,7 +510,7 @@ api.interceptors.request.use(
         console.log(`[API] ${method.toUpperCase()} ${requestPath}`, {
           hasPersistedLocalToken: !!persistedLocalToken,
           hasSessionToken: !!sessionToken,
-          token: token ? `${token.substring(0, 20)}...` : null,
+          token: token ? `${String(token).substring(0, 20)}...` : null,
           isRequestPublic,
           willAttachAuth: !!token && !isRequestPublic
         })
@@ -546,7 +549,7 @@ api.interceptors.request.use(
     if (import.meta.env.DEV) {
       try {
         console.log(`🚀 API Request: ${config.method?.toUpperCase()} ${config.url}`)
-      } catch (e) {}
+      } catch (e) { if (import.meta.env.DEV) console.warn('ensureApiBaseReady inner removeItem failed:', e && e.message) }
     }
     
     return config
@@ -589,8 +592,11 @@ api.interceptors.response.use(
     const requestIsPublic = isPublicPath(requestPath, originalRequest?.method)
 
     // Get current token from the persisted session/local storage.
+    // Accept both `sessionStorage.token` and either `localStorage.auth_token` or `localStorage.token`.
     const sessionToken = authSessionStorage?.getItem('token')
-    const persistedLocalToken = typeof window !== 'undefined' ? window.localStorage.getItem('auth_token') : null
+    const persistedLocalToken = typeof window !== 'undefined'
+      ? (window.localStorage.getItem('auth_token') || window.localStorage.getItem('token'))
+      : null
     const token = sessionToken || persistedLocalToken
     
     // Handle 401 Unauthorized
@@ -722,7 +728,7 @@ api.interceptors.response.use(
         // Suppress logging for expected auth-missing errors to avoid noise in DEV console.
         if (error.isAuthMissing || error.silent) {
           if (import.meta.env.DEV) {
-            try { console.debug('Request prevented: missing auth token for', originalRequest?.url) } catch (e) {}
+            try { console.debug('Request prevented: missing auth token for', originalRequest?.url) } catch (e) { if (import.meta.env.DEV) console.warn('console.debug failed:', e && e.message) }
           }
           // Mark as silent to prevent unhandled rejection warnings
           error.silent = true

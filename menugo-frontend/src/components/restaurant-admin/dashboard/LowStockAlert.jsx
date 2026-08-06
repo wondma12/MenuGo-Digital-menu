@@ -1,4 +1,4 @@
-import React from 'react'
+
 import { ExclamationTriangleIcon, ShoppingCartIcon } from '@heroicons/react/24/outline'
 import Button from '../../../common/Button'
 import { useNavigate } from 'react-router-dom'

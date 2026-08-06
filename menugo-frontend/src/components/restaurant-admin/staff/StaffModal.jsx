@@ -1,4 +1,4 @@
-import React from 'react'
+
 import { useMutation, useQueryClient } from 'react-query'
 import Modal from '../../../common/Modal'
 import StaffForm from './StaffForm'
@@ -20,7 +20,7 @@ const StaffModal = ({ isOpen, onClose, staff, onSuccess }) => {
       if (plain) {
         try {
           navigator.clipboard?.writeText(plain)
-        } catch {}
+        } catch (err) { if (import.meta.env.DEV) console.warn('clipboard write failed:', err && err.message) }
         toast('Temporary password copied to clipboard: ' + plain, { icon: '🔐' })
       }
       onSuccess()

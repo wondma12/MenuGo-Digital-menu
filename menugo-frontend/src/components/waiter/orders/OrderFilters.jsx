@@ -1,4 +1,4 @@
-import React from 'react'
+
 import Select from '../../common/Select'
 
 const OrderFilters = ({ filters, onFiltersChange }) => {

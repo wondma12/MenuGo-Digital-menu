@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import {useState} from 'react'
 import { MapPinIcon, ClockIcon } from '@heroicons/react/24/outline'
 import { Coffee } from 'lucide-react'
 import { motion } from 'framer-motion'

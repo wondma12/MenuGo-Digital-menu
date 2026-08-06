@@ -1,5 +1,5 @@
 // src/components/platform-admin/dashboard/StatCard.jsx
-import React from 'react'
+
 import { ArrowTrendingUpIcon, ArrowTrendingDownIcon } from '@heroicons/react/24/outline'
 
 const StatCard = ({ title, value, icon: Icon, trend, trendValue, color }) => {

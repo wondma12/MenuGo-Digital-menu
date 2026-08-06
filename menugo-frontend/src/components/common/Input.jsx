@@ -1,4 +1,4 @@
-import React, { forwardRef, useState } from 'react'
+import {forwardRef, useState} from 'react'
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline'
 
 const Input = forwardRef(({

@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from 'react'
+import {useMemo, useRef, useState} from 'react'
 import { useAuthStore } from '../../../store/authStore'
 import { generateRestaurantQRCode } from '../../../services/qrService'
 import { getQrTargetUrl } from '../../../utils/qr'

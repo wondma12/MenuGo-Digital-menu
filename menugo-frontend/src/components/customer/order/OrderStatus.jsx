@@ -1,4 +1,4 @@
-import React from 'react'
+
 import { Clock, Check, Activity, Star, X } from 'lucide-react'
 
 const OrderStatus = ({ status }) => {

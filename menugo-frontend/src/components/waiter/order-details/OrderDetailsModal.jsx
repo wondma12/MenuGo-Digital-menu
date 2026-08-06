@@ -1,4 +1,4 @@
-import React from 'react'
+
 import Modal from '../../common/Modal'
 import OrderItemsList from './OrderItemsList'
 import OrderSummary from './OrderSummary'

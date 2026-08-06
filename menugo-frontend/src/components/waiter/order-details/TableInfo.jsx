@@ -1,4 +1,4 @@
-import React from 'react'
+
 import { MapPin, Users } from 'lucide-react'
 
 const TableInfo = ({ table }) => {

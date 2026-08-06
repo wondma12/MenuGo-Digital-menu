@@ -1,5 +1,5 @@
 import { toast as _toast } from 'react-toastify'
-import React from 'react'
+
 
 // Default export to match `import toast from 'react-hot-toast'`
 export default _toast

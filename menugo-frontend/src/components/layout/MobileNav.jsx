@@ -1,5 +1,5 @@
 // src/components/layout/MobileNav.jsx
-import React, { useState } from 'react'
+import {useState} from 'react'
 import { NavLink } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { XMarkIcon, ChevronDownIcon, ChevronRightIcon } from '@heroicons/react/24/outline'

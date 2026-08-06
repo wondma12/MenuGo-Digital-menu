@@ -1,4 +1,4 @@
-import React from 'react'
+
 import { motion } from 'framer-motion'
 import { ExclamationTriangleIcon, ShoppingCartIcon } from '@heroicons/react/24/outline'
 import Button from '../../../common/Button'

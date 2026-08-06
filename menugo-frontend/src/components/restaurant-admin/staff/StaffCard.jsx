@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import {useState} from 'react'
 import { motion } from 'framer-motion'
 import { PencilIcon, TrashIcon, EnvelopeIcon, PhoneIcon, ClockIcon } from '@heroicons/react/24/outline'
 import Avatar from '../../../common/Avatar'

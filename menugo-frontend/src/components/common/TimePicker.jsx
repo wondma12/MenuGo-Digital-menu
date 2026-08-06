@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react'
+import {useState, useRef, useEffect} from 'react'
 import { ClockIcon } from '@heroicons/react/24/outline'
 
 const TimePicker = ({ selected, onChange, label, error, className = '', placeholder = 'Select time', interval = 30 }) => {

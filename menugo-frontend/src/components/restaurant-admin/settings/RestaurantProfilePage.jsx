@@ -1,4 +1,4 @@
-import React from 'react'
+
 import { useQuery } from 'react-query'
 import Loading from '../../../common/Loading'
 import RestaurantProfile from './RestaurantProfile'

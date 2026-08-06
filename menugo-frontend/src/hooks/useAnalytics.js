@@ -69,4 +69,4 @@ export const usePlatformAnalytics = (dateRange) => {
   return { analytics: data, isLoading }
 }
 
-export default useAnalytics
+export default usePlatformAnalytics

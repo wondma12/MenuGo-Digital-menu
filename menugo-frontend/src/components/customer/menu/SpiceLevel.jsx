@@ -1,4 +1,4 @@
-import React from 'react'
+
 import Tooltip from '../../common/Tooltip'
 
 const SpiceLevel = ({ level }) => {

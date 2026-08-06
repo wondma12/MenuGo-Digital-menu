@@ -1,7 +1,7 @@
 
 
     // src/components/kitchen/KitchenCompletedOrders.jsx
-import React, { useState, useEffect } from 'react';
+import {useState, useEffect} from 'react'
 import kitchenService from '../../services/kitchenService';
 import { useWebSocket } from '../../hooks/useWebSocket';
 import Pagination from '../common/Pagination';

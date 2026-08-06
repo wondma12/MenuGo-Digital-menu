@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import {useEffect, useState} from 'react'
 import { motion } from 'framer-motion'
 import { Bars3Icon, FolderIcon, ArrowUpIcon, ArrowDownIcon } from '@heroicons/react/24/outline'
 import { updateCategoryOrder } from '../../../services/categoryService'

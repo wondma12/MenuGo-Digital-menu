@@ -1,4 +1,4 @@
-import React from 'react'
+
 import { ClipboardDocumentIcon } from '@heroicons/react/24/outline'
 
 const SpecialInstructions = ({ value, onChange }) => {

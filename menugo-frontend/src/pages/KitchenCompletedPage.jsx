@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import {useState, useEffect} from 'react'
 import { useLocation } from 'react-router-dom'
 import KitchenCompletedOrders from '../components/kitchen/KitchenCompletedOrders'
 import Loading from '../components/common/Loading'

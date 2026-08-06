@@ -1,4 +1,4 @@
-import React from 'react'
+
 import { ChartBarIcon, UserGroupIcon, HeartIcon } from '@heroicons/react/24/outline'
 import { formatPrice } from '../../../utils/currency'
 

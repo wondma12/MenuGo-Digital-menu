@@ -1,4 +1,4 @@
-import React from 'react'
+
 import { Bars3Icon } from '@heroicons/react/24/outline'
 
 const TopBar = ({ title, user, actions, onMenuClick, showMenuButton = true }) => {

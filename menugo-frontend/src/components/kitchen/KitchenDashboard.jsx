@@ -1,5 +1,5 @@
 // src/components/kitchen/KitchenDashboard.jsx
-import React, { useState, useEffect } from 'react';
+import {useState, useEffect} from 'react'
 import { useNavigate, useLocation } from 'react-router-dom';
 import KitchenStats from './KitchenStats';
 import KitchenNotificationList from './KitchenNotificationList';

@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react'
+import {useRef, useState} from 'react'
 import QRCode from 'react-qr-code'
 import { useMutation } from 'react-query'
 import Modal from '../../../common/Modal'

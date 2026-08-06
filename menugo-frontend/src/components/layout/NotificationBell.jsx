@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react'
+import {useState, useEffect, useRef} from 'react'
 import { BellIcon } from '@heroicons/react/24/outline'
 import { Check, Star, Settings, Bell } from 'lucide-react'
 import { useQuery } from 'react-query'

@@ -63,8 +63,8 @@ export const connectWebSocket = () => {
 
           function cleanup() {
             clearTimeout(timer)
-            try { sock.off('connect', onConnect) } catch (e) {}
-            try { sock.off('connect_error', onError) } catch (e) {}
+            try { sock.off('connect', onConnect) } catch (e) { if (import.meta.env.DEV) console.warn('sock.off connect failed:', e && e.message) }
+            try { sock.off('connect_error', onError) } catch (e) { if (import.meta.env.DEV) console.warn('sock.off connect_error failed:', e && e.message) }
           }
 
           sock.once('connect', onConnect)
@@ -79,7 +79,7 @@ export const connectWebSocket = () => {
         return socket
       } catch (err) {
         if (sock) {
-          try { sock.close() } catch (e) {}
+          try { sock.close() } catch (e) { if (import.meta.env.DEV) console.warn('sock.close failed:', e && e.message) }
         }
         // try next candidate
       }

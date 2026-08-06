@@ -1,5 +1,5 @@
 // src/components/kitchen/KitchenStats.jsx
-import React from 'react';
+
 
 const KitchenStats = ({ stats }) => {
   const statItems = [

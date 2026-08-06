@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import {useState} from 'react'
 import { useQuery, useMutation } from 'react-query'
 import { useNavigate } from 'react-router-dom'
 import { CheckIcon } from '@heroicons/react/24/outline'
@@ -18,9 +18,9 @@ const SystemSettings = () => {
   const { data: settings, isLoading, isError, error, refetch } = useQuery('systemSettings', getSystemSettings)
   const queryClient = useQueryClient()
   const mutation = useMutation(updateSystemSettings, {
-    onSuccess: (data) => {
+      onSuccess: (data) => {
       toast.success('Settings saved successfully')
-      try { queryClient.invalidateQueries('systemSettings') } catch (e) {}
+      try { queryClient.invalidateQueries('systemSettings') } catch (e) { if (import.meta.env.DEV) console.warn('invalidateQueries failed:', e && e.message) }
     },
     onError: () => toast.error('Failed to save settings'),
   })

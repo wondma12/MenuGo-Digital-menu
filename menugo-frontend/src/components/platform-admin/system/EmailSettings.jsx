@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import {useState} from 'react'
 import { useMutation, useQueryClient } from 'react-query'
 import { CheckIcon } from '@heroicons/react/24/outline'
 import Input from '../../../common/Input'

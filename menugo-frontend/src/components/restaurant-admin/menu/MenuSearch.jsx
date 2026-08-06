@@ -1,4 +1,4 @@
-import React from 'react'
+
 import { MagnifyingGlassIcon, XMarkIcon } from '@heroicons/react/24/outline'
 
 const MenuSearch = ({ value, onChange, placeholder = "Search menu items..." }) => {

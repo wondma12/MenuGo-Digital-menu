@@ -1,4 +1,4 @@
-import React from 'react'
+
 import { useQuery } from 'react-query'
 import WaiterStats from './WaiterStats'
 import TodayMetrics from './TodayMetrics'

@@ -1,4 +1,4 @@
-import React from 'react'
+
 import Select from '../../../common/Select'
 import { useQuery } from 'react-query'
 import { getCategories } from '../../../services/categoryService'

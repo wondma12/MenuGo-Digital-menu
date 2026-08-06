@@ -1,5 +1,5 @@
 // src/components/platform-admin/restaurants/RestaurantDetails.jsx
-import React, { useState } from 'react';
+import {useState} from 'react'
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from 'react-query';
 import { getRestaurantDetails } from '../../../services/restaurantService';

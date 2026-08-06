@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react'
+import {useState, useRef} from 'react'
 import { DocumentArrowUpIcon, DocumentArrowDownIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import Button from '../../../common/Button'
 import Modal from '../../../common/Modal'

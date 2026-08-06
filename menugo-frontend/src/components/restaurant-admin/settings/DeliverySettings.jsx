@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import {useState} from 'react'
 import { useMutation, useQueryClient } from 'react-query'
 import Input from '../../../common/Input'
 import Switch from '../../../common/Switch'

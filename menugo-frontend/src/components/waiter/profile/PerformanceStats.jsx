@@ -1,4 +1,4 @@
-import React from 'react'
+
 import { motion } from 'framer-motion'
 import { Star, ShoppingBag, DollarSign, BarChart } from 'lucide-react'
 import { formatPrice } from '../../../utils/currency'

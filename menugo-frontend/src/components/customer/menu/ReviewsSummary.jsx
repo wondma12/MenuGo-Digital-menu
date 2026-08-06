@@ -1,4 +1,4 @@
-import React from 'react'
+
 import { useQuery } from 'react-query'
 import { StarIcon } from '@heroicons/react/24/outline'
 import { getReviews } from '../../../services/reviewService'

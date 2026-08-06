@@ -1,4 +1,4 @@
-import React from 'react'
+
 
 const OrderPriorityBadge = ({ priority }) => {
   if (!priority || priority === 'normal') return null

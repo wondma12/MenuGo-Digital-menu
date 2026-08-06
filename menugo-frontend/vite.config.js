@@ -63,7 +63,7 @@ const resolveBackendUrl = async (env) => {
     if (!candidate) return false
     try {
       if (await probeHealth(candidate)) {
-        console.log(`[vite] Resolved backend target from ${label}: ${candidate}`)
+        console.warn(`[vite] Resolved backend target from ${label}: ${candidate}`)
         return candidate
       }
     } catch (e) {
@@ -113,9 +113,9 @@ export default defineConfig(async ({ mode }) => {
   const devPort = Number.parseInt(env.VITE_PORT || env.PORT || '3002', 10)
 
   if (finalApiUrl) {
-    console.log(`[vite] Proxy /api target set to ${finalApiUrl}`)
+    console.warn(`[vite] Proxy /api target set to ${finalApiUrl}`)
   } else {
-    console.log('[vite] Proxy /api target could not be resolved; falling back to current origin')
+    console.warn('[vite] Proxy /api target could not be resolved; falling back to current origin')
   }
 
   return {
@@ -182,13 +182,19 @@ export default defineConfig(async ({ mode }) => {
                     const upstream = await axios.request({ url: full, method: req.method || 'GET', responseType: 'stream', timeout: 8000, validateStatus: () => true, httpAgent: new http.Agent({ keepAlive: true }), httpsAgent: new https.Agent({ keepAlive: true }) })
                     if (upstream && upstream.status >= 200 && upstream.status < 400 && upstream.data) {
                       // Pipe headers and stream back
-                      Object.entries(upstream.headers || {}).forEach(([k, v]) => { try { res.setHeader(k, v) } catch (e) {} })
+                      Object.entries(upstream.headers || {}).forEach(([k, v]) => {
+                        try {
+                          res.setHeader(k, v)
+                        } catch (e) {
+                          void e
+                        }
+                      })
                       res.statusCode = upstream.status
                       upstream.data.pipe(res)
                       return
                     }
                   } catch (e) {
-                    // try next candidate
+                    void e
                   }
                 }
 
@@ -196,7 +202,7 @@ export default defineConfig(async ({ mode }) => {
                 res.end && res.end('Bad gateway')
               }
             } catch (e) {
-              // ignore
+              void e
             }
           },
         },
@@ -212,7 +218,7 @@ export default defineConfig(async ({ mode }) => {
           onError: (err, req, res) => {
              
             console.error('Vite proxy /auth error ->', err && err.message ? err.message : err);
-            try { if (!res.headersSent) { res.writeHead && res.writeHead(502); res.end && res.end('Bad gateway'); } } catch (e) {}
+            try { if (!res.headersSent) { res.writeHead && res.writeHead(502); res.end && res.end('Bad gateway'); } } catch (e) { void e }
           },
         },
         '/ws': {
@@ -230,7 +236,7 @@ export default defineConfig(async ({ mode }) => {
           onError: (err, req, res) => {
              
             console.error('Vite proxy /uploads error ->', err && err.message ? err.message : err);
-            try { if (!res.headersSent) { res.writeHead && res.writeHead(502); res.end && res.end('Bad gateway'); } } catch (e) {}
+            try { if (!res.headersSent) { res.writeHead && res.writeHead(502); res.end && res.end('Bad gateway'); } } catch (e) { void e }
           },
         },
       },

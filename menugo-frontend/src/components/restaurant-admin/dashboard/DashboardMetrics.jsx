@@ -1,4 +1,4 @@
-import React from 'react'
+
 import { ArrowTrendingUpIcon, ArrowTrendingDownIcon } from '@heroicons/react/24/outline'
 
 const DashboardMetrics = ({ title, value, change, icon: Icon, color }) => {

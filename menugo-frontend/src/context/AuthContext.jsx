@@ -1,5 +1,5 @@
 // src/context/AuthContext.jsx
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import {createContext, useContext, useState, useEffect} from 'react'
 import { authService } from '../services/authService';
 
 const AuthContext = createContext();
@@ -22,8 +22,11 @@ export const AuthProvider = ({ children }) => {
   const updateLastActivity = () => {
     try {
       localStorage.setItem('lastActivity', String(Date.now()));
-    } catch (e) {}
+    } catch (e) {
+      if (import.meta.env.DEV) console.warn('updateLastActivity failed:', e && e.message)
+    }
   };
+  
 
   const clearSession = () => {
     localStorage.removeItem('token');

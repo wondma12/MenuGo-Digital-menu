@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import {useEffect, useMemo, useState} from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeftIcon, ClockIcon, FireIcon, SparklesIcon } from '@heroicons/react/24/outline'
 import { getRestaurantMenu } from '../../../services/menuService'

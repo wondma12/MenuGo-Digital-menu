@@ -1,4 +1,4 @@
-import React from 'react'
+
 import { MapPinIcon } from '@heroicons/react/24/outline'
 
 const TableInput = ({ value, onChange }) => {

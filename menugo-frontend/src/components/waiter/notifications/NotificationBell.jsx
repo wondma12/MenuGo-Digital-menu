@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react'
+import {useState, useEffect, useRef} from 'react'
 import { Bell } from 'lucide-react'
 import { useQuery } from 'react-query'
 import { motion, AnimatePresence } from 'framer-motion'

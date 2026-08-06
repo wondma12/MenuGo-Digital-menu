@@ -1,6 +1,5 @@
 import {
   format,
-  parse,
   differenceInDays,
   differenceInHours,
   differenceInMinutes,
@@ -13,7 +12,6 @@ import {
   startOfMonth,
   endOfMonth,
   isSameDay,
-  isSameWeek,
   isSameMonth,
   isToday,
   isYesterday,
@@ -66,9 +64,10 @@ export const getDateRange = (range) => {
   switch (range) {
     case 'today':
       return { start: startOfDay(now), end: endOfDay(now) }
-    case 'yesterday':
+    case 'yesterday': {
       const yesterday = subDays(now, 1)
       return { start: startOfDay(yesterday), end: endOfDay(yesterday) }
+    }
     case 'this_week':
       return { start: startOfWeek(now), end: endOfWeek(now) }
     case 'this_month':

@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import {useState} from 'react'
 import { useMutation } from 'react-query'
 import Button from '../../common/Button'
 import RejectOrderModal from '../verification/RejectOrderModal'

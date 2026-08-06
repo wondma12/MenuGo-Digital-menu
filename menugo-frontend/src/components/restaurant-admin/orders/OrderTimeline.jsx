@@ -1,4 +1,4 @@
-import React from 'react'
+
 import { CheckCircleIcon, ClockIcon } from '@heroicons/react/24/outline'
 import { FileText, Check, Activity, Star } from 'lucide-react'
 

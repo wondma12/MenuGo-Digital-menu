@@ -1,4 +1,4 @@
-import React from 'react'
+
 import { motion } from 'framer-motion'
 import { User, Clock, Users, MapPin, Phone } from 'lucide-react'
 import Button from '../../common/Button'

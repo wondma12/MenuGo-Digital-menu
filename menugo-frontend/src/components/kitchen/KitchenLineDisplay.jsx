@@ -1,5 +1,5 @@
 // src/components/kitchen/KitchenLineDisplay.jsx
-import React, { useState, useEffect } from 'react';
+import {useState, useEffect} from 'react'
 
 const KitchenLineDisplay = ({ orders, onComplete }) => {
   const [lineItems, setLineItems] = useState([]);

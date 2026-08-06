@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import {useState} from 'react'
 import { motion } from 'framer-motion'
 import { PencilIcon, TrashIcon, PlusIcon, MinusIcon } from '@heroicons/react/24/outline'
 import Badge from '../../../common/Badge'

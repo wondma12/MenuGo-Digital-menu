@@ -1,4 +1,4 @@
-import React from 'react'
+
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { Bars3Icon, FolderIcon } from '@heroicons/react/24/outline'

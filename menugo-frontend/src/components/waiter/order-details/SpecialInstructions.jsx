@@ -1,4 +1,4 @@
-import React from 'react'
+
 import { Clipboard } from 'lucide-react'
 
 const SpecialInstructions = ({ instructions }) => {

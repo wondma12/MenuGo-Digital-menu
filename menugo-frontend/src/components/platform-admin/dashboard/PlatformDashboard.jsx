@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import {useState} from 'react'
 import { motion } from 'framer-motion'
 import { useQuery } from 'react-query'
 import { startOfMonth, endOfMonth } from 'date-fns'

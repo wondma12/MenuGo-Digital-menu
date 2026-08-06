@@ -1,4 +1,4 @@
-import React from 'react'
+
 import { Link } from 'react-router-dom'
 import { useCartStore } from '../../store/cartStore'
 import { EnvelopeIcon, PhoneIcon, SparklesIcon } from '@heroicons/react/24/outline'

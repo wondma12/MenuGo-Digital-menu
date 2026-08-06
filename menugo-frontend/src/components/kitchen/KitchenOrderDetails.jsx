@@ -1,5 +1,5 @@
 // src/components/kitchen/KitchenOrderDetails.jsx
-import React from 'react';
+
 import Modal from '../common/Modal';
 import KitchenStatusBadge from './KitchenStatusBadge';
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import {useState} from 'react'
 import { useQuery } from 'react-query'
 import { motion, AnimatePresence } from 'framer-motion'
 import { MagnifyingGlassIcon, FunnelIcon } from '@heroicons/react/24/outline'

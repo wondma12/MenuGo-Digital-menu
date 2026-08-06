@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import {useState} from 'react'
 import { motion } from 'framer-motion'
 import { Clock, User, MapPin, Eye, ChevronRight } from 'lucide-react'
 import OrderStatusBadge from './OrderStatusBadge'

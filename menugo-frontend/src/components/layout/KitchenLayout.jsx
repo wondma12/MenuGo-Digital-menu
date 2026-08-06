@@ -1,5 +1,5 @@
 // src/components/layout/KitchenLayout.jsx
-import React, { useState, useEffect } from 'react';
+import {useState, useEffect} from 'react'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { toast } from 'react-toastify';

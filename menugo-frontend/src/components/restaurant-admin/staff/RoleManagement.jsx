@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import {useState} from 'react'
 import { useQuery, useMutation, useQueryClient } from 'react-query'
 import { motion } from 'framer-motion'
 import { PencilIcon, CheckIcon, XMarkIcon } from '@heroicons/react/24/outline'

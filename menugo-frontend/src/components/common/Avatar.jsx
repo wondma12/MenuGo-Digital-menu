@@ -1,4 +1,4 @@
-import React from 'react'
+
 
 const Avatar = ({ src, name, size = 'md', className = '' }) => {
   const sizes = {

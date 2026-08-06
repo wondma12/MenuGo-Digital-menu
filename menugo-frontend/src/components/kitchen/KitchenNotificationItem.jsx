@@ -1,4 +1,4 @@
-import React from 'react'
+
 import { Bell, CheckCircle, Clock } from 'lucide-react'
 
 const KitchenNotificationItem = ({ notification }) => {

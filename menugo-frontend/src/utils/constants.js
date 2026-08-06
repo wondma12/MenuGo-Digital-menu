@@ -189,7 +189,7 @@ export const CACHE_DURATIONS = {
 // Regex patterns
 export const PATTERNS = {
   EMAIL: /^[^\s@]+@([^\s@.,]+\.)+[^\s@.,]{2,}$/,
-  PHONE: /^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$/,
+  PHONE: /^[+]?[(]?[0-9]{3}[)]?[-\s.]?[0-9]{3}[-\s.]?[0-9]{4,6}$/,
   PASSWORD: /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{6,}$/,
   ZIP_CODE: /^\d{5}(-\d{4})?$/,
   CREDIT_CARD: /^\d{4}-?\d{4}-?\d{4}-?\d{4}$/,

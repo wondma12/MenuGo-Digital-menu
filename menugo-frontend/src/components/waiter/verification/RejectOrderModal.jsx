@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import {useState} from 'react'
 import { useMutation } from 'react-query'
 import Modal from '../../common/Modal'
 import Button from '../../common/Button'

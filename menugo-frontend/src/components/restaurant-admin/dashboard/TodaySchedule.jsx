@@ -1,4 +1,4 @@
-import React from 'react'
+
 import { ClockIcon, UsersIcon } from '@heroicons/react/24/outline'
 
 const TodaySchedule = ({ schedule }) => {

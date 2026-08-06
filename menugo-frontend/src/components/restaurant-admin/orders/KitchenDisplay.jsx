@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react'
+import {useState, useEffect, useRef} from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useMutation } from 'react-query'
 import { BellIcon, CheckCircleIcon, ClockIcon } from '@heroicons/react/24/outline'

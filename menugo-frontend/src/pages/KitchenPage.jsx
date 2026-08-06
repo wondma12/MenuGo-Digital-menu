@@ -1,5 +1,5 @@
 // src/pages/KitchenPage.jsx
-import React, { useState, useEffect } from 'react';
+import {useState, useEffect} from 'react'
 import { useLocation } from 'react-router-dom';
 import KitchenDashboard from '../components/kitchen/KitchenDashboard';
 import { useKitchen } from '../hooks/useKitchen';
@@ -56,7 +56,7 @@ const KitchenPage = () => {
     return () => {
       try {
         if (socket.emit) socket.emit('leave-kitchen', restaurantId);
-      } catch (e) {}
+      } catch (e) { if (import.meta.env.DEV) console.warn('leave-kitchen emit failed:', e && e.message) }
     };
   }, [socket, restaurantId]);
 

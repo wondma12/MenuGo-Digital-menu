@@ -1,4 +1,4 @@
-import React from 'react'
+
 import { User, Mail, Phone } from 'lucide-react'
 
 const CustomerInfo = ({ customer }) => {

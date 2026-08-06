@@ -1,5 +1,5 @@
 // src/components/kitchen/KitchenSoundNotification.jsx
-import React, { useEffect, useRef } from 'react';
+import {useEffect, useRef} from 'react'
 import { useAudio } from '../../hooks/useAudio';
 
 const KitchenSoundNotification = ({ onNewOrder, enabled = true }) => {

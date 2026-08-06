@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import {useState} from 'react'
 
 const ImageWithPlaceholder = ({ src, alt = '', className = '', style = {} }) => {
   const [errored, setErrored] = useState(false)

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react'
+import {useMemo, useState} from 'react'
 import { useQuery } from 'react-query'
 import { motion } from 'framer-motion'
 import {

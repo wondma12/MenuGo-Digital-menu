@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import {useState} from 'react'
 import { motion } from 'framer-motion'
 import { PencilIcon, QrCodeIcon, UsersIcon, SparklesIcon } from '@heroicons/react/24/outline'
 import Badge from '../../../common/Badge'
@@ -8,10 +8,10 @@ import { updateTableStatus } from '../../../services/tableService'
 import toast from 'react-hot-toast'
 
 const TableCard = ({ table, onEdit, onRefresh }) => {
-  if (!table) return null
   const [showQR, setShowQR] = useState(false)
   const [showStatusDialog, setShowStatusDialog] = useState(false)
   const [pendingStatus, setPendingStatus] = useState(null)
+  if (!table) return null
   const tableNumber = table.tableNumber ?? table.table_number ?? table.number ?? table.tableNo ?? table.table_no ?? '—'
 
   const getStatusConfig = (status) => {

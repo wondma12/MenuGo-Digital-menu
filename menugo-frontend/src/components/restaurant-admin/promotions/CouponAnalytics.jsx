@@ -1,4 +1,4 @@
-import React from 'react'
+
 import { motion } from 'framer-motion'
 import { ChartBarIcon, TagIcon, CurrencyDollarIcon, UsersIcon } from '@heroicons/react/24/outline'
 import { formatPrice } from '../../../utils/currency'

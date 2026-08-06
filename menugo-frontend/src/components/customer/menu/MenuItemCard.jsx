@@ -1,4 +1,4 @@
-import React from 'react'
+
 import { motion } from 'framer-motion'
 import { ShoppingBagIcon, HeartIcon } from '@heroicons/react/24/outline'
 import DietaryIcons from './DietaryIcons'

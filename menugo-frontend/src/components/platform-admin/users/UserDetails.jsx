@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import {useState} from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery } from 'react-query'
 import { ArrowLeftIcon, EnvelopeIcon, PhoneIcon, CalendarIcon, ShieldCheckIcon, PencilIcon, XCircleIcon, CheckCircleIcon, TrashIcon } from '@heroicons/react/24/outline'

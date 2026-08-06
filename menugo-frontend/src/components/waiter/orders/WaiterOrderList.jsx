@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import {useState, useEffect} from 'react'
 import { useQuery } from 'react-query'
 import { motion } from 'framer-motion'
 import { Clock, Check, Activity, SearchX } from 'lucide-react'
@@ -31,7 +31,7 @@ const WaiterOrderList = () => {
     const handleRefresh = (data) => {
       // play a subtle notification for verified/kitchen updates
       if (data && (data.type === 'new_order' || data.type === 'order_verified')) {
-        try { playSound('new-order') } catch (e) {}
+        try { playSound('new-order') } catch (e) { if (import.meta.env.DEV) console.warn('playSound failed:', e && e.message) }
       }
       refetch()
     }

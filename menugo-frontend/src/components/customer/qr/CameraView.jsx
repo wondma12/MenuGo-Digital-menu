@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react'
+import {useRef, useEffect} from 'react'
 
 const CameraView = ({ onScan, onError }) => {
   const videoRef = useRef(null)

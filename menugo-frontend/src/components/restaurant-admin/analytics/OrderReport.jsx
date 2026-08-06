@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { useQuery } from 'react-query'
 import { motion } from 'framer-motion'
 import {
@@ -8,6 +8,7 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
+  Legend,
   ResponsiveContainer,
   PieChart,
   Pie,
@@ -118,7 +119,7 @@ const OrderReport = () => {
             {data?.orderTypeDistribution?.map((type, index) => (
               <div key={type.name} className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <div className={`w-3 h-3 rounded-full bg-${COLORS[index % COLORS.length]}-500`} />
+                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
                   <span className="text-sm text-gray-700 capitalize">{type.name}</span>
                 </div>
                 <div className="flex items-center gap-4">

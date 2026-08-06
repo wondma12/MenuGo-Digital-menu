@@ -1,4 +1,4 @@
-import React from 'react'
+
 import { motion } from 'framer-motion'
 import { Bell, CreditCard, HelpCircle, Coffee, MessageSquare, ChevronRight } from 'lucide-react'
 

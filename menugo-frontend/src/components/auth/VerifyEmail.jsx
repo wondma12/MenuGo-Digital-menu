@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import {useState, useEffect} from 'react'
 import { useLocation, useNavigate, Link, useParams } from 'react-router-dom'
 import Button from '../common/Button'
 import Alert from '../common/Alert'

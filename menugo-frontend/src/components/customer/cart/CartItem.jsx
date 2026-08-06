@@ -1,4 +1,4 @@
-import React from 'react'
+
 import { MinusIcon, PlusIcon } from '@heroicons/react/24/outline'
 
 const CartItem = ({ item, onUpdateQuantity, onRemove }) => {

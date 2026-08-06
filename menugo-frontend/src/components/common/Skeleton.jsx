@@ -1,4 +1,4 @@
-import React from 'react'
+
 
 const Skeleton = ({ variant = 'text', count = 1, className = '' }) => {
   const variants = {

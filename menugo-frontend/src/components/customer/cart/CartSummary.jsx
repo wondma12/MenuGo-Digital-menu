@@ -1,4 +1,4 @@
-import React from 'react'
+
 
 const CartSummary = ({ subtotal, tax, total, discount = 0, taxRate = null }) => {
   const taxLabel = Number.isFinite(Number(taxRate)) ? `Tax (${String(Number(taxRate).toFixed(2)).replace(/\.0+$/, '').replace(/\.?0+$/, '')}%)` : 'Tax'
