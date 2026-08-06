@@ -1429,8 +1429,18 @@ const verifyRestaurant = catchAsync(async (req, res) => {
     throw new ApiError(400, 'is_verified is required and must be a boolean or an approval status');
   }
 
-  const restaurant = await Restaurant.findByPk(id);
+  const restaurantId = String(id || payload.restaurantId || payload.restaurant_id || payload.id || '').trim();
+  const restaurant = restaurantId
+    ? await Restaurant.findOne({ where: { id: restaurantId } })
+    : null;
+
   if (!restaurant) {
+    logger.warn('Restaurant verification failed because restaurant lookup returned no result', {
+      attemptedId: restaurantId,
+      requestParams: req.params,
+      requestBody: payload,
+      userId: req.user?.id,
+    });
     throw new ApiError(404, 'Restaurant not found');
   }
 
