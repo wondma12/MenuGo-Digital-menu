@@ -187,21 +187,27 @@ function patchPgClientQuery() {
       return originalQuery.apply(this, arguments);
     }
 
-    const emitter = new EventEmitter();
-    process.nextTick(() => {
-      originalQuery.call(this, text, (error, result) => {
-        if (error) {
-          emitter.emit('error', error);
-          return;
-        }
+    const result = originalQuery.call(this, text);
 
-        const rows = Array.isArray(result && result.rows) ? result.rows : [];
-        for (const row of rows) {
-          emitter.emit('row', row);
-        }
-        emitter.emit('end');
-      });
+    if (!result || typeof result.then !== 'function') {
+      return result;
+    }
+
+    const emitter = new EventEmitter();
+
+    result.then((res) => {
+      const rows = Array.isArray(res && res.rows) ? res.rows : [];
+      rows.forEach((row) => emitter.emit('row', row));
+      emitter.emit('end', res);
+    }).catch((error) => {
+      emitter.emit('error', error);
     });
+
+    emitter.then = result.then.bind(result);
+    emitter.catch = result.catch.bind(result);
+    if (typeof result.finally === 'function') {
+      emitter.finally = result.finally.bind(result);
+    }
 
     return emitter;
   };

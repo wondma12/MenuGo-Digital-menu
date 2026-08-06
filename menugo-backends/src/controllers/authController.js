@@ -464,10 +464,17 @@ const logout = catchAsync(async (req, res) => {
   const token = req.headers.authorization?.split(' ')[1];
 
   if (token) {
-    await UserSession.update(
-      { revoked_at: new Date() },
-      { where: { token } },
-    );
+    try {
+      await UserSession.update(
+        { revoked_at: new Date() },
+        { where: { token } },
+      );
+    } catch (updateError) {
+      logger.warn('Unable to revoke session during logout', {
+        error: updateError && updateError.message ? updateError.message : String(updateError),
+        tokenProvided: Boolean(token),
+      });
+    }
   }
 
   res.json(ApiResponse.success(null, 'Logged out successfully'));

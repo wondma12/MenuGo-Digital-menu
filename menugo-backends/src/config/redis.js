@@ -9,23 +9,25 @@ const isRedisEnabled = () => {
   const hasRedisUrl = Boolean(process.env.REDIS_URL);
   const hasRedisHost = Boolean(process.env.REDIS_HOST);
   const hasRedisPort = Boolean(process.env.REDIS_PORT);
+  const hasRedisConfig = hasRedisUrl || (hasRedisHost && hasRedisPort);
 
   if (explicitDisabled) return false;
-  if (explicitEnabled) return true;
+  if (explicitEnabled) {
+    if (!hasRedisConfig) {
+      logger.warn('Redis explicitly enabled, but REDIS_URL or REDIS_HOST and REDIS_PORT are not configured. Skipping Redis initialization.');
+      return false;
+    }
+    return true;
+  }
 
   const bindsToLocalhost = (value) => /^(localhost|127\.0\.0\.1|\[::1\]|::1)$/i.test(String(value || '').trim());
   const redisUrlIsLocal = hasRedisUrl && /^(redis:\/\/)(:?[^@]*@)?(localhost|127\.0\.0\.1|\[::1\]|::1)(:\d+)?/i.test(process.env.REDIS_URL);
 
-  if (process.env.NODE_ENV === 'production') {
-    if (redisUrlIsLocal) return false;
-    if (hasRedisHost && hasRedisPort && !bindsToLocalhost(process.env.REDIS_HOST)) {
-      return true;
-    }
-    return false;
-  }
+  if (hasRedisUrl && !redisUrlIsLocal) return true;
+  if (hasRedisHost && hasRedisPort && !bindsToLocalhost(process.env.REDIS_HOST)) return true;
 
-  if (hasRedisUrl) return true;
-  return Boolean(hasRedisHost && hasRedisPort);
+  // Only connect to localhost Redis when explicitly enabled.
+  return false;
 };
 
 const formatError = (err) => {
@@ -47,6 +49,18 @@ const formatError = (err) => {
   return err.message || String(err);
 };
 
+const cleanupRedisClient = async () => {
+  if (!redisClient) return;
+  const clientToClose = redisClient;
+  redisClient = null;
+  clientToClose.removeAllListeners();
+  try {
+    await clientToClose.disconnect();
+  } catch (cleanupError) {
+    // ignore cleanup failures, redis is already unavailable
+  }
+};
+
 const initRedis = async () => {
   const redisEnabled = isRedisEnabled();
 
@@ -56,34 +70,59 @@ const initRedis = async () => {
   }
 
   try {
+    const useTls = ['true', '1', 'yes'].includes(String(process.env.REDIS_TLS || '').toLowerCase());
     let redisUrl = process.env.REDIS_URL;
 
     if (!redisUrl) {
       const host = process.env.REDIS_HOST || 'localhost';
       const port = process.env.REDIS_PORT || 6379;
+      const username = process.env.REDIS_USERNAME;
       const password = process.env.REDIS_PASSWORD;
+      const scheme = useTls ? 'rediss' : 'redis';
+      const auth = username
+        ? `${encodeURIComponent(username)}:${encodeURIComponent(password || '')}@`
+        : password
+          ? `:${encodeURIComponent(password)}@`
+          : '';
 
-      if (password) {
-        redisUrl = `redis://:${password}@${host}:${port}`;
-      } else {
-        redisUrl = `redis://${host}:${port}`;
-      }
+      redisUrl = `${scheme}://${auth}${host}:${port}`;
+    } else if (useTls && /^redis:\/\//i.test(redisUrl)) {
+      redisUrl = redisUrl.replace(/^redis:\/\//i, 'rediss://');
     }
 
     logger.info(`Attempting to connect to Redis at: ${redisUrl.replace(/:[^:]+@/, ':***@')}`);
 
-    redisClient = redis.createClient({
+    const redisOptions = {
       url: redisUrl,
       database: process.env.REDIS_DB || 0,
+      disableOfflineQueue: true,
       socket: {
-        connectTimeout: 2000,
+        connectTimeout: 5000,
         reconnectStrategy: false,
       },
-    });
+    };
+
+    if (useTls) {
+      redisOptions.socket.tls = true;
+    }
+
+    redisClient = redis.createClient(redisOptions);
+
+    let redisErrorCount = 0;
+    const maxRedisErrorLogs = 1;
 
     redisClient.on('error', (err) => {
       const message = formatError(err);
-      logger.warn('Redis unavailable; continuing without cache', { name: err && err.name, message, stack: err && err.stack });
+      if (redisErrorCount < maxRedisErrorLogs) {
+        logger.warn('Redis unavailable; continuing without cache', { name: err && err.name, message, stack: err && err.stack });
+      } else {
+        logger.debug('Redis error after initial failure', { name: err && err.name, message });
+      }
+      redisErrorCount += 1;
+    });
+
+    redisClient.on('end', () => {
+      logger.debug('Redis connection ended');
     });
 
     redisClient.on('connect', () => {
@@ -94,7 +133,7 @@ const initRedis = async () => {
     logger.info('Redis client initialized successfully');
     return redisClient;
   } catch (error) {
-    redisClient = null;
+    await cleanupRedisClient();
     const message = formatError(error);
     logger.warn('Redis unavailable; continuing without cache', { name: error && error.name, message, stack: error && error.stack });
     return null;

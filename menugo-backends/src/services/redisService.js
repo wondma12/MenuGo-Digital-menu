@@ -5,23 +5,28 @@ let redisClient = null;
 
 const isRedisEnabled = () => {
   const explicitEnabled = process.env.REDIS_ENABLED === 'true' || process.env.REDIS_ENABLED === '1';
+  const explicitDisabled = process.env.REDIS_ENABLED === 'false' || process.env.REDIS_ENABLED === '0';
   const hasRedisUrl = Boolean(process.env.REDIS_URL);
   const hasRedisHost = Boolean(process.env.REDIS_HOST);
   const hasRedisPort = Boolean(process.env.REDIS_PORT);
+  const hasRedisConfig = hasRedisUrl || (hasRedisHost && hasRedisPort);
 
-  if (explicitEnabled || hasRedisUrl) return true;
-
-  if (process.env.NODE_ENV === 'production') {
-    return Boolean(
-      hasRedisHost &&
-      hasRedisPort &&
-      process.env.REDIS_HOST !== 'localhost' &&
-      process.env.REDIS_HOST !== '127.0.0.1' &&
-      process.env.REDIS_HOST !== '::1'
-    );
+  if (explicitDisabled) return false;
+  if (explicitEnabled) {
+    if (!hasRedisConfig) {
+      logger.warn('Redis explicitly enabled, but REDIS_URL or REDIS_HOST and REDIS_PORT are not configured. Skipping Redis initialization.');
+      return false;
+    }
+    return true;
   }
 
-  return Boolean(hasRedisHost && hasRedisPort);
+  const bindsToLocalhost = (value) => /^(localhost|127\.0\.0\.1|\[::1\]|::1)$/i.test(String(value || '').trim());
+  const redisUrlIsLocal = hasRedisUrl && /^(redis:\/\/)(:?[^@]*@)?(localhost|127\.0\.0\.1|\[::1\]|::1)(:\d+)?/i.test(process.env.REDIS_URL);
+
+  if (hasRedisUrl && !redisUrlIsLocal) return true;
+  if (hasRedisHost && hasRedisPort && !bindsToLocalhost(process.env.REDIS_HOST)) return true;
+
+  return false;
 };
 
 const formatError = (err) => {
@@ -31,7 +36,7 @@ const formatError = (err) => {
       const inner = Array.from(err.errors || []).map(e => (e && (e.message || String(e))) || String(e));
       return inner.length ? inner.join(' | ') : (err.message || String(err));
     } catch (e) {
-      return err.message || String(err);
+      return err.message || String(e);
     }
   }
   if (err && Array.isArray(err.errors)) {
@@ -39,6 +44,18 @@ const formatError = (err) => {
     return inner.length ? inner.join(' | ') : (err.message || String(err));
   }
   return err.message || String(err);
+};
+
+const cleanupRedisClient = async () => {
+  if (!redisClient) return;
+  const clientToClose = redisClient;
+  redisClient = null;
+  clientToClose.removeAllListeners();
+  try {
+    await clientToClose.disconnect();
+  } catch (cleanupError) {
+    // ignore cleanup failures, redis is already unavailable
+  }
 };
 
 // Initialize Redis client
@@ -51,19 +68,57 @@ const initRedis = async () => {
   }
 
   try {
-    redisClient = redis.createClient({
-      url: process.env.REDIS_URL || `redis://${process.env.REDIS_HOST || 'localhost'}:${process.env.REDIS_PORT || 6379}`,
-      password: process.env.REDIS_PASSWORD,
+    const useTls = ['true', '1', 'yes'].includes(String(process.env.REDIS_TLS || '').toLowerCase());
+    let redisUrl = process.env.REDIS_URL;
+
+    if (!redisUrl) {
+      const host = process.env.REDIS_HOST || 'localhost';
+      const port = process.env.REDIS_PORT || 6379;
+      const username = process.env.REDIS_USERNAME;
+      const password = process.env.REDIS_PASSWORD;
+      const scheme = useTls ? 'rediss' : 'redis';
+      const auth = username
+        ? `${encodeURIComponent(username)}:${encodeURIComponent(password || '')}@`
+        : password
+          ? `:${encodeURIComponent(password)}@`
+          : '';
+
+      redisUrl = `${scheme}://${auth}${host}:${port}`;
+    } else if (useTls && /^redis:\/\//i.test(redisUrl)) {
+      redisUrl = redisUrl.replace(/^redis:\/\//i, 'rediss://');
+    }
+
+    const redisOptions = {
+      url: redisUrl,
       database: parseInt(process.env.REDIS_DB) || 0,
+      disableOfflineQueue: true,
       socket: {
-        connectTimeout: 2000,
+        connectTimeout: 5000,
         reconnectStrategy: false,
       },
-    });
+    };
+
+    if (useTls) {
+      redisOptions.socket.tls = true;
+    }
+
+    redisClient = redis.createClient(redisOptions);
+
+    let redisErrorCount = 0;
+    const maxRedisErrorLogs = 1;
 
     redisClient.on('error', (err) => {
       const message = formatError(err);
-      logger.warn('Redis unavailable; continuing without cache', { name: err && err.name, message, stack: err && err.stack });
+      if (redisErrorCount < maxRedisErrorLogs) {
+        logger.warn('Redis unavailable; continuing without cache', { name: err && err.name, message, stack: err && err.stack });
+      } else {
+        logger.debug('Redis error after initial failure', { name: err && err.name, message });
+      }
+      redisErrorCount += 1;
+    });
+
+    redisClient.on('end', () => {
+      logger.debug('Redis connection ended');
     });
 
     redisClient.on('connect', () => {
@@ -73,7 +128,7 @@ const initRedis = async () => {
     await redisClient.connect();
     return redisClient;
   } catch (error) {
-    redisClient = null;
+    await cleanupRedisClient();
     const message = formatError(error);
     logger.warn('Redis unavailable; continuing without cache', { name: error && error.name, message, stack: error && error.stack });
     return null;
