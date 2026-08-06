@@ -156,7 +156,7 @@ export default defineConfig(async ({ mode }) => {
           timeout: 120000,
           // Provide clearer console errors when proxying fails and attempt alternatives
           onError: async (err, req, res) => {
-            // eslint-disable-next-line no-console
+             
             console.error('Vite proxy /api error ->', err && err.message ? err.message : err);
             try {
               if (!res.headersSent) {
@@ -178,7 +178,7 @@ export default defineConfig(async ({ mode }) => {
                   if (!target) continue
                   const full = `${target.replace(/\/$/, '')}${proxiedUrl}`
                   try {
-                    // eslint-disable-next-line no-await-in-loop
+                     
                     const upstream = await axios.request({ url: full, method: req.method || 'GET', responseType: 'stream', timeout: 8000, validateStatus: () => true, httpAgent: new http.Agent({ keepAlive: true }), httpsAgent: new https.Agent({ keepAlive: true }) })
                     if (upstream && upstream.status >= 200 && upstream.status < 400 && upstream.data) {
                       // Pipe headers and stream back
@@ -210,7 +210,7 @@ export default defineConfig(async ({ mode }) => {
           rewrite: (path) => path.replace(/^\/auth/, '/auth'),
           timeout: 120000,
           onError: (err, req, res) => {
-            // eslint-disable-next-line no-console
+             
             console.error('Vite proxy /auth error ->', err && err.message ? err.message : err);
             try { if (!res.headersSent) { res.writeHead && res.writeHead(502); res.end && res.end('Bad gateway'); } } catch (e) {}
           },
@@ -228,7 +228,7 @@ export default defineConfig(async ({ mode }) => {
           },
           timeout: 120000,
           onError: (err, req, res) => {
-            // eslint-disable-next-line no-console
+             
             console.error('Vite proxy /uploads error ->', err && err.message ? err.message : err);
             try { if (!res.headersSent) { res.writeHead && res.writeHead(502); res.end && res.end('Bad gateway'); } } catch (e) {}
           },

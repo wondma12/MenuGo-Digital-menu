@@ -48,7 +48,7 @@ const QRCodeGenerator = ({ isOpen, onClose, table }) => {
   }
 
   const handlePrint = () => {
-    ;(async () => {
+    (async () => {
       if (!qrRef.current) return
       const canvas = await html2canvas(qrRef.current)
       const dataUrl = canvas.toDataURL()

@@ -305,29 +305,11 @@ export const AppRoutes = () => {
           />
           
           {/* 404 Page */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </React.Suspense>
-    </ErrorBoundary>
-  )
-}
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </React.Suspense>
+            </ErrorBoundary>
+          )
+        }
 
-function NotFound() {
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-      <div className="text-center">
-        <div className="text-9xl font-bold text-gray-300 dark:text-gray-700">404</div>
-        <h1 className="text-2xl font-semibold text-gray-900 dark:text-white mt-4">Page Not Found</h1>
-        <p className="text-gray-500 dark:text-gray-400 mt-2">The page you're looking for doesn't exist.</p>
-        <a
-          href="/"
-          className="mt-6 inline-flex items-center px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
-        >
-          Go Back Home
-        </a>
-      </div>
-    </div>
-  )
-}
-
-export default AppRoutes
+        export default AppRoutes

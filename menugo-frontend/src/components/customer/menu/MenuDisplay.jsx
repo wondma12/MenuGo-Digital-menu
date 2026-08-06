@@ -79,7 +79,7 @@ const MenuDisplay = () => {
     }
     fetchItem()
     return () => { mounted = false }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+   
   }, [searchParams, menuItems])
 
   // Fetch orders for current table (so customers can see status of items they've ordered)

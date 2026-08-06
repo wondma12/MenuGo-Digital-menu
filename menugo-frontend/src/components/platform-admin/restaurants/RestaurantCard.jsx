@@ -27,6 +27,8 @@ const RestaurantCard = ({ restaurant, onUpdate, variant = 'grid' }) => {
   const [showVerifyDialog, setShowVerifyDialog] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
 
+  const isPlatformAdmin = useAuthStore.getState()?.user?.role === 'platform_admin'
+
   const isListView = variant === 'list'
 
   const [timeLeft, setTimeLeft] = useState(null)
@@ -166,7 +168,7 @@ const RestaurantCard = ({ restaurant, onUpdate, variant = 'grid' }) => {
       icon: ShieldCheckIcon,
       onClick: () => setShowVerifyDialog(true),
       danger: false,
-      hidden: !restaurant.is_active || restaurant.is_verified || useAuthStore.getState()?.user?.role !== 'platform_admin',
+        hidden: !restaurant.is_active || restaurant.is_verified || !isPlatformAdmin,
     },
     {
       label: 'Delete',
@@ -300,7 +302,7 @@ const RestaurantCard = ({ restaurant, onUpdate, variant = 'grid' }) => {
           >
             {restaurant.is_active ? <XCircleIcon className="h-4 w-4" /> : <CheckCircleIcon className="h-4 w-4" />}
           </button>
-          {(!restaurant.is_verified && restaurant.is_active && useAuthStore.getState()?.user?.role === 'platform_admin') && (
+          {(!restaurant.is_verified && restaurant.is_active && isPlatformAdmin) && (
             <button
               onClick={() => setShowVerifyDialog(true)}
               title="Verify"
@@ -431,7 +433,7 @@ const RestaurantCard = ({ restaurant, onUpdate, variant = 'grid' }) => {
         </div>
 
         <div className="mt-2 flex gap-1 justify-end">
-          {(!restaurant.is_verified && restaurant.is_active) && (
+          {(!restaurant.is_verified && restaurant.is_active && isPlatformAdmin) && (
             <button
               onClick={() => setShowVerifyDialog(true)}
               title="Verify"
