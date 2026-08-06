@@ -19,17 +19,14 @@ const createCallRequest = catchAsync(async (req, res) => {
 
   // Resolve restaurant by QR identifier or primary key.
   // Allow forgiving slug/name resolution for customer-facing identifiers.
-  let restaurant = await Restaurant.findOne({ where: { qr_code_identifier: restaurantParam, is_active: true } });
+  let restaurant = await Restaurant.findOne({ where: { qr_code_identifier: restaurantParam, deleted_at: null, is_active: true } });
   if (!restaurant) {
-    restaurant = await Restaurant.findByPk(restaurantParam);
-    if (restaurant && !restaurant.is_active) {
-      restaurant = null
-    }
+    restaurant = await Restaurant.findOne({ where: { id: restaurantParam, deleted_at: null, is_active: true } }).catch(() => null);
   }
 
   if (!restaurant) {
     const normalizedParam = normalizeIdentifier(restaurantParam)
-    const candidates = await Restaurant.findAll({ where: { is_active: true } })
+    const candidates = await Restaurant.findAll({ where: { deleted_at: null, is_active: true } })
     restaurant = candidates.find((r) => {
       try {
         const slug = normalizeIdentifier(r.qr_code_identifier) || normalizeIdentifier(r.name)

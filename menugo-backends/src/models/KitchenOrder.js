@@ -18,6 +18,10 @@ class KitchenOrder {
     try {
       await connection.beginTransaction();
 
+      const dialect = (db && db.sequelize && typeof db.sequelize.getDialect === 'function')
+        ? db.sequelize.getDialect()
+        : 'mysql';
+
       const orderId = orderData.order_id ?? null;
       const restaurantId = orderData.restaurant_id ?? null;
       const orderNumber = typeof orderData.order_number !== 'undefined' && orderData.order_number !== null
@@ -32,15 +36,22 @@ class KitchenOrder {
       const estimatedTime = typeof orderData.estimated_time !== 'undefined' ? orderData.estimated_time : null;
       const notesVal = typeof orderData.notes !== 'undefined' ? orderData.notes : null;
 
-      const [result] = await connection.execute(
-        `INSERT INTO kitchen_orders (
+      const kitchenOrderSql = dialect === 'postgres'
+        ? `INSERT INTO kitchen_orders (
           order_id, restaurant_id, order_number, table_number, customer_name,
           waiter_id, waiter_name, status, station, priority, estimated_time, notes
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING id`
+        : `INSERT INTO kitchen_orders (
+          order_id, restaurant_id, order_number, table_number, customer_name,
+          waiter_id, waiter_name, status, station, priority, estimated_time, notes
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+
+      const [result] = await connection.execute(
+        kitchenOrderSql,
         [orderId, restaurantId, orderNumber, tableNumber, customerName, waiterId, waiterName, 'pending', stationVal, priorityVal, estimatedTime, notesVal]
       );
 
-      const kitchenOrderId = result.insertId;
+      const kitchenOrderId = result.insertId ?? (Array.isArray(result.rows) && result.rows[0] ? result.rows[0].id : null);
 
       // Insert items and modifiers
       if (Array.isArray(orderData.items)) {
@@ -50,13 +61,18 @@ class KitchenOrder {
           const qty = typeof it.quantity !== 'undefined' ? it.quantity : 1;
           const prepTime = typeof it.preparation_time !== 'undefined' ? it.preparation_time : null;
 
+          const itemSql = dialect === 'postgres'
+            ? `INSERT INTO kitchen_order_items (kitchen_order_id, item_id, item_name, quantity, preparation_time)
+             VALUES ($1, $2, $3, $4, $5) RETURNING id`
+            : `INSERT INTO kitchen_order_items (kitchen_order_id, item_id, item_name, quantity, preparation_time)
+             VALUES (?, ?, ?, ?, ?)`;
+
           const [itemRes] = await connection.execute(
-            `INSERT INTO kitchen_order_items (kitchen_order_id, item_id, item_name, quantity, preparation_time)
-             VALUES (?, ?, ?, ?, ?)`,
+            itemSql,
             [kitchenOrderId, itemId, itemName, qty, prepTime]
           );
 
-          const kitchenOrderItemId = itemRes.insertId;
+          const kitchenOrderItemId = itemRes.insertId ?? (Array.isArray(itemRes.rows) && itemRes.rows[0] ? itemRes.rows[0].id : null);
 
           if (Array.isArray(it.modifiers)) {
             for (const m of it.modifiers) {
@@ -93,7 +109,7 @@ class KitchenOrder {
     try {
       const dashboardDate = date ? new Date(date) : new Date();
       const dateStr = format(dashboardDate, 'yyyy-MM-dd');
-      const dialect = (db && db.sequelize && typeof db.sequelize.getDialect === 'function') ? db.sequelize.getDialect() : 'mysql';
+      const dialect = (db && db.sequelize && typeof db.sequelize.getDialect === 'function') ? String(db.sequelize.getDialect()).toLowerCase() : 'mysql';
 
       // Pending orders (same SQL works on both dialects)
       const [pending] = await db.execute(
@@ -105,13 +121,20 @@ class KitchenOrder {
         [restaurantId]
       );
 
-      // Preparing orders - compute elapsed minutes differently for sqlite vs mysql
+      // Preparing orders - compute elapsed minutes per dialect.
       let preparingSql;
       if (dialect === 'sqlite') {
         preparingSql = `SELECT k.*, (CAST(strftime('%s','now') AS INTEGER) - CAST(strftime('%s', k.started_at) AS INTEGER)) / 60.0 as elapsed_minutes,
           COALESCE((SELECT COUNT(*) FROM kitchen_order_items WHERE kitchen_order_id = k.id), 0) as item_count
          FROM kitchen_orders k
          WHERE k.restaurant_id = ? AND k.status = 'preparing'
+         ORDER BY k.started_at ASC
+         LIMIT 50`;
+      } else if (dialect === 'postgres' || dialect === 'postgresql') {
+        preparingSql = `SELECT k.*, EXTRACT(EPOCH FROM (NOW() - k.started_at)) / 60.0 as elapsed_minutes,
+          COALESCE((SELECT COUNT(*) FROM kitchen_order_items WHERE kitchen_order_id = k.id), 0) as item_count
+         FROM kitchen_orders k
+         WHERE k.restaurant_id = $1 AND k.status = 'preparing'
          ORDER BY k.started_at ASC
          LIMIT 50`;
       } else {
@@ -146,6 +169,8 @@ class KitchenOrder {
       let avgPrepSql;
       if (dialect === 'sqlite') {
         avgPrepSql = `SELECT AVG((CAST(strftime('%s', ready_at) AS INTEGER) - CAST(strftime('%s', started_at) AS INTEGER)) / 60.0) as avg_time FROM kitchen_orders WHERE restaurant_id = ? AND status = 'completed' AND DATE(completed_at) = ? AND started_at IS NOT NULL AND ready_at IS NOT NULL`;
+      } else if (dialect === 'postgres' || dialect === 'postgresql') {
+        avgPrepSql = `SELECT AVG(EXTRACT(EPOCH FROM (ready_at - started_at)) / 60.0) as avg_time FROM kitchen_orders WHERE restaurant_id = $1 AND status = 'completed' AND DATE(completed_at) = $2 AND started_at IS NOT NULL AND ready_at IS NOT NULL`;
       } else {
         avgPrepSql = `SELECT AVG(TIMESTAMPDIFF(MINUTE, started_at, ready_at)) as avg_time FROM kitchen_orders WHERE restaurant_id = ? AND status = 'completed' AND DATE(completed_at) = ? AND started_at IS NOT NULL AND ready_at IS NOT NULL`;
       }
@@ -344,7 +369,15 @@ class KitchenOrder {
   static async getAnalytics(restaurantId, date = null) {
     const targetDate = date ? new Date(date) : new Date();
     const dateStr = format(targetDate, 'yyyy-MM-dd');
-    const [analytics] = await db.execute(`SELECT status, COUNT(*) as count, AVG(TIMESTAMPDIFF(MINUTE, started_at, ready_at)) as avg_prep_time FROM kitchen_orders WHERE restaurant_id = ? AND DATE(created_at) = ? GROUP BY status`, [restaurantId, dateStr]);
+    const dialect = (db && db.sequelize && typeof db.sequelize.getDialect === 'function') ? String(db.sequelize.getDialect()).toLowerCase() : 'mysql';
+    let avgPrepExpr = 'AVG(TIMESTAMPDIFF(MINUTE, started_at, ready_at))';
+    if (dialect === 'sqlite') {
+      avgPrepExpr = "AVG((CAST(strftime('%s', ready_at) AS INTEGER) - CAST(strftime('%s', started_at) AS INTEGER)) / 60.0)";
+    } else if (dialect === 'postgres' || dialect === 'postgresql') {
+      avgPrepExpr = 'AVG(EXTRACT(EPOCH FROM (ready_at - started_at)) / 60.0)';
+    }
+
+    const [analytics] = await db.execute(`SELECT status, COUNT(*) as count, ${avgPrepExpr} as avg_prep_time FROM kitchen_orders WHERE restaurant_id = ? AND DATE(created_at) = ? GROUP BY status`, [restaurantId, dateStr]);
     const [topItems] = await db.execute(`SELECT ki.item_name as name, SUM(ki.quantity) as total_quantity, AVG(ki.preparation_time) as avg_prep_time FROM kitchen_order_items ki JOIN kitchen_orders k ON ki.kitchen_order_id = k.id WHERE k.restaurant_id = ? AND k.status = 'completed' GROUP BY ki.item_name ORDER BY total_quantity DESC LIMIT 10`, [restaurantId]);
     return { analytics, topItems };
   }

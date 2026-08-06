@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Mail, 
@@ -69,6 +69,8 @@ const schema = yup.object({
 
 const Login = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const forceLogin = new URLSearchParams(location.search).get('forceLogin') === '1';
   const { login, isLoading, error, clearError, checkAuth, isAuthenticated } = useAuthStore();
   const [showError, setShowError] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -105,6 +107,8 @@ const Login = () => {
 
     const redirectIfAuthenticated = async () => {
       try {
+        if (forceLogin) return;
+
         const sessionToken = typeof window !== 'undefined' ? window.sessionStorage.getItem('token') : null;
         if (!sessionToken && !isAuthenticated) return;
 

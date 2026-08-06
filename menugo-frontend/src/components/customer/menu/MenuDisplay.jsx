@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { useParams, useSearchParams, Link } from 'react-router-dom'
+import { useParams, useSearchParams } from 'react-router-dom'
 import { useQuery } from 'react-query'
 import { motion, AnimatePresence } from 'framer-motion'
 import RestaurantHeader from './RestaurantHeader'

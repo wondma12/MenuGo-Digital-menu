@@ -40,6 +40,42 @@ const RestaurantDetails = () => {
   const [previewLoading, setPreviewLoading] = useState(false)
   const [previewError, setPreviewError] = useState(null)
 
+  const handleDocumentPreview = async (href) => {
+    if (!href) return
+    const proxyUrl = `/api/preview?url=${encodeURIComponent(href)}`
+    setPreviewError(null)
+    setPreviewLoading(true)
+
+    try {
+      const headResponse = await fetch(proxyUrl, { method: 'HEAD' })
+      if (headResponse.ok) {
+        const contentType = headResponse.headers.get('content-type') || ''
+        setPreviewSrc({ url: proxyUrl, contentType })
+        setShowPreview(true)
+        return
+      }
+
+      // Some providers reject HEAD requests even though GET works.
+      const getResponse = await fetch(proxyUrl, { method: 'GET' })
+      if (!getResponse.ok) {
+        throw new Error('Preview resource is not available')
+      }
+      const contentType = getResponse.headers.get('content-type') || ''
+      if (getResponse.body && typeof getResponse.body.cancel === 'function') {
+        getResponse.body.cancel()
+      }
+      setPreviewSrc({ url: proxyUrl, contentType })
+      setShowPreview(true)
+    } catch (err) {
+      console.warn('Preview check failed, falling back to direct URL:', err)
+      setPreviewError('Preview not available due to cross-origin restrictions or network error. You can download the document.')
+      setPreviewSrc({ url: href, contentType: '' })
+      setShowPreview(true)
+    } finally {
+      setPreviewLoading(false)
+    }
+  }
+
   // Extract restaurant data from response (handle multiple possible formats)
   const restaurant = data?.data?.data || data?.data || data;
 
@@ -407,29 +443,7 @@ const RestaurantDetails = () => {
                       <button
                         onClick={(e) => {
                           e.preventDefault();
-                          // load preview: try to fetch and create object URL for reliable embedding
-                          const handlePreview = async () => {
-                            setPreviewError(null)
-                            setPreviewLoading(true)
-                            try {
-                              // Prefer server-side proxy to avoid CORS / X-Frame-Options blocking.
-                              const proxyUrl = `/api/preview?url=${encodeURIComponent(businessLicenseHref)}`
-                              // Lightweight HEAD to verify availability without streaming the entire file
-                              const head = await fetch(proxyUrl, { method: 'HEAD' })
-                              if (!head.ok) throw new Error('Preview not available')
-                              const contentType = head.headers.get('content-type') || ''
-                              setPreviewSrc({ url: proxyUrl, contentType })
-                              setShowPreview(true)
-                            } catch (err) {
-                              // Fallback: show original href in iframe and allow download
-                              setPreviewError('Preview not available due to cross-origin restrictions or network error. You can download the document.')
-                              setPreviewSrc({ url: businessLicenseHref, contentType: '' })
-                              setShowPreview(true)
-                            } finally {
-                              setPreviewLoading(false)
-                            }
-                          }
-                          handlePreview()
+                          handleDocumentPreview(businessLicenseHref)
                         }}
                         className="text-primary-600 hover:underline"
                       >

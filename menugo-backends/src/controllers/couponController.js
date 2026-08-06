@@ -1,8 +1,8 @@
-const { Coupon, CouponUsage, Order } = require('../models');
+const { Coupon, CouponUsage, Order, Restaurant } = require('../models');
 const { ApiResponse } = require('../utils/apiResponse');
 const { ApiError } = require('../utils/apiError');
 const { catchAsync } = require('../utils/catchAsync');
-const { Op } = require('sequelize');
+const { Op, fn, col, where } = require('sequelize');
 
 // Get all coupons for restaurant
 const getCoupons = catchAsync(async (req, res) => {
@@ -209,13 +209,74 @@ const getCouponAnalytics = catchAsync(async (req, res) => {
   }, 'Coupon analytics retrieved'));
 });
 
+const normalizeRestaurantIdentifier = (value) => {
+  if (!value) return '';
+  return value.toString().trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9\-]/g, '');
+};
+
+const resolvePublicRestaurant = async (restaurantId) => {
+  if (!restaurantId) return null;
+
+  const normalizeLookup = normalizeRestaurantIdentifier(restaurantId);
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  let restaurant = null;
+
+  // Exact QR slug or identifier lookup first
+  restaurant = await Restaurant.findOne({ where: { qr_code_identifier: restaurantId, deleted_at: null, is_active: true } }).catch(() => null);
+
+  // If the exact identifier did not match, also try a case-insensitive slug lookup
+  // before falling back to UUID/PK lookup. This helps support user-facing slugs
+  // that may differ only by case or formatting.
+  if (!restaurant) {
+    restaurant = await Restaurant.findOne({
+      where: {
+        deleted_at: null,
+        is_active: true,
+        [Op.or]: [
+          { qr_code_identifier: restaurantId },
+          where(fn('lower', col('qr_code_identifier')), normalizeLookup),
+        ],
+      },
+    }).catch(() => null);
+  }
+
+  // If the input looks like a UUID, try primary key lookup too.
+  if (!restaurant && uuidRegex.test(restaurantId)) {
+    restaurant = await Restaurant.findOne({ where: { id: restaurantId, deleted_at: null, is_active: true } }).catch(() => null);
+  }
+
+  // Fallback to forgiving slug/name match across all active restaurants.
+  if (!restaurant) {
+    const candidates = await Restaurant.findAll({ where: { deleted_at: null, is_active: true } });
+    restaurant = candidates.find((candidate) => {
+      try {
+        const candidateSlug = normalizeRestaurantIdentifier(candidate.qr_code_identifier) || normalizeRestaurantIdentifier(candidate.name);
+        return candidateSlug === normalizeLookup || normalizeRestaurantIdentifier(candidate.name) === normalizeLookup;
+      } catch (e) {
+        return false;
+      }
+    }) || null;
+
+    if (restaurant && restaurant.toJSON) {
+      restaurant = Restaurant.build(restaurant.toJSON(), { isNewRecord: false });
+    }
+  }
+
+  return restaurant;
+};
+
 // Public: Get active coupons for restaurant (for menu/promotions display)
 const getPublicCoupons = catchAsync(async (req, res) => {
   const { restaurantId } = req.params;
 
+  const restaurant = await resolvePublicRestaurant(restaurantId);
+  if (!restaurant) {
+    throw new ApiError(404, 'Restaurant not found');
+  }
+
   const coupons = await Coupon.findAll({
     where: {
-      restaurant_id: restaurantId,
+      restaurant_id: restaurant.id,
       is_active: true,
       start_date: { [Op.lte]: new Date() },
       end_date: { [Op.gte]: new Date() },

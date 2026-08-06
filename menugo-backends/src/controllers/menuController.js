@@ -297,14 +297,14 @@ const getCustomerMenu = catchAsync(async (req, res) => {
 
   let restaurant = null;
 
-  // First try an exact identifier match across non-deleted restaurants.
+  // First try an exact identifier match across non-deleted, active restaurants.
   if (restaurantId) {
-    restaurant = await Restaurant.findOne({ where: { qr_code_identifier: restaurantId, deleted_at: null } }).catch(() => null);
+    restaurant = await Restaurant.findOne({ where: { qr_code_identifier: restaurantId, deleted_at: null, is_active: true } }).catch(() => null);
   }
 
   // Fallback to UUID primary key lookup.
   if (!restaurant && restaurantId && uuidRegex.test(restaurantId)) {
-    restaurant = await Restaurant.findByPk(restaurantId).catch(() => null);
+    restaurant = await Restaurant.findOne({ where: { id: restaurantId, deleted_at: null, is_active: true } }).catch(() => null);
   }
 
   // If still not found, attempt a forgiving slug/name lookup across all non-deleted restaurants.

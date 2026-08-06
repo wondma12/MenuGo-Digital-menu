@@ -15,13 +15,23 @@ class KitchenStation {
 
   // Create station
   static async create(stationData) {
+    const dialect = (db && db.sequelize && typeof db.sequelize.getDialect === 'function')
+      ? db.sequelize.getDialect()
+      : 'mysql';
+
+    const insertSql = dialect === 'postgres'
+      ? `INSERT INTO kitchen_stations (restaurant_id, name, station_type, chef_id, display_order)
+       VALUES ($1, $2, $3, $4, $5) RETURNING id`
+      : `INSERT INTO kitchen_stations (restaurant_id, name, station_type, chef_id, display_order)
+       VALUES (?, ?, ?, ?, ?)`;
+
     const [result] = await db.execute(
-      `INSERT INTO kitchen_stations (restaurant_id, name, station_type, chef_id, display_order)
-       VALUES (?, ?, ?, ?, ?)`,
+      insertSql,
       [stationData.restaurant_id, stationData.name, stationData.station_type, 
        stationData.chef_id, stationData.display_order || 0]
     );
-    return { id: result.insertId, ...stationData };
+    const stationId = result.insertId ?? (Array.isArray(result.rows) && result.rows[0] ? result.rows[0].id : null);
+    return { id: stationId, ...stationData };
   }
 
   // Assign order to station

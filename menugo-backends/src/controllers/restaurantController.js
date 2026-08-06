@@ -262,28 +262,27 @@ const getRestaurantById = catchAsync(async (req, res) => {
     },
   ];
 
+  const normalizeIdentifier = (s) => (s || '').toString().trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9\-]/g, '');
+
   let restaurant = null;
   if (uuidRegex.test(paramId)) {
-    // Primary key lookup
+    // Primary key lookup for UUID ids only.
     restaurant = await Restaurant.findByPk(paramId, { include: includes });
   } else {
-    // Attempt primary key lookup before falling back to slug-based identifiers.
-    // Some restaurants are stored with numeric or non-UUID primary keys.
-    restaurant = await Restaurant.findByPk(paramId, { include: includes });
-    if (!restaurant) {
-      restaurant = await Restaurant.findOne({ where: { qr_code_identifier: paramId, deleted_at: null }, include: includes });
-    }
+    // Slug lookup by identifier. Avoid calling findByPk with non-UUID text because
+    // PostgreSQL UUID columns will reject invalid UUID syntax.
+    restaurant = await Restaurant.findOne({ where: { qr_code_identifier: paramId, deleted_at: null }, include: includes });
 
-    // If not found, attempt a more forgiving match: normalize name -> slug and compare
+    // If not found by explicit identifier, try forgiving slug/name normalization.
     if (!restaurant) {
+      const normalizedParam = normalizeIdentifier(paramId);
       const candidates = await Restaurant.findAll({ where: { deleted_at: null }, include: includes });
-      const normalize = (s) => (s || '').toString().trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9\-]/g, '');
-      restaurant = candidates.find(r => {
+      restaurant = candidates.find((r) => {
         try {
-          const slug = normalize(r.qr_code_identifier) || normalize(r.name);
-          return slug === normalize(paramId) || normalize(r.name) === normalize(paramId);
+          const slug = normalizeIdentifier(r.qr_code_identifier) || normalizeIdentifier(r.name);
+          return slug === normalizedParam || normalizeIdentifier(r.name) === normalizedParam;
         } catch (e) {
-          return false; 
+          return false;
         }
       }) || null;
       if (restaurant && restaurant.toJSON) {

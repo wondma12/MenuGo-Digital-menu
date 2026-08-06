@@ -153,10 +153,20 @@ class KitchenService {
   }
 
   async getOrdersByStatus(restaurantId, status) {
+    const dialect = (db && db.sequelize && typeof db.sequelize.getDialect === 'function') ? String(db.sequelize.getDialect()).toLowerCase() : 'mysql';
+    let waitingSql;
+    if (dialect === 'sqlite') {
+      waitingSql = `(CAST(strftime('%s','now') AS INTEGER) - CAST(strftime('%s', k.created_at) AS INTEGER)) / 60.0`;
+    } else if (dialect === 'postgres' || dialect === 'postgresql') {
+      waitingSql = `EXTRACT(EPOCH FROM (NOW() - k.created_at)) / 60.0`;
+    } else {
+      waitingSql = `TIMESTAMPDIFF(MINUTE, k.created_at, NOW())`;
+    }
+
     const [orders] = await db.execute(
       `SELECT k.*, 
         COALESCE((SELECT COUNT(*) FROM kitchen_order_items WHERE kitchen_order_id = k.id), 0) as item_count,
-        TIMESTAMPDIFF(MINUTE, k.created_at, NOW()) as waiting_minutes
+        ${waitingSql} as waiting_minutes
        FROM kitchen_orders k
        WHERE k.restaurant_id = ? AND k.status = ?
        ORDER BY 
@@ -196,15 +206,30 @@ class KitchenService {
   }
 
   async getKitchenMetrics(restaurantId) {
+    const dialect = (db && db.sequelize && typeof db.sequelize.getDialect === 'function') ? String(db.sequelize.getDialect()).toLowerCase() : 'mysql';
+    let dateTodayClause = 'CURDATE()';
+    let avgPrepExpr = 'TIMESTAMPDIFF(MINUTE, started_at, ready_at)';
+    let longestPrepExpr = "TIMESTAMPDIFF(MINUTE, started_at, NOW())";
+
+    if (dialect === 'sqlite') {
+      dateTodayClause = "DATE('now')";
+      avgPrepExpr = "(CAST(strftime('%s', ready_at) AS INTEGER) - CAST(strftime('%s', started_at) AS INTEGER)) / 60.0";
+      longestPrepExpr = "(CAST(strftime('%s','now') AS INTEGER) - CAST(strftime('%s', started_at) AS INTEGER)) / 60.0";
+    } else if (dialect === 'postgres' || dialect === 'postgresql') {
+      dateTodayClause = "CURRENT_DATE";
+      avgPrepExpr = "EXTRACT(EPOCH FROM (ready_at - started_at)) / 60.0";
+      longestPrepExpr = "EXTRACT(EPOCH FROM (NOW() - started_at)) / 60.0";
+    }
+
     const [metrics] = await db.execute(
       `SELECT 
         COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_count,
         COUNT(CASE WHEN status = 'preparing' THEN 1 END) as preparing_count,
         COUNT(CASE WHEN status = 'ready' THEN 1 END) as ready_count,
-        COUNT(CASE WHEN DATE(completed_at) = CURDATE() THEN 1 END) as completed_today,
+        COUNT(CASE WHEN DATE(completed_at) = ${dateTodayClause} THEN 1 END) as completed_today,
         AVG(CASE WHEN status = 'completed' AND started_at IS NOT NULL AND ready_at IS NOT NULL
-          THEN TIMESTAMPDIFF(MINUTE, started_at, ready_at) END) as avg_prep_time,
-        MAX(CASE WHEN status = 'preparing' THEN TIMESTAMPDIFF(MINUTE, started_at, NOW()) END) as longest_prep_time
+          THEN ${avgPrepExpr} END) as avg_prep_time,
+        MAX(CASE WHEN status = 'preparing' THEN ${longestPrepExpr} END) as longest_prep_time
        FROM kitchen_orders
        WHERE restaurant_id = ?`,
       [restaurantId]
@@ -234,13 +259,21 @@ class KitchenService {
   }
 
   async getRealtimeStats(restaurantId) {
+    const dialect = (db && db.sequelize && typeof db.sequelize.getDialect === 'function') ? String(db.sequelize.getDialect()).toLowerCase() : 'mysql';
+    let avgWaitExpr = 'TIMESTAMPDIFF(MINUTE, created_at, NOW())';
+    if (dialect === 'sqlite') {
+      avgWaitExpr = "(CAST(strftime('%s','now') AS INTEGER) - CAST(strftime('%s', created_at) AS INTEGER)) / 60.0";
+    } else if (dialect === 'postgres' || dialect === 'postgresql') {
+      avgWaitExpr = 'EXTRACT(EPOCH FROM (NOW() - created_at)) / 60.0';
+    }
+
     const [stats] = await db.execute(
       `SELECT 
         COUNT(*) as total_active,
         SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending,
         SUM(CASE WHEN status = 'preparing' THEN 1 ELSE 0 END) as preparing,
         SUM(CASE WHEN status = 'ready' THEN 1 ELSE 0 END) as ready,
-        AVG(TIMESTAMPDIFF(MINUTE, created_at, NOW())) as avg_wait_time
+        AVG(${avgWaitExpr}) as avg_wait_time
        FROM kitchen_orders
        WHERE restaurant_id = ? AND status IN ('pending', 'preparing', 'ready')`,
       [restaurantId]

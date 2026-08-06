@@ -56,11 +56,14 @@ const startServer = async () => {
         // Provide DB-specific CREATE statements. MySQL-compatible statements
         // are used by default; when running SQLite (dev fallback) use a
         // compatible variant to avoid syntax errors like AUTOINCREMENT/ENUM.
+        // Provide DB-specific CREATE statements. MySQL-compatible statements
+        // are used by default; SQLite and PostgreSQL use their own compatible
+        // variants so startup does not try to run the wrong DDL dialect.
         const creates = [];
         if (dialect === 'sqlite') {
           creates.push(
             `CREATE TABLE IF NOT EXISTS kitchen_orders (
-              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              id SERIAL PRIMARY KEY,
               order_id TEXT NOT NULL,
               restaurant_id TEXT NOT NULL,
               order_number TEXT NOT NULL,
@@ -80,110 +83,133 @@ const startServer = async () => {
               updated_at DATETIME DEFAULT (CURRENT_TIMESTAMP)
             )`,
           );
+        } else if (dialect === 'postgres') {
+          creates.push(
+            `CREATE TABLE IF NOT EXISTS kitchen_orders (
+              id SERIAL PRIMARY KEY,
+              order_id UUID NOT NULL,
+              restaurant_id UUID NOT NULL,
+              order_number VARCHAR(50) NOT NULL,
+              table_number VARCHAR(20) DEFAULT NULL,
+              customer_name VARCHAR(100) DEFAULT 'Guest',
+              waiter_id UUID NULL,
+              waiter_name VARCHAR(100) NULL,
+              status VARCHAR(255) CHECK (status IN ('pending','preparing','ready','completed','cancelled')) DEFAULT 'pending',
+              station VARCHAR(50) DEFAULT 'all',
+              priority VARCHAR(255) CHECK (priority IN ('low','normal','high','urgent')) DEFAULT 'normal',
+              started_at TIMESTAMP NULL,
+              ready_at TIMESTAMP NULL,
+              completed_at TIMESTAMP NULL,
+              estimated_time INT DEFAULT 0,
+              notes TEXT NULL,
+              created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+              updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )`,
+          );
 
           creates.push(
             `CREATE TABLE IF NOT EXISTS kitchen_order_items (
-              id INTEGER PRIMARY KEY AUTOINCREMENT,
-              kitchen_order_id INTEGER NOT NULL,
-              item_id TEXT NOT NULL,
-              item_name TEXT NOT NULL,
-              quantity INTEGER NOT NULL DEFAULT 1,
-              preparation_time INTEGER DEFAULT 5,
+              id SERIAL PRIMARY KEY,
+              kitchen_order_id INT NOT NULL,
+              item_id UUID NOT NULL,
+              item_name VARCHAR(200) NOT NULL,
+              quantity INT NOT NULL DEFAULT 1,
+              preparation_time INT DEFAULT 5,
               special_instructions TEXT NULL,
-              created_at DATETIME DEFAULT (CURRENT_TIMESTAMP)
+              created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )`,
           );
 
           creates.push(
             `CREATE TABLE IF NOT EXISTS kitchen_order_item_modifiers (
-              id INTEGER PRIMARY KEY AUTOINCREMENT,
-              kitchen_order_item_id INTEGER NOT NULL,
-              modifier_name TEXT NOT NULL,
-              modifier_price REAL DEFAULT 0,
-              created_at DATETIME DEFAULT (CURRENT_TIMESTAMP)
+              id SERIAL PRIMARY KEY,
+              kitchen_order_item_id INT NOT NULL,
+              modifier_name VARCHAR(100) NOT NULL,
+              modifier_price DECIMAL(10, 2) DEFAULT 0,
+              created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )`,
           );
 
           creates.push(
             `CREATE TABLE IF NOT EXISTS kitchen_stations (
-              id INTEGER PRIMARY KEY AUTOINCREMENT,
-              restaurant_id TEXT NOT NULL,
-              name TEXT NOT NULL,
-              station_type TEXT NOT NULL,
-              chef_id TEXT NULL,
-              is_active INTEGER DEFAULT 1,
-              display_order INTEGER DEFAULT 0,
-              created_at DATETIME DEFAULT (CURRENT_TIMESTAMP)
+              id SERIAL PRIMARY KEY,
+              restaurant_id UUID NOT NULL,
+              name VARCHAR(100) NOT NULL,
+              station_type VARCHAR(255) CHECK (station_type IN ('grill','pizza','salad','dessert','prep','expo','all')) NOT NULL,
+              chef_id UUID NULL,
+              is_active BOOLEAN DEFAULT TRUE,
+              display_order INT DEFAULT 0,
+              created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )`,
           );
 
           creates.push(
             `CREATE TABLE IF NOT EXISTS kitchen_station_assignments (
-              id INTEGER PRIMARY KEY AUTOINCREMENT,
-              station_id INTEGER NOT NULL,
-              kitchen_order_id INTEGER NOT NULL,
-              started_at DATETIME DEFAULT (CURRENT_TIMESTAMP),
-              completed_at DATETIME NULL
+              id SERIAL PRIMARY KEY,
+              station_id INT NOT NULL,
+              kitchen_order_id INT NOT NULL,
+              started_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+              completed_at TIMESTAMP NULL
             )`,
           );
 
           creates.push(
             `CREATE TABLE IF NOT EXISTS kitchen_activity_logs (
-              id INTEGER PRIMARY KEY AUTOINCREMENT,
-              restaurant_id TEXT NOT NULL,
-              kitchen_order_id INTEGER NULL,
-              chef_id TEXT NULL,
-              action TEXT NOT NULL,
-              old_status TEXT NULL,
-              new_status TEXT NULL,
+              id SERIAL PRIMARY KEY,
+              restaurant_id UUID NOT NULL,
+              kitchen_order_id INT NULL,
+              chef_id UUID NULL,
+              action VARCHAR(50) NOT NULL,
+              old_status VARCHAR(50) NULL,
+              new_status VARCHAR(50) NULL,
               notes TEXT NULL,
-              created_at DATETIME DEFAULT (CURRENT_TIMESTAMP)
+              created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )`,
           );
 
           creates.push(
             `CREATE TABLE IF NOT EXISTS kitchen_performance_metrics (
-              id INTEGER PRIMARY KEY AUTOINCREMENT,
-              restaurant_id TEXT NOT NULL,
+              id SERIAL PRIMARY KEY,
+              restaurant_id UUID NOT NULL,
               date DATE NOT NULL,
-              total_orders_completed INTEGER DEFAULT 0,
-              average_prep_time_minutes REAL DEFAULT 0,
-              average_wait_time_minutes REAL DEFAULT 0,
-              peak_hour_orders INTEGER DEFAULT 0,
-              cancelled_orders INTEGER DEFAULT 0,
-              created_at DATETIME DEFAULT (CURRENT_TIMESTAMP)
+              total_orders_completed INT DEFAULT 0,
+              average_prep_time_minutes DECIMAL(10, 2) DEFAULT 0,
+              average_wait_time_minutes DECIMAL(10, 2) DEFAULT 0,
+              peak_hour_orders INT DEFAULT 0,
+              cancelled_orders INT DEFAULT 0,
+              created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )`,
           );
 
           creates.push(
             `CREATE TABLE IF NOT EXISTS kitchen_inventory_alerts (
-              id INTEGER PRIMARY KEY AUTOINCREMENT,
-              restaurant_id TEXT NOT NULL,
-              item_id TEXT NOT NULL,
-              item_name TEXT NOT NULL,
-              current_stock REAL NOT NULL,
-              threshold_level REAL NOT NULL,
-              status TEXT DEFAULT 'low',
-              created_at DATETIME DEFAULT (CURRENT_TIMESTAMP),
-              resolved_at DATETIME NULL
+              id SERIAL PRIMARY KEY,
+              restaurant_id UUID NOT NULL,
+              item_id UUID NOT NULL,
+              item_name VARCHAR(200) NOT NULL,
+              current_stock DECIMAL(10, 2) NOT NULL,
+              threshold_level DECIMAL(10, 2) NOT NULL,
+              status VARCHAR(255) CHECK (status IN ('low','critical','out_of_stock')) DEFAULT 'low',
+              created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+              resolved_at TIMESTAMP NULL
             )`,
           );
 
           creates.push(
             `CREATE TABLE IF NOT EXISTS subscription_plans (
-              id TEXT PRIMARY KEY,
-              name TEXT NOT NULL,
-              tier TEXT NOT NULL UNIQUE,
+              id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+              name VARCHAR(255) NOT NULL,
+              tier VARCHAR(50) NOT NULL UNIQUE,
               description TEXT,
-              price_monthly REAL DEFAULT 0,
-              price_yearly REAL DEFAULT 0,
-              features TEXT,
-              limits TEXT,
-              is_active INTEGER DEFAULT 1,
-              stripe_price_monthly_id TEXT,
-              stripe_price_yearly_id TEXT,
-              created_at DATETIME DEFAULT (CURRENT_TIMESTAMP),
-              updated_at DATETIME DEFAULT (CURRENT_TIMESTAMP)
+              price_monthly DECIMAL(10, 2) DEFAULT 0,
+              price_yearly DECIMAL(10, 2) DEFAULT 0,
+              features JSONB,
+              limits JSONB,
+              is_active BOOLEAN DEFAULT TRUE,
+              stripe_price_monthly_id VARCHAR(255),
+              stripe_price_yearly_id VARCHAR(255),
+              created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+              updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )`,
           );
         } else {

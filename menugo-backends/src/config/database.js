@@ -117,6 +117,98 @@ const patchSequelizeShutdown = (sequelizeInstance) => {
   connectionManager.__menuGoSafeDisconnectPatched = true;
 };
 
+function translatePgPlaceholders(sql) {
+  let parameterIndex = 0;
+  return String(sql).replace(/\?/g, () => `$${++parameterIndex}`);
+}
+
+function normalizePgQueryResult(sql, result) {
+  const statement = String(sql || '').trim().toUpperCase();
+  const command = statement.split(/\s+/)[0];
+  const rows = Array.isArray(result && result.rows) ? result.rows : [];
+
+  if (command === 'SELECT' || command === 'WITH' || command === 'SHOW' || command === 'VALUES' || command === 'EXPLAIN') {
+    return [rows, result];
+  }
+
+  if (command === 'INSERT') {
+    const firstRow = rows[0] || null;
+    const insertId = firstRow && (firstRow.id ?? firstRow.insert_id ?? firstRow.insertId ?? null);
+    return [{ insertId, affectedRows: result && typeof result.rowCount === 'number' ? result.rowCount : rows.length, rows }, result];
+  }
+
+  if (command === 'UPDATE' || command === 'DELETE') {
+    return [{ affectedRows: result && typeof result.rowCount === 'number' ? result.rowCount : 0, changedRows: result && typeof result.rowCount === 'number' ? result.rowCount : 0, rows }, result];
+  }
+
+  return [rows.length > 0 ? rows : result, result];
+}
+
+function createPgExecutor(clientOrPool) {
+  return async (sql, params = []) => {
+    const translatedSql = translatePgPlaceholders(sql);
+    const result = await clientOrPool.query(translatedSql, params);
+    return normalizePgQueryResult(sql, result);
+  };
+}
+
+function sanitizePgConnectionString(connectionString) {
+  if (!connectionString) {
+    return connectionString;
+  }
+
+  try {
+    const url = new URL(connectionString);
+    url.searchParams.delete('sslmode');
+    url.searchParams.delete('channel_binding');
+    url.searchParams.delete('uselibpqcompat');
+    return url.toString();
+  } catch (error) {
+    return connectionString;
+  }
+}
+
+function patchPgClientQuery() {
+  const pg = require('pg');
+  const Client = pg && pg.Client;
+
+  if (!Client || Client.prototype.__menuGoQueryShimPatched) {
+    return;
+  }
+
+  const originalQuery = Client.prototype.query;
+  const { EventEmitter } = require('events');
+
+  Client.prototype.query = function patchedQuery(text, values, callback) {
+    const hasCallback = typeof values === 'function' || typeof callback === 'function';
+    const hasParameters = Array.isArray(values) || (values && typeof values === 'object' && !hasCallback);
+
+    if (hasCallback || hasParameters || typeof text !== 'string' || arguments.length !== 1) {
+      return originalQuery.apply(this, arguments);
+    }
+
+    const emitter = new EventEmitter();
+    process.nextTick(() => {
+      originalQuery.call(this, text, (error, result) => {
+        if (error) {
+          emitter.emit('error', error);
+          return;
+        }
+
+        const rows = Array.isArray(result && result.rows) ? result.rows : [];
+        for (const row of rows) {
+          emitter.emit('row', row);
+        }
+        emitter.emit('end');
+      });
+    });
+
+    return emitter;
+  };
+
+  Client.prototype.__menuGoQueryShimPatched = true;
+}
+
 if (useSqliteFallback) {
   try {
     // ensure tmp directory exists
@@ -140,6 +232,8 @@ if (useSqliteFallback) {
 }
 
 if (!useSqliteFallback) {
+  patchPgClientQuery();
+
   const dbConfig = getDatabaseConfig();
   const dialect = dbConfig.dialect || 'mysql';
   const dbPort = dbConfig.port || (dialect === 'postgres' ? 5432 : 3306);
@@ -155,7 +249,7 @@ if (!useSqliteFallback) {
   if (dialect === 'postgres') {
     const { Pool } = require('pg');
     const pgPool = new Pool({
-      connectionString: process.env.DATABASE_URL || undefined,
+      connectionString: sanitizePgConnectionString(process.env.DATABASE_URL || undefined),
       host: dbConfig.host,
       port: dbPort,
       user: dbConfig.user,
@@ -166,6 +260,8 @@ if (!useSqliteFallback) {
       connectionTimeoutMillis: poolConfig.acquire,
       ssl: useSsl ? { rejectUnauthorized: false } : false,
     });
+
+    const executePgQuery = createPgExecutor(pgPool);
 
     sequelize = new Sequelize(
       dbConfig.database,
@@ -188,15 +284,16 @@ if (!useSqliteFallback) {
     );
 
     pool = {
-      query: pgPool.query.bind(pgPool),
-      execute: pgPool.query.bind(pgPool),
+      query: executePgQuery,
+      execute: executePgQuery,
     };
 
     getPromiseConnection = async () => {
       const client = await pgPool.connect();
+      const execute = createPgExecutor(client);
       return {
-        query: client.query.bind(client),
-        execute: client.query.bind(client),
+        query: execute,
+        execute,
         release: client.release.bind(client),
       };
     };

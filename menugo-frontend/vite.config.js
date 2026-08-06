@@ -51,19 +51,55 @@ const resolveBackendUrl = async (env) => {
 
   const fallbackPorts = [5003, 5004, 5000, 5001, 5002, 5005]
   const fallbackUrls = fallbackPorts.flatMap((port) => [`http://127.0.0.1:${port}`, `http://localhost:${port}`])
+
   const candidates = uniqueCandidates([
-    configuredUrl,
     runtimeUrl,
+    configuredUrl,
     ...fallbackUrls,
     'http://127.0.0.1:5000',
   ])
 
-  for (const candidate of candidates) {
-    if (await probeHealth(candidate)) {
-      return candidate
+  const tryCandidate = async (candidate, label) => {
+    if (!candidate) return false
+    try {
+      if (await probeHealth(candidate)) {
+        console.log(`[vite] Resolved backend target from ${label}: ${candidate}`)
+        return candidate
+      }
+    } catch (e) {
+      console.warn(`[vite] ${label} probe failed for ${candidate}: ${e?.message || e}`)
     }
+    return false
   }
 
+  // Prefer a local runtime backend if it is available, even when a remote
+  // VITE_API_URL is configured. This makes local dev more reliable when the
+  // backend is started locally and writes runtime_api_url.txt.
+  if (runtimeUrl) {
+    const resolved = await tryCandidate(runtimeUrl, 'runtime_api_url.txt')
+    if (resolved) return resolved
+  }
+
+  // If a configured API URL is local, try it before falling back to port probing.
+  if (configuredUrl && /^(https?:\/\/)?(localhost|127\.0\.0\.1|0\.0\.0\.0|\[::1\]|::1)(:\d+)?$/i.test(configuredUrl)) {
+    const resolved = await tryCandidate(configuredUrl, 'configured API URL')
+    if (resolved) return resolved
+  }
+
+  // If configured URL is remote, use it only if no local runtime target is available.
+  if (configuredUrl && !/^(https?:\/\/)?(localhost|127\.0\.0\.1|0\.0\.0\.0|\[::1\]|::1)(:\d+)?$/i.test(configuredUrl)) {
+    const resolved = await tryCandidate(configuredUrl, 'configured remote API URL')
+    if (resolved) return resolved
+  }
+
+  for (const candidate of candidates) {
+    if (!candidate) continue
+    if (candidate === runtimeUrl || candidate === configuredUrl) continue
+    const resolved = await tryCandidate(candidate, 'fallback candidate')
+    if (resolved) return resolved
+  }
+
+  console.warn('[vite] No backend candidate responded; using fallback target')
   return configuredUrl || runtimeUrl || 'http://127.0.0.1:5000'
 }
 
@@ -75,6 +111,12 @@ export default defineConfig(async ({ mode }) => {
   const finalApiUrl = normalizedApiUrl && normalizedApiUrl.replace(/^http:\/\/localhost/i, 'http://127.0.0.1')
   const wsUrl = env.VITE_WS_URL || `${(finalApiUrl || normalizedApiUrl).replace(/^http/, 'ws')}`
   const devPort = Number.parseInt(env.VITE_PORT || env.PORT || '3002', 10)
+
+  if (finalApiUrl) {
+    console.log(`[vite] Proxy /api target set to ${finalApiUrl}`)
+  } else {
+    console.log('[vite] Proxy /api target could not be resolved; falling back to current origin')
+  }
 
   return {
     plugins: [react()],
@@ -106,6 +148,10 @@ export default defineConfig(async ({ mode }) => {
         '/api': {
           target: finalApiUrl || normalizedApiUrl,
           changeOrigin: true,
+          secure: false,
+          cookieDomainRewrite: {
+            '*': ''
+          },
           rewrite: (path) => path.replace(/^\/api/, '/api'),
           timeout: 120000,
           // Provide clearer console errors when proxying fails and attempt alternatives
@@ -157,6 +203,10 @@ export default defineConfig(async ({ mode }) => {
         '/auth': {
           target: finalApiUrl || normalizedApiUrl,
           changeOrigin: true,
+          secure: false,
+          cookieDomainRewrite: {
+            '*': ''
+          },
           rewrite: (path) => path.replace(/^\/auth/, '/auth'),
           timeout: 120000,
           onError: (err, req, res) => {
@@ -172,6 +222,10 @@ export default defineConfig(async ({ mode }) => {
         '/uploads': {
           target: finalApiUrl || normalizedApiUrl,
           changeOrigin: true,
+          secure: false,
+          cookieDomainRewrite: {
+            '*': ''
+          },
           timeout: 120000,
           onError: (err, req, res) => {
             // eslint-disable-next-line no-console

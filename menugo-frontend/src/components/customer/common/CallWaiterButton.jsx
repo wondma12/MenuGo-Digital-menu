@@ -28,7 +28,9 @@ const CallWaiterButton = ({ restaurantId }) => {
 
   return (
     <div className="mt-3">
-      {/* <Button onClick={() => handleCall('service')} isLoading={loading} size="sm">Call Waiter</Button> */}
+      <Button onClick={() => handleCall('service')} isLoading={loading} size="sm">
+        Call Waiter
+      </Button>
     </div>
   )
 }

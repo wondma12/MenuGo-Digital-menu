@@ -63,6 +63,10 @@ const RestaurantInfo = ({ restaurant }) => {
     <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
       <div className="flex items-start gap-4">
         <div className="flex-1">
+          <div className="mb-4">
+            <div className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Restaurant</div>
+            <div className="text-2xl font-bold text-slate-900">{restaurant.name}</div>
+          </div>
           <h3 className="text-sm text-gray-500 mb-1">Contact</h3>
           <div className="flex flex-col gap-2 text-sm">
             {address && (

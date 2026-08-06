@@ -1,13 +1,12 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
 import { useCartStore } from '../../store/cartStore'
-import { HeartIcon, HomeIcon, EnvelopeIcon, PhoneIcon, MapPinIcon, SparklesIcon } from '@heroicons/react/24/outline'
+import { EnvelopeIcon, PhoneIcon, SparklesIcon } from '@heroicons/react/24/outline'
 
 export default function Footer({ onOpenCart, restaurantId, restaurant, centered = false }) {
   const { totalItems, totalPrice } = useCartStore()
   const email = restaurant?.email || restaurant?.restaurant_email || restaurant?.contactEmail || ''
   const phone = restaurant?.phone || restaurant?.restaurant_phone || restaurant?.contactPhone || ''
-  const address = [restaurant?.address, restaurant?.city, restaurant?.state].filter(Boolean).join(', ')
 
   return (
     <>
@@ -38,14 +37,12 @@ export default function Footer({ onOpenCart, restaurantId, restaurant, centered 
                 {/* Restaurant name intentionally removed per request */}
 
                 <div className="flex flex-wrap gap-1">
-                  {phone && (
-                    <Link to={`/menu/${restaurantId}?showCall=1`} className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:border-slate-300 hover:bg-white hover:text-primary-700">
-                      <PhoneIcon className="h-4 w-4" />
-                      Call Waiter
-                    </Link>
-                  )}
+                  <Link to={`/menu/${restaurantId}?showCall=1`} className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:border-slate-300 hover:bg-white hover:text-primary-700">
+                    <PhoneIcon className="h-4 w-4" />
+                    Call Waiter
+                  </Link>
 
-                  <Link to="/login" className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:border-slate-300 hover:bg-white hover:text-primary-700">
+                  <Link to="/login?forceLogin=1" className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:border-slate-300 hover:bg-white hover:text-primary-700">
                     <SparklesIcon className="h-4 w-4" />
                     Staff Login
                   </Link>
