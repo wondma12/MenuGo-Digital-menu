@@ -10,7 +10,16 @@ const isLocalhostApiUrl = (url) => {
   return /^(https?:\/\/)?(localhost|127\.0\.0\.1|0\.0\.0\.0|\[::1\]|::1)(:\d+)?$/i.test(url)
 }
 
-const isProductionLike = Boolean(import.meta.env.PROD || import.meta.env.VITE_APP_ENV === 'production' || (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1'))
+const getBrowserOrigin = () => {
+  if (typeof window === 'undefined' || !window.location) return ''
+  return String(window.location.origin || '').trim()
+}
+
+const isProductionLike = Boolean(
+  import.meta.env.PROD ||
+  import.meta.env.VITE_APP_ENV === 'production' ||
+  (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1')
+)
 
 const normalizeStoredToken = (value) => {
   if (!value) return null
@@ -35,6 +44,15 @@ const resolveApiUrl = () => {
   const explicit = String(import.meta.env.VITE_API_URL || import.meta.env.API_URL || '').trim()
   if (explicit && !isLocalhostApiUrl(explicit)) {
     return explicit
+  }
+
+  // In production deployments where the frontend and backend share the same origin,
+  // use the current browser origin rather than a hard-coded backend host.
+  if (typeof window !== 'undefined' && window.location && window.location.origin) {
+    const origin = String(window.location.origin || '').trim()
+    if (origin && !isLocalhostApiUrl(origin)) {
+      return origin
+    }
   }
 
   if (isProductionLike) {

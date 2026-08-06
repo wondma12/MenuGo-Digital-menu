@@ -19,6 +19,11 @@ const getClientUrl = () => String(process.env.CLIENT_URL || 'http://localhost:51
 // Register new user
 const register = catchAsync(async (req, res) => {
   console.log('[DEBUG] authController.register called');
+  console.log('[DEBUG] authController.register request url:', req.originalUrl);
+  console.log('[DEBUG] authController.register headers:', {
+    'content-type': req.headers['content-type'],
+    origin: req.headers.origin,
+  });
   console.log('[DEBUG] req.body keys:', Object.keys(req.body || {}));
   console.log('[DEBUG] req.files keys:', req.files ? Object.keys(req.files) : []);
   console.log('[DEBUG] req.body sample:', {
@@ -221,12 +226,13 @@ const register = catchAsync(async (req, res) => {
     email_verification_token: verificationToken,
     email_verification_expires: new Date(Date.now() + getEmailVerificationExpiryMs()),
   });
-  // Send welcome email (do not fail registration if email sending errors)
-  try {
-    await sendWelcomeEmail(normalizedEmail, full_name, { verificationToken });
-  } catch (emailErr) {
-    console.error('sendWelcomeEmail error (non-fatal):', emailErr && emailErr.message ? emailErr.message : emailErr);
-  }
+  // Send welcome email asynchronously so registration does not depend on SMTP latency or delivery failures.
+  // Registration is already complete at this point; email sending is best-effort.
+  sendWelcomeEmail(normalizedEmail, full_name, { verificationToken })
+    .then(() => console.log('[DEBUG] Welcome email queued successfully for', normalizedEmail))
+    .catch((emailErr) => {
+      console.error('sendWelcomeEmail error (non-fatal):', emailErr && emailErr.message ? emailErr.message : emailErr);
+    });
 
   // If registering as restaurant_admin, do not auto-login or return tokens
   if (isRestaurantAdmin) {

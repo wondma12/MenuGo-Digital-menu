@@ -178,7 +178,8 @@ const MultiStepRegistration = () => {
         navigate('/login', { replace: true });
       } catch (err) {
         console.error('Registration error', err);
-        toast.error(err?.response?.data?.message || 'Registration failed');
+        const responseMessage = err?.response?.data?.message || err?.message || 'Registration failed';
+        toast.error(responseMessage);
       } finally {
         setIsLoading(false);
       }
