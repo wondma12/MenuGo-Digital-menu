@@ -1,5 +1,6 @@
 import {useState} from 'react'
 import { useQuery } from 'react-query'
+import { useAuthStore } from '../../../store/authStore'
 import { motion } from 'framer-motion'
 import { format, differenceInCalendarDays, isValid, startOfMonth, endOfMonth, eachDayOfInterval } from 'date-fns'
 import {
@@ -159,10 +160,14 @@ const PlatformAnalytics = () => {
     end: endOfMonth(new Date()),
   })
 
+  const authToken = useAuthStore((state) => state.token) || (typeof window !== 'undefined' ? window.sessionStorage.getItem('token') : null) || (typeof window !== 'undefined' ? window.localStorage.getItem('auth_token') : null) || (typeof window !== 'undefined' ? window.localStorage.getItem('token') : null)
   const { data, isLoading } = useQuery(
-    ['platformAnalytics', dateRange],
+    ['platformAnalytics', dateRange, authToken],
     // Use the richer dashboard API which aggregates restaurants, users, orders and revenue
-    () => getPlatformDashboardData(dateRange)
+    () => getPlatformDashboardData(dateRange),
+    {
+      enabled: Boolean(authToken),
+    }
   )
 
   const revenueSeries = normalizeChartSeries(data?.revenueData || [], dateRange, true)
@@ -203,7 +208,7 @@ const PlatformAnalytics = () => {
             { title: 'Total Revenue', value: formatPrice(data?.totalRevenue || 0) },
             { title: 'Active Restaurants', value: data?.activeRestaurants || 0 },
             { title: 'Active Users', value: (data?.activeUsers || 0).toLocaleString() },
-            { title: 'Total Orders', value: (data?.completedOrders || 0).toLocaleString() },
+            { title: 'Total Orders', value: ((data?.totalOrders || data?.completedOrders || 0)).toLocaleString() },
           ].map((stat, index) => (
             <motion.div
               key={stat.title}

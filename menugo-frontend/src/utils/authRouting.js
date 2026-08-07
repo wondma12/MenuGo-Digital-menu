@@ -12,8 +12,10 @@ export const getRoleHomePath = (roleOrUser) => {
     case 'platform_admin':
       return '/platform/dashboard'
     case 'restaurant_admin':
+    case 'admin':
       return '/admin/dashboard'
     case 'chef':
+    case 'manager':
       return '/chef/kitchen'
     case 'waiter':
       return '/waiter/dashboard'

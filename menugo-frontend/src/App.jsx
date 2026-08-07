@@ -381,6 +381,13 @@ function App() {
                   <Route path="completed" element={<KitchenPage />} />
                   <Route path="active" element={<KitchenPage />} />
               </Route>
+
+              <Route path="/kitchen" element={<KitchenLayout />}>
+                <Route index element={<Navigate to="/chef/kitchen" />} />
+                <Route path="dashboard" element={<KitchenPage />} />
+                <Route path="active" element={<KitchenPage />} />
+                <Route path="completed" element={<KitchenPage />} />
+              </Route>
             </Route>
             
             {/* Waiter Routes */}

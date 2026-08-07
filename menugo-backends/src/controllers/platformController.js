@@ -14,6 +14,7 @@ const { ApiResponse } = require('../utils/apiResponse');
 const { ApiError } = require('../utils/apiError');
 const { catchAsync } = require('../utils/catchAsync');
 const { applyUpgradeRequestToRestaurant } = require('../utils/subscriptionUtils');
+const { buildGrowthSeries, toLocalDateString } = require('../utils/dashboardSeries');
 const { Op } = require('sequelize');
 
 // Public homepage summary for marketing pages
@@ -152,6 +153,7 @@ const getPlatformUserAnalytics = catchAsync(async (req, res) => {
 
 // Get platform analytics - SIMPLIFIED VERSION
 const getPlatformAnalytics = catchAsync(async (req, res) => {
+
   try {
     console.log('=== Platform Analytics API Called ===');
     
@@ -325,7 +327,40 @@ const getPlatformDashboard = catchAsync(async (req, res) => {
       { tier: 'six_month', count: premiumCount },
       { tier: 'yearly', count: enterpriseCount },
     ];
-    
+
+    // Generate monthly new restaurant growth for the last 12 months
+    let growthData = [];
+    try {
+      const months = [];
+      const now = new Date();
+      for (let i = 11; i >= 0; i--) {
+        const monthStart = new Date(now.getFullYear(), now.getMonth() - i, 1, 0, 0, 0, 0);
+        const monthEnd = new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 1, 0, 0, 0, 0);
+        months.push({ monthStart, monthEnd });
+      }
+
+      const monthlyRows = await Promise.all(months.map(async (m) => {
+        const newCount = await Restaurant.count({
+          where: {
+            created_at: { [Op.between]: [m.monthStart, m.monthEnd] },
+            deleted_at: null,
+          },
+        }).catch(() => 0) || 0;
+
+        return {
+          month: m.monthStart.toLocaleString('default', { month: 'short', year: 'numeric' }),
+          new_restaurants: newCount,
+        };
+      }));
+
+      growthData = buildGrowthSeries(monthlyRows, 0);
+    } catch (err) {
+      console.error('Growth data generation error:', err);
+      growthData = [];
+    }
+
+    const metrics = { role_breakdown: [] };
+
     // Build revenue data honoring optional startDate/endDate query params.
     // If the requested range is long (> 60 days) aggregate by month, otherwise by day.
     const revenueData = [];
@@ -428,12 +463,25 @@ const getPlatformDashboard = catchAsync(async (req, res) => {
       platform_health: 99.9,
       health_trend: 0,
     };
+
+    // Build metrics object for frontend charts and role distribution
+    metrics.role_breakdown = [];
+    try {
+      const roles = ['platform_admin', 'restaurant_admin', 'restaurant_owner', 'waiter', 'chef', 'customer'];
+      const counts = await Promise.all(roles.map((r) => User.count({ where: { role: r, deleted_at: null } }).catch(() => 0)));
+      metrics.role_breakdown = roles.map((r, i) => ({ name: r.replace(/_/g, ' '), value: counts[i] || 0 }));
+    } catch (err) {
+      console.error('Role breakdown error:', err);
+      metrics.role_breakdown = [];
+    }
     
     console.log('Dashboard stats calculated');
     
     res.json(ApiResponse.success({
       stats,
       revenue_data: revenueData,
+      growth_data: growthData,
+      metrics,
       recent_restaurants: recentRestaurants,
       recent_orders: recentOrders,
       subscription_breakdown: subscriptionBreakdown,
@@ -463,6 +511,8 @@ const getPlatformDashboard = catchAsync(async (req, res) => {
         health_trend: 0,
       },
       revenue_data: [],
+      growth_data: [],
+      metrics: { role_breakdown: [] },
       recent_restaurants: [],
       recent_orders: [],
       subscription_breakdown: [],

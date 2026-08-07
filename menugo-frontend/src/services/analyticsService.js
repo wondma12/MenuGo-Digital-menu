@@ -497,18 +497,34 @@ export const getPlatformDashboardData = async (dateRange) => {
     if (import.meta.env.DEV) console.log('Calling dashboard API...');
 
     // Avoid calling protected dashboard when there is no auth token present.
-    const token = useAuthStore.getState().token || (typeof window !== 'undefined' ? window.sessionStorage.getItem('token') : null)
+    const token = useAuthStore.getState().token ||
+      (typeof window !== 'undefined' ? window.sessionStorage.getItem('token') : null) ||
+      (typeof window !== 'undefined' ? window.localStorage.getItem('auth_token') : null) ||
+      (typeof window !== 'undefined' ? window.localStorage.getItem('token') : null)
     if (!token) {
       if (import.meta.env.DEV) console.debug('Skipping dashboard fetch: no token present')
       return getDefaultDashboardData()
     }
 
-    const response = await api.get('/dashboard/platform', {
+    // Prefer the platform analytics endpoint for the analytics page.
+    let response = await api.get('/platform/analytics', {
       params: {
         startDate: toLocalDateString(dateRange?.start),
         endDate: toLocalDateString(dateRange?.end),
       }
     });
+
+    if (import.meta.env.DEV) console.log('Platform analytics API response status:', response.status);
+
+    if ((!response.data || response.data.success === false) || !response.data.data) {
+      if (import.meta.env.DEV) console.warn('Platform analytics endpoint returned no data; falling back to dashboard/platform')
+      response = await api.get('/dashboard/platform', {
+        params: {
+          startDate: toLocalDateString(dateRange?.start),
+          endDate: toLocalDateString(dateRange?.end),
+        }
+      });
+    }
 
     if (import.meta.env.DEV) console.log('Dashboard API response status:', response.status);
 
@@ -540,8 +556,8 @@ export const getPlatformDashboardData = async (dateRange) => {
         // Prefer admin-only active user count when available
         activeUsers: adminActiveUsers !== null ? adminActiveUsers : (stats.active_users || 0),
         usersGrowth: stats.users_growth || 0,
-        totalOrders: stats.total_orders || 0,
-        completedOrders: stats.completed_orders || 0,
+        totalOrders: stats.total_orders || stats.completed_orders || stats.totalOrders || 0,
+        completedOrders: stats.completed_orders || stats.total_orders || stats.totalOrders || 0,
         todayOrders: stats.today_orders || 0,
         todayCompletedOrders: stats.today_completed_orders || 0,
         ordersGrowth: stats.orders_growth || 0,

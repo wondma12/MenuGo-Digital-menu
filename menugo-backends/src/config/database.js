@@ -292,6 +292,9 @@ if (!useSqliteFallback) {
     pool = {
       query: executePgQuery,
       execute: executePgQuery,
+      end: async () => {
+        await pgPool.end();
+      },
     };
 
     getPromiseConnection = async () => {
@@ -301,6 +304,22 @@ if (!useSqliteFallback) {
         query: execute,
         execute,
         release: client.release.bind(client),
+        beginTransaction: async () => {
+          await client.query('BEGIN');
+          return true;
+        },
+        commit: async () => {
+          await client.query('COMMIT');
+          return true;
+        },
+        rollback: async () => {
+          try {
+            await client.query('ROLLBACK');
+          } catch (error) {
+            // rollback can fail if a transaction never started or is already abandoned
+          }
+          return true;
+        },
       };
     };
 
@@ -460,6 +479,22 @@ if (usingSqlite) {
     getConnection: async () => ({ // minimal compatible shape for callers expecting a connection
       query: async (sql, params) => sequelize.query(sql, { replacements: params }),
       release: async () => {},
+      beginTransaction: async () => {
+        await sequelize.query('BEGIN');
+        return true;
+      },
+      commit: async () => {
+        await sequelize.query('COMMIT');
+        return true;
+      },
+      rollback: async () => {
+        try {
+          await sequelize.query('ROLLBACK');
+        } catch (error) {
+          // ignore rollback failures if no transaction was started
+        }
+        return true;
+      },
     }),
     pool: null,
     callbackPool,

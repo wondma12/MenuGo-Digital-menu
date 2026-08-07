@@ -27,17 +27,11 @@ const OrderActions = ({ orderId, currentStatus, onRefresh, onClose }) => {
     try {
       setIsVerifying(true)
       // Call verify API (manual)
-      const verified = await verifyOrder(orderId, 'manual')
-      // Prepare payload: use full verified order if available, otherwise fallback to minimal id
-      let orderPayload = { order_id: orderId }
-      if (verified && typeof verified === 'object') {
-        if (verified.id || verified.order_id || verified.orderId) {
-          orderPayload = verified
-        } else if (verified.data && (verified.data.id || verified.data.order_id)) {
-          orderPayload = verified.data
-        }
-      }
+      await verifyOrder(orderId, 'manual')
 
+      // The waiter does not own the kitchen screen. Verification is processed
+      // server-side and the kitchen room is refreshed via socket/kitchen events.
+      // Keep the waiter in the waiter workflow and show a success confirmation.
       toast.success('Order verified and sent to kitchen')
       onRefresh()
       onClose()

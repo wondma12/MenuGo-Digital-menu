@@ -1,6 +1,7 @@
 import {useState} from 'react'
 import { motion } from 'framer-motion'
 import { useQuery } from 'react-query'
+import { useAuthStore } from '../../../store/authStore'
 import { startOfMonth, endOfMonth } from 'date-fns'
 import {
   BuildingOfficeIcon,
@@ -27,10 +28,14 @@ const PlatformDashboard = () => {
   const defaultEnd = endOfMonth(now)
   const [dateRange, setDateRange] = useState({ start: defaultStart, end: defaultEnd })
   
+  const authToken = useAuthStore((state) => state.token) || (typeof window !== 'undefined' ? window.sessionStorage.getItem('token') : null) || (typeof window !== 'undefined' ? window.localStorage.getItem('auth_token') : null) || (typeof window !== 'undefined' ? window.localStorage.getItem('token') : null)
   const { data, isLoading } = useQuery(
-    ['platformDashboard', dateRange],
+    ['platformDashboard', dateRange, authToken],
     () => getPlatformDashboardData(dateRange),
-    { refetchInterval: 30000 }
+    {
+      refetchInterval: 30000,
+      enabled: Boolean(authToken),
+    }
   )
 
   if (isLoading) return <Loading />
@@ -113,7 +118,7 @@ const PlatformDashboard = () => {
       {/* Metrics & Health Row */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2">
-          <PlatformMetrics data={data?.metrics || {}} />
+          <PlatformMetrics data={data || {}} />
         </div>
         <div>
           <SystemHealth health={data?.systemHealth || {}} />

@@ -5,6 +5,8 @@ import {
   ChartBarIcon,
   ArrowTrendingUpIcon,
   ArrowTrendingDownIcon,
+  SparklesIcon,
+  ScaleIcon,
 } from '@heroicons/react/24/outline'
 import { formatPrice } from '../../../utils/currency'
 
@@ -29,11 +31,15 @@ const MetricCard = ({ title, value, change, icon: Icon, color }) => {
 }
 
 const PlatformMetrics = ({ data }) => {
+  const avgOrderValue = data.avgOrderValue ?? (data.totalOrders > 0 ? Number(data.totalRevenue || 0) / Number(data.totalOrders || 1) : 0)
+  const activeUsers = Number(data.activeUsers ?? data.totalUsers ?? 0)
+  const totalOrders = Number(data.totalOrders ?? data.completedOrders ?? 0)
+  const platformHealth = data.platformHealth ?? data.health ?? 100
   const metrics = [
-    { title: 'Avg Order Value', value: formatPrice(data.avgOrderValue || 0), change: data.avgOrderValueChange, icon: ChartBarIcon, color: 'from-blue-500 to-blue-400' },
-    { title: 'Active Users', value: data.activeUsers?.toLocaleString() || 0, change: data.activeUsersChange, icon: UserGroupIcon, color: 'from-emerald-500 to-emerald-400' },
-    { title: 'Conversion Rate', value: `${data.conversionRate || 0}%`, change: data.conversionRateChange, icon: ChartBarIcon, color: 'from-violet-500 to-violet-400' },
-    { title: 'Retention Rate', value: `${data.retentionRate || 0}%`, change: data.retentionRateChange, icon: UserGroupIcon, color: 'from-orange-500 to-amber-400' },
+    { title: 'Avg Order Value', value: formatPrice(avgOrderValue), change: data.revenueGrowth || 0, icon: ChartBarIcon, color: 'from-blue-500 to-blue-400' },
+    { title: 'Active Users', value: activeUsers.toLocaleString(), change: data.usersGrowth || data.activeUsersChange || 0, icon: UserGroupIcon, color: 'from-emerald-500 to-emerald-400' },
+    { title: 'Completed Orders', value: totalOrders.toLocaleString(), change: data.ordersGrowth || 0, icon: SparklesIcon, color: 'from-violet-500 to-violet-400' },
+    { title: 'Platform Health', value: `${platformHealth}%`, change: data.healthTrend || 0, icon: ScaleIcon, color: 'from-orange-500 to-amber-400' },
   ]
 
   return (

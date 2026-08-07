@@ -42,7 +42,8 @@ router.use(restrictTo('platform_admin'));
 
 // Dashboard routes
 router.get('/dashboard', getPlatformDashboard);
-router.get('/analytics', getPlatformAnalytics);
+// Use the richer dashboard payload for the analytics page, not the simplified counts-only route.
+router.get('/analytics', getPlatformDashboard);
 router.get('/analytics/users', getPlatformUserAnalytics);
 
 // Support tickets routes

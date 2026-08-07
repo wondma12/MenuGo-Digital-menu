@@ -5,14 +5,52 @@ const { ApiError } = require('../utils/apiError');
 const { catchAsync } = require('../utils/catchAsync');
 const { Op, QueryTypes } = require('sequelize');
 
-// Dialect helpers: use sqlite's strftime when running on sqlite, otherwise use MySQL functions
-const dialect = sequelize && sequelize.getDialect ? sequelize.getDialect() : (sequelize && sequelize.options && sequelize.options.dialect) || 'mysql';
-const formatDateCol = (col, format) => dialect === 'sqlite'
-  ? sequelize.fn('strftime', format, sequelize.col(col))
-  : sequelize.fn('DATE_FORMAT', sequelize.col(col), format);
-const formatHourCol = (colName = 'created_at') => dialect === 'sqlite'
-  ? sequelize.fn('strftime', '%H', sequelize.col(colName))
-  : sequelize.fn('HOUR', sequelize.col(colName));
+// Dialect helpers: keep the analytics layer database-aware so Postgres,
+// MySQL and SQLite do not emit incompatible SQL fragments.
+const getRuntimeDialect = () => {
+  const activeDialect = sequelize && typeof sequelize.getDialect === 'function'
+    ? sequelize.getDialect()
+    : (sequelize && sequelize.options && sequelize.options.dialect) || 'mysql';
+
+  return String(activeDialect || 'mysql').toLowerCase();
+};
+
+const formatDateCol = (col, format) => {
+  const dialect = getRuntimeDialect();
+
+  if (dialect === 'sqlite') {
+    return sequelize.fn('strftime', format, sequelize.col(col));
+  }
+
+  if (dialect === 'postgres' || dialect === 'postgresql') {
+    const postgresFormat = (() => {
+      if (format === '%Y-%m') return 'YYYY-MM';
+      if (format === '%Y-%m-%d') return 'YYYY-MM-DD';
+      if (format === '%Y-%m-%d %H:%i:%s') return 'YYYY-MM-DD HH24:MI:SS';
+      if (format === '%Y') return 'YYYY';
+      if (format === '%H') return 'HH24';
+      return format;
+    })();
+
+    return sequelize.fn('TO_CHAR', sequelize.col(col), postgresFormat);
+  }
+
+  return sequelize.fn('DATE_FORMAT', sequelize.col(col), format);
+};
+
+const formatHourCol = (colName = 'created_at') => {
+  const dialect = getRuntimeDialect();
+
+  if (dialect === 'sqlite') {
+    return sequelize.fn('strftime', '%H', sequelize.col(colName));
+  }
+
+  if (dialect === 'postgres' || dialect === 'postgresql') {
+    return sequelize.literal(`EXTRACT(HOUR FROM ${colName})`);
+  }
+
+  return sequelize.fn('HOUR', sequelize.col(colName));
+};
 
 const toStartOfDay = (value) => {
   const date = new Date(value)
@@ -228,8 +266,8 @@ const getMenuPerformance = catchAsync(async (req, res) => {
   const topItems = await sequelize.query(
     `SELECT
       m.menu_item_id AS menu_item_id,
-      mi.id AS "analytics_item.id",
-      mi.name AS "analytics_item.name",
+      mi.id AS analytics_item_id,
+      mi.name AS analytics_item_name,
       SUM(m.order_count) AS total_orders,
       SUM(m.quantity_sold) AS total_quantity,
       SUM(m.revenue) AS total_revenue,
@@ -255,10 +293,28 @@ const getMenuPerformance = catchAsync(async (req, res) => {
       nest: true,
       raw: true,
     }
-  );
+  ).then(rows => rows.map(row => ({
+    ...row,
+    analytics_item: {
+      id: row.analytics_item_id,
+      name: row.analytics_item_name,
+    },
+  })));
 
   const menuData = await sequelize.query(
-    "SELECT m.menu_item_id AS menu_item_id, mi.name AS `analytics_item.name`, SUM(m.order_count) AS total_orders, SUM(m.quantity_sold) AS total_quantity, SUM(m.revenue) AS total_revenue FROM menu_item_analytics m LEFT JOIN menu_items mi ON m.menu_item_id = mi.id AND mi.deleted_at IS NULL WHERE m.restaurant_id = :restaurantId AND m.date BETWEEN :startDate AND :endDate GROUP BY m.menu_item_id, mi.name",
+    `SELECT m.menu_item_id AS menu_item_id,
+      mi.id AS analytics_item_id,
+      mi.name AS analytics_item_name,
+      SUM(m.order_count) AS total_orders,
+      SUM(m.quantity_sold) AS total_quantity,
+      SUM(m.revenue) AS total_revenue
+    FROM menu_item_analytics m
+    LEFT JOIN menu_items mi
+      ON m.menu_item_id = mi.id
+      AND mi.deleted_at IS NULL
+    WHERE m.restaurant_id = :restaurantId
+      AND m.date BETWEEN :startDate AND :endDate
+    GROUP BY m.menu_item_id, mi.id, mi.name`,
     {
       replacements: {
         restaurantId,
@@ -269,7 +325,13 @@ const getMenuPerformance = catchAsync(async (req, res) => {
       raw: true,
       nest: true,
     }
-  );
+  ).then(rows => rows.map(row => ({
+    ...row,
+    analytics_item: {
+      id: row.analytics_item_id,
+      name: row.analytics_item_name,
+    },
+  })));
 
   const categoryPerformance = await MenuItem.findAll({
     where: { restaurant_id: restaurantId, deleted_at: null },
@@ -526,7 +588,8 @@ const exportAnalyticsReport = catchAsync(async (req, res) => {
 
   const menuData = await sequelize.query(
     `SELECT m.menu_item_id AS menu_item_id,
-      mi.name AS "analytics_item.name",
+      mi.id AS analytics_item_id,
+      mi.name AS analytics_item_name,
       SUM(m.order_count) AS total_orders,
       SUM(m.quantity_sold) AS total_quantity,
       SUM(m.revenue) AS total_revenue
@@ -536,7 +599,7 @@ const exportAnalyticsReport = catchAsync(async (req, res) => {
       AND mi.deleted_at IS NULL
     WHERE m.restaurant_id = :restaurantId
       AND m.date BETWEEN :startDate AND :endDate
-    GROUP BY m.menu_item_id, mi.name`,
+    GROUP BY m.menu_item_id, mi.id, mi.name`,
     {
       replacements: {
         restaurantId,
@@ -547,7 +610,13 @@ const exportAnalyticsReport = catchAsync(async (req, res) => {
       raw: true,
       nest: true,
     }
-  );
+  ).then(rows => rows.map(row => ({
+    ...row,
+    analytics_item: {
+      id: row.analytics_item_id,
+      name: row.analytics_item_name,
+    },
+  })));
 
   const hourlyData = await HourlyAnalytics.findAll({
     where: {

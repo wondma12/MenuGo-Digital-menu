@@ -88,8 +88,8 @@ const generateMenuReport = catchAsync(async (req, res) => {
   const menuPerformance = await sequelize.query(
     `SELECT
       m.menu_item_id AS menu_item_id,
-      mi.id AS "analytics_item.id",
-      mi.name AS "analytics_item.name",
+      mi.id AS analytics_item_id,
+      mi.name AS analytics_item_name,
       SUM(m.order_count) AS total_orders,
       SUM(m.quantity_sold) AS total_quantity,
       SUM(m.revenue) AS total_revenue,
@@ -112,7 +112,13 @@ const generateMenuReport = catchAsync(async (req, res) => {
       nest: true,
       raw: true,
     }
-  );
+  ).then(rows => rows.map(row => ({
+    ...row,
+    analytics_item: {
+      id: row.analytics_item_id,
+      name: row.analytics_item_name,
+    },
+  })));
 
   res.json(ApiResponse.success(menuPerformance, 'Menu performance report generated'));
 });

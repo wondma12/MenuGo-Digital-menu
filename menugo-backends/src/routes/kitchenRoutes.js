@@ -7,7 +7,7 @@ const { validateKitchenUpdate } = require('../validations/kitchenValidation');
 
 // All routes require authentication
 router.use(protect);
-router.use(authorize('kitchen', 'chef', 'admin', 'restaurant_admin'));
+router.use(authorize('kitchen', 'chef', 'admin', 'restaurant_admin', 'manager'));
 
 // Dashboard routes
 router.get('/dashboard/:restaurantId', kitchenController.getDashboardData);

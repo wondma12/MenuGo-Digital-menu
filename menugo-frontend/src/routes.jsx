@@ -147,6 +147,7 @@ export const routeConfig = {
     { path: '/chef/active', element: KitchenActiveOrders, layout: KitchenLayout },
     { path: '/chef/completed', element: KitchenCompletedPage, layout: KitchenLayout },
     { path: '/chef/orders/:orderId', element: KitchenOrderDetails, layout: KitchenLayout },
+    { path: '/kitchen', element: KitchenDashboard, layout: KitchenLayout },
     { path: '/kitchen/dashboard', element: KitchenDashboard, layout: KitchenLayout },
     { path: '/kitchen/active', element: KitchenActiveOrders, layout: KitchenLayout },
     { path: '/kitchen/completed', element: KitchenCompletedPage, layout: KitchenLayout },
@@ -168,7 +169,9 @@ const roleRouteMap = {
   platform_admin: ['public', 'platformAdmin', 'restaurantAdmin', 'kitchen'],
   // Restaurant owners/admins can view kitchen dashboard as well
   restaurant_admin: ['public', 'restaurantAdmin', 'kitchen'],
+  admin: ['public', 'restaurantAdmin', 'kitchen'],
   chef: ['public', 'kitchen'],
+  manager: ['public', 'kitchen'],
   waiter: ['public', 'waiter'],
   customer: ['public', 'customer'],
 }
