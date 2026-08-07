@@ -611,6 +611,7 @@ const getRestaurantDashboard = catchAsync(async (req, res) => {
         completed_total: completedTotal || 0,
       },
       revenue_data: revenueData,
+      orders_data: revenueData,
       popular_items: popularItems,
       today_schedule: todaySchedule,
       recent_orders: [],
