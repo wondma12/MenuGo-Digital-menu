@@ -647,7 +647,7 @@ export const getRestaurantDashboardData = async ({ restaurantId, startDate, endD
     restaurant: payload.restaurant || payload.restaurant || {},
     // completed counts
     completedToday: stats.completed_today ?? stats.completedToday ?? payload.completed_today ?? payload.completedToday ?? 0,
-    completedTotal: stats.completed_total ?? stats.completedTotal ?? payload.completed_total ?? payload.completedTotal ?? 0,
+    completedTotal: stats.completed_total ?? stats.completedTotal ?? stats.completed_today ?? stats.completedToday ?? payload.completed_total ?? payload.completedTotal ?? payload.completed_today ?? payload.completedToday ?? 0,
     // flatten key names expected by UI
     todayOrders: stats.today_orders ?? stats.todayOrders ?? payload.today_orders ?? payload.todayOrders ?? 0,
     todayRevenue: stats.today_revenue ?? stats.todayRevenue ?? payload.today_revenue ?? payload.todayRevenue ?? 0,

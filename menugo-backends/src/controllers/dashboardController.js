@@ -509,6 +509,8 @@ const getRestaurantDashboard = catchAsync(async (req, res) => {
       revenueData.push({ date: toLocalDateString(dayStart), revenue: dailyRevenue, orders: dailyOrders });
     }
 
+    const completedTotal = revenueData.reduce((sum, point) => sum + Number(point.orders || 0), 0);
+
     const todayKey = toLocalDateString(todayStart)
     let todayReservations = []
     try {
@@ -606,6 +608,7 @@ const getRestaurantDashboard = catchAsync(async (req, res) => {
         today_orders: todayOrders,
         today_revenue: todayRevenue || 0,
         completed_today: completedToday || 0,
+        completed_total: completedTotal || 0,
       },
       revenue_data: revenueData,
       popular_items: popularItems,
