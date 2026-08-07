@@ -642,12 +642,38 @@ export const getRestaurantDashboardData = async ({ restaurantId, startDate, endD
   // backend returns { restaurant, stats, recent_orders, ... }
   const stats = payload.stats || {}
 
+  const revenueData = buildDailySeries(payload.revenue_data || payload.revenueData || [], startDate, endDate).map((point) => {
+    const todayKey = formatDateKey(new Date())
+    if (point.date === todayKey) {
+      return {
+        ...point,
+        revenue: Number(stats.today_revenue ?? payload.today_revenue ?? point.revenue ?? 0),
+        orders: Number(stats.completed_today ?? payload.completed_today ?? stats.today_orders ?? payload.today_orders ?? point.orders ?? 0),
+      }
+    }
+    return point
+  })
+
+  const ordersData = buildDailySeries(payload.orders_data || payload.ordersData || payload.revenue_data || payload.revenueData || [], startDate, endDate).map((point) => {
+    const todayKey = formatDateKey(new Date())
+    if (point.date === todayKey) {
+      return {
+        ...point,
+        orders: Number(stats.completed_today ?? payload.completed_today ?? stats.today_orders ?? payload.today_orders ?? point.orders ?? 0),
+        revenue: Number(stats.today_revenue ?? payload.today_revenue ?? point.revenue ?? 0),
+      }
+    }
+    return point
+  })
+
+  const computedCompletedTotal = ordersData.reduce((sum, point) => sum + Number(point.orders || 0), 0)
+
   const normalized = {
     // basic restaurant info
     restaurant: payload.restaurant || payload.restaurant || {},
     // completed counts
     completedToday: stats.completed_today ?? stats.completedToday ?? payload.completed_today ?? payload.completedToday ?? 0,
-    completedTotal: stats.completed_total ?? stats.completedTotal ?? stats.completed_today ?? stats.completedToday ?? payload.completed_total ?? payload.completedTotal ?? payload.completed_today ?? payload.completedToday ?? 0,
+    completedTotal: stats.completed_total ?? stats.completedTotal ?? payload.completed_total ?? payload.completedTotal ?? (computedCompletedTotal > 0 ? computedCompletedTotal : stats.completed_today ?? stats.completedToday ?? payload.completed_today ?? payload.completedToday ?? 0),
     // flatten key names expected by UI
     todayOrders: stats.today_orders ?? stats.todayOrders ?? payload.today_orders ?? payload.todayOrders ?? 0,
     todayRevenue: stats.today_revenue ?? stats.todayRevenue ?? payload.today_revenue ?? payload.todayRevenue ?? 0,
@@ -657,28 +683,8 @@ export const getRestaurantDashboardData = async ({ restaurantId, startDate, endD
     activeCustomers: stats.active_customers ?? stats.activeCustomers ?? payload.active_customers ?? payload.activeCustomers ?? 0,
     avgRating: stats.avg_rating ?? stats.avgRating ?? payload.avg_rating ?? payload.avgRating ?? 0,
     ratingChange: stats.rating_change ?? stats.ratingChange ?? payload.rating_change ?? payload.ratingChange ?? 0,
-    revenueData: buildDailySeries(payload.revenue_data || payload.revenueData || [], startDate, endDate).map((point) => {
-      const todayKey = formatDateKey(new Date())
-      if (point.date === todayKey) {
-        return {
-          ...point,
-          revenue: Number(stats.today_revenue ?? payload.today_revenue ?? point.revenue ?? 0),
-          orders: Number(stats.completed_today ?? payload.completed_today ?? stats.today_orders ?? payload.today_orders ?? point.orders ?? 0),
-        }
-      }
-      return point
-    }),
-    ordersData: buildDailySeries(payload.orders_data || payload.ordersData || payload.revenue_data || payload.revenueData || [], startDate, endDate).map((point) => {
-      const todayKey = formatDateKey(new Date())
-      if (point.date === todayKey) {
-        return {
-          ...point,
-          orders: Number(stats.completed_today ?? payload.completed_today ?? stats.today_orders ?? payload.today_orders ?? point.orders ?? 0),
-          revenue: Number(stats.today_revenue ?? payload.today_revenue ?? point.revenue ?? 0),
-        }
-      }
-      return point
-    }),
+    revenueData,
+    ordersData,
     popularItems: payload.popular_items || payload.popularItems || [],
     lowStockItems: payload.low_stock_items || payload.lowStockItems || [],
     recentOrders: payload.recent_orders || payload.recentOrders || [],
