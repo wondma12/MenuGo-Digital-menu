@@ -2,6 +2,7 @@ const nodemailer = require('nodemailer');
 const handlebars = require('handlebars');
 const fs = require('fs');
 const path = require('path');
+const axios = require('axios');
 const { logger } = require('../utils/logger');
 let oauth2Client = null;
 // Lazy-load google auth only if OAuth2 vars are provided
@@ -79,6 +80,50 @@ const loadTemplate = (templateName, data) => {
   return template(data);
 };
 
+const buildWelcomeText = (data) => {
+  const lines = [
+    `Welcome to MenuGo!`,
+    '',
+    `Hello ${data.name || 'there'},`,
+    'Thanks for joining MenuGo. Your restaurant account is being prepared and should be active soon.',
+    '',
+    'If you need help, reply to this email or visit support.',
+    '',
+    'MenuGo Team',
+  ];
+  return lines.join('\n');
+};
+
+const getSendGridKey = () => process.env.SENDGRID_API_KEY || process.env.SENDGRID_KEY || '';
+
+const sendViaSendGrid = async (mailOptions) => {
+  const sendgridKey = getSendGridKey();
+  if (!sendgridKey) {
+    throw new Error('SendGrid API key not configured');
+  }
+
+  const payload = {
+    personalizations: [{ to: [{ email: mailOptions.to }], subject: mailOptions.subject }],
+    from: { email: process.env.EMAIL_FROM || process.env.SMTP_USER || 'no-reply@menugo.local', name: process.env.EMAIL_FROM_NAME || 'MenuGo' },
+    content: [
+      { type: 'text/plain', value: mailOptions.text || '' },
+      { type: 'text/html', value: mailOptions.html || '' },
+    ],
+    reply_to: mailOptions.replyTo ? { email: mailOptions.replyTo } : undefined,
+  };
+
+  const response = await axios.post('https://api.sendgrid.com/v3/mail/send', payload, {
+    headers: { Authorization: `Bearer ${sendgridKey}`, 'Content-Type': 'application/json' },
+    timeout: parseInt(process.env.SMTP_TIMEOUT_MS, 10) || 20000,
+  });
+
+  if (response && (response.status === 202 || response.status === 200)) {
+    return { messageId: `sendgrid-${Date.now()}` };
+  }
+
+  throw new Error(`SendGrid HTTP API returned status ${response.status}`);
+};
+
 // Send email
 const sendEmail = async (to, subject, template, data) => {
   const transporter = await createTransporter();
@@ -90,13 +135,36 @@ const sendEmail = async (to, subject, template, data) => {
       to,
       subject,
       html,
+      ...(template === 'welcome' ? { text: buildWelcomeText(data) } : {}),
+      replyTo: data?.replyTo || process.env.EMAIL_REPLY_TO || process.env.EMAIL_FROM || process.env.SMTP_USER,
     };
+
+    const sendgridKey = getSendGridKey();
+    if (sendgridKey) {
+      try {
+        logger.info(`Sending email to ${to} using SendGrid HTTP API`);
+        return await sendViaSendGrid(mailOptions);
+      } catch (sendgridErr) {
+        logger.warn('SendGrid HTTP API send failed, falling back to SMTP:', sendgridErr && sendgridErr.message ? sendgridErr.message : sendgridErr);
+      }
+    }
 
     const info = await transporter.sendMail(mailOptions);
     logger.info(`Email sent to ${to}: ${info.messageId}`);
     return info;
   } catch (error) {
     logger.error('Email send error:', error);
+
+    const sendgridKey = getSendGridKey();
+    if (sendgridKey) {
+      try {
+        logger.info(`Attempting SendGrid fallback for ${to}`);
+        return await sendViaSendGrid({ ...{ to, subject, html: loadTemplate(template, data), text: template === 'welcome' ? buildWelcomeText(data) : undefined, replyTo: data?.replyTo || process.env.EMAIL_REPLY_TO || process.env.EMAIL_FROM || process.env.SMTP_USER }, from: mailOptions.from });
+      } catch (sgErr) {
+        logger.warn('SendGrid fallback failed:', sgErr && sgErr.message ? sgErr.message : sgErr);
+      }
+    }
+
     throw error;
   }
 };
