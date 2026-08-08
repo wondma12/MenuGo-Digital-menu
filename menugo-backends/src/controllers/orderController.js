@@ -19,6 +19,28 @@ const normalizeRestaurantIdentifier = (value) => String(value ?? '')
   .replace(/\s+/g, '-')
   .replace(/[^a-z0-9-]/g, '');
 
+const resolveRestaurantByIdentifier = async (restaurantIdentifier) => {
+  if (!restaurantIdentifier) return null;
+
+  let restaurant = await Restaurant.findOne({ where: { qr_code_identifier: restaurantIdentifier, is_active: true, deleted_at: null } });
+  if (!restaurant) {
+    restaurant = await Restaurant.findByPk(restaurantIdentifier);
+    if (restaurant && (!restaurant.is_active || restaurant.deleted_at)) restaurant = null;
+  }
+
+  if (!restaurant) {
+    const requestedIdentifier = normalizeRestaurantIdentifier(restaurantIdentifier);
+    const candidates = await Restaurant.findAll({ where: { is_active: true, deleted_at: null }, attributes: ['id', 'name', 'qr_code_identifier', 'is_active'] });
+    restaurant = candidates.find((candidate) => {
+      const candidateIdentifier = normalizeRestaurantIdentifier(candidate.qr_code_identifier);
+      const candidateName = normalizeRestaurantIdentifier(candidate.name);
+      return candidateIdentifier === requestedIdentifier || candidateName === requestedIdentifier;
+    }) || null;
+  }
+
+  return restaurant;
+};
+
 const resolveTableByNumber = async (restaurantId, tableNumber) => {
   const normalized = normalizeTableNumber(tableNumber);
   if (!normalized) return null;
@@ -60,23 +82,7 @@ const createOrder = catchAsync(async (req, res) => {
   } = req.body;
 
   // Support both slug-style `qr_code_identifier` and UUID primary key values for restaurant
-  let restaurant = await Restaurant.findOne({ where: { qr_code_identifier: restaurant_id, is_active: true } });
-  if (!restaurant) {
-    restaurant = await Restaurant.findByPk(restaurant_id);
-    if (restaurant && !restaurant.is_active) restaurant = null;
-  }
-
-  if (!restaurant && restaurant_id) {
-    const candidates = await Restaurant.findAll({
-      where: { is_active: true, deleted_at: null },
-      attributes: ['id', 'name', 'qr_code_identifier', 'is_active'],
-    });
-    const requestedIdentifier = normalizeRestaurantIdentifier(restaurant_id);
-    restaurant = candidates.find((candidate) => (
-      normalizeRestaurantIdentifier(candidate.qr_code_identifier) === requestedIdentifier ||
-      normalizeRestaurantIdentifier(candidate.name) === requestedIdentifier
-    )) || null;
-  }
+  const restaurant = await resolveRestaurantByIdentifier(restaurant_id);
 
   if (!restaurant) {
     throw new ApiError(404, 'Restaurant not found');
@@ -572,7 +578,13 @@ const getRestaurantOrders = catchAsync(async (req, res) => {
   const tableNumber = req.query.table || req.query.table_number || null;
   const offset = (page - 1) * limit;
 
-  const where = { restaurant_id: restaurantId };
+  const restaurant = await resolveRestaurantByIdentifier(restaurantId);
+  if (!restaurant) {
+    throw new ApiError(404, 'Restaurant not found');
+  }
+
+  const resolvedRestaurantId = restaurant.id;
+  const where = { restaurant_id: resolvedRestaurantId };
   // Table filter: if a table number is provided (public/customer view), restrict to that table
   if (tableNumber) {
     where.table_number = tableNumber;
@@ -651,11 +663,11 @@ const getRestaurantOrders = catchAsync(async (req, res) => {
   // Gather simple status counts for dashboard
   let verifiedTotal = 0, pendingCount = 0, preparingCount = 0, readyCount = 0, completedCount = 0;
   try {
-    verifiedTotal = await Order.count({ where: { restaurant_id: restaurantId, status: 'verified' } });
-    pendingCount = await Order.count({ where: { restaurant_id: restaurantId, status: 'pending' } });
-    preparingCount = await Order.count({ where: { restaurant_id: restaurantId, status: 'preparing' } });
-    readyCount = await Order.count({ where: { restaurant_id: restaurantId, status: 'ready' } });
-    completedCount = await Order.count({ where: { restaurant_id: restaurantId, status: 'completed' } });
+    verifiedTotal = await Order.count({ where: { restaurant_id: resolvedRestaurantId, status: 'verified' } });
+    pendingCount = await Order.count({ where: { restaurant_id: resolvedRestaurantId, status: 'pending' } });
+    preparingCount = await Order.count({ where: { restaurant_id: resolvedRestaurantId, status: 'preparing' } });
+    readyCount = await Order.count({ where: { restaurant_id: resolvedRestaurantId, status: 'ready' } });
+    completedCount = await Order.count({ where: { restaurant_id: resolvedRestaurantId, status: 'completed' } });
   } catch (err) {
     console.error('Order status counts error:', err);
   }
