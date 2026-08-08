@@ -19,7 +19,6 @@ import * as yup from 'yup';
 import { useAuthStore } from '../../store/authStore';
 import Input from '../common/Input';
 import Button from '../common/Button';
-import Alert from '../common/Alert';
 import { toast } from 'react-toastify';
 import SocialLogin from './SocialLogin';
 import { getEffectiveRole, getRoleHomePath } from '../../utils/authRouting';
@@ -50,11 +49,6 @@ const floatAnimation = {
   transition: { duration: 3, repeat: Infinity, ease: 'easeInOut' },
 };
 
-const pulseAnimation = {
-  scale: [1, 1.05, 1],
-  transition: { duration: 2, repeat: Infinity, ease: 'easeInOut' },
-};
-
 const schema = yup.object({
   email: yup
     .string()
@@ -67,10 +61,20 @@ const schema = yup.object({
   rememberMe: yup.boolean(),
 });
 
+const getSafeReturnPath = (value) => {
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  if (/^(https?:)?\/\//i.test(trimmed)) return null;
+  return trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
+};
+
 const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const forceLogin = new URLSearchParams(location.search).get('forceLogin') === '1';
+  const searchParams = new URLSearchParams(location.search);
+  const forceLogin = searchParams.get('forceLogin') === '1';
+  const returnToPath = getSafeReturnPath(searchParams.get('returnTo') || searchParams.get('redirect') || location.state?.from || null);
   const { login, isLoading, error, clearError, checkAuth, isAuthenticated } = useAuthStore();
   const [showError, setShowError] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -128,7 +132,7 @@ const Login = () => {
     return () => {
       cancelled = true;
     };
-  }, [checkAuth, isAuthenticated, navigate]);
+  }, [checkAuth, forceLogin, isAuthenticated, navigate]);
 
   // Handle token returned from OAuth redirects
   useEffect(() => {
@@ -157,7 +161,7 @@ const Login = () => {
             const parsed = token ? parseJwt(token) : null;
 
             const userRole = srcUser?.staff?.role || srcUser?.role || parsed?.staff?.role || parsed?.role || null;
-            const redirectPath = getRoleHomePath(userRole);
+            const redirectPath = returnToPath || getRoleHomePath(userRole);
             navigate(redirectPath, { replace: true });
           }
         })();
@@ -165,7 +169,7 @@ const Login = () => {
     } catch (e) {
       // ignore malformed urls
     }
-  }, [checkAuth, navigate]);
+  }, [checkAuth, navigate, returnToPath]);
 
   const onSubmit = async (data) => {
     if (isLoading || submitLockRef.current) return;
@@ -196,7 +200,7 @@ const Login = () => {
           const parsed = token ? parseJwt(token) : null;
 
           const userRole = srcUser?.staff?.role || srcUser?.role || parsed?.staff?.role || parsed?.role || null;
-          const redirectPath = getRoleHomePath(userRole);
+          const redirectPath = returnToPath || getRoleHomePath(userRole);
           navigate(redirectPath, { replace: true });
         }, 1000);
       } else {
@@ -276,7 +280,7 @@ const Login = () => {
         {/* Back to home link */}
         <motion.div variants={itemVariants} className="mb-4">
           <Link
-            to="/"
+            to={returnToPath || '/'}
             className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-orange-600 transition-all duration-300 group"
           >
             <motion.span whileHover={{ x: -4 }} transition={{ type: 'spring', stiffness: 300 }}>

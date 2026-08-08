@@ -42,7 +42,10 @@ export default function Footer({ onOpenCart, restaurantId, restaurant, centered 
                     Call Waiter
                   </Link>
 
-                  <Link to="/login?forceLogin=1" className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:border-slate-300 hover:bg-white hover:text-primary-700">
+                  <Link
+                    to={restaurantId ? `/login?forceLogin=1&returnTo=${encodeURIComponent(`/menu/${restaurantId}`)}` : '/login?forceLogin=1'}
+                    className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:border-slate-300 hover:bg-white hover:text-primary-700"
+                  >
                     <SparklesIcon className="h-4 w-4" />
                     Staff Login
                   </Link>
