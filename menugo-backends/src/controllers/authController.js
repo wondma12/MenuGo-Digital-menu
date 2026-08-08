@@ -376,7 +376,15 @@ const login = catchAsync(async (req, res) => {
   let token;
   let refreshToken;
   try {
-    token = generateToken(user.id, user.role);
+    // Prefer encoding the staff role in the JWT when the user has a
+    // RestaurantStaff record. This ensures staff users (chef/waiter)
+    // are represented correctly in the token and the frontend can
+    // deterministically route based on the token payload.
+    const effectiveRoleForToken = (typeof staffRecord !== 'undefined' && staffRecord && staffRecord.role)
+      ? staffRecord.role
+      : user.role;
+
+    token = generateToken(user.id, effectiveRoleForToken);
     refreshToken = generateRefreshToken(user.id);
 
     await UserSession.create({

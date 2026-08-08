@@ -185,11 +185,18 @@ const Login = () => {
         toast.success('Login successful! Redirecting...');
 
         const authResolved = await checkAuth().catch(() => false);
+
+        // Prefer the authoritative user returned by checkAuth(). If checkAuth
+        // failed (network or transient), fall back to the login response
+        // payload first, then to any persisted user snapshot. This avoids
+        // using a stale persisted user (e.g. previous waiter) when deciding
+        // the post-login redirect for staff users.
         const persistedUser = useAuthStore.getState().user;
+        const srcUser = authResolved ? persistedUser : (result.user || persistedUser);
         const currentToken = useAuthStore.getState().token || sessionStorage.getItem('token');
-        const userRole = getEffectiveRole(persistedUser, currentToken);
+        const userRole = getEffectiveRole(srcUser, currentToken);
         const redirectPath = getPostLoginRedirectPath(
-          persistedUser,
+          srcUser,
           returnToPath || getRoleHomePath(userRole),
           currentToken
         );
