@@ -19,9 +19,10 @@ import * as yup from 'yup';
 import { useAuthStore } from '../../store/authStore';
 import Input from '../common/Input';
 import Button from '../common/Button';
+import Alert from '../common/Alert';
 import { toast } from 'react-toastify';
 import SocialLogin from './SocialLogin';
-import { getEffectiveRole, getRoleHomePath } from '../../utils/authRouting';
+import { getEffectiveRole, getPostLoginRedirectPath, getRoleHomePath } from '../../utils/authRouting';
 
 // Animation variants
 const containerVariants = {
@@ -120,7 +121,8 @@ const Login = () => {
         if (cancelled || !isReady) return;
 
         const currentUser = useAuthStore.getState().user;
-        const targetPath = getRoleHomePath(getEffectiveRole(currentUser));
+        const token = useAuthStore.getState().token || sessionStorage.getItem('token');
+        const targetPath = getRoleHomePath(getEffectiveRole(currentUser, token));
         navigate(targetPath, { replace: true });
       } catch (error) {
         // Stay on login when auth cannot be confirmed.
@@ -136,39 +138,38 @@ const Login = () => {
 
   // Handle token returned from OAuth redirects
   useEffect(() => {
-    try {
-      const params = new URLSearchParams(window.location.search);
-      const token = params.get('token');
-      if (token) {
+    let cancelled = false;
+
+    const handleOauthToken = async () => {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const token = params.get('token');
+        if (!token || cancelled) return;
+
         try { sessionStorage.setItem('token', token) } catch (e) { /* ignore */ }
-        (async () => {
-          const ok = await checkAuth();
-          if (ok) {
-            const persistedUser = useAuthStore.getState().user;
-            const srcUser = persistedUser;
 
-            const parseJwt = (t) => {
-              try {
-                const p = t.split('.')[1];
-                const json = decodeURIComponent(atob(p.replace(/-/g, '+').replace(/_/g, '/')).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
-                return JSON.parse(json);
-              } catch (e) {
-                return null;
-              }
-            };
-
-            const token = useAuthStore.getState().token || sessionStorage.getItem('token');
-            const parsed = token ? parseJwt(token) : null;
-
-            const userRole = srcUser?.staff?.role || srcUser?.role || parsed?.staff?.role || parsed?.role || null;
-            const redirectPath = returnToPath || getRoleHomePath(userRole);
-            navigate(redirectPath, { replace: true });
-          }
-        })();
+        const authResolved = await checkAuth();
+        if (authResolved && !cancelled) {
+          const persistedUser = useAuthStore.getState().user;
+          const currentToken = useAuthStore.getState().token || sessionStorage.getItem('token');
+          const userRole = getEffectiveRole(persistedUser, currentToken);
+          const redirectPath = getPostLoginRedirectPath(
+            persistedUser,
+            returnToPath || getRoleHomePath(userRole),
+            currentToken
+          );
+          navigate(redirectPath, { replace: true });
+        }
+      } catch (e) {
+        // ignore malformed urls
       }
-    } catch (e) {
-      // ignore malformed urls
-    }
+    };
+
+    handleOauthToken();
+
+    return () => {
+      cancelled = true;
+    };
   }, [checkAuth, navigate, returnToPath]);
 
   const onSubmit = async (data) => {
@@ -182,27 +183,17 @@ const Login = () => {
       if (result?.success) {
         setShowSuccess(true);
         toast.success('Login successful! Redirecting...');
-        setTimeout(() => {
-          const persistedUser = useAuthStore.getState().user;
-          const srcUser = result.user || persistedUser;
 
-          const parseJwt = (t) => {
-            try {
-              const p = t.split('.')[1];
-              const json = decodeURIComponent(atob(p.replace(/-/g, '+').replace(/_/g, '/')).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
-              return JSON.parse(json);
-            } catch (e) {
-              return null;
-            }
-          };
-
-          const token = useAuthStore.getState().token || sessionStorage.getItem('token');
-          const parsed = token ? parseJwt(token) : null;
-
-          const userRole = srcUser?.staff?.role || srcUser?.role || parsed?.staff?.role || parsed?.role || null;
-          const redirectPath = returnToPath || getRoleHomePath(userRole);
-          navigate(redirectPath, { replace: true });
-        }, 1000);
+        const authResolved = await checkAuth().catch(() => false);
+        const persistedUser = useAuthStore.getState().user;
+        const currentToken = useAuthStore.getState().token || sessionStorage.getItem('token');
+        const userRole = getEffectiveRole(persistedUser, currentToken);
+        const redirectPath = getPostLoginRedirectPath(
+          persistedUser,
+          returnToPath || getRoleHomePath(userRole),
+          currentToken
+        );
+        navigate(redirectPath, { replace: true });
       } else {
         setLoginAttempts(prev => prev + 1);
         setShowError(true);
