@@ -47,8 +47,12 @@ const SocialLogin = () => {
 
   const handleSocialLogin = async (provider) => {
     try {
-      // Redirect to OAuth provider (ensure /api is present)
-      window.location.href = `${OAUTH_BASE_URL}/api/auth/${provider}`
+      // Redirect to OAuth provider (ensure /api is present).
+      // Include the current frontend origin so the backend can return the
+      // user to the correct host after OAuth completes.
+      const currentOrigin = typeof window !== 'undefined' ? window.location.origin : ''
+      const frontendParam = currentOrigin ? `?frontend=${encodeURIComponent(currentOrigin)}` : ''
+      window.location.href = `${OAUTH_BASE_URL}/api/auth/${provider}${frontendParam}`
     } catch (error) {
       console.error('Social login failed:', error)
     }
@@ -90,7 +94,8 @@ const SocialLogin = () => {
       if (!parsedUser) {
         try {
           const response = await authService.getCurrentUser()
-          parsedUser = response?.data?.user || response?.data || response?.user || response
+          const payload = response?.data ?? response
+          parsedUser = payload?.data?.user || payload?.data || payload?.user || payload
         } catch (error) {
           console.error('OAuth user lookup failed:', error)
           navigate('/login?error=oauth', { replace: true })

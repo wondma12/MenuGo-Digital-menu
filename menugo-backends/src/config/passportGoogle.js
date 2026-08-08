@@ -21,11 +21,13 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
     callbackURL: resolvedCallback,
   }, async (accessToken, refreshToken, profile, done) => {
     try {
-      const email = profile.emails && profile.emails[0] && profile.emails[0].value;
-      if (!email) return done(new Error('No email returned from Google'), null);
+      let email = profile.emails && profile.emails[0] && profile.emails[0].value
+      email = String(email || '').trim().toLowerCase()
+      if (!email) return done(new Error('No email returned from Google'), null)
 
-      // Find or create a user
-      let user = await User.findOne({ where: { email } });
+      // Find existing user by normalized email. This preserves admin/restaurant roles
+      // for accounts that were created before Google auth was enabled.
+      let user = await User.findOne({ where: { email } })
       if (!user) {
         user = await User.create({
           email,
@@ -34,14 +36,14 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
           is_active: true,
           role: 'customer',
           avatar_url: (profile.photos && profile.photos[0] && profile.photos[0].value) || null,
-        });
+        })
       }
 
-      return done(null, user);
+      return done(null, user)
     } catch (err) {
-      return done(err, null);
+      return done(err, null)
     }
-  }));
+  }))
 }
 
 module.exports = passport;
