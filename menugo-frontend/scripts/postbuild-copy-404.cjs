@@ -18,9 +18,19 @@ if (!fs.existsSync(indexFile)) {
 fs.copyFileSync(indexFile, fallbackFile)
 console.log('Copied index.html -> 404.html for SPA fallback')
 
+// Create a platform-agnostic redirects file so static hosts that support
+// a redirects/rewrites configuration can route unknown paths back to index.html.
+const redirectsFile = path.join(distDir, '_redirects')
+try {
+  fs.writeFileSync(redirectsFile, '/* /index.html 200\n', 'utf8')
+  console.log('Created _redirects file for SPA fallback:', path.relative(distDir, redirectsFile))
+} catch (err) {
+  console.warn('Failed to create _redirects file:', err && err.message)
+}
+
 // Also create nested index.html files for routes that static hosts may request
-// directly (e.g. /admin/dashboard). This ensures a 200-served HTML for those
-// paths even when the host doesn't support SPA rewrites.
+// directly (e.g. /admin/dashboard). This is an extra fallback for hosts that
+// only serve index files under directory branches.
 const ensureNestedIndex = (routePath) => {
   const parts = routePath.replace(/^\/+|\/+$/g, '').split('/')
   const dir = path.join(distDir, ...parts)
@@ -38,6 +48,15 @@ const routesToCreate = [
   '/admin',
   '/admin/dashboard',
   '/admin/login',
+  '/customer',
+  '/menu',
+  '/scan',
+  '/order-confirmation',
+  '/platform',
+  '/platform/system',
+  '/platform/system/health',
+  '/platform/system/audit-logs',
+  '/platform/system/backup',
   '/admin/*'
 ]
 

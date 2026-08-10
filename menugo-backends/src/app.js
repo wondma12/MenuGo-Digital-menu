@@ -193,8 +193,24 @@ app.use('/uploads', express.static('uploads'));
 try {
   const path = require('path');
   const fs = require('fs');
-  const frontendDist = process.env.FRONTEND_DIST_PATH || path.resolve(__dirname, '..', 'menugo-frontend', 'dist');
-  if (fs.existsSync(frontendDist)) {
+  const candidatePaths = [
+    process.env.FRONTEND_DIST_PATH,
+    path.resolve(__dirname, '..', 'menugo-frontend', 'dist'),
+    path.resolve(process.cwd(), 'menugo-frontend', 'dist'),
+    path.resolve(process.cwd(), 'dist'),
+    path.resolve(__dirname, '..', 'dist'),
+  ].filter(Boolean);
+
+  let frontendDist = null;
+  for (const candidate of candidatePaths) {
+    if (fs.existsSync(candidate)) {
+      frontendDist = candidate
+      break
+    }
+  }
+
+  if (frontendDist) {
+    logger.info && logger.info('Serving frontend static files from', frontendDist)
     app.use(express.static(frontendDist));
 
     // SPA fallback: for any request that looks like a browser navigation
