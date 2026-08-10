@@ -20,6 +20,7 @@ import {
     ArrowRight as FaArrowRight,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import Loading from '../../../common/Loading'
 import contactService from '../../../services/contactService';
 
 const Messages = () => {
@@ -195,17 +196,12 @@ const Messages = () => {
     };
 
     if (loading) {
-        return (
-            <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
-                <div className="w-12 h-12 border-3 border-slate-200 border-t-orange-500 rounded-full animate-spin" />
-                <p className="text-slate-500">Loading your messages...</p>
-            </div>
-        );
+        return <Loading text="Loading contact messages..." />
     }
 
     return (
-        <div className="relative space-y-6 overflow-visible bg-white p-4 sm:px-6 lg:px-8 min-h-screen">
-            {/* Background decorations */}
+        <div className="relative space-y-6 overflow-visible bg-white p-4 sm:px-6 lg:px-8 font-['Manrope',system-ui,sans-serif] text-slate-900 sm:p-6 lg:p-8">
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_rgba(251,146,60,0.12),transparent_45%),radial-gradient(ellipse_at_bottom_left,_rgba(59,130,246,0.08),transparent_55%)]" />
             <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(251,146,60,0.18),transparent_32%),radial-gradient(circle_at_bottom_left,_rgba(59,130,246,0.12),transparent_32%)]" />
             <div className="pointer-events-none absolute -left-24 top-24 h-72 w-72 rounded-full bg-orange-300/20 blur-3xl" />
             <div className="pointer-events-none absolute -right-20 top-1/2 h-80 w-80 rounded-full bg-blue-300/20 blur-3xl" />
@@ -281,9 +277,9 @@ const Messages = () => {
                 {/* Search and filters */}
                 <div className="relative z-20 flex flex-col gap-3 md:flex-row md:items-center">
                     <div className="relative flex-1 min-w-[200px]">
-                        <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm" />
+                        <FaSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-orange-400 text-sm" />
                         <input
-                            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 pl-9 text-sm text-slate-900 placeholder:text-slate-400 focus:border-orange-500 focus:bg-white focus:outline-none focus:ring-3 focus:ring-orange-500/10 transition-all"
+                            className="w-full rounded-none border border-slate-200 bg-white py-3 pl-12 pr-4 text-slate-900 shadow-sm outline-none transition focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
                             placeholder="Search by name, email, subject or message"
                             value={searchTerm}
                             onChange={e => setSearchTerm(e.target.value)}
@@ -323,8 +319,8 @@ const Messages = () => {
                 {/* Messages Grid */}
                 <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.5fr] gap-6">
                     {/* Messages List */}
-                    <div className="rounded-3xl border border-orange-100 bg-white/95 shadow-[0_20px_60px_rgba(15,23,42,0.08)] overflow-hidden flex flex-col">
-                        <div className="flex justify-between items-center px-6 py-4 border-b border-slate-100">
+                    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm flex flex-col">
+                        <div className="flex justify-between items-center px-6 py-4 border-b border-slate-200 bg-slate-50">
                             <h3 className="flex items-center gap-2 text-sm font-semibold text-slate-900">
                                 Inbox 
                                 <span className="text-xs text-slate-500 bg-slate-100 px-2.5 py-0.5 rounded-full">
@@ -386,7 +382,7 @@ const Messages = () => {
                     </div>
 
                     {/* Message Detail */}
-                    <div className="rounded-3xl border border-orange-100 bg-white/95 shadow-[0_20px_60px_rgba(15,23,42,0.08)] overflow-hidden">
+                    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
                         {selectedMessage ? (
                             <div className="p-6 flex flex-col gap-6 h-full">
                                 <div className="flex flex-col sm:flex-row justify-between items-start gap-4 pb-4 border-b border-slate-100">
