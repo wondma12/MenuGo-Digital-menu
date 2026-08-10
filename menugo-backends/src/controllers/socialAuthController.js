@@ -15,14 +15,41 @@ const { getClientIp, getUserAgent } = require('../utils/requestInfo');
 const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
 
 // Allowed frontend origins for redirect safety (local dev hosts + configured FRONTEND_URL)
-const allowedOrigins = new Set([
+// Note: at runtime we also accept the request's Origin when it appears valid so
+// the OAuth callback can return the token to the correct frontend in deployed
+// environments where FRONTEND_URL may not exactly match the incoming Origin.
+const defaultAllowed = [
   frontendUrl.replace(/\/api\/?$/, ''),
   'http://localhost:5173',
   'http://localhost:5174',
   'http://localhost:5172',
   'http://127.0.0.1:5173',
   'http://127.0.0.1:5174',
-])
+]
+
+const isValidOrigin = (origin) => {
+  if (!origin || typeof origin !== 'string') return false
+  try {
+    const u = new URL(origin)
+    // Only allow http(s) schemes and simple hostnames
+    if (!['http:', 'https:'].includes(u.protocol)) return false
+    // disallow file: and data: and other non-web schemes
+    return Boolean(u.hostname)
+  } catch (e) {
+    return false
+  }
+}
+
+const allowedOrigins = (req) => {
+  const set = new Set(defaultAllowed)
+  try {
+    const reqOrigin = req && (req.headers?.origin || req.query?.frontend)
+    if (isValidOrigin(reqOrigin)) set.add(String(reqOrigin))
+  } catch (e) {
+    // ignore
+  }
+  return set
+}
 
 exports.googleRedirect = (req, res, next) => {
   if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
@@ -38,7 +65,7 @@ exports.googleRedirect = (req, res, next) => {
     // keep raw
   }
 
-  if (!allowedOrigins.has(frontendOrigin)) {
+  if (!allowedOrigins(req).has(frontendOrigin)) {
     frontendOrigin = frontendUrl
   }
 
@@ -53,7 +80,7 @@ exports.googleCallback = (req, res, next) => {
       if (err || !user) {
         // use state if available
         const requested = req.query && req.query.state ? decodeURIComponent(req.query.state) : frontendUrl
-        const dest = allowedOrigins.has(requested) ? requested : frontendUrl
+        const dest = allowedOrigins(req).has(requested) ? requested : frontendUrl
         return res.redirect(`${dest}/login?error=oauth`);
       }
 
@@ -70,7 +97,7 @@ exports.googleCallback = (req, res, next) => {
       });
 
       const requested = req.query && req.query.state ? decodeURIComponent(req.query.state) : frontendUrl
-      const dest = allowedOrigins.has(requested) ? requested : frontendUrl
+      const dest = allowedOrigins(req).has(requested) ? requested : frontendUrl
 
       const redirectUrl = `${dest}/login?token=${encodeURIComponent(token)}`;
       return res.redirect(redirectUrl);
