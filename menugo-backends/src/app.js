@@ -184,6 +184,42 @@ if (process.env.NODE_ENV !== 'development') {
 // Static files
 app.use('/uploads', express.static('uploads'));
 
+// Serve frontend static files (optional). If a built frontend exists in the
+// repository (e.g. `menugo-frontend/dist`) we will serve it and provide an
+// SPA fallback so client-side routes like `/menu/:slug` return index.html.
+// This is safe to keep enabled in environments where the frontend is served
+// separately because it only activates when the `dist` folder exists or
+// when `FRONTEND_DIST_PATH` is explicitly set.
+try {
+  const path = require('path');
+  const fs = require('fs');
+  const frontendDist = process.env.FRONTEND_DIST_PATH || path.resolve(__dirname, '..', 'menugo-frontend', 'dist');
+  if (fs.existsSync(frontendDist)) {
+    app.use(express.static(frontendDist));
+
+    // SPA fallback: for any request that looks like a browser navigation
+    // (Accepts HTML) and is not an API or static asset, return index.html
+    app.get('*', (req, res, next) => {
+      try {
+        const urlPath = req.path || '';
+        // Do not intercept API, uploads, socket, or favicon requests
+        if (urlPath.startsWith('/api') || urlPath.startsWith('/uploads') || urlPath.startsWith('/socket.io') || urlPath === '/favicon.ico') {
+          return next();
+        }
+
+        const accept = String(req.headers.accept || '')
+        if (!accept.includes('text/html')) return next();
+
+        return res.sendFile(path.join(frontendDist, 'index.html'));
+      } catch (e) {
+        return next(e);
+      }
+    });
+  }
+} catch (e) {
+  logger && logger.warn && logger.warn('Frontend static mount failed (continuing):', e && e.message ? e.message : e);
+}
+
 // Backwards-compatible alias for OAuth routes: internally rewrite `/auth/*` -> `/api/auth/*`
 // This helps browsers or bookmarks that hit `/auth/google` (without the `/api` prefix)
 // without losing headers or changing the original method.
