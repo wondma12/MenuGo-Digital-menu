@@ -6,17 +6,17 @@ const securityMiddleware = helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'", "https:", "http:"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https:", "http:"],
-      imgSrc: ["'self'", "data:", "https:", "http:"],
-      fontSrc: ["'self'", "https:", "http:", "data:"],
-      connectSrc: ["'self'", "https:", "http:", "ws:", "wss:"],
+      styleSrc: ["'self'", "'unsafe-inline'", 'https:', 'http:'],
+      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", 'https:', 'http:'],
+      imgSrc: ["'self'", 'data:', 'https:', 'http:'],
+      fontSrc: ["'self'", 'https:', 'http:', 'data:'],
+      connectSrc: ["'self'", 'https:', 'http:', 'ws:', 'wss:'],
       frameSrc: ["'self'"],
       objectSrc: ["'none'"],
     },
   },
   crossOriginEmbedderPolicy: false,
-  crossOriginResourcePolicy: { policy: "cross-origin" },
+  crossOriginResourcePolicy: { policy: 'cross-origin' },
 });
 
 // CORS configuration
@@ -38,7 +38,9 @@ const corsMiddleware = cors({
     const allAllowedOrigins = [...new Set([...allowedOrigins, ...defaultOrigins])];
 
     // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
+    if (!origin) {
+      return callback(null, true);
+    }
 
     const normalizedOrigin = origin.trim();
     if (allAllowedOrigins.includes(normalizedOrigin) || isLocalhostOrigin(normalizedOrigin) || process.env.NODE_ENV !== 'production') {
@@ -76,7 +78,9 @@ const hppMiddleware = (req, res, next) => {
 const sanitizeMiddleware = (req, res, next) => {
   // Remove any $ and . from keys to prevent MongoDB injection
   const sanitize = (obj) => {
-    if (!obj || typeof obj !== 'object') return obj;
+    if (!obj || typeof obj !== 'object') {
+      return obj;
+    }
     
     for (const key in obj) {
       if (key.startsWith('$') || key.includes('.')) {
@@ -89,9 +93,15 @@ const sanitizeMiddleware = (req, res, next) => {
     return obj;
   };
   
-  if (req.body) sanitize(req.body);
-  if (req.query) sanitize(req.query);
-  if (req.params) sanitize(req.params);
+  if (req.body) {
+    sanitize(req.body);
+  }
+  if (req.query) {
+    sanitize(req.query);
+  }
+  if (req.params) {
+    sanitize(req.params);
+  }
   
   next();
 };

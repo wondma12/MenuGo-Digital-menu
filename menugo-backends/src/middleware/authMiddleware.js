@@ -41,9 +41,9 @@ const protect = async (req, res, next) => {
     // malformed headers during development. Enable by setting DEBUG_AUTH=true.
     const authDebug = String(process.env.DEBUG_AUTH || '').toLowerCase() === 'true';
     if (authDebug) {
-      const mask = (t) => (typeof t === 'string' && t.length > 12) ? `${t.slice(0,6)}...${t.slice(-6)}` : String(t)
-      const headerVal = req.headers.authorization || req.headers['x-access-token'] || req.headers['auth_token'] || req.headers['x-auth-token'] || null
-      logger && logger.info && logger.info('protect() token sources', { header: headerVal && String(headerVal).slice(0,120), cookie: req.cookies && req.cookies.token, query: req.query && req.query.token, sanitized: mask(token) })
+      const mask = (t) => (typeof t === 'string' && t.length > 12) ? `${t.slice(0,6)}...${t.slice(-6)}` : String(t);
+      const headerVal = req.headers.authorization || req.headers['x-access-token'] || req.headers['auth_token'] || req.headers['x-auth-token'] || null;
+      logger && logger.info && logger.info('protect() token sources', { header: headerVal && String(headerVal).slice(0,120), cookie: req.cookies && req.cookies.token, query: req.query && req.query.token, sanitized: mask(token) });
     }
 
     // Prefer DB-backed session lookup: if a valid session exists in DB, accept it.
@@ -137,17 +137,17 @@ const protect = async (req, res, next) => {
     }
 
     throw new ApiError(401, 'Session expired or invalid');
-    } catch (error) {
+  } catch (error) {
     // Mask token for logs (don't log full token).
-    const mask = (t) => (typeof t === 'string' && t.length > 12) ? `${t.slice(0,6)}...${t.slice(-6)}` : String(t)
+    const mask = (t) => (typeof t === 'string' && t.length > 12) ? `${t.slice(0,6)}...${t.slice(-6)}` : String(t);
     if (error.name === 'JsonWebTokenError') {
-      logger && logger.warn && logger.warn('Invalid JWT provided to protect()', { reason: error.message, token: mask(req.headers && (req.headers.authorization || req.headers['x-access-token'] || req.headers['auth_token'] || req.headers['x-auth-token'] || req.cookies?.token || req.query?.token)) })
+      logger && logger.warn && logger.warn('Invalid JWT provided to protect()', { reason: error.message, token: mask(req.headers && (req.headers.authorization || req.headers['x-access-token'] || req.headers['auth_token'] || req.headers['x-auth-token'] || req.cookies?.token || req.query?.token)) });
       next(new ApiError(401, 'Invalid token'));
     } else if (error.name === 'TokenExpiredError') {
-      logger && logger.info && logger.info('Expired JWT provided to protect()', { token: mask(req.headers && (req.headers.authorization || req.headers['x-access-token'] || req.headers['auth_token'] || req.headers['x-auth-token'] || req.cookies?.token || req.query?.token)) })
+      logger && logger.info && logger.info('Expired JWT provided to protect()', { token: mask(req.headers && (req.headers.authorization || req.headers['x-access-token'] || req.headers['auth_token'] || req.headers['x-auth-token'] || req.cookies?.token || req.query?.token)) });
       next(new ApiError(401, 'Token expired'));
     } else {
-      logger && logger.error && logger.error('Auth protect() error', { err: error && (error.message || error) })
+      logger && logger.error && logger.error('Auth protect() error', { err: error && (error.message || error) });
       next(error);
     }
   }
@@ -202,12 +202,16 @@ const authorize = (...roles) => {
     }
 
     // Allow if user's top-level role is permitted
-    if (roles.includes(req.user.role)) return next();
+    if (roles.includes(req.user.role)) {
+      return next();
+    }
 
     // Check for a restaurant staff assignment and allow based on that role
     try {
       const staff = await RestaurantStaff.findOne({ where: { user_id: req.user.id, is_active: true } });
-      if (staff && roles.includes(staff.role)) return next();
+      if (staff && roles.includes(staff.role)) {
+        return next();
+      }
     } catch (e) {
       // swallow DB errors and fall through to deny
     }
@@ -226,7 +230,7 @@ const generateToken = (userId, role) => {
   return jwt.sign(
     { id: userId, role },
     process.env.JWT_SECRET,
-    { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
+    { expiresIn: process.env.JWT_EXPIRES_IN || '7d' },
   );
 };
 
@@ -235,7 +239,7 @@ const generateRefreshToken = (userId) => {
   return jwt.sign(
     { id: userId },
     process.env.JWT_REFRESH_SECRET,
-    { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '30d' }
+    { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '30d' },
   );
 };
 

@@ -1,0 +1,142 @@
+{
+  "title": "MenuGo API Documentation",
+  "version": "1.0.0",
+  "baseUrl": "/api",
+  "description": "Complete backend API reference for the MenuGo digital menu platform.",
+  "endpoints": [],
+  "authentication": {
+    "type": "Bearer JWT",
+    "header": "Authorization: Bearer <token>",
+    "note": "Most protected routes require a valid JWT token from /api/auth/login or /api/auth/register."
+  },
+  "groups": [
+    {
+      "name": "Authentication",
+      "description": "Register, log in, refresh tokens, and manage password recovery.",
+      "endpoints": [
+        {"method": "POST", "path": "/api/auth/register", "auth": "Public", "summary": "Create a new user account and restaurant profile."},
+        {"method": "POST", "path": "/api/auth/login", "auth": "Public", "summary": "Authenticate a user and receive a JWT."},
+        {"method": "POST", "path": "/api/auth/refresh-token", "auth": "Public", "summary": "Refresh an expired JWT with a refresh token."},
+        {"method": "POST", "path": "/api/auth/forgot-password", "auth": "Public", "summary": "Send a password reset email."},
+        {"method": "POST", "path": "/api/auth/reset-password", "auth": "Public", "summary": "Reset a password using the recovery token."},
+        {"method": "GET", "path": "/api/auth/verify-email/:token", "auth": "Public", "summary": "Verify an email address using the supplied token."}
+      ]
+    },
+    {
+      "name": "Restaurants",
+      "description": "Create, update, retrieve, and manage restaurants and their public settings.",
+      "endpoints": [
+        {"method": "GET", "path": "/api/restaurants", "auth": "Public", "summary": "List restaurants available to the public."},
+        {"method": "POST", "path": "/api/restaurants", "auth": "Authenticated", "summary": "Create a new restaurant profile."},
+        {"method": "GET", "path": "/api/restaurants/:id", "auth": "Public", "summary": "Get a single restaurant by ID."},
+        {"method": "PUT", "path": "/api/restaurants/:id", "auth": "Owner/Admin", "summary": "Update restaurant details and assets."},
+        {"method": "DELETE", "path": "/api/restaurants/:id", "auth": "Owner/Admin", "summary": "Delete a restaurant and related records."},
+        {"method": "GET", "path": "/api/restaurants/:id/tables", "auth": "Staff/Owner", "summary": "List tables for a restaurant."},
+        {"method": "POST", "path": "/api/restaurants/:id/calls", "auth": "Public", "summary": "Create a call request for the restaurant."}
+      ]
+    },
+    {
+      "name": "Menu",
+      "description": "Manage categories, items, modifiers, and public menu visibility.",
+      "endpoints": [
+        {"method": "GET", "path": "/api/menu/restaurant/:restaurantId", "auth": "Public", "summary": "Get the public menu for a restaurant."},
+        {"method": "GET", "path": "/api/menu/items/:restaurantId", "auth": "Public", "summary": "List menu items for a restaurant."},
+        {"method": "GET", "path": "/api/menu/item/:id", "auth": "Public", "summary": "Fetch one menu item by ID."},
+        {"method": "GET", "path": "/api/menu/categories/:restaurantId", "auth": "Public", "summary": "List categories for the customer-facing menu."},
+        {"method": "POST", "path": "/api/menu/categories/:restaurantId", "auth": "Staff/Owner", "summary": "Create a menu category."},
+        {"method": "POST", "path": "/api/menu/items/:restaurantId", "auth": "Staff/Owner", "summary": "Create a new menu item including optional image upload."},
+        {"method": "PUT", "path": "/api/menu/items/:id", "auth": "Staff/Owner", "summary": "Update an existing menu item."},
+        {"method": "DELETE", "path": "/api/menu/categories/:id", "auth": "Staff/Owner", "summary": "Delete a menu category."}
+      ]
+    },
+    {
+      "name": "Orders",
+      "description": "Create, track, update, and cancel customer orders.",
+      "endpoints": [
+        {"method": "POST", "path": "/api/orders", "auth": "Public/Authenticated", "summary": "Create a new order."},
+        {"method": "GET", "path": "/api/orders/restaurant/:restaurantId", "auth": "Staff/Owner", "summary": "List orders for a restaurant."},
+        {"method": "GET", "path": "/api/orders/:id", "auth": "Public/Authenticated", "summary": "Get an order by ID."},
+        {"method": "PUT", "path": "/api/orders/:id/status", "auth": "Staff/Owner", "summary": "Change the current order status."},
+        {"method": "POST", "path": "/api/orders/:id/cancel", "auth": "Public/Authenticated", "summary": "Cancel an existing order."}
+      ]
+    },
+    {
+      "name": "Tables & QR",
+      "description": "Manage tables and generate QR codes for dine-in access.",
+      "endpoints": [
+        {"method": "GET", "path": "/api/tables/restaurant/:restaurantId", "auth": "Staff/Owner", "summary": "List tables for a restaurant."},
+        {"method": "POST", "path": "/api/tables/restaurant/:restaurantId", "auth": "Owner", "summary": "Create a table."},
+        {"method": "PATCH", "path": "/api/tables/:id/status", "auth": "Staff/Owner", "summary": "Update table occupancy or availability."},
+        {"method": "POST", "path": "/api/qr/restaurant/:restaurantId/generate", "auth": "Staff/Owner", "summary": "Generate a QR code for a restaurant menu."},
+        {"method": "POST", "path": "/api/qr/restaurant/:restaurantId/table/:tableId/generate", "auth": "Staff/Owner", "summary": "Generate a table-specific QR code."},
+        {"method": "POST", "path": "/api/qr/scan/:identifier", "auth": "Public", "summary": "Record a QR scan event for analytics."}
+      ]
+    },
+    {
+      "name": "Waiters & Staff",
+      "description": "Support waiter shifts, notifications, and staff role management.",
+      "endpoints": [
+        {"method": "GET", "path": "/api/waiters/dashboard", "auth": "Waiter", "summary": "Get the waiter dashboard data."},
+        {"method": "POST", "path": "/api/waiters/shift/start", "auth": "Waiter", "summary": "Start a waiter shift."},
+        {"method": "POST", "path": "/api/waiters/shift/end", "auth": "Waiter", "summary": "End a waiter shift."},
+        {"method": "GET", "path": "/api/staff", "auth": "Staff/Owner", "summary": "List staff members."},
+        {"method": "POST", "path": "/api/staff", "auth": "Owner/Admin", "summary": "Create a new staff member."},
+        {"method": "GET", "path": "/api/staff/roles", "auth": "Staff/Owner", "summary": "List available roles and permissions."}
+      ]
+    },
+    {
+      "name": "Analytics & Reports",
+      "description": "Read sales, customer, and operational metrics.",
+      "endpoints": [
+        {"method": "GET", "path": "/api/analytics/sales/:restaurantId", "auth": "Staff/Owner", "summary": "Retrieve sales analytics for a restaurant."},
+        {"method": "GET", "path": "/api/analytics/menu/:restaurantId", "auth": "Staff/Owner", "summary": "Retrieve menu performance analytics."},
+        {"method": "GET", "path": "/api/analytics/hourly/:restaurantId", "auth": "Staff/Owner", "summary": "Retrieve hourly traffic analytics."},
+        {"method": "GET", "path": "/api/reports/sales/:restaurantId", "auth": "Staff/Owner", "summary": "Generate a sales report."},
+        {"method": "GET", "path": "/api/reports/orders/:restaurantId", "auth": "Staff/Owner", "summary": "Generate an order report."},
+        {"method": "GET", "path": "/api/reports/menu/:restaurantId", "auth": "Staff/Owner", "summary": "Generate a menu performance report."}
+      ]
+    },
+    {
+      "name": "Reviews & Coupons",
+      "description": "Collect customer feedback and manage coupons.",
+      "endpoints": [
+        {"method": "GET", "path": "/api/reviews/restaurant/:restaurantId", "auth": "Public", "summary": "Get customer reviews for a restaurant."},
+        {"method": "POST", "path": "/api/reviews/restaurant/:restaurantId", "auth": "Public/Authenticated", "summary": "Create a review."},
+        {"method": "GET", "path": "/api/coupons/public/restaurant/:restaurantId", "auth": "Public", "summary": "List public coupons for a restaurant."},
+        {"method": "POST", "path": "/api/coupons/validate", "auth": "Public", "summary": "Validate a coupon code."},
+        {"method": "POST", "path": "/api/coupons/restaurant/:restaurantId", "auth": "Staff/Owner", "summary": "Create a new coupon."}
+      ]
+    },
+    {
+      "name": "Inventory & Notifications",
+      "description": "Monitor stock, inventory activity, and account notifications.",
+      "endpoints": [
+        {"method": "GET", "path": "/api/inventory/restaurant/:restaurantId", "auth": "Staff/Owner", "summary": "List inventory items."},
+        {"method": "GET", "path": "/api/inventory/restaurant/:restaurantId/summary", "auth": "Staff/Owner", "summary": "Get an inventory summary."},
+        {"method": "GET", "path": "/api/notifications", "auth": "Authenticated", "summary": "List notifications for the current user."},
+        {"method": "PATCH", "path": "/api/notifications/:id/read", "auth": "Authenticated", "summary": "Mark one notification as read."},
+        {"method": "PATCH", "path": "/api/notifications/read-all", "auth": "Authenticated", "summary": "Mark all notifications as read."}
+      ]
+    },
+    {
+      "name": "Support & Platform",
+      "description": "Handle support tickets, platform administration, and system health.",
+      "endpoints": [
+        {"method": "GET", "path": "/api/platform/health", "auth": "Public", "summary": "Get a system health signal."},
+        {"method": "GET", "path": "/api/support/tickets", "auth": "Authenticated", "summary": "List support tickets."},
+        {"method": "POST", "path": "/api/support/tickets", "auth": "Public/Authenticated", "summary": "Create a new support ticket."},
+        {"method": "POST", "path": "/api/support/tickets/:ticketId/messages", "auth": "Authenticated", "summary": "Add a message to a ticket."},
+        {"method": "GET", "path": "/api/system/health", "auth": "Public", "summary": "Health check for system services."},
+        {"method": "GET", "path": "/api/system/settings", "auth": "Admin", "summary": "Read system-wide settings."}
+      ]
+    },
+    {
+      "name": "Files & Media",
+      "description": "Upload images and other media files to the platform.",
+      "endpoints": [
+        {"method": "POST", "path": "/api/upload", "auth": "Authenticated", "summary": "Upload a single file."},
+        {"method": "POST", "path": "/api/upload/multiple", "auth": "Authenticated", "summary": "Upload several files at once."}
+      ]
+    }
+  ]
+}

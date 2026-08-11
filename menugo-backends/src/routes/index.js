@@ -1,5 +1,7 @@
 // src/routes/index.js
 const express = require('express');
+const path = require('path');
+const fs = require('fs');
 const router = express.Router();
 
 // Import route modules
@@ -52,6 +54,36 @@ router.use('/public/contact', contactRoutes);
 router.use('/system', systemRoutes);  // Make sure this line exists
 router.use('/upload', uploadRoutes);
 router.use('/preview', previewRoutes);
+// Documentation endpoints
+router.get('/docs', (req, res) => {
+  const docsPath = path.resolve(__dirname, '..', '..', 'docs', 'api-docs.html');
+  if (fs.existsSync(docsPath)) {
+    return res.sendFile(docsPath);
+  }
+  return res.status(404).json({ success: false, message: 'API documentation page not found' });
+});
+
+router.get('/docs.json', (req, res) => {
+  const docsPath = path.resolve(__dirname, '..', '..', 'docs', 'api-docs.json');
+  if (fs.existsSync(docsPath)) {
+    const fileContent = fs.readFileSync(docsPath, 'utf8');
+    try {
+      const parsed = JSON.parse(fileContent);
+      const flattenedEndpoints = (parsed.groups || []).flatMap((group) => (group.endpoints || []).map((endpoint) => ({
+        ...endpoint,
+        group: group.name,
+      })));
+      return res.json({
+        ...parsed,
+        endpoints: flattenedEndpoints,
+      });
+    } catch (error) {
+      return res.status(500).json({ success: false, message: 'Invalid API documentation JSON', error: error.message });
+    }
+  }
+  return res.status(404).json({ success: false, message: 'API documentation JSON not found' });
+});
+
 // Health check
 router.get('/health', (req, res) => {
   res.status(200).json({ status: 'success', message: 'Server is running' });
