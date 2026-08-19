@@ -1,4 +1,5 @@
 import {useEffect, useState, useRef} from 'react'
+import { Link } from 'react-router-dom'
 import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
 import {
   staggerContainer,
@@ -102,9 +103,13 @@ const About = () => {
     {
       icon: HeartIcon,
       title: 'Customer First',
-      description: 'Every detail is shaped around the real rhythms of service, from first contact to final payment.',
-      summary: 'We make hospitality tools feel intuitive for guests and teams alike.',
-      bullets: ['Faster guest journeys', 'Less friction during rush hours', 'Experience-first design'],
+      description: 'Customers scan, browse, order, and pay - all from their phone. No app download required.',
+      summary: '',
+      bullets: [
+        'Faster guest journeys',
+        'Less friction during rush hours',
+        'Experience-first design',
+      ],
       gradient: 'from-rose-500 to-pink-500',
       bgColor: 'bg-rose-50',
       iconColor: 'text-rose-600',
@@ -602,21 +607,44 @@ const About = () => {
                     </div>
                     <h3 className="text-lg font-bold text-slate-900">{value.title}</h3>
                     <p className="mt-3 text-sm leading-relaxed text-slate-600">{value.description}</p>
-                    <p className="mt-3 text-sm font-medium text-slate-700">{value.summary}</p>
-                    <div className="mt-4 flex flex-wrap gap-2">
-                      {value.bullets.map((bullet, bulletIndex) => (
-                        <span
-                          key={bulletIndex}
-                          className="rounded-full border border-slate-200 bg-white/80 px-3 py-1 text-xs font-semibold text-slate-600"
-                        >
-                          {bullet}
-                        </span>
-                      ))}
-                    </div>
-                    <div className="mt-5 inline-flex items-center text-sm font-semibold text-orange-600 transition-colors group-hover:text-orange-700">
-                      Learn more
-                      <ChevronRightIcon className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-1" />
-                    </div>
+                    {value.summary && <p className="mt-3 text-sm font-medium text-slate-700">{value.summary}</p>}
+                    {['Customer First', 'Innovation', 'Collaboration', 'Global Impact'].includes(value.title) ? (
+                      <div className="mt-5 space-y-3 text-left">
+                        {value.bullets.map((bullet) => (
+                          <div key={bullet} className="flex items-center gap-3 text-sm text-slate-700">
+                            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-green-100">
+                              <CheckCircleIcon className="h-4 w-4 text-green-600" />
+                            </span>
+                            <span>{bullet}</span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="mt-4 flex flex-wrap gap-2">
+                        {value.bullets.map((bullet, bulletIndex) => (
+                          <span
+                            key={bulletIndex}
+                            className="rounded-full border border-slate-200 bg-white/80 px-3 py-1 text-xs font-semibold text-slate-600"
+                          >
+                            {bullet}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    {['Customer First', 'Innovation', 'Collaboration', 'Global Impact'].includes(value.title) ? (
+                      <Link
+                        to="/contact"
+                        className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-orange-600 to-orange-500 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-orange-600/30 transition-all hover:shadow-orange-600/50"
+                      >
+                        Learn More
+                        <ArrowRightIcon className="h-4 w-4" />
+                      </Link>
+                    ) : (
+                      <div className="mt-5 inline-flex items-center text-sm font-semibold text-orange-600 transition-colors group-hover:text-orange-700">
+                        Learn more
+                        <ChevronRightIcon className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                      </div>
+                    )}
                   </div>
                 </motion.div>
               ))}
