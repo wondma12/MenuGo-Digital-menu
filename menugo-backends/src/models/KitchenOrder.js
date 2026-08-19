@@ -113,8 +113,9 @@ class KitchenOrder {
 
       // Pending orders (same SQL works on both dialects)
       const [pending] = await db.execute(
-        `SELECT k.*, COALESCE((SELECT COUNT(*) FROM kitchen_order_items WHERE kitchen_order_id = k.id), 0) as item_count
+        `SELECT k.*, rt.section AS table_section, COALESCE((SELECT COUNT(*) FROM kitchen_order_items WHERE kitchen_order_id = k.id), 0) as item_count
          FROM kitchen_orders k
+         LEFT JOIN restaurant_tables rt ON rt.restaurant_id = k.restaurant_id AND rt.table_number = k.table_number
          WHERE k.restaurant_id = ? AND k.status = 'pending'
          ORDER BY CASE k.priority WHEN 'urgent' THEN 1 WHEN 'high' THEN 2 WHEN 'normal' THEN 3 ELSE 4 END, k.created_at ASC
          LIMIT 50`,
@@ -125,22 +126,25 @@ class KitchenOrder {
       let preparingSql;
       if (dialect === 'sqlite') {
         preparingSql = `SELECT k.*, (CAST(strftime('%s','now') AS INTEGER) - CAST(strftime('%s', k.started_at) AS INTEGER)) / 60.0 as elapsed_minutes,
-          COALESCE((SELECT COUNT(*) FROM kitchen_order_items WHERE kitchen_order_id = k.id), 0) as item_count
+          rt.section AS table_section, COALESCE((SELECT COUNT(*) FROM kitchen_order_items WHERE kitchen_order_id = k.id), 0) as item_count
          FROM kitchen_orders k
+         LEFT JOIN restaurant_tables rt ON rt.restaurant_id = k.restaurant_id AND rt.table_number = k.table_number
          WHERE k.restaurant_id = ? AND k.status = 'preparing'
          ORDER BY k.started_at ASC
          LIMIT 50`;
       } else if (dialect === 'postgres' || dialect === 'postgresql') {
         preparingSql = `SELECT k.*, EXTRACT(EPOCH FROM (NOW() - k.started_at)) / 60.0 as elapsed_minutes,
-          COALESCE((SELECT COUNT(*) FROM kitchen_order_items WHERE kitchen_order_id = k.id), 0) as item_count
+          rt.section AS table_section, COALESCE((SELECT COUNT(*) FROM kitchen_order_items WHERE kitchen_order_id = k.id), 0) as item_count
          FROM kitchen_orders k
+         LEFT JOIN restaurant_tables rt ON rt.restaurant_id = k.restaurant_id AND rt.table_number = k.table_number
          WHERE k.restaurant_id = $1 AND k.status = 'preparing'
          ORDER BY k.started_at ASC
          LIMIT 50`;
       } else {
         preparingSql = `SELECT k.*, TIMESTAMPDIFF(MINUTE, k.started_at, NOW()) as elapsed_minutes,
-          COALESCE((SELECT COUNT(*) FROM kitchen_order_items WHERE kitchen_order_id = k.id), 0) as item_count
+          rt.section AS table_section, COALESCE((SELECT COUNT(*) FROM kitchen_order_items WHERE kitchen_order_id = k.id), 0) as item_count
          FROM kitchen_orders k
+         LEFT JOIN restaurant_tables rt ON rt.restaurant_id = k.restaurant_id AND rt.table_number = k.table_number
          WHERE k.restaurant_id = ? AND k.status = 'preparing'
          ORDER BY k.started_at ASC
          LIMIT 50`;
@@ -149,8 +153,9 @@ class KitchenOrder {
       const [preparing] = await db.execute(preparingSql, [restaurantId]);
 
       const [ready] = await db.execute(
-        `SELECT k.*, COALESCE((SELECT COUNT(*) FROM kitchen_order_items WHERE kitchen_order_id = k.id), 0) as item_count
+        `SELECT k.*, rt.section AS table_section, COALESCE((SELECT COUNT(*) FROM kitchen_order_items WHERE kitchen_order_id = k.id), 0) as item_count
          FROM kitchen_orders k
+         LEFT JOIN restaurant_tables rt ON rt.restaurant_id = k.restaurant_id AND rt.table_number = k.table_number
          WHERE k.restaurant_id = ? AND k.status = 'ready'
          ORDER BY k.ready_at DESC
          LIMIT 50`,

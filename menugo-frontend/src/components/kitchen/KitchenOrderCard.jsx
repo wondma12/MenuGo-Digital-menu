@@ -8,6 +8,7 @@ import KitchenOrderDetails from './KitchenOrderDetails';
 const KitchenOrderCard = ({ order, displayNumber, type, onUpdateStatus }) => {
   const [showDetails, setShowDetails] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
+  const tableSection = order.tableSection ?? order.table_section ?? order.table?.section ?? order.raw?.order_table?.section ?? 'General';
 
   useEffect(() => {
     if (order.status === 'preparing' && order.startedAt) {
@@ -58,7 +59,9 @@ const KitchenOrderCard = ({ order, displayNumber, type, onUpdateStatus }) => {
               </div>
             </div>
 
-            <div className="mt-2 text-sm text-slate-600">Table {order.tableNumber} • {order.customerName || 'Guest'}</div>
+            <div className="mt-2 text-sm text-slate-600">
+              Table {order.tableNumber} • {tableSection} • {order.customerName || 'Guest'}
+            </div>
           </div>
 
           <div className="flex flex-col items-end ml-3">

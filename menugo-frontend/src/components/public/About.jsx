@@ -22,8 +22,6 @@ import {
   ArrowRightIcon,
   PhoneArrowUpRightIcon,
   ClockIcon,
-  CurrencyDollarIcon,
-  WifiIcon,
   CheckBadgeIcon,
   StarIcon,
   TrophyIcon,
@@ -151,20 +149,6 @@ const About = () => {
       icon: RocketLaunchIcon,
       gradient: 'from-orange-500 to-amber-500',
     },
-    { 
-      year: '2026', 
-      title: 'Expanded Workflows', 
-      text: 'Added live orders, kitchen visibility, and staff coordination.', 
-      icon: ClockIcon,
-      gradient: 'from-blue-500 to-cyan-500',
-    },
-    { 
-      year: 'Now', 
-      title: 'Growing With Restaurants', 
-      text: 'Helping teams deliver faster service and clearer analytics.', 
-      icon: ChartBarIcon,
-      gradient: 'from-emerald-500 to-green-500',
-    },
   ]
 
   const metrics = [
@@ -237,13 +221,6 @@ const About = () => {
       avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&h=150&q=80",
       rating: 5,
     }
-  ]
-
-  const impactStats = [
-    { icon: CurrencyDollarIcon, value: '22%', label: 'Avg. revenue increase', gradient: 'from-emerald-500 to-green-500' },
-    { icon: ClockIcon, value: '35%', label: 'Faster table turns', gradient: 'from-blue-500 to-cyan-500' },
-    { icon: WifiIcon, value: '100%', label: 'Digital adoption rate', gradient: 'from-purple-500 to-violet-500' },
-    { icon: CheckBadgeIcon, value: '98%', label: 'Customer satisfaction', gradient: 'from-rose-500 to-pink-500' },
   ]
 
   return (
@@ -640,59 +617,6 @@ const About = () => {
                       Learn more
                       <ChevronRightIcon className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-1" />
                     </div>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Impact Stats with Enhanced Cards */}
-        <section className="bg-gradient-to-br from-orange-50 to-amber-50 py-16 sm:py-20">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="mx-auto mb-12 max-w-3xl text-center">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-              >
-                <span className="inline-block px-4 py-1 rounded-full bg-orange-200 text-orange-800 text-sm font-semibold mb-3">
-                  Impact
-                </span>
-                <h2 className="text-3xl font-black tracking-tight text-slate-900 md:text-4xl">Real impact, measured</h2>
-                <p className="mt-3 text-lg text-slate-700">Numbers from restaurants using MenuGo every day.</p>
-              </motion.div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-              {impactStats.map((stat, idx) => (
-                <motion.div
-                  key={idx}
-                  variants={popIn}
-                  initial="hidden"
-                  whileInView="show"
-                  viewport={{ once: true }}
-                  transition={{ delay: idx * 0.08 }}
-                  whileHover={{ 
-                    y: -8,
-                    scale: 1.05,
-                    transition: { type: 'spring', stiffness: 300 },
-                  }}
-                  className="relative rounded-2xl bg-white p-6 text-center shadow-md transition-all hover:shadow-xl overflow-hidden"
-                >
-                  <motion.div 
-                    className="absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-5 transition-opacity"
-                    style={{ backgroundImage: `linear-gradient(to bottom right, ${stat.gradient})` }}
-                  />
-                  <div className="relative">
-                    <stat.icon className="mx-auto h-8 w-8 text-orange-600" />
-                    <motion.p 
-                      className="mt-2 text-3xl font-black bg-gradient-to-r bg-clip-text text-transparent"
-                      style={{ backgroundImage: `linear-gradient(to right, ${stat.gradient})` }}
-                    >
-                      {stat.value}
-                    </motion.p>
-                    <p className="text-sm text-slate-500">{stat.label}</p>
                   </div>
                 </motion.div>
               ))}

@@ -5,9 +5,18 @@ import Badge from '../../../common/Badge'
 import ConfirmationDialog from '../../../common/ConfirmationDialog'
 import { updateMenuItemAvailability, deleteMenuItem } from '../../../services/menuService'
 import toast from 'react-hot-toast'
+import ListPagination from '../../common/ListPagination'
 
 const MenuList = ({ items, selectedItems, onSelectItem, onEdit, onRefresh }) => {
   const [deleteTarget, setDeleteTarget] = React.useState(null)
+  const [currentPage, setCurrentPage] = React.useState(1)
+  const pageSize = 10
+  const totalPages = Math.max(1, Math.ceil(items.length / pageSize))
+  const paginatedItems = items.slice((currentPage - 1) * pageSize, currentPage * pageSize)
+
+  React.useEffect(() => {
+    setCurrentPage((page) => Math.min(page, totalPages))
+  }, [items.length, totalPages])
 
   const handleAvailabilityToggle = async (item) => {
     try {
@@ -53,10 +62,10 @@ const MenuList = ({ items, selectedItems, onSelectItem, onEdit, onRefresh }) => 
                 <th className="w-10 px-4 py-3">
                   <input
                     type="checkbox"
-                    checked={selectedItems.length === items.length && items.length > 0}
+                    checked={paginatedItems.length > 0 && paginatedItems.every((item) => selectedItems.includes(item.id))}
                     onChange={(e) => {
                       if (e.target.checked) {
-                        onSelectItem(items.map(i => i.id))
+                        onSelectItem(paginatedItems.map(i => i.id))
                       } else {
                         onSelectItem([])
                       }
@@ -74,7 +83,7 @@ const MenuList = ({ items, selectedItems, onSelectItem, onEdit, onRefresh }) => 
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-                {items.map((item, index) => (
+                {paginatedItems.map((item, index) => (
                   <motion.tr
                     key={item.id}
                     initial={{ opacity: 0, y: 8 }}
@@ -174,7 +183,7 @@ const MenuList = ({ items, selectedItems, onSelectItem, onEdit, onRefresh }) => 
           </table>
         </div>
         <div className="space-y-3 p-3 md:hidden">
-          {items.map((item, index) => (
+          {paginatedItems.map((item, index) => (
             <motion.div
               key={item.id}
               initial={{ opacity: 0, y: 8 }}
@@ -239,6 +248,8 @@ const MenuList = ({ items, selectedItems, onSelectItem, onEdit, onRefresh }) => 
           ))}
         </div>
       </div>
+
+      <ListPagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
 
       <ConfirmationDialog
         isOpen={!!deleteTarget}

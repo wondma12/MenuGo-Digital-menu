@@ -1,4 +1,4 @@
-import {useState} from 'react'
+import {useEffect, useState} from 'react'
 import { motion } from 'framer-motion'
 import { PencilIcon, TrashIcon, EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline'
 import Avatar from '../../../common/Avatar'
@@ -7,9 +7,18 @@ import ConfirmationDialog from '../../../common/ConfirmationDialog'
 import StaffCard from './StaffCard'
 import { updateStaffStatus, deleteStaff } from '../../../services/staffService'
 import toast from 'react-hot-toast'
+import ListPagination from '../../common/ListPagination'
 
 const StaffList = ({ staff, onEdit, onRefresh }) => {
   const [deleteTarget, setDeleteTarget] = useState(null)
+  const [currentPage, setCurrentPage] = useState(1)
+  const pageSize = 10
+  const totalPages = Math.max(1, Math.ceil(staff.length / pageSize))
+  const paginatedStaff = staff.slice((currentPage - 1) * pageSize, currentPage * pageSize)
+
+  useEffect(() => {
+    setCurrentPage((page) => Math.min(page, totalPages))
+  }, [staff.length, totalPages])
 
   const handleStatusToggle = async (staffMember) => {
     try {
@@ -67,7 +76,7 @@ const StaffList = ({ staff, onEdit, onRefresh }) => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {staff.map((member, index) => (
+              {paginatedStaff.map((member, index) => (
                 <motion.tr
                   key={member.id}
                   initial={{ opacity: 0 }}
@@ -147,7 +156,7 @@ const StaffList = ({ staff, onEdit, onRefresh }) => {
         </div>
 
         <div className="grid gap-4 p-3 sm:p-4 md:hidden">
-          {staff.map((member, index) => (
+          {paginatedStaff.map((member, index) => (
             <motion.div
               key={member.id}
               initial={{ opacity: 0, y: 8 }}
@@ -159,6 +168,8 @@ const StaffList = ({ staff, onEdit, onRefresh }) => {
           ))}
         </div>
       </div>
+
+      <ListPagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
 
       <ConfirmationDialog
         isOpen={!!deleteTarget}

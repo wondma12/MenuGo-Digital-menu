@@ -1,10 +1,11 @@
-import {useState} from 'react'
+import {useEffect, useState} from 'react'
 import { motion } from 'framer-motion'
 import { PencilIcon, TrashIcon, UsersIcon } from '@heroicons/react/24/outline'
 import Badge from '../../../common/Badge'
 import ConfirmationDialog from '../../../common/ConfirmationDialog'
 import { deleteTable } from '../../../services/tableService'
 import toast from 'react-hot-toast'
+import ListPagination from '../../common/ListPagination'
 
 const TableList = ({ tables = [], onEdit, onRefresh }) => {
   const safeTables = Array.isArray(tables) ? tables.filter(Boolean) : []
@@ -25,6 +26,14 @@ const TableList = ({ tables = [], onEdit, onRefresh }) => {
     return String(leftValue).localeCompare(String(rightValue), undefined, { numeric: true, sensitivity: 'base' })
   })
   const [deleteTarget, setDeleteTarget] = useState(null)
+  const [currentPage, setCurrentPage] = useState(1)
+  const pageSize = 10
+  const totalPages = Math.max(1, Math.ceil(sortedTables.length / pageSize))
+  const paginatedTables = sortedTables.slice((currentPage - 1) * pageSize, currentPage * pageSize)
+
+  useEffect(() => {
+    setCurrentPage((page) => Math.min(page, totalPages))
+  }, [sortedTables.length, totalPages])
 
   const getStatusConfig = () => ({ label: 'Available', color: 'success' })
 
@@ -64,7 +73,7 @@ const TableList = ({ tables = [], onEdit, onRefresh }) => {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 bg-white">
-            {sortedTables.map((table, index) => {
+            {paginatedTables.map((table, index) => {
               const tableNumber = table.tableNumber ?? table.table_number ?? table.number ?? table.tableNo ?? table.table_no ?? '—'
               const statusConfig = getStatusConfig(table.status)
               return (
@@ -121,7 +130,7 @@ const TableList = ({ tables = [], onEdit, onRefresh }) => {
       </div>
 
       <div className="space-y-3 p-3 md:hidden">
-        {sortedTables.map((table, index) => {
+        {paginatedTables.map((table, index) => {
           const tableNumber = table.tableNumber ?? table.table_number ?? table.number ?? table.tableNo ?? table.table_no ?? '—'
           const statusConfig = getStatusConfig(table.status)
           return (
@@ -169,6 +178,8 @@ const TableList = ({ tables = [], onEdit, onRefresh }) => {
           )
         })}
       </div>
+
+      <ListPagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
 
       <ConfirmationDialog
         isOpen={!!deleteTarget}

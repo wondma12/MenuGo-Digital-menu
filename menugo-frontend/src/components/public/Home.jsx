@@ -15,13 +15,8 @@ import {
   ShieldCheckIcon,
   StarIcon,
   SparklesIcon,
-  GlobeAltIcon,
   UsersIcon,
-  CreditCardIcon,
-  LightBulbIcon,
   PhoneArrowUpRightIcon,
-  CalendarDaysIcon,
-  ChatBubbleLeftRightIcon,
   ArrowPathIcon,
   ChevronRightIcon,
   PlayIcon,
@@ -258,33 +253,6 @@ const Home = () => {
     ]
   },
 ];
-  const advancedFeatures = [
-    {
-      icon: CreditCardIcon,
-      title: 'Split Payments',
-      description: 'Let guests split bills seamlessly via QR or waiter assistance.',
-      gradient: 'from-emerald-400 to-cyan-400',
-    },
-    {
-      icon: GlobeAltIcon,
-      title: 'Multi‑language',
-      description: 'Auto‑translate menus into 15+ languages for international guests.',
-      gradient: 'from-blue-400 to-indigo-400',
-    },
-    {
-      icon: ChatBubbleLeftRightIcon,
-      title: 'AI Order Assistant',
-      description: 'Smart upsell suggestions & allergen alerts during ordering.',
-      gradient: 'from-purple-400 to-pink-400',
-    },
-    {
-      icon: CalendarDaysIcon,
-      title: 'Reservations Sync',
-      description: 'Connect with Google Calendar & booking platforms automatically.',
-      gradient: 'from-orange-400 to-red-400',
-    },
-  ];
-
   const stats = [
     { 
       value: compactNumber(platformSummary.restaurants_live), 
@@ -704,59 +672,6 @@ const Home = () => {
                   >
                     <ChevronRightIcon className="h-5 w-5 text-orange-500" />
                   </motion.div>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Advanced Capabilities */}
-        <section className="bg-gradient-to-br from-slate-50 to-white py-16 sm:py-20">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="mx-auto mb-12 max-w-3xl text-center">
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-              >
-                <span className="inline-flex items-center gap-2 rounded-full bg-orange-100 px-4 py-1 text-sm font-medium text-orange-800">
-                  <LightBulbIcon className="h-4 w-4" />
-                  Next‑gen capabilities
-                </span>
-                <h2 className="mt-3 text-3xl font-extrabold tracking-tight text-slate-900 md:text-4xl">
-                  Go beyond basic ordering
-                </h2>
-                <p className="mt-3 text-lg text-slate-600">
-                  Premium features designed to maximize revenue and guest satisfaction.
-                </p>
-              </motion.div>
-            </div>
-
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-              {advancedFeatures.map((feature, idx) => (
-                <motion.div
-                  key={idx}
-                  variants={popIn}
-                  initial="hidden"
-                  whileInView="show"
-                  viewport={{ once: true }}
-                  transition={{ delay: idx * 0.1 }}
-                  whileHover={{ 
-                    y: -8,
-                    scale: 1.03,
-                    transition: { type: 'spring', stiffness: 300 },
-                  }}
-                  className="relative group rounded-2xl bg-white p-6 text-center shadow-sm transition-all hover:shadow-xl overflow-hidden cursor-pointer"
-                >
-                  <motion.div 
-                    className="absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-5 transition-opacity"
-                    style={{ backgroundImage: `linear-gradient(to bottom right, ${feature.gradient})` }}
-                  />
-                  <div className={`relative mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-r ${feature.gradient} shadow-lg`}>
-                    <feature.icon className="h-7 w-7 text-white" />
-                  </div>
-                  <h3 className="relative text-base font-bold text-slate-900">{feature.title}</h3>
-                  <p className="relative mt-2 text-sm text-slate-500">{feature.description}</p>
                 </motion.div>
               ))}
             </div>

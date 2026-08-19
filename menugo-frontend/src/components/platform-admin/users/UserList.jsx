@@ -5,6 +5,8 @@ import {
   MagnifyingGlassIcon,
   FunnelIcon,
   UserPlusIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
   EllipsisVerticalIcon,
   EyeIcon,
   PencilIcon,
@@ -16,7 +18,6 @@ import { useNavigate } from 'react-router-dom'
 import UserFilters from './UserFilters'
 import Loading from '../../../common/Loading'
 import EmptyState from '../../../common/EmptyState'
-import Pagination from '../../../common/Pagination'
 import Button from '../../../common/Button'
 import Badge from '../../../common/Badge'
 import Dropdown from '../../../common/Dropdown'
@@ -28,6 +29,7 @@ import { getUsers } from '../../../services/userService'
 
 const UserList = () => {
   const navigate = useNavigate()
+  const pageSize = 10
   const [searchTerm, setSearchTerm] = useState('')
   // Default to showing all user roles (platform, restaurant, waiter, customer, support)
   // Default to show only admin accounts (platform_admin + restaurant_admin)
@@ -62,7 +64,7 @@ const UserList = () => {
 
   const { data, isLoading, refetch } = useQuery(
     ['users', currentPage, searchTerm, filters],
-    () => getUsers({ page: currentPage, search: searchTerm, ...filters }),
+    () => getUsers({ page: currentPage, limit: pageSize, search: searchTerm, ...filters }),
     { keepPreviousData: true }
   )
 
@@ -72,6 +74,16 @@ const UserList = () => {
     () => getUsers({ role: 'platform_admin,restaurant_admin', page: 1, limit: 1 }),
     { staleTime: 5 * 60 * 1000 }
   )
+
+  const handleSearchChange = (event) => {
+    setSearchTerm(event.target.value)
+    setCurrentPage(1)
+  }
+
+  const handleFiltersChange = (nextFilters) => {
+    setFilters(nextFilters)
+    setCurrentPage(1)
+  }
 
   const formatDate = (value) => {
     if (!value) return 'Unknown'
@@ -186,7 +198,7 @@ const UserList = () => {
             type="text"
             placeholder="Search users by name, email, or phone..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={handleSearchChange}
             className="w-full rounded-none border border-slate-200 bg-white py-3 pl-12 pr-4 text-slate-900 shadow-sm outline-none transition focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
           />
         </div>
@@ -202,7 +214,7 @@ const UserList = () => {
       {/* Filters Panel */}
       {showFilters && (
         <div>
-          <UserFilters filters={filters} onFiltersChange={setFilters} />
+          <UserFilters filters={filters} onFiltersChange={handleFiltersChange} />
         </div>
       )}
 
@@ -342,13 +354,29 @@ const UserList = () => {
             </div>
           </div>
 
-          {data?.totalPages > 1 && (
-            <div className="mt-8 flex justify-center">
-              <Pagination
-                currentPage={currentPage}
-                totalPages={data.totalPages}
-                onPageChange={setCurrentPage}
-              />
+          {data?.users?.length > 0 && (
+            <div className="mt-8 flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+              <button
+                type="button"
+                onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+                disabled={currentPage === 1}
+                className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:border-orange-300 hover:bg-orange-50 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                <ChevronLeftIcon className="h-5 w-5" />
+                Previous
+              </button>
+              <span className="text-sm font-semibold text-slate-600">
+                Page {currentPage} of {data.totalPages || 1}
+              </span>
+              <button
+                type="button"
+                onClick={() => setCurrentPage((page) => Math.min(data.totalPages || 1, page + 1))}
+                disabled={currentPage === (data.totalPages || 1)}
+                className="inline-flex items-center gap-2 rounded-lg border border-orange-200 bg-orange-50 px-3 py-2 text-sm font-semibold text-orange-700 transition hover:bg-orange-100 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                Next
+                <ChevronRightIcon className="h-5 w-5" />
+              </button>
             </div>
           )}
         </>

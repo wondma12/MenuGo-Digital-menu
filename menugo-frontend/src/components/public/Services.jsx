@@ -829,7 +829,7 @@ const Services = () => {
                           <div key={i} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors">
                             <div>
                               <p className="font-medium text-sm text-slate-900">{item}</p>
-                              <p className="text-xs text-slate-500">${(12 + i * 3).toFixed(2)}</p>
+                              <p className="text-xs text-slate-500">ETB {(12 + i * 3).toFixed(2)}</p>
                             </div>
                             <div className="flex items-center gap-2">
                               <button className="w-6 h-6 rounded-full bg-slate-200 hover:bg-orange-500 hover:text-white transition-colors">-</button>
@@ -841,7 +841,7 @@ const Services = () => {
                         <div className="border-t border-slate-200 pt-4">
                           <div className="flex justify-between text-sm font-semibold">
                             <span>Total</span>
-                            <span className="text-orange-600">$24.00</span>
+                            <span className="text-orange-600">ETB 24.00</span>
                           </div>
                           <button className="w-full mt-3 py-3 bg-gradient-to-r from-orange-600 to-orange-500 text-white rounded-xl font-semibold hover:shadow-lg hover:shadow-orange-600/30 transition-all">
                             Place Order
@@ -890,7 +890,7 @@ const Services = () => {
                         <div className="grid grid-cols-2 gap-3">
                           {[
                             { label: "Total Orders", value: "847", color: "text-blue-600" },
-                            { label: "Avg. Value", value: "$42", color: "text-green-600" }
+                            { label: "Avg. Value", value: "ETB 42", color: "text-green-600" }
                           ].map((stat, i) => (
                             <div key={i} className="bg-slate-50 p-3 rounded-xl">
                               <p className="text-xs text-slate-500">{stat.label}</p>

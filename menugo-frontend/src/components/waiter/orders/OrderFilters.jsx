@@ -1,7 +1,7 @@
 
 import Select from '../../common/Select'
 
-const OrderFilters = ({ filters, onFiltersChange }) => {
+const OrderFilters = ({ filters, onFiltersChange, sections = [], sectionFilter = 'all', onSectionChange }) => {
   const handleChange = (key, value) => {
     onFiltersChange({ ...filters, [key]: value })
   }
@@ -30,8 +30,22 @@ const OrderFilters = ({ filters, onFiltersChange }) => {
     { value: 'year', label: 'Last 365 days' },
   ]
 
+  const sectionOptions = [
+    { value: 'all', label: 'All Sections' },
+    ...sections.map((section) => ({ value: section, label: section })),
+  ]
+
   return (
     <div className="flex flex-nowrap items-center gap-3 rounded-3xl border-orange-100 bg-gradient-to-r from-white to-orange-50/40 p-3 shadow-sm">
+      {typeof onSectionChange === 'function' && (
+        <Select
+          value={sectionFilter}
+          onChange={(e) => onSectionChange(e.target.value)}
+          options={sectionOptions}
+          containerClassName="mb-0"
+          className="!w-auto w-40 text-sm py-1.5 px-3 rounded-lg"
+        />
+      )}
       <Select
         value={filters.status}
         onChange={(e) => handleChange('status', e.target.value)}

@@ -5,12 +5,10 @@ import {
   PhoneIcon,
   MapPinIcon,
   ClockIcon,
-  ChatBubbleLeftRightIcon,
   CheckCircleIcon,
   ExclamationCircleIcon,
   UserIcon,
   PencilIcon,
-  CalendarDaysIcon,
   NewspaperIcon,
   ShieldCheckIcon,
   SparklesIcon,
@@ -290,15 +288,6 @@ const Contact = () => {
                   >
                     Send a Message
                     <EnvelopeIcon className="h-4 w-4" />
-                  </a>
-                </motion.div>
-                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                  <a
-                    href="/schedule-demo"
-                    className="inline-flex items-center gap-2 rounded-full bg-orange-500/80 backdrop-blur-sm px-6 py-3 text-sm font-semibold text-white transition-all hover:bg-orange-500"
-                  >
-                    <CalendarDaysIcon className="h-4 w-4" />
-                    Schedule Demo
                   </a>
                 </motion.div>
               </motion.div>
@@ -601,36 +590,6 @@ const Contact = () => {
                       </div>
                     </div>
                   </div>
-                </motion.div>
-
-                {/* Live Chat CTA - Enhanced */}
-                <motion.div 
-                  whileHover={{ y: -4, scale: 1.01 }}
-                  className="rounded-2xl bg-gradient-to-r from-orange-600 via-orange-500 to-amber-500 p-6 text-white shadow-xl"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="relative">
-                      <motion.div
-                        animate={{ scale: [1, 1.1, 1] }}
-                        transition={{ duration: 2, repeat: Infinity }}
-                        className="absolute inset-0 rounded-full bg-white/20"
-                      />
-                      <ChatBubbleLeftRightIcon className="relative h-8 w-8" />
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-bold">Live Chat Support</h3>
-                      <p className="text-sm text-orange-100">Need immediate assistance? Our team is available 24/7.</p>
-                    </div>
-                  </div>
-                  <motion.button
-                    onClick={() => window.open('/chat', '_blank')}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    className="mt-4 inline-flex items-center gap-2 rounded-full bg-white px-6 py-2.5 text-sm font-semibold text-orange-600 shadow-lg transition-all hover:shadow-xl"
-                  >
-                    Start Live Chat
-                    <ArrowRightIcon className="h-4 w-4" />
-                  </motion.button>
                 </motion.div>
 
                 {/* Newsletter Signup - Enhanced */}

@@ -1,14 +1,108 @@
 import {useState, useEffect} from 'react'
 import { useQuery } from 'react-query'
 import { motion } from 'framer-motion'
-import { Clock, Check, Activity, SearchX } from 'lucide-react'
+import { Clock, Check, Activity, SearchX, Eye, ChevronRight } from 'lucide-react'
 import WaiterOrderCard from './WaiterOrderCard'
 import OrderFilters from './OrderFilters'
 import OrderStatusBadge from './OrderStatusBadge'
+import OrderDetailsModal from '../order-details/OrderDetailsModal'
 import Loading from '../../common/Loading'
 import { getWaiterOrders } from '../../../services/waiterService'
 import { useWebSocket } from '../../../hooks/useWebSocket'
 import { useAudio } from '../../../hooks/useAudio'
+
+const CompletedOrderRow = ({ order, displayNumber, onOpen }) => {
+  const tableSection = order?.tableSection || order?.table_section || order?.table?.section || order?.raw?.order_table?.section || 'General'
+  const tableNumber = order?.tableNumber || order?.table_number || order?.table?.number || '-'
+  const itemCount = order?.itemCount ?? order?.items?.length ?? 0
+  const itemNames = Array.isArray(order?.items)
+    ? order.items.map((item) => item.name ?? item.title ?? '').filter(Boolean).join(', ')
+    : '-'
+  const total = Number(order?.totalAmount ?? order?.total ?? order?.total_amount ?? 0)
+  const createdAt = new Date(order?.createdAt)
+  const elapsedMinutes = Number.isNaN(createdAt.getTime()) ? 0 : Math.max(0, Math.floor((Date.now() - createdAt.getTime()) / 60000))
+  const elapsed = elapsedMinutes < 60
+    ? `${elapsedMinutes} min ago`
+    : `${Math.floor(elapsedMinutes / 60)}h ${elapsedMinutes % 60}m ago`
+
+  return (
+    <>
+      <tr
+        className="cursor-pointer border-b border-slate-100 transition-colors hover:bg-orange-50/40"
+        onClick={onOpen}
+      >
+        <td className="whitespace-nowrap px-4 py-4 text-sm font-black text-slate-900">#{displayNumber}</td>
+        <td className="px-4 py-4 font-semibold text-slate-800">{order?.customerName ?? order?.customer?.name ?? 'Guest'}</td>
+        <td className="px-4 py-4">
+          <div className="font-semibold text-slate-800">Table {tableNumber}</div>
+        </td>
+        <td className="px-4 py-4 text-sm text-slate-600">{tableSection}</td>
+        <td className="w-24 px-1 py-4">
+          <div className="font-semibold text-slate-800">{itemCount} items</div>
+          <div className="mt-1 max-w-xs truncate text-xs text-slate-500">{itemNames}</div>
+        </td>
+        <td className="w-24 whitespace-nowrap px-1 py-4 text-sm text-slate-500">{elapsed}</td>
+        <td className="whitespace-nowrap px-2 py-4 text-sm font-black text-orange-600">Br {Number.isNaN(total) ? '0.00' : total.toFixed(2)}</td>
+        <td className="px-2 py-4 text-right">
+          <button
+            type="button"
+            onClick={(event) => { event.stopPropagation(); onOpen() }}
+            className="inline-flex items-center gap-1 rounded-none bg-gradient-to-r from-orange-600 to-orange-500 px-3 py-2 text-xs font-semibold text-white shadow-lg shadow-orange-600/30 transition-all hover:-translate-y-0.5 hover:from-orange-700 hover:to-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-300 focus:ring-offset-2"
+          >
+            <Eye className="h-3.5 w-3.5" />
+            Details
+            <ChevronRight className="h-3.5 w-3.5" />
+          </button>
+        </td>
+      </tr>
+    </>
+  )
+}
+
+const CompletedOrdersTable = ({ orders, orderIndexMap, onRefresh }) => {
+  const [selectedOrder, setSelectedOrder] = useState(null)
+
+  return (
+    <>
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[720px] text-left">
+            <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+              <tr>
+                <th className="px-4 py-3 font-semibold">Order</th>
+                <th className="px-4 py-3 font-semibold">Guest</th>
+                <th className="px-4 py-3 font-semibold">Table</th>
+                <th className="px-4 py-3 font-semibold">Section</th>
+                <th className="w-24 px-1 py-3 font-semibold">Items</th>
+                <th className="w-24 px-1 py-3 font-semibold">Completed</th>
+                <th className="px-2 py-3 font-semibold">Total</th>
+                <th className="px-2 py-3 text-right font-semibold">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {orders.map((order) => (
+                <CompletedOrderRow
+                  key={order.id}
+                  order={order}
+                  displayNumber={orderIndexMap[order.id]}
+                  onOpen={() => setSelectedOrder(order)}
+                />
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      {selectedOrder && (
+        <OrderDetailsModal
+          order={selectedOrder}
+          displayNumber={orderIndexMap[selectedOrder.id]}
+          onClose={() => setSelectedOrder(null)}
+          onRefresh={onRefresh}
+        />
+      )}
+    </>
+  )
+}
 
 const WaiterOrderList = () => {
   const [filters, setFilters] = useState({ status: 'all', priority: 'all', range: 'all' })
@@ -85,22 +179,18 @@ const WaiterOrderList = () => {
       <div className="pointer-events-none absolute -right-20 top-1/2 h-80 w-80 rounded-full bg-blue-300/20 blur-3xl" />
 
       <div className="relative z-10 mx-auto max-w-7xl space-y-6 overflow-visible">
-        <div className="relative z-20 flex flex-col col-2 gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div className="relative z-20 flex flex-col gap-4">
           <div className="max-w-2xl space-y-2">
             <h1 className="text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">Waiter Orders </h1>
             <p className="max-w-2xl text-sm text-slate-500 sm:text-base">Search, filter, and move orders through the service line from one polished workspace.</p>
           </div>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <select
-              value={sectionFilter}
-              onChange={(event) => setSectionFilter(event.target.value)}
-              className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-semibold capitalize text-slate-700 outline-none focus:border-orange-300 focus:ring-2 focus:ring-orange-100"
-            >
-              <option value="all">Filter by section</option>
-              {sections.map((section) => <option key={section} value={section}>{section}</option>)}
-            </select>
-            <OrderFilters filters={filters} onFiltersChange={setFilters} />
-          </div>
+          <OrderFilters
+            filters={filters}
+            onFiltersChange={setFilters}
+            sections={sections}
+            sectionFilter={sectionFilter}
+            onSectionChange={setSectionFilter}
+          />
         </div>
 
         <div className="space-y-8">
@@ -112,18 +202,22 @@ const WaiterOrderList = () => {
                 <OrderStatusBadge status={status} size="sm" />
                 <span className="rounded-full bg-orange-50 px-2.5 py-1 text-xs font-semibold text-orange-700 ring-1 ring-orange-100">{statusOrders.length}</span>
               </div>
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {statusOrders.map((order, index) => (
-                  <motion.div
-                    key={order.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.05 }}
-                  >
-                    <WaiterOrderCard order={order} displayNumber={orderIndexMap[order.id]} onRefresh={refetch} />
-                  </motion.div>
-                ))}
-              </div>
+              {status === 'completed' ? (
+                <CompletedOrdersTable orders={statusOrders} orderIndexMap={orderIndexMap} onRefresh={refetch} />
+              ) : (
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                  {statusOrders.map((order, index) => (
+                    <motion.div
+                      key={order.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.05 }}
+                    >
+                      <WaiterOrderCard order={order} displayNumber={orderIndexMap[order.id]} onRefresh={refetch} />
+                    </motion.div>
+                  ))}
+                </div>
+              )}
             </div>
           )
         )}

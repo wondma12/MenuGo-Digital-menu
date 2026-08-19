@@ -31,6 +31,8 @@ class KitchenController {
         order_number: o.order_number || o.orderNumber,
         tableNumber: o.table_number || o.tableNumber,
         table_number: o.table_number || o.tableNumber,
+        tableSection: o.table_section || o.tableSection || 'General',
+        table_section: o.table_section || o.tableSection || 'General',
         customerName: o.customer_name || o.customerName,
         waiterId: o.waiter_id || o.waiterId,
         waiterName: o.waiter_name || o.waiterName,

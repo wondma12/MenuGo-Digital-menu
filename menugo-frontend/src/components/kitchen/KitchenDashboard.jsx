@@ -3,13 +3,21 @@ import {useState, useEffect} from 'react'
 import { useNavigate, useLocation } from 'react-router-dom';
 import KitchenStats from './KitchenStats';
 import KitchenNotificationList from './KitchenNotificationList';
-// Kitchen filters removed per request
 import KitchenOrderList from './KitchenOrderList';
 import KitchenCompletedOrders from './KitchenCompletedOrders';
 import KitchenInventoryAlert from './KitchenInventoryAlert';
 
+const getOrderSection = (order) => (
+  order?.tableSection ||
+  order?.table_section ||
+  order?.table?.section ||
+  order?.raw?.order_table?.section ||
+  'General'
+);
+
 const KitchenDashboard = ({ restaurantId, orders, stats, onUpdateStatus, initialTab = 'pending' }) => {
   const [activeTab, setActiveTab] = useState(initialTab || 'pending');
+  const [sectionFilter, setSectionFilter] = useState('all');
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -32,9 +40,13 @@ const KitchenDashboard = ({ restaurantId, orders, stats, onUpdateStatus, initial
       navigate(target);
     }
   };
-  const pendingOrders = orders.filter(o => o.status === 'pending');
-  const preparingOrders = orders.filter(o => o.status === 'preparing');
-  const readyOrders = orders.filter(o => o.status === 'ready');
+  const sections = [...new Set(orders.map(getOrderSection))].sort((a, b) => a.localeCompare(b));
+  const visibleOrders = orders.filter((order) => (
+    sectionFilter === 'all' || getOrderSection(order) === sectionFilter
+  ));
+  const pendingOrders = visibleOrders.filter(o => o.status === 'pending');
+  const preparingOrders = visibleOrders.filter(o => o.status === 'preparing');
+  const readyOrders = visibleOrders.filter(o => o.status === 'ready');
   const completedOrders = orders.filter(o => o.status === 'completed');
 
   const tabStyles = {
@@ -71,10 +83,9 @@ const KitchenDashboard = ({ restaurantId, orders, stats, onUpdateStatus, initial
       {/* Notifications removed per request; notifications handled via sound/alerts */}
       
       <div className="relative max-w-7xl mx-auto px-4 py-8">
-        {/* Kitchen filters removed */}
-        
         <div className="mb-8 overflow-x-auto rounded-2xl border border-orange-100 bg-white/90 px-3 py-2 shadow-sm backdrop-blur-sm">
-          <nav className="flex space-x-3 md:space-x-4 whitespace-nowrap">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <nav className="flex space-x-3 whitespace-nowrap md:space-x-4">
             {['pending', 'preparing', 'ready', 'completed'].map(tab => (
               <button
                 key={tab}
@@ -89,7 +100,21 @@ const KitchenDashboard = ({ restaurantId, orders, stats, onUpdateStatus, initial
                 </span>
               </button>
             ))}
-          </nav>
+            </nav>
+            <label className="flex shrink-0 items-center gap-2 text-sm font-semibold text-slate-700">
+              <span>Filter by section</span>
+              <select
+                value={sectionFilter}
+                onChange={(event) => setSectionFilter(event.target.value)}
+                className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 outline-none focus:border-orange-300 focus:ring-2 focus:ring-orange-100"
+              >
+                <option value="all">All sections</option>
+                {sections.map((section) => (
+                  <option key={section} value={section}>{section}</option>
+                ))}
+              </select>
+            </label>
+          </div>
         </div>
 
         {activeTab === 'pending' && (

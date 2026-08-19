@@ -1,12 +1,21 @@
-import {useState} from 'react'
+import {useEffect, useState} from 'react'
 import { motion } from 'framer-motion'
 import { EyeIcon } from '@heroicons/react/24/outline'
 import OrderStatusBadge from './OrderStatusBadge'
 import OrderDetailsModal from './OrderDetailsModal'
 import { formatCurrency } from '../../../utils/formatters'
+import ListPagination from '../../common/ListPagination'
 
 const OrderTable = ({ orders, onRefresh }) => {
   const [selectedOrder, setSelectedOrder] = useState(null)
+  const [currentPage, setCurrentPage] = useState(1)
+  const pageSize = 10
+  const totalPages = Math.max(1, Math.ceil(orders.length / pageSize))
+  const paginatedOrders = orders.slice((currentPage - 1) * pageSize, currentPage * pageSize)
+
+  useEffect(() => {
+    setCurrentPage((page) => Math.min(page, totalPages))
+  }, [orders.length, totalPages])
 
   const formatDate = (date) => {
     return new Date(date).toLocaleString()
@@ -30,7 +39,7 @@ const OrderTable = ({ orders, onRefresh }) => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {orders.map((order, index) => (
+              {paginatedOrders.map((order, index) => (
                 <motion.tr
                   key={order.id}
                   initial={{ opacity: 0 }}
@@ -74,7 +83,7 @@ const OrderTable = ({ orders, onRefresh }) => {
         </div>
 
         <div className="space-y-3 p-3 md:hidden">
-          {orders.map((order, index) => (
+          {paginatedOrders.map((order, index) => (
             <motion.div
               key={order.id}
               initial={{ opacity: 0, y: 8 }}
@@ -110,6 +119,8 @@ const OrderTable = ({ orders, onRefresh }) => {
           ))}
         </div>
       </div>
+
+      <ListPagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
 
       {orders.length === 0 && (
         <div className="rounded-none bg-white py-12 text-center shadow-[0_16px_40px_rgba(15,23,42,0.06)]">

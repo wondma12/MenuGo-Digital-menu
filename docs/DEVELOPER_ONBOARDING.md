@@ -5,9 +5,7 @@
 - [menugo-backends](menugo-backends): backend API and services
 - [menugo-frontend](menugo-frontend): React/Vite frontend
 - [docs](docs): architecture, deployment, and technical documentation
-
 ## 2. Prerequisites
-
 - Node.js 18+
 - npm 9+
 - Git

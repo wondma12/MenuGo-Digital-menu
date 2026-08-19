@@ -1,13 +1,22 @@
-import {useState} from 'react'
+import {useEffect, useState} from 'react'
 import { motion } from 'framer-motion'
 import { PencilIcon, TrashIcon, EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline'
 import Badge from '../../../common/Badge'
 import ConfirmationDialog from '../../../common/ConfirmationDialog'
 import { deleteCategory, updateCategoryStatus } from '../../../services/categoryService'
 import toast from 'react-hot-toast'
+import ListPagination from '../../common/ListPagination'
 
 const CategoryList = ({ categories, onEdit, onRefresh }) => {
   const [deleteTarget, setDeleteTarget] = useState(null)
+  const [currentPage, setCurrentPage] = useState(1)
+  const pageSize = 10
+  const totalPages = Math.max(1, Math.ceil(categories.length / pageSize))
+  const paginatedCategories = categories.slice((currentPage - 1) * pageSize, currentPage * pageSize)
+
+  useEffect(() => {
+    setCurrentPage((page) => Math.min(page, totalPages))
+  }, [categories.length, totalPages])
 
   const handleDelete = async () => {
     try {
@@ -38,7 +47,7 @@ const CategoryList = ({ categories, onEdit, onRefresh }) => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {categories.map((category, index) => (
+              {paginatedCategories.map((category, index) => (
                 <motion.tr
                   key={category.id}
                   initial={{ opacity: 0 }}
@@ -104,7 +113,7 @@ const CategoryList = ({ categories, onEdit, onRefresh }) => {
           </table>
         </div>
         <div className="space-y-3 p-3 md:hidden">
-          {categories.map((category, index) => (
+          {paginatedCategories.map((category, index) => (
             <motion.div
               key={category.id}
               initial={{ opacity: 0, y: 8 }}
@@ -156,6 +165,8 @@ const CategoryList = ({ categories, onEdit, onRefresh }) => {
           ))}
         </div>
       </div>
+
+      <ListPagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
 
       <ConfirmationDialog
         isOpen={!!deleteTarget}
