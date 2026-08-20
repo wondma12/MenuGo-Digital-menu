@@ -5,6 +5,9 @@ const net = require('net');
 const { Server } = require('socket.io');
 const { logger } = require('./utils/logger');
 
+const isProductionRuntime = String(process.env.NODE_ENV || '').toLowerCase() === 'production' || Boolean(process.env.RENDER);
+const normalizeApiBaseUrl = (value) => String(value || '').trim().replace(/\/+$/, '').replace(/\/api$/i, '');
+
 let currentPort = parseInt(process.env.PORT, 10) || 5000;
 // Allow automatic schema alteration during local development for convenience.
 // Keep destructive changes opt-in for non-development environments.
@@ -438,10 +441,15 @@ const startServer = async () => {
       currentPort = portToUse;
     }
 
-    // Ensure process.env.API_URL reflects the chosen port before loading the
-    // express app so modules that generate absolute URLs (Passport callbacks)
-    // use the correct address.
-    process.env.API_URL = `http://localhost:${currentPort}`;
+    // Keep the public Render URL in production so Passport generates a usable
+    // OAuth callback. Local development should continue to follow the port
+    // selected above.
+    if (isProductionRuntime) {
+      const publicApiUrl = normalizeApiBaseUrl(process.env.API_URL || process.env.RENDER_EXTERNAL_URL);
+      if (publicApiUrl) process.env.API_URL = publicApiUrl;
+    } else {
+      process.env.API_URL = `http://localhost:${currentPort}`;
+    }
     // If GOOGLE_CALLBACK_URL wasn't explicitly set, derive it from API_URL
     if (!process.env.GOOGLE_CALLBACK_URL) {
       process.env.GOOGLE_CALLBACK_URL = `${process.env.API_URL}/api/auth/google/callback`;
@@ -490,7 +498,7 @@ const startServer = async () => {
         logger.error(`EADDRINUSE: Port ${currentPort} is already in use. Another process is bound to this port.`);
 
         // Optional fallback: try next ports when ALLOW_PORT_FALLBACK=true
-        if (process.env.ALLOW_PORT_FALLBACK === 'true') {
+        if (!isProductionRuntime && process.env.ALLOW_PORT_FALLBACK === 'true') {
           const maxAttemptsFallback = parseInt(process.env.PORT_FALLBACK_ATTEMPTS, 10) || 5;
           let attempts = 0;
 
