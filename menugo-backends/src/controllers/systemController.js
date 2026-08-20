@@ -1,6 +1,31 @@
 // src/controllers/systemController.js
 const crypto = require('crypto');
 const os = require('os');
+const { PlatformSetting, User } = require('../models');
+
+const defaultSystemSettings = {
+  platformName: 'MenuGo',
+  platformVersion: '2.0.0',
+  supportEmail: 'support@menugo.com',
+  maintenanceMode: false,
+  allowRegistration: true,
+};
+
+const readPlatformSettings = async () => {
+  try {
+    const rows = await PlatformSetting.findAll();
+    return rows.reduce((settings, row) => {
+      try {
+        settings[row.key] = JSON.parse(row.value);
+      } catch (error) {
+        settings[row.key] = row.value;
+      }
+      return settings;
+    }, {});
+  } catch (error) {
+    return {};
+  }
+};
 
 // Helper function for consistent response
 const sendResponse = (res, statusCode, success, message, data = null) => {
@@ -15,12 +40,10 @@ const sendResponse = (res, statusCode, success, message, data = null) => {
 // Get system settings
 const getSystemSettings = async (req, res) => {
   try {
+    const savedSettings = await readPlatformSettings();
     const settings = {
-      platformName: 'MenuGo',
-      platformVersion: '2.0.0',
-      supportEmail: 'support@menugo.com',
-      maintenanceMode: false,
-      allowRegistration: true,
+      ...defaultSystemSettings,
+      ...savedSettings,
       
       smtpHost: process.env.SMTP_HOST || '',
       smtpPort: parseInt(process.env.SMTP_PORT) || 587,
@@ -57,6 +80,11 @@ const getSystemSettings = async (req, res) => {
 const updateSystemSettings = async (req, res) => {
   try {
     const { type, data } = req.body;
+    if (data && typeof data === 'object') {
+      await Promise.all(Object.entries(data).map(([key, value]) => (
+        PlatformSetting.upsert({ key, value: JSON.stringify(value) })
+      )));
+    }
     sendResponse(res, 200, true, 'Settings updated successfully', { type, ...data });
   } catch (error) {
     sendResponse(res, 500, false, error.message);
@@ -256,6 +284,7 @@ const testEmailSettings = async (req, res) => {
 
 module.exports = {
   getSystemSettings,
+  getPublicPlatformBranding,
   updateSystemSettings,
   getAuditLogs,
   getSystemHealth,
@@ -265,3 +294,22 @@ module.exports = {
   downloadBackup,
   testEmailSettings,
 };
+
+async function getPublicPlatformBranding(req, res) {
+  const savedSettings = await readPlatformSettings();
+  let profileLogo = '';
+  try {
+    const platformAdmin = await User.findOne({
+      where: { role: 'platform_admin' },
+      attributes: ['avatar_url'],
+    });
+    profileLogo = platformAdmin?.avatar_url || '';
+  } catch (error) {
+    // The system logo and default mark remain available if the profile lookup fails.
+  }
+
+  sendResponse(res, 200, true, 'Platform branding retrieved', {
+    platformName: savedSettings.platformName || defaultSystemSettings.platformName,
+    platform_logo: savedSettings.platform_logo || profileLogo,
+  });
+}

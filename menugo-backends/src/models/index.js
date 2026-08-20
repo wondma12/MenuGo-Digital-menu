@@ -54,6 +54,7 @@ const SupportTicket = require('./SupportTicket');
 const TicketMessage = require('./TicketMessage');
 const SystemLog = require('./SystemLog');
 const ContactMessage = require('./ContactMessage');
+const PlatformSetting = require('./PlatformSetting');
 
 // Define associations with unique aliases
 const defineAssociations = () => {
@@ -410,6 +411,7 @@ const db = {
   TicketMessage,
   SystemLog,
   ContactMessage,
+  PlatformSetting,
 };
 
 // Compatibility shims for older Sequelize versions that use `findById`

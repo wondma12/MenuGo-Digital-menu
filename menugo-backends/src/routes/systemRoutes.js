@@ -4,6 +4,7 @@ const router = express.Router();
 const { protect, authorize } = require('../middleware/authMiddleware');
 const {
   getSystemSettings,
+  getPublicPlatformBranding,
   updateSystemSettings,
   getAuditLogs,
   getSystemHealth,
@@ -15,6 +16,7 @@ const {
 } = require('../controllers/systemController');
 
 // All system routes require authentication and platform admin role
+router.get('/public-branding', getPublicPlatformBranding);
 router.use(protect);
 router.use(authorize('platform_admin'));
 

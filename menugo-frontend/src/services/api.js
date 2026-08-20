@@ -333,6 +333,7 @@ const publicPathRules = [
   { path: '/auth/verify-email', methods: ['post'], exact: true },
   { path: '/auth/verify-email', methods: ['get'], prefix: true },
   { path: '/platform/public-summary', methods: ['get'], prefix: true },
+  { path: '/system/public-branding', methods: ['get'], exact: true },
   { path: '/platform/subscriptions/plans', methods: ['get'], exact: true },
   { path: '/menu/restaurant', methods: ['get'], prefix: true },
   { path: '/menu/items', methods: ['get'], prefix: true },

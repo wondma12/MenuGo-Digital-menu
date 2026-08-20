@@ -23,6 +23,7 @@ import Alert from '../common/Alert';
 import { toast } from 'react-toastify';
 import SocialLogin from './SocialLogin';
 import { getEffectiveRole, getPostLoginRedirectPath, getRoleHomePath } from '../../utils/authRouting';
+import { getPublicPlatformBranding } from '../../services/systemService';
 
 // Animation variants
 const containerVariants = {
@@ -82,6 +83,7 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isFocused, setIsFocused] = useState({ email: false, password: false });
   const [loginAttempts, setLoginAttempts] = useState(0);
+  const [platformLogo, setPlatformLogo] = useState('');
   const submitLockRef = useRef(false);
 
   const {
@@ -135,6 +137,22 @@ const Login = () => {
       cancelled = true;
     };
   }, [checkAuth, forceLogin, isAuthenticated, navigate]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    getPublicPlatformBranding()
+      .then((branding) => {
+        if (!cancelled) setPlatformLogo(branding?.platform_logo || branding?.logo || '');
+      })
+      .catch(() => {
+        // Keep the default MenuGo mark when branding is unavailable.
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Handle token returned from OAuth redirects
   useEffect(() => {
@@ -296,13 +314,22 @@ const Login = () => {
           <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-orange-400 via-orange-500 to-amber-400" />
 
           <div className="text-center">
-            <motion.div
+            {platformLogo ? (
+              <motion.img
+                src={platformLogo}
+                alt="MenuGo platform logo"
+                onError={() => setPlatformLogo('')}
+                whileHover={{ scale: 1.05, rotate: 360 }}
+                transition={{ duration: 0.6 }}
+                className="mx-auto h-16 w-16 rounded-2xl object-contain shadow-lg shadow-orange-500/20"
+              />
+            ) : <motion.div
               whileHover={{ scale: 1.05, rotate: 360 }}
               transition={{ duration: 0.6 }}
               className="mx-auto h-16 w-16 rounded-2xl bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center shadow-lg shadow-orange-500/20"
             >
               <span className="text-white font-bold text-2xl">MG</span>
-            </motion.div>
+            </motion.div>}
 
             <motion.h2 
               variants={itemVariants}

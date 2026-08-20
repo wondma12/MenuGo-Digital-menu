@@ -16,6 +16,11 @@ export const getSystemSettings = async () => {
   return response?.data?.data || response?.data || {}
 }
 
+export const getPublicPlatformBranding = async () => {
+  const response = await api.get('/system/public-branding')
+  return response?.data?.data || response?.data || {}
+}
+
 export const updateSystemSettings = async (data) => {
   if (!hasAuthToken()) throw new Error('auth_required')
   const response = await api.put('/system/settings', data)
