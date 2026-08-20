@@ -34,6 +34,8 @@ import {
 import { HeartIcon as HeartSolidIcon } from '@heroicons/react/24/solid';
 import PublicHeader from './PublicHeader';
 import PublicFooter from './PublicFooter';
+import image from '../../assets/images/IMAGE.png'
+import imag from '../../assets/image.png'
 import { getPublicPlatformSummary, getPlatformDashboardData } from '../../services/analyticsService';
 import { QrCode, Smartphone, ChefHat, Bell, CreditCard, Star, Quote, ChevronLeft, ChevronRight } from 'lucide-react';
 
@@ -359,18 +361,18 @@ const Home = () => {
   const testimonials = [
     {
       id: 1,
-      name: "Sarah Johnson",
-      role: "Owner, The Italian Place",
-      image: "https://i.pravatar.cc/100?img=1",
+      name: "Beza Adefris",
+      role: "Owner, The ethiopia Place",
+      image: 'https://avatars.githubusercontent.com/u/194465358?v=4',
       rating: 5,
       text: "MenuGo transformed our restaurant operations completely. The QR menu system is incredibly intuitive, and our customers love the convenience. We've seen a 40% increase in order efficiency since implementing it.",
       metrics: { label: "Revenue Increase", value: "+35%" }
     },
     {
       id: 2,
-      name: "Michael Chen",
+      name: "Haymanot wondmagegn",
       role: "CEO, Golden Dragon Group",
-      image: "https://i.pravatar.cc/100?img=3",
+      image: 'https://avatars.githubusercontent.com/u/190810647?v=4',
       rating: 5,
       text: "Managing multiple locations was always a challenge until we found MenuGo. The centralized dashboard gives us real-time insights across all our restaurants. The analytics have been game-changing for our business decisions.",
       metrics: { label: "Efficiency Gain", value: "+50%" }
@@ -379,7 +381,7 @@ const Home = () => {
       id: 3,
       name: "Emily Rodriguez",
       role: "Manager, Fresh Bites Cafe",
-      image: "https://i.pravatar.cc/100?img=5",
+      image: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=160&h=160&q=80',
       rating: 4,
       text: "The staff management features are phenomenal. Scheduling, permissions, and performance tracking have never been easier. Our team productivity has improved significantly, and the support team is incredibly responsive.",
       metrics: { label: "Time Saved", value: "20hrs/wk" }
@@ -388,7 +390,7 @@ const Home = () => {
       id: 4,
       name: "David Park",
       role: "Founder, Sushi Master",
-      image: "https://i.pravatar.cc/100?img=8",
+      image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=160&h=160&q=80',
       rating: 5,
       text: "We tried several restaurant management platforms before MenuGo. None compare to the seamless experience and comprehensive features. The real-time kitchen display system has reduced our order errors by 90%.",
       metrics: { label: "Error Reduction", value: "-90%" }
@@ -397,7 +399,7 @@ const Home = () => {
       id: 5,
       name: "Lisa Thompson",
       role: "Director, Bistro Deluxe",
-      image: "https://i.pravatar.cc/100?img=9",
+      image: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=160&h=160&q=80',
       rating: 5,
       text: "MenuGo's customer feedback system has been invaluable. We're able to address issues in real-time and improve our service quality continuously. Our customer satisfaction scores have never been higher.",
       metrics: { label: "Customer Satisfaction", value: "4.9/5" }
@@ -864,6 +866,10 @@ const Home = () => {
                             <img
                               src={testimonials[testimonialIndex].image}
                               alt={testimonials[testimonialIndex].name}
+                              onError={(event) => {
+                                event.currentTarget.onerror = null;
+                                event.currentTarget.src = '/placeholder-avatar.png';
+                              }}
                               className="w-14 h-14 rounded-2xl object-cover border-2 border-orange-200"
                             />
                             <div>
