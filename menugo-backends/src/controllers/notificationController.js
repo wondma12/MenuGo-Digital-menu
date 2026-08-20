@@ -6,33 +6,47 @@ const { Op } = require('sequelize');
 
 // Get user notifications
 const getNotifications = catchAsync(async (req, res) => {
-  const userId = req.user.id;
-  const { page = 1, limit = 20, is_read, type } = req.query;
-  const offset = (page - 1) * limit;
+  try {
+    const userId = req.user.id;
+    const { page = 1, limit = 20, is_read, type } = req.query;
+    const parsedPage = Math.max(1, parseInt(page, 10) || 1);
+    const parsedLimit = Math.min(100, Math.max(1, parseInt(limit, 10) || 20));
+    const offset = (parsedPage - 1) * parsedLimit;
 
-  const where = { user_id: userId };
-  if (is_read !== undefined) where.is_read = is_read === 'true';
-  if (type) where.type = type;
+    const where = { user_id: userId };
+    if (is_read !== undefined) where.is_read = is_read === 'true';
+    if (type) where.type = type;
 
-  const { count, rows } = await Notification.findAndCountAll({
-    where,
-    limit: parseInt(limit),
-    offset,
-    order: [['created_at', 'DESC']],
-  });
+    const { count, rows } = await Notification.findAndCountAll({
+      where,
+      limit: parsedLimit,
+      offset,
+      order: [['created_at', 'DESC']],
+    });
 
-  // Get unread count
-  const unreadCount = await Notification.count({
-    where: { user_id: userId, is_read: false },
-  });
+    const unreadCount = await Notification.count({
+      where: { user_id: userId, is_read: false },
+    });
 
-  res.json(ApiResponse.success({
-    notifications: rows,
-    total: count,
-    unread_count: unreadCount,
-    page: parseInt(page),
-    totalPages: Math.ceil(count / limit),
-  }, 'Notifications retrieved'));
+    return res.json(ApiResponse.success({
+      notifications: rows,
+      total: count,
+      unread_count: unreadCount,
+      page: parsedPage,
+      totalPages: Math.ceil(count / parsedLimit),
+    }, 'Notifications retrieved'));
+  } catch (error) {
+    // Notifications are optional UI data. A missing/out-of-date notification
+    // table must not make the authenticated dashboard fail with HTTP 500.
+    console.warn('[notifications] Falling back to an empty list:', error?.message || error);
+    return res.json(ApiResponse.success({
+      notifications: [],
+      total: 0,
+      unread_count: 0,
+      page: 1,
+      totalPages: 0,
+    }, 'Notifications unavailable'));
+  }
 });
 
 // Mark notification as read
