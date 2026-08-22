@@ -71,6 +71,7 @@ const EmailSettings = ({ settings, onSave }) => {
         <Input
           label="SMTP Password"
           type="password"
+          autoComplete="off"
           value={formData.smtpPass}
           onChange={(e) => setFormData({ ...formData, smtpPass: e.target.value })}
           required

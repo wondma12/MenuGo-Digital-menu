@@ -252,6 +252,7 @@ const MultiStepRegistration = () => {
                     <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                     <Input
                       type="password"
+                      autoComplete="new-password"
                       placeholder="Create a password"
                       value={formData.password}
                       onChange={(e) => handleChange("password", e.target.value)}
@@ -267,6 +268,7 @@ const MultiStepRegistration = () => {
                     <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                     <Input
                       type="password"
+                      autoComplete="new-password"
                       placeholder="Confirm your password"
                       value={formData.confirmPassword}
                       onChange={(e) => handleChange("confirmPassword", e.target.value)}

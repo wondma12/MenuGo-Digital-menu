@@ -280,8 +280,8 @@ const UserForm = () => {
 
         {!isEditing && (
           <>
-            <Input label="Password" type="password" {...register('password')} error={errors.password?.message} required />
-            <Input label="Confirm Password" type="password" {...register('confirmPassword')} error={errors.confirmPassword?.message} required />
+            <Input label="Password" type="password" autoComplete="new-password" {...register('password')} error={errors.password?.message} required />
+            <Input label="Confirm Password" type="password" autoComplete="new-password" {...register('confirmPassword')} error={errors.confirmPassword?.message} required />
           </>
         )}
 

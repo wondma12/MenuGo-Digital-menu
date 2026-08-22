@@ -245,9 +245,9 @@ const PlatformProfile = () => {
               </div>
 
               <form onSubmit={handlePasswordChange} className="mt-4 space-y-4">
-                <Input label="Current Password" type="password" value={passwordData.currentPassword} onChange={(e) => setPasswordData((current) => ({ ...current, currentPassword: e.target.value }))} error={passwordErrors.currentPassword} required />
-                <Input label="New Password" type="password" value={passwordData.newPassword} onChange={(e) => setPasswordData((current) => ({ ...current, newPassword: e.target.value }))} error={passwordErrors.newPassword} required />
-                <Input label="Confirm New Password" type="password" value={passwordData.confirmPassword} onChange={(e) => setPasswordData((current) => ({ ...current, confirmPassword: e.target.value }))} error={passwordErrors.confirmPassword} required />
+                <Input label="Current Password" type="password" autoComplete="current-password" value={passwordData.currentPassword} onChange={(e) => setPasswordData((current) => ({ ...current, currentPassword: e.target.value }))} error={passwordErrors.currentPassword} required />
+                <Input label="New Password" type="password" autoComplete="new-password" value={passwordData.newPassword} onChange={(e) => setPasswordData((current) => ({ ...current, newPassword: e.target.value }))} error={passwordErrors.newPassword} required />
+                <Input label="Confirm New Password" type="password" autoComplete="new-password" value={passwordData.confirmPassword} onChange={(e) => setPasswordData((current) => ({ ...current, confirmPassword: e.target.value }))} error={passwordErrors.confirmPassword} required />
                 <div className="flex justify-end pt-2">
                   <Button type="submit" isLoading={savingPassword} className="rounded-none bg-gradient-to-r from-orange-600 to-orange-500 text-white hover:from-orange-700 hover:to-orange-600 shadow-lg shadow-orange-600/30">
                     Update Password

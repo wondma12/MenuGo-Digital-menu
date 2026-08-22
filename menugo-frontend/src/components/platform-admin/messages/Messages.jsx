@@ -33,10 +33,13 @@ const Messages = () => {
     const [statusFilter, setStatusFilter] = useState('all');
     const [replyText, setReplyText] = useState('');
     const [sendingReply, setSendingReply] = useState(false);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const pageSize = 10;
 
     useEffect(() => {
         fetchMessages();
-    }, []);
+    }, [currentPage, searchTerm, statusFilter]);
 
     useEffect(() => {
         filterMessages();
@@ -59,12 +62,19 @@ const Messages = () => {
     };
 
     const fetchMessages = async () => {
+        setLoading(true);
         try {
-            const response = await contactService.getAdminContactMessages();
+            const response = await contactService.getAdminContactMessages({
+                page: currentPage,
+                limit: pageSize,
+                search: searchTerm || undefined,
+                status: statusFilter !== 'all' ? statusFilter : undefined,
+            });
             const items = response?.data || [];
             setMessages(items);
             setFilteredMessages(items);
             setSummary(response?.meta?.summary || buildSummary(items));
+            setTotalPages(Math.max(1, response?.meta?.pagination?.totalPages || 1));
         } catch (error) {
             console.error('Error fetching messages:', error);
             toast.error('Failed to fetch messages');
@@ -90,6 +100,16 @@ const Messages = () => {
         }
         
         setFilteredMessages(filtered);
+    };
+
+    const handleSearchChange = (event) => {
+        setSearchTerm(event.target.value);
+        setCurrentPage(1);
+    };
+
+    const handleStatusChange = (event) => {
+        setStatusFilter(event.target.value);
+        setCurrentPage(1);
     };
 
     const handleSelectMessage = async (msg) => {
@@ -282,7 +302,7 @@ const Messages = () => {
                             className="w-full rounded-none border border-slate-200 bg-white py-3 pl-12 pr-4 text-slate-900 shadow-sm outline-none transition focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
                             placeholder="Search by name, email, subject or message"
                             value={searchTerm}
-                            onChange={e => setSearchTerm(e.target.value)}
+                            onChange={handleSearchChange}
                         />
                         {searchTerm && (
                             <button 
@@ -299,7 +319,7 @@ const Messages = () => {
                         <select 
                             className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 pl-9 text-sm text-slate-900 focus:border-orange-500 focus:bg-white focus:outline-none focus:ring-3 focus:ring-orange-500/10 transition-all appearance-none cursor-pointer"
                             value={statusFilter} 
-                            onChange={e => setStatusFilter(e.target.value)}
+                            onChange={handleStatusChange}
                         >
                             <option value="all">All</option>
                             <option value="unread">Unread</option>
@@ -310,7 +330,7 @@ const Messages = () => {
 
                     <button 
                         className="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-orange-500 to-amber-400 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:shadow-md transition-all hover:-translate-y-0.5"
-                        onClick={() => { setSearchTerm(''); setStatusFilter('all'); }}
+                        onClick={() => { setSearchTerm(''); setStatusFilter('all'); setCurrentPage(1); }}
                     >
                         Clear Filters
                     </button>
@@ -379,6 +399,32 @@ const Messages = () => {
                                 ))
                             )}
                         </div>
+
+                        {messages.length > 0 && (
+                            <div className="flex items-center justify-between border-t border-slate-200 bg-slate-50 px-4 py-3">
+                                <button
+                                    type="button"
+                                    onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+                                    disabled={currentPage === 1 || loading}
+                                    className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:border-orange-300 hover:bg-orange-50 disabled:cursor-not-allowed disabled:opacity-40"
+                                >
+                                    <FaArrowLeft className="h-4 w-4" />
+                                    Previous
+                                </button>
+                                <span className="text-sm font-semibold text-slate-600">
+                                    Page {currentPage} of {totalPages}
+                                </span>
+                                <button
+                                    type="button"
+                                    onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
+                                    disabled={currentPage === totalPages || loading}
+                                    className="inline-flex items-center gap-2 rounded-lg border border-orange-200 bg-orange-50 px-3 py-2 text-sm font-semibold text-orange-700 transition hover:bg-orange-100 disabled:cursor-not-allowed disabled:opacity-40"
+                                >
+                                    Next
+                                    <FaArrowRight className="h-4 w-4" />
+                                </button>
+                            </div>
+                        )}
                     </div>
 
                     {/* Message Detail */}

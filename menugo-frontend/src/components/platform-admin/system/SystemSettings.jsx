@@ -154,7 +154,7 @@ const EmailSettings = ({ settings, onSave }) => {
       <Input label="SMTP Host" value={formData.smtpHost} onChange={(e) => setFormData({ ...formData, smtpHost: e.target.value })} />
       <Input label="SMTP Port" type="number" value={formData.smtpPort} onChange={(e) => setFormData({ ...formData, smtpPort: parseInt(e.target.value) })} />
       <Input label="SMTP Username" value={formData.smtpUser} onChange={(e) => setFormData({ ...formData, smtpUser: e.target.value })} />
-      <Input label="SMTP Password" type="password" value={formData.smtpPass} onChange={(e) => setFormData({ ...formData, smtpPass: e.target.value })} />
+      <Input label="SMTP Password" type="password" autoComplete="off" value={formData.smtpPass} onChange={(e) => setFormData({ ...formData, smtpPass: e.target.value })} />
       <Input label="From Email" type="email" value={formData.fromEmail} onChange={(e) => setFormData({ ...formData, fromEmail: e.target.value })} />
       <Input label="From Name" value={formData.fromName} onChange={(e) => setFormData({ ...formData, fromName: e.target.value })} />
       <div className="flex justify-end">
@@ -209,6 +209,7 @@ const IntegrationSettings = ({ settings, onSave }) => {
         <Input
           label="Stripe Secret Key"
           type="password"
+          autoComplete="off"
           value={formData.stripeSecretKey}
           onChange={(e) => setFormData({ ...formData, stripeSecretKey: e.target.value })}
           className="rounded-none border-slate-200 text-slate-900 focus:border-orange-300 focus:ring-orange-100"
@@ -216,6 +217,7 @@ const IntegrationSettings = ({ settings, onSave }) => {
         <Input
           label="Stripe Webhook Secret"
           type="password"
+          autoComplete="off"
           value={formData.stripeWebhookSecret}
           onChange={(e) => setFormData({ ...formData, stripeWebhookSecret: e.target.value })}
           className="rounded-none border-slate-200 text-slate-900 focus:border-orange-300 focus:ring-orange-100"

@@ -98,7 +98,7 @@ const StaffForm = ({ staff, onSubmit, onCancel, isLoading }) => {
         <Input label="Hourly Rate ($)" type="number" step="0.01" {...register('hourlyRate')} error={errors.hourlyRate?.message} className="rounded-none border-slate-200 focus:border-orange-300 focus:ring-orange-100" />
         {!isEditing && (
           <>
-            <Input label="Password" type="password" {...register('password')} error={errors.password?.message} required className="rounded-none border-slate-200 focus:border-orange-300 focus:ring-orange-100" />
+            <Input label="Password" type="password" autoComplete="new-password" {...register('password')} error={errors.password?.message} required className="rounded-none border-slate-200 focus:border-orange-300 focus:ring-orange-100" />
           </>
         )}
       </div>

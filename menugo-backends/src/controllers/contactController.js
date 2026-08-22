@@ -39,12 +39,42 @@ const createContactMessage = catchAsync(async (req, res) => {
 });
 
 const listContactMessages = catchAsync(async (req, res) => {
-  const { page = 1, limit = 50 } = req.query;
-  const offset = (page - 1) * limit;
+  const { page = 1, limit = 10, search, status } = req.query;
+  const parsedPage = Math.max(1, parseInt(page, 10) || 1);
+  const parsedLimit = Math.min(100, Math.max(1, parseInt(limit, 10) || 10));
+  const offset = (parsedPage - 1) * parsedLimit;
+  const where = {};
+
+  if (search) {
+    const searchPattern = `%${String(search).trim()}%`;
+    where[Op.or] = [
+      { name: { [Op.like]: searchPattern } },
+      { email: { [Op.like]: searchPattern } },
+      { subject: { [Op.like]: searchPattern } },
+      { message: { [Op.like]: searchPattern } },
+    ];
+  }
+
+  if (status === 'unread') {
+    where.read_at = null;
+    where.replied_at = null;
+    where.reply_from_restaurant = null;
+  } else if (status === 'read') {
+    where.read_at = { [Op.ne]: null };
+    where.replied_at = null;
+    where.reply_from_restaurant = null;
+  } else if (status === 'replied') {
+    where[Op.or] = [
+      ...(where[Op.or] || []),
+      { replied_at: { [Op.ne]: null } },
+      { reply_from_restaurant: { [Op.ne]: null } },
+    ];
+  }
 
   const { count, rows } = await ContactMessage.findAndCountAll({
-    limit: parseInt(limit),
-    offset: parseInt(offset),
+    where,
+    limit: parsedLimit,
+    offset,
     order: [['created_at', 'DESC']],
   });
 
@@ -72,7 +102,7 @@ const listContactMessages = catchAsync(async (req, res) => {
   const unread = Math.max(total - read - replied, 0);
   const summary = { total, unread, read, replied };
 
-  res.json(paginatedResponse(rows.map(toMessageView), count, page, limit, summary));
+  res.json(paginatedResponse(rows.map(toMessageView), count, parsedPage, parsedLimit, summary));
 });
 
 const markContactMessageRead = catchAsync(async (req, res) => {

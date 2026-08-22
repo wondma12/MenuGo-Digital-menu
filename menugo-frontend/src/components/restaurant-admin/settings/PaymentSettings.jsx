@@ -70,6 +70,7 @@ const PaymentSettings = ({ settings }) => {
                   <label className="block text-sm font-medium text-slate-700 mb-1">Stripe Secret Key</label>
                   <input
                     type="password"
+                    autoComplete="off"
                     value={formData.stripeSecretKey}
                     onChange={(e) => setFormData({ ...formData, stripeSecretKey: e.target.value })}
                     className="w-full px-3 py-2 border border-slate-300 rounded-lg"

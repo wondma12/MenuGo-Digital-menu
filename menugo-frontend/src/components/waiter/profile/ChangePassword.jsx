@@ -46,6 +46,7 @@ const ChangePassword = () => {
       <Input
         label="Current Password"
         type="password"
+        autoComplete="current-password"
         value={formData.currentPassword}
         onChange={(e) => setFormData({ ...formData, currentPassword: e.target.value })}
         error={errors.currentPassword}
@@ -54,6 +55,7 @@ const ChangePassword = () => {
       <Input
         label="New Password"
         type="password"
+        autoComplete="new-password"
         value={formData.newPassword}
         onChange={(e) => setFormData({ ...formData, newPassword: e.target.value })}
         error={errors.newPassword}
@@ -62,6 +64,7 @@ const ChangePassword = () => {
       <Input
         label="Confirm New Password"
         type="password"
+        autoComplete="new-password"
         value={formData.confirmPassword}
         onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
         error={errors.confirmPassword}
