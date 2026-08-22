@@ -1839,12 +1839,12 @@ export default function FullPage() {
                 <motion.div whileHover={{ y: -4 }} className="overflow-hidden rounded-2xl bg-white shadow-xl ring-1 ring-slate-100 transition-all hover:shadow-2xl">
                   <div className="h-56 w-full bg-slate-200 relative overflow-hidden">
                     <motion.div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent z-10" initial={{ opacity: 0 }} whileHover={{ opacity: 1 }} />
-                    <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3024.2219901290355!2d-74.00369368400567!3d40.71312937933098!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x89c25a316bbaf9a7%3A0xb89d1fe6bc499443!2sDowntown%20Conference%20Center!5e0!3m2!1sen!2sus!4v1644262073846!5m2!1sen!2sus" width="100%" height="100%" style={{ border: 0 }} allowFullScreen loading="lazy" title="MenuGo Office Location"></iframe>
+                    <iframe src="https://www.google.com/maps?q=9.0320,38.7469&z=13&output=embed" width="100%" height="100%" style={{ border: 0 }} allowFullScreen loading="lazy" title="MenuGo Office Location"></iframe>
                   </div>
                   <div className="p-5">
                     <div className="flex items-center justify-between">
                       <div><h3 className="text-base font-bold text-slate-900">Visit our office</h3><p className="mt-1 text-sm text-slate-600">123 Main Street, Suite 100<br />Addis Abeba, AA 1000</p></div>
-                      <motion.a href="https://maps.google.com" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 rounded-full bg-orange-50 px-4 py-2 text-sm font-medium text-orange-600 transition-all hover:bg-orange-100" whileHover={{ x: 4 }}>
+                      <motion.a href="https://www.google.com/maps/dir/?api=1&destination=9.0320,38.7469" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 rounded-full bg-orange-50 px-4 py-2 text-sm font-medium text-orange-600 transition-all hover:bg-orange-100" whileHover={{ x: 4 }}>
                         Directions <ArrowRightIcon className="h-3 w-3" />
                       </motion.a>
                     </div>

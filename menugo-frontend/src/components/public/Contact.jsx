@@ -138,7 +138,7 @@ const Contact = () => {
       title: 'Visit Us',
       details: '123 Main Street',
       sub: 'Addis Abeba, AA 1000',
-      action: 'https://maps.google.com',
+      action: 'https://www.google.com/maps/dir/?api=1&destination=9.0320,38.7469',
       actionText: 'Get Directions',
       gradient: 'from-purple-500 to-violet-500',
     },
@@ -542,7 +542,7 @@ const Contact = () => {
                       whileHover={{ opacity: 1 }}
                     />
                     <iframe
-                      src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3024.2219901290355!2d-74.00369368400567!3d40.71312937933098!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x89c25a316bbaf9a7%3A0xb89d1fe6bc499443!2sDowntown%20Conference%20Center!5e0!3m2!1sen!2sus!4v1644262073846!5m2!1sen!2sus"
+                      src="https://www.google.com/maps?q=9.0320,38.7469&z=13&output=embed"
                       width="100%"
                       height="100%"
                       style={{ border: 0 }}
@@ -561,7 +561,7 @@ const Contact = () => {
                         </p>
                       </div>
                       <motion.a
-                        href="https://maps.google.com"
+                        href="https://www.google.com/maps/dir/?api=1&destination=9.0320,38.7469"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-1 rounded-full bg-orange-50 px-4 py-2 text-sm font-medium text-orange-600 transition-all hover:bg-orange-100"
