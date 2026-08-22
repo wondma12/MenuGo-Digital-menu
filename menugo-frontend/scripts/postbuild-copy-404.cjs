@@ -56,8 +56,7 @@ const routesToCreate = [
   '/platform/system',
   '/platform/system/health',
   '/platform/system/audit-logs',
-  '/platform/system/backup',
-  '/admin/*'
+  '/platform/system/backup'
 ]
 
 routesToCreate.forEach(r => ensureNestedIndex(r))
