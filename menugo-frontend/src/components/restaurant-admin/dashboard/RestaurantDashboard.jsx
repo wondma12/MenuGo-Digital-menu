@@ -24,8 +24,11 @@ import { formatPrice } from '../../../utils/currency'
 
 const RestaurantDashboard = () => {
   const { user } = useAuthStore()
-  // Normalize restaurant id from user object (accept string or nested object)
-  const restaurantId = user?.restaurant_id?.id || user?.restaurant_id || user?.restaurant?.id || user?.restaurant?._id
+  const restaurantId = user?.staff?.restaurant_id
+    || user?.restaurant_id?.id
+    || user?.restaurant_id
+    || user?.restaurant?.id
+    || user?.restaurant?._id
   const [dateRange, setDateRange] = useState({
     start: startOfMonth(new Date()),
     end: endOfMonth(new Date()),
