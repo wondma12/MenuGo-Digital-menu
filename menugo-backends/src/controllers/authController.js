@@ -532,6 +532,26 @@ const forgotPassword = catchAsync(async (req, res) => {
   res.json(ApiResponse.success({ email_sent: true }, 'If an account exists for that email, a reset link has been sent.'));
 });
 
+// Resend email verification without revealing whether an email is registered.
+const resendVerification = catchAsync(async (req, res) => {
+  const normalizedEmail = normalizeEmailInput(req.body.email);
+  const genericResponse = 'If an account exists for that email, a verification link has been sent.';
+  const user = await User.findOne({ where: { email: normalizedEmail } });
+
+  if (!user || user.email_verified) {
+    return res.json(ApiResponse.success(null, genericResponse));
+  }
+
+  const verificationToken = crypto.randomBytes(32).toString('hex');
+  await user.update({
+    email_verification_token: verificationToken,
+    email_verification_expires: new Date(Date.now() + getEmailVerificationExpiryMs()),
+  });
+
+  await sendWelcomeEmail(normalizedEmail, user.full_name, { verificationToken });
+  return res.json(ApiResponse.success(null, genericResponse));
+});
+
 // Reset password
 const resetPassword = catchAsync(async (req, res) => {
   const { token } = req.body;
@@ -710,6 +730,7 @@ module.exports = {
   refreshToken,
   logout,
   forgotPassword,
+  resendVerification,
   resetPassword,
   verifyEmail,
   changePassword,

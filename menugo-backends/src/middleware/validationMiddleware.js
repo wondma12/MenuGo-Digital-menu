@@ -77,6 +77,7 @@ const authValidations = {
     body('password').notEmpty().withMessage('Password is required'),
   ],
   forgotPassword: [commonValidations.email],
+  resendVerification: [commonValidations.email],
   resetPassword: [
     body('token').notEmpty().withMessage('Reset token is required'),
     body(['password', 'newPassword']).custom((value, { req }) => {

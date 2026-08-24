@@ -10,6 +10,7 @@ const {
   refreshToken,
   logout,
   forgotPassword,
+  resendVerification,
   resetPassword,
   verifyEmail,
   changePassword,
@@ -23,6 +24,7 @@ router.post('/register', uploadFields([{ name: 'businessLicenseDocument', maxCou
 router.post('/login', validate(authValidations.login), login);
 router.post('/refresh-token', refreshToken);
 router.post('/forgot-password', validate(authValidations.forgotPassword), forgotPassword);
+router.post('/resend-verification', validate(authValidations.resendVerification), resendVerification);
 router.post('/reset-password', validate(authValidations.resetPassword), resetPassword);
 router.get('/verify-email/:token', verifyEmail);
 
