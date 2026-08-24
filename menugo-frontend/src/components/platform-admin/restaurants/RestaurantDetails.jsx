@@ -44,8 +44,8 @@ const RestaurantDetails = () => {
   const handleDocumentPreview = async (href) => {
     if (!href) return
     const apiRoot = String(api.defaults?.baseURL || '').replace(/\/$/, '')
-    const proxyPath = `/preview?url=${encodeURIComponent(href)}`
-    const proxyUrl = apiRoot ? `${apiRoot}${proxyPath}` : `/api${proxyPath}`
+    const proxyPath = `${apiRoot.endsWith('/api') ? '' : '/api'}/preview?url=${encodeURIComponent(href)}`
+    const proxyUrl = apiRoot ? `${apiRoot}${proxyPath}` : proxyPath
     setPreviewError(null)
     setPreviewLoading(true)
 
