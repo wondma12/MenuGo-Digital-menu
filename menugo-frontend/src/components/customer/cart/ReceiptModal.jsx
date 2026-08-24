@@ -1,7 +1,5 @@
 import {useRef} from 'react'
-import { X, Download, Printer } from 'lucide-react'
-import html2canvas from 'html2canvas'
-import jsPDF from 'jspdf'
+import { X, Printer } from 'lucide-react'
 import Button from '../../common/Button'
 
 const ReceiptModal = ({ isOpen, onClose, order, restaurant, items, totalAmount, orderType, tableNumber, specialInstructions }) => {
@@ -15,45 +13,6 @@ const ReceiptModal = ({ isOpen, onClose, order, restaurant, items, totalAmount, 
   const restaurantName = restaurant?.name || restaurant?.restaurant_name || 'MenuGo'
   const normalizedOrderType = String(orderType || 'dine_in').replace('_', ' ').toUpperCase()
   
-  const handleDownloadPDF = async () => {
-    if (!receiptRef.current) return
-
-    try {
-      const canvas = await html2canvas(receiptRef.current, {
-        backgroundColor: '#ffffff',
-        scale: 2,
-        useCORS: true,
-        logging: false,
-      })
-
-      const imgData = canvas.toDataURL('image/png')
-      const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4',
-      })
-
-      const imgWidth = 210
-      const imgHeight = (canvas.height * imgWidth) / canvas.width
-      let heightLeft = imgHeight
-
-      let position = 0
-      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight)
-      heightLeft -= 297
-
-      while (heightLeft >= 0) {
-        position = heightLeft - imgHeight
-        pdf.addPage()
-        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight)
-        heightLeft -= 297
-      }
-
-      pdf.save(`MenuGo-Receipt-${orderNumber}.pdf`)
-    } catch (error) {
-      console.error('Error generating PDF:', error)
-    }
-  }
-
   const handlePrint = () => {
     if (!receiptRef.current) return
     const printWindow = window.open('', '', 'height=600,width=800')
@@ -186,13 +145,6 @@ const ReceiptModal = ({ isOpen, onClose, order, restaurant, items, totalAmount, 
 
         {/* Action Buttons */}
         <div className="sticky bottom-0 bg-slate-50 px-6 py-4 flex gap-3 border-t">
-          <Button
-            onClick={handleDownloadPDF}
-            className="flex-1 bg-green-600 hover:bg-green-700 flex items-center justify-center gap-2"
-          >
-            <Download size={18} />
-            Download
-          </Button>
           <Button
             onClick={handlePrint}
             className="flex-1 bg-blue-600 hover:bg-blue-700 flex items-center justify-center gap-2"
