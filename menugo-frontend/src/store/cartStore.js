@@ -72,7 +72,7 @@ const useCartStore = create(
       },
 
       clearCart: () => {
-        set({ items: [], totalItems: 0, totalPrice: 0 })
+        set({ items: [], totalItems: 0, totalPrice: 0, tableNumber: '' })
       },
 
       updateItemOptions: (id, selectedOptions) => {

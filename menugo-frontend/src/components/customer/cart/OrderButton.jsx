@@ -77,8 +77,10 @@ const downloadCustomerReceipt = async ({ data, items, tableNumber, orderType, cu
   const logoDataUrl = await loadImageDataUrl(restaurant?.logo || restaurant?.logoUrl || restaurant?.logo_url)
   if (logoDataUrl) {
     try {
-      doc.addImage(logoDataUrl, 'PNG', pageWidth / 2 - 28, cursorY, 56, 56)
-      cursorY += 68
+      const logoSize = 56
+      const logoTop = cursorY
+      doc.addImage(logoDataUrl, 'PNG', pageWidth / 2 - logoSize / 2, logoTop, logoSize, logoSize)
+      cursorY = logoTop + logoSize + 16
     } catch (error) {
       console.warn('Receipt logo could not be embedded', error)
     }
@@ -86,6 +88,7 @@ const downloadCustomerReceipt = async ({ data, items, tableNumber, orderType, cu
 
   doc.setTextColor(230, 126, 34)
   writeLine(restaurant?.name || restaurant?.restaurant_name || 'MenuGo', { fontSize: 24, style: 'bold', align: 'center' })
+  cursorY += 4
   doc.setTextColor(100, 100, 100)
   if (restaurant?.location) writeLine(restaurant.location, { fontSize: 10, align: 'center' })
   if (restaurant?.contact_phone) writeLine(restaurant.contact_phone, { fontSize: 10, align: 'center' })
