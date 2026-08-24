@@ -43,7 +43,7 @@ const WaiterOrderCard = ({ order, displayNumber, onRefresh }) => {
     <>
       <motion.div
         whileHover={{ y: -4 }}
-        className="group cursor-pointer overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-xl"
+        className="group flex h-full min-h-[292px] cursor-pointer flex-col overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-xl"
         onClick={() => setShowDetails(true)}
       >
         <div className="border-b border-slate-100 bg-[linear-gradient(180deg,#ffffff_0%,#fff7ed_100%)] p-4">
@@ -66,8 +66,8 @@ const WaiterOrderCard = ({ order, displayNumber, onRefresh }) => {
           </div>
         </div>
 
-        <div className="space-y-4 p-4">
-          <div className="rounded-2xl bg-gradient-to-br from-orange-50 to-white p-3">
+        <div className="flex flex-1 flex-col space-y-4 p-4">
+          <div className="min-h-[92px] rounded-2xl bg-gradient-to-br from-orange-50 to-white p-3">
             <div className="flex items-center justify-between gap-3 text-sm">
               <span className="text-slate-500">Items</span>
               <span className="font-semibold text-slate-900">{order.itemCount ?? order.items?.length ?? 0} items</span>
@@ -77,7 +77,7 @@ const WaiterOrderCard = ({ order, displayNumber, onRefresh }) => {
             </div>
           </div>
 
-          <div className="flex items-center justify-between gap-3">
+          <div className="mt-auto flex items-center justify-between gap-3">
             <div className="inline-flex items-center gap-1.5 rounded-full bg-orange-50 px-2.5 py-1 text-xs font-semibold text-orange-700">
               <Clock className="h-3.5 w-3.5" />
               {getTimeElapsed(order.createdAt)}

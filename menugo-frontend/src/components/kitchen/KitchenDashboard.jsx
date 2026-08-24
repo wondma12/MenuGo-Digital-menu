@@ -77,7 +77,8 @@ const KitchenDashboard = ({ restaurantId, orders, stats, onUpdateStatus, initial
   };
 
   return (
-    <div className="kitchen-dashboard min-h-screen bg-white text-gray-900">
+    <div className="kitchen-dashboard relative min-h-screen overflow-visible bg-white text-gray-900">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_rgba(251,146,60,0.12),transparent_45%),radial-gradient(ellipse_at_bottom_left,_rgba(59,130,246,0.08),transparent_55%)]" />
       <KitchenInventoryAlert />
       <KitchenStats stats={stats} />
       {/* Notifications removed per request; notifications handled via sound/alerts */}
