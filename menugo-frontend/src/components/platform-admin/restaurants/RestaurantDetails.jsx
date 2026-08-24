@@ -3,6 +3,7 @@ import {useState} from 'react'
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from 'react-query';
 import { getRestaurantDetails } from '../../../services/restaurantService';
+import api from '../../../services/api';
 import Loading from '../../common/Loading';
 import Skeleton from '../../common/Skeleton';
 import Alert from '../../common/Alert';
@@ -42,7 +43,9 @@ const RestaurantDetails = () => {
 
   const handleDocumentPreview = async (href) => {
     if (!href) return
-    const proxyUrl = `/api/preview?url=${encodeURIComponent(href)}`
+    const apiRoot = String(api.defaults?.baseURL || '').replace(/\/$/, '')
+    const proxyPath = `/preview?url=${encodeURIComponent(href)}`
+    const proxyUrl = apiRoot ? `${apiRoot}${proxyPath}` : `/api${proxyPath}`
     setPreviewError(null)
     setPreviewLoading(true)
 
