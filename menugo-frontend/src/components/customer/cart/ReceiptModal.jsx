@@ -11,6 +11,9 @@ const ReceiptModal = ({ isOpen, onClose, order, restaurant, items, totalAmount, 
 
   const orderNumber = order?.order_number || order?.orderNumber || order?.order_id || order?.orderId || 'N/A'
   const orderDate = new Date(order?.created_at || order?.createdAt || Date.now()).toLocaleString()
+  const restaurantLogo = restaurant?.logo || restaurant?.logo_url || restaurant?.logoUrl || null
+  const restaurantName = restaurant?.name || restaurant?.restaurant_name || 'MenuGo'
+  const normalizedOrderType = String(orderType || 'dine_in').replace('_', ' ').toUpperCase()
   
   const handleDownloadPDF = async () => {
     if (!receiptRef.current) return
@@ -61,9 +64,9 @@ const ReceiptModal = ({ isOpen, onClose, order, restaurant, items, totalAmount, 
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-none sm:rounded-xl max-w-4xl w-full max-h-[92vh] overflow-y-auto shadow-2xl">
         {/* Header */}
-        <div className="sticky top-0 bg-gradient-to-r from-orange-600 to-orange-700 px-6 py-4 flex justify-between items-center">
+        <div className="sticky top-0 bg-[#1f2a44] px-6 py-4 flex justify-between items-center z-10">
           <h2 className="text-white font-black text-xl">Order Receipt</h2>
           <button onClick={onClose} className="text-white hover:bg-orange-800 p-1 rounded-lg transition">
             <X size={24} />
@@ -73,15 +76,16 @@ const ReceiptModal = ({ isOpen, onClose, order, restaurant, items, totalAmount, 
         {/* Receipt Content */}
         <div ref={receiptRef} className="p-8 bg-white">
           {/* Restaurant Header */}
-          <div className="text-center mb-8 pb-6 border-b-2 border-orange-200">
-            {restaurant?.logo && (
+          <div className="text-center mb-6 pb-5 border-b border-slate-200">
+            {restaurantLogo && (
               <img
-                src={restaurant.logo}
-                alt={restaurant.name}
-                className="h-16 w-16 mx-auto mb-3 rounded-full object-cover shadow-md"
+                src={restaurantLogo}
+                alt={restaurantName}
+                className="h-16 w-16 mx-auto mb-3 rounded-full object-cover shadow-md border border-slate-200"
               />
             )}
-            <h1 className="text-3xl font-black text-orange-600 mb-1">{restaurant?.name || 'MenuGo'}</h1>
+            <h1 className="text-3xl font-black text-[#1f2a44] uppercase mb-1">{restaurantName}</h1>
+            <p className="text-sm font-medium tracking-wide text-slate-500 uppercase">Order Receipt</p>
             {restaurant?.location && (
               <p className="text-sm text-slate-600">{restaurant.location}</p>
             )}
@@ -91,31 +95,35 @@ const ReceiptModal = ({ isOpen, onClose, order, restaurant, items, totalAmount, 
           </div>
 
           {/* Order Details */}
-          <div className="mb-6 space-y-2 text-sm">
-            <div className="flex justify-between">
+          <div className="mb-6 grid grid-cols-2 md:grid-cols-5 border border-slate-300 bg-slate-50 text-sm">
+            <div className="p-3 border-b md:border-b-0 md:border-r border-slate-300">
               <span className="text-slate-600 font-medium">Order #</span>
-              <span className="font-bold text-slate-900">{orderNumber}</span>
+              <span className="block font-bold text-slate-900 break-all">{orderNumber}</span>
             </div>
-            <div className="flex justify-between">
+            <div className="p-3 border-b md:border-b-0 md:border-r border-slate-300">
+              <span className="text-slate-600 font-medium">Type</span>
+              <span className="block text-slate-900">{normalizedOrderType}</span>
+            </div>
+            <div className="p-3 border-b md:border-b-0 md:border-r border-slate-300">
+              <span className="text-slate-600 font-medium">Customer</span>
+              <span className="block text-slate-900">{order?.customer_name || order?.customerName || 'Guest'}</span>
+            </div>
+            <div className="p-3 border-b md:border-b-0 md:border-r border-slate-300">
               <span className="text-slate-600 font-medium">Date</span>
-              <span className="text-slate-900">{orderDate}</span>
+              <span className="block text-slate-900">{orderDate}</span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-slate-600 font-medium">Order Type</span>
-              <span className="text-slate-900 capitalize">{orderType?.replace('_', ' ')}</span>
-            </div>
-            {tableNumber && (
-              <div className="flex justify-between">
+            <div className="p-3">
                 <span className="text-slate-600 font-medium">Table</span>
-                <span className="text-slate-900">Table {tableNumber}</span>
-              </div>
-            )}
+                <span className="block text-slate-900">{tableNumber || '-'}</span>
+            </div>
           </div>
 
           {/* Items */}
-          <div className="mb-6 pb-6 border-b-2 border-orange-200">
-            <h3 className="font-bold text-slate-900 mb-4 text-base">Order Items</h3>
-            <div className="space-y-3">
+          <div className="mb-6 pb-6 border-b border-slate-200">
+            <div className="grid grid-cols-[2rem_minmax(0,1fr)_4rem_7rem_7rem] gap-2 bg-[#1f2a44] text-white text-sm font-bold px-3 py-3">
+              <span>#</span><span>Item</span><span className="text-right">Qty</span><span className="text-right">Unit Price</span><span className="text-right">Amount</span>
+            </div>
+            <div>
               {items.map((item, index) => {
                 const qty = Number(item?.quantity || 0)
                 const basePrice = Number(item?.price || 0)
@@ -124,10 +132,10 @@ const ReceiptModal = ({ isOpen, onClose, order, restaurant, items, totalAmount, 
                 const lineTotal = unitPrice * qty
 
                 return (
-                  <div key={index} className="space-y-1">
-                    <div className="flex justify-between items-start">
-                      <div className="flex-1">
-                        <p className="font-semibold text-slate-900">{item?.name}</p>
+                  <div key={index} className="grid grid-cols-[2rem_minmax(0,1fr)_4rem_7rem_7rem] gap-2 items-start border-x border-b border-slate-200 px-3 py-3 text-sm">
+                      <span className="text-slate-700">{index + 1}</span>
+                      <div className="min-w-0">
+                        <p className="font-semibold text-slate-900 break-words">{item?.name}</p>
                         {item?.selectedOptions && Object.keys(item.selectedOptions).length > 0 && (
                           <p className="text-xs text-slate-500 mt-1">
                             {Object.entries(item.selectedOptions)
@@ -136,9 +144,9 @@ const ReceiptModal = ({ isOpen, onClose, order, restaurant, items, totalAmount, 
                           </p>
                         )}
                       </div>
-                      <span className="font-bold text-slate-900 ml-2">Br {lineTotal.toFixed(2)}</span>
-                    </div>
-                    <p className="text-xs text-slate-600">Qty: {qty} × Br {unitPrice.toFixed(2)}</p>
+                      <span className="text-right text-slate-900">{qty}</span>
+                      <span className="text-right text-slate-900 whitespace-nowrap">Br {unitPrice.toFixed(2)}</span>
+                      <span className="text-right font-bold text-slate-900 whitespace-nowrap">Br {lineTotal.toFixed(2)}</span>
                   </div>
                 )
               })}
@@ -154,14 +162,14 @@ const ReceiptModal = ({ isOpen, onClose, order, restaurant, items, totalAmount, 
           )}
 
           {/* Totals */}
-          <div className="space-y-3 bg-orange-50 p-4 rounded-lg">
+          <div className="space-y-3 p-1">
             <div className="flex justify-between text-sm">
               <span className="text-slate-600 font-medium">Subtotal</span>
               <span className="text-slate-900">Br {(totalAmount).toFixed(2)}</span>
             </div>
-            <div className="flex justify-between text-lg font-bold border-t-2 border-orange-200 pt-3">
+            <div className="flex justify-between text-lg font-bold border-t-2 border-[#d99000] pt-3">
               <span className="text-slate-900">Total</span>
-              <span className="text-orange-600">Br {(totalAmount).toFixed(2)}</span>
+              <span className="text-[#1f2a44]">Br {(totalAmount).toFixed(2)}</span>
             </div>
           </div>
 

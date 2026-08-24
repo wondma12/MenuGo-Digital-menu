@@ -6,6 +6,7 @@ import { createOrder } from '../../../services/orderService'
 import { getPublicTables } from '../../../services/tableService'
 import { getRestaurantDetails } from '../../../services/restaurantService'
 import toast from 'react-hot-toast'
+import ReceiptModal from './ReceiptModal'
 
 const formatMoney = (value) => `Br ${Number(value || 0).toFixed(2)}`
 
@@ -180,21 +181,12 @@ const downloadCustomerReceipt = async ({ data, items, tableNumber, orderType, cu
 
 const OrderButton = ({ restaurantId, items, tableNumber, specialInstructions, totalAmount, orderType = 'dine_in', customerName = '', customerPhone = '', customerEmail = '', deliveryAddress = '', restaurant = {}, onSuccess }) => {
   const [isLoading, setIsLoading] = useState(false)
+  const [receiptOrder, setReceiptOrder] = useState(null)
 
   const mutation = useMutation(createOrder, {
     onSuccess: async (data) => {
-      await downloadCustomerReceipt({
-        data,
-        items,
-        tableNumber,
-        orderType,
-        customerName,
-        specialInstructions,
-        totalAmount,
-        restaurant,
-      })
-      toast.success('Order placed successfully! Receipt downloaded.')
-      onSuccess()
+      setReceiptOrder(data)
+      toast.success('Order placed successfully!')
     },
     onError: (error) => {
       const resp = error?.response?.data
@@ -314,6 +306,20 @@ const OrderButton = ({ restaurantId, items, tableNumber, specialInstructions, to
       >
         Place Order
       </Button>
+      <ReceiptModal
+        isOpen={Boolean(receiptOrder)}
+        onClose={() => {
+          setReceiptOrder(null)
+          onSuccess()
+        }}
+        order={receiptOrder}
+        restaurant={restaurant}
+        items={items}
+        totalAmount={totalAmount}
+        orderType={orderType}
+        tableNumber={tableNumber}
+        specialInstructions={specialInstructions}
+      />
     </>
   )
 }
