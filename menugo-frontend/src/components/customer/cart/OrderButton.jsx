@@ -123,6 +123,26 @@ const downloadCustomerReceipt = async ({ data, items, tableNumber, orderType, cu
   cursorY += 4
 
   let calculatedSubtotal = 0
+  const columnWidths = [28, contentWidth - 180, 42, 55, 55]
+  const columnX = columnWidths.reduce((positions, width, index) => {
+    positions.push((positions[index - 1] || marginX) + (index ? columnWidths[index - 1] : 0))
+    return positions
+  }, [])
+  const drawTableHeader = () => {
+    doc.setFillColor(31, 42, 68)
+    doc.rect(marginX, cursorY, contentWidth, 24, 'F')
+    doc.setTextColor(255, 255, 255)
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(9)
+    doc.text('#', columnX[0] + 8, cursorY + 16)
+    doc.text('Item', columnX[1] + 6, cursorY + 16)
+    doc.text('Qty', columnX[2] + columnWidths[2] - 8, cursorY + 16, { align: 'right' })
+    doc.text('Unit Price', columnX[3] + columnWidths[3] - 4, cursorY + 16, { align: 'right' })
+    doc.text('Amount', columnX[4] + columnWidths[4], cursorY + 16, { align: 'right' })
+    cursorY += 24
+  }
+
+  drawTableHeader()
   items.forEach((item, index) => {
     const qty = Number(item?.quantity || 0)
     const basePrice = Number(item?.price || 0)
@@ -132,25 +152,31 @@ const downloadCustomerReceipt = async ({ data, items, tableNumber, orderType, cu
     calculatedSubtotal += lineTotal
 
     const itemName = item?.name || 'Item'
-    
-    // Item name and price
-    writeLine(`${index + 1}. ${itemName}`, { style: 'bold' })
-    
-    // Options if any
-    if (item?.selectedOptions && Object.keys(item.selectedOptions).length > 0) {
-      const optionsText = Object.entries(item.selectedOptions)
-        .map(([key, value]) => `${key}: Br ${Number(value || 0).toFixed(2)}`)
-        .join(' • ')
-      writeLine(`    ${optionsText}`, { fontSize: 9 })
-    }
-    
-    // Quantity and price
-    writeLine(`    Qty: ${qty} × Br ${unitPrice.toFixed(2)} = Br ${lineTotal.toFixed(2)}`, { fontSize: 10 })
-    cursorY += 2
+    const optionText = item?.selectedOptions && Object.keys(item.selectedOptions).length > 0
+      ? Object.entries(item.selectedOptions).map(([key, value]) => `${key}: Br ${Number(value || 0).toFixed(2)}`).join(', ')
+      : ''
+    const itemLines = doc.splitTextToSize(`${itemName}${optionText ? ` (${optionText})` : ''}`, columnWidths[1] - 12)
+    const rowHeight = Math.max(28, itemLines.length * 11 + 12)
+    ensureSpace(rowHeight)
+    doc.setFillColor(index % 2 === 0 ? 248 : 255, index % 2 === 0 ? 250 : 255, 252)
+    doc.rect(marginX, cursorY, contentWidth, rowHeight, 'F')
+    doc.setDrawColor(220, 225, 232)
+    doc.rect(marginX, cursorY, contentWidth, rowHeight)
+    doc.setTextColor(30, 41, 59)
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(9)
+    doc.text(String(index + 1), columnX[0] + 8, cursorY + 17)
+    doc.setFont('helvetica', 'bold')
+    doc.text(itemLines, columnX[1] + 6, cursorY + 14)
+    doc.setFont('helvetica', 'normal')
+    doc.text(String(qty), columnX[2] + columnWidths[2] - 8, cursorY + 17, { align: 'right' })
+    doc.text(`Br ${unitPrice.toFixed(2)}`, columnX[3] + columnWidths[3] - 4, cursorY + 17, { align: 'right' })
+    doc.setFont('helvetica', 'bold')
+    doc.text(`Br ${lineTotal.toFixed(2)}`, columnX[4] + columnWidths[4], cursorY + 17, { align: 'right' })
+    cursorY += rowHeight
   })
 
-  cursorY += 6
-  writeLine('-'.repeat(50))
+  cursorY += 10
   cursorY += 4
 
   // Special instructions

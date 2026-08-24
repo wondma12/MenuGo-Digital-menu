@@ -81,10 +81,17 @@ const ReceiptModal = ({ isOpen, onClose, order, restaurant, items, totalAmount, 
           <div className="mb-6 pb-6 border-b border-slate-200">
             <div className="overflow-x-auto">
               <div className="min-w-[560px]">
-                <div className="grid grid-cols-[2rem_minmax(0,1fr)_4rem_7rem_7rem] gap-2 bg-[#1f2a44] text-white text-sm font-bold px-3 py-3">
-                  <span>#</span><span>Item</span><span className="text-right">Qty</span><span className="text-right">Unit Price</span><span className="text-right">Amount</span>
-                </div>
-                <div>
+                <table className="w-full border-collapse text-sm">
+                  <thead className="bg-[#1f2a44] text-left text-white">
+                    <tr>
+                      <th scope="col" className="w-10 px-3 py-3">#</th>
+                      <th scope="col" className="px-3 py-3">Item</th>
+                      <th scope="col" className="w-16 px-3 py-3 text-right">Qty</th>
+                      <th scope="col" className="w-28 px-3 py-3 text-right">Unit Price</th>
+                      <th scope="col" className="w-28 px-3 py-3 text-right">Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody>
                   {items.map((item, index) => {
                 const qty = Number(item?.quantity || 0)
                 const basePrice = Number(item?.price || 0)
@@ -93,10 +100,10 @@ const ReceiptModal = ({ isOpen, onClose, order, restaurant, items, totalAmount, 
                 const lineTotal = unitPrice * qty
 
                     return (
-                      <div key={index} className="grid grid-cols-[2rem_minmax(0,1fr)_4rem_7rem_7rem] gap-2 items-start border-x border-b border-slate-200 px-3 py-3 text-sm">
-                      <span className="text-slate-700">{index + 1}</span>
-                      <div className="min-w-0">
-                        <p className="font-semibold text-slate-900 break-words">{item?.name}</p>
+                      <tr key={index} className="border-x border-b border-slate-200 align-top">
+                        <td className="px-3 py-3 text-slate-700">{index + 1}</td>
+                        <td className="min-w-0 px-3 py-3">
+                          <p className="font-semibold text-slate-900 break-words">{item?.name}</p>
                         {item?.selectedOptions && Object.keys(item.selectedOptions).length > 0 && (
                           <p className="text-xs text-slate-500 mt-1">
                             {Object.entries(item.selectedOptions)
@@ -104,14 +111,15 @@ const ReceiptModal = ({ isOpen, onClose, order, restaurant, items, totalAmount, 
                               .join(' • ')}
                           </p>
                         )}
-                      </div>
-                      <span className="text-right text-slate-900">{qty}</span>
-                      <span className="text-right text-slate-900 whitespace-nowrap">Br {unitPrice.toFixed(2)}</span>
-                      <span className="text-right font-bold text-slate-900 whitespace-nowrap">Br {lineTotal.toFixed(2)}</span>
-                      </div>
+                        </td>
+                        <td className="px-3 py-3 text-right text-slate-900">{qty}</td>
+                        <td className="px-3 py-3 text-right text-slate-900 whitespace-nowrap">Br {unitPrice.toFixed(2)}</td>
+                        <td className="px-3 py-3 text-right font-bold text-slate-900 whitespace-nowrap">Br {lineTotal.toFixed(2)}</td>
+                      </tr>
                     )
                   })}
-                </div>
+                  </tbody>
+                </table>
               </div>
             </div>
           </div>
