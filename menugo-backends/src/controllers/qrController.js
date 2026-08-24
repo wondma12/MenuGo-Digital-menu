@@ -15,6 +15,41 @@ const getBaseUrl = (req) => {
   return String(origin).replace(/\/$/, '');
 };
 
+const getUniqueQrIdentifier = async (restaurantId, baseIdentifier) => {
+  const existing = await QRCode.findOne({ where: { identifier: baseIdentifier } });
+  if (!existing || String(existing.restaurant_id) === String(restaurantId)) {
+    return baseIdentifier;
+  }
+
+  return `${baseIdentifier}-${String(restaurantId).slice(0, 8)}`;
+};
+
+const upsertRestaurantQRCode = async (restaurantId, identifier, values) => {
+  const existing = await QRCode.findOne({ where: { identifier } });
+  if (existing) {
+    if (String(existing.restaurant_id) !== String(restaurantId)) {
+      throw new ApiError(409, 'QR code identifier is already in use');
+    }
+    await existing.update(values);
+    return existing;
+  }
+
+  try {
+    return await QRCode.create({ restaurant_id: restaurantId, identifier, ...values });
+  } catch (error) {
+    if (error.name !== 'SequelizeUniqueConstraintError') {
+      throw error;
+    }
+
+    const concurrentRecord = await QRCode.findOne({ where: { identifier } });
+    if (!concurrentRecord || String(concurrentRecord.restaurant_id) !== String(restaurantId)) {
+      throw error;
+    }
+    await concurrentRecord.update(values);
+    return concurrentRecord;
+  }
+};
+
 // Generate QR code for restaurant
 const generateRestaurantQR = catchAsync(async (req, res) => {
   const { restaurantId } = req.params;
@@ -56,6 +91,7 @@ const generateRestaurantQR = catchAsync(async (req, res) => {
   if (identifierInUse && identifierInUse.id !== restaurant.id) {
     qrIdentifier = `${restaurantSlug}-${String(restaurant.id).slice(0, 8)}`
   }
+  qrIdentifier = await getUniqueQrIdentifier(restaurantId, qrIdentifier)
 
   // Try to find an existing record (may be null)
   const existing = await QRCode.findOne({ where: { restaurant_id: restaurantId, identifier: qrIdentifier } })
@@ -84,13 +120,7 @@ const generateRestaurantQR = catchAsync(async (req, res) => {
 
     let newQr = null
     // Upsert behavior varies by dialect; do explicit find->update/create to be safe
-    const existingQrRecord = await QRCode.findOne({ where: { restaurant_id: restaurantId, identifier: qrIdentifier } })
-    if (existingQrRecord) {
-      await existingQrRecord.update({ url: qrUrl, qr_image_url: qrCloudinaryUrl, is_active: true })
-      newQr = existingQrRecord
-    } else {
-      newQr = await QRCode.create({ restaurant_id: restaurantId, identifier: qrIdentifier, url: qrUrl, qr_image_url: qrCloudinaryUrl, is_active: true })
-    }
+    newQr = await upsertRestaurantQRCode(restaurantId, qrIdentifier, { url: qrUrl, qr_image_url: qrCloudinaryUrl, is_active: true })
 
     qrCodeRecord = newQr
     // Update the restaurant record with latest cloud URL (if any)
@@ -134,6 +164,7 @@ const generateTableQR = catchAsync(async (req, res) => {
   if (!qrIdentifier) {
     // Create a new restaurant qr identifier and QR
     qrIdentifier = slugify(restaurant.name || 'restaurant') || 'restaurant'
+    qrIdentifier = await getUniqueQrIdentifier(restaurantId, qrIdentifier)
     const qrUrl = `${getBaseUrl(req)}/menu/${qrIdentifier}`
 
     // Try to generate and upload; if upload fails we'll still return base64/local file
@@ -149,14 +180,7 @@ const generateTableQR = catchAsync(async (req, res) => {
         }
       }
 
-      let newQr = null
-      const existingQrRecord = await QRCode.findOne({ where: { restaurant_id: restaurantId, identifier: qrIdentifier } })
-      if (existingQrRecord) {
-        await existingQrRecord.update({ url: qrUrl, qr_image_url: qrCloudinaryUrl, is_active: true })
-        newQr = existingQrRecord
-      } else {
-        newQr = await QRCode.create({ restaurant_id: restaurantId, identifier: qrIdentifier, url: qrUrl, qr_image_url: qrCloudinaryUrl, is_active: true })
-      }
+      const newQr = await upsertRestaurantQRCode(restaurantId, qrIdentifier, { url: qrUrl, qr_image_url: qrCloudinaryUrl, is_active: true })
 
       qrCodeRecord = newQr
       await restaurant.update({ qr_code_identifier: qrIdentifier, qr_code_url: qrCloudinaryUrl })
@@ -185,14 +209,7 @@ const generateTableQR = catchAsync(async (req, res) => {
         }
       }
 
-      let newQr = null
-      const existingQrRecord = await QRCode.findOne({ where: { restaurant_id: restaurantId, identifier: qrIdentifier } })
-      if (existingQrRecord) {
-        await existingQrRecord.update({ url: qrUrl, qr_image_url: qrCloudinaryUrl, is_active: true })
-        newQr = existingQrRecord
-      } else {
-        newQr = await QRCode.create({ restaurant_id: restaurantId, identifier: qrIdentifier, url: qrUrl, qr_image_url: qrCloudinaryUrl, is_active: true })
-      }
+      const newQr = await upsertRestaurantQRCode(restaurantId, qrIdentifier, { url: qrUrl, qr_image_url: qrCloudinaryUrl, is_active: true })
 
       qrCodeRecord = newQr
       await restaurant.update({ qr_code_url: qrCloudinaryUrl })
