@@ -54,7 +54,11 @@ const ReviewResponse = ({ review, onClose, onRefresh }) => {
 
         <div className="flex justify-end gap-3 pt-4">
           <Button variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button onClick={handleSubmit} isLoading={mutation.isLoading}>
+          <Button
+            onClick={handleSubmit}
+            isLoading={mutation.isLoading}
+            className="rounded-none bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-700 hover:to-orange-600 shadow-lg shadow-orange-600/20"
+          >
             {review.replyFromRestaurant ? 'Update Response' : 'Send Response'}
           </Button>
         </div>
