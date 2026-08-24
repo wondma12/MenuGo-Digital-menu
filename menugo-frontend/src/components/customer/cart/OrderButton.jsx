@@ -112,18 +112,8 @@ const downloadCustomerReceipt = async ({ data, items, tableNumber, orderType, cu
   if (tableNumber) writeLine(`Table: ${tableNumber}`)
   if (customerName) writeLine(`Customer: ${customerName}`)
   
-  cursorY += 8
-  writeLine('-'.repeat(50))
-  cursorY += 4
-  
-  // Items header
-  doc.setTextColor(230, 126, 34)
-  writeLine('ITEMS', { fontSize: 12, style: 'bold' })
-  doc.setTextColor(20, 20, 20)
-  cursorY += 4
-
   let calculatedSubtotal = 0
-  const columnWidths = [28, contentWidth - 180, 42, 55, 55]
+  const columnWidths = [28, contentWidth - 225, 45, 75, 77]
   const columnX = columnWidths.reduce((positions, width, index) => {
     positions.push((positions[index - 1] || marginX) + (index ? columnWidths[index - 1] : 0))
     return positions
@@ -139,6 +129,10 @@ const downloadCustomerReceipt = async ({ data, items, tableNumber, orderType, cu
     doc.text('Qty', columnX[2] + columnWidths[2] - 8, cursorY + 16, { align: 'right' })
     doc.text('Unit Price', columnX[3] + columnWidths[3] - 4, cursorY + 16, { align: 'right' })
     doc.text('Amount', columnX[4] + columnWidths[4], cursorY + 16, { align: 'right' })
+    doc.setDrawColor(120, 130, 150)
+    for (let index = 1; index < columnX.length; index += 1) {
+      doc.line(columnX[index], cursorY, columnX[index], cursorY + 24)
+    }
     cursorY += 24
   }
 
@@ -162,6 +156,9 @@ const downloadCustomerReceipt = async ({ data, items, tableNumber, orderType, cu
     doc.rect(marginX, cursorY, contentWidth, rowHeight, 'F')
     doc.setDrawColor(220, 225, 232)
     doc.rect(marginX, cursorY, contentWidth, rowHeight)
+    for (let columnIndex = 1; columnIndex < columnX.length; columnIndex += 1) {
+      doc.line(columnX[columnIndex], cursorY, columnX[columnIndex], cursorY + rowHeight)
+    }
     doc.setTextColor(30, 41, 59)
     doc.setFont('helvetica', 'normal')
     doc.setFontSize(9)
