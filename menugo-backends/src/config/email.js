@@ -3,7 +3,6 @@ const handlebars = require('handlebars');
 const fs = require('fs');
 const path = require('path');
 const { logger } = require('../utils/logger');
-const dns = require('dns').promises;
 const axios = require('axios');
 
 const SMTP_HOST = String(process.env.SMTP_HOST || '').trim();
@@ -11,6 +10,7 @@ const SMTP_PORT = parseInt(process.env.SMTP_PORT) || (process.env.SMTP_SECURE ==
 const SMTP_SECURE = process.env.SMTP_SECURE === 'true';
 const SMTP_USER = process.env.SMTP_USER || '';
 const SMTP_PASS = process.env.SMTP_PASS || '';
+const BREVO_API_KEY = String(process.env.BREVO_API_KEY || '').trim();
 
 const DEFAULT_SMTP_TIMEOUT = parseInt(process.env.SMTP_TIMEOUT_MS, 10) || 20000; // 20s default, override with env
 
@@ -35,10 +35,6 @@ const createTransportConfig = (host, port = SMTP_PORT, secure = SMTP_SECURE) => 
   socketTimeout: DEFAULT_SMTP_TIMEOUT,
 });
 
-const createTransportForHost = (host, port = SMTP_PORT, secure = SMTP_SECURE) => {
-  return nodemailer.createTransport(createTransportConfig(host, port, secure));
-};
-
 const createGmailServiceTransport = () => {
   if (!SMTP_HOST.includes('gmail') && !SMTP_HOST.includes('google')) {
     return null;
@@ -61,10 +57,6 @@ const createGmailServiceTransport = () => {
 
 // Create a default transporter immediately (do not rely on the async resolver to finish)
 const transporter = nodemailer.createTransport(createTransportConfig(SMTP_HOST));
-
-// NOTE: Startup IPv4 probing is intentionally disabled to avoid network
-// operations during module import. Per-send fallback and IPv4 retries are
-// handled by `sendEmail` itself to make the module safe to require.
 
 const DEFAULT_PUBLIC_FRONTEND_URL = 'https://menugo-digital-menu-jgz2.onrender.com';
 
@@ -188,6 +180,36 @@ const sendViaSendGrid = async (mailOptions) => {
   throw new Error(`SendGrid HTTP API returned status ${response.status}`);
 };
 
+const sendViaBrevoApi = async (mailOptions) => {
+  if (!BREVO_API_KEY) {
+    throw new Error('Brevo API key not configured');
+  }
+
+  const senderEmail = process.env.EMAIL_FROM || SMTP_USER;
+  const senderName = process.env.EMAIL_FROM_NAME || 'MenuGo';
+  const response = await axios.post('https://api.brevo.com/v3/smtp/email', {
+    sender: { email: senderEmail, name: senderName },
+    to: [{ email: mailOptions.to }],
+    subject: mailOptions.subject,
+    htmlContent: mailOptions.html,
+    textContent: mailOptions.text,
+    ...(mailOptions.replyTo ? { replyTo: { email: mailOptions.replyTo } } : {}),
+  }, {
+    headers: {
+      accept: 'application/json',
+      'api-key': BREVO_API_KEY,
+      'content-type': 'application/json',
+    },
+    timeout: DEFAULT_SMTP_TIMEOUT,
+  });
+
+  if (response && response.data && response.data.messageId) {
+    return { messageId: response.data.messageId };
+  }
+
+  throw new Error('Brevo API returned no message ID');
+};
+
 const sendEmail = async (to, subject, template, data) => {
   try {
     const html = loadTemplate(template, data);
@@ -204,6 +226,16 @@ const sendEmail = async (to, subject, template, data) => {
 
     // If SendGrid is configured, try the safer HTTP API before direct SMTP.
     const sendgridKey = getSendGridKey();
+    if (BREVO_API_KEY) {
+      try {
+        logger.info(`Sending email to ${to} using Brevo HTTP API`);
+        return await sendViaBrevoApi(mailOptions);
+      } catch (brevoErr) {
+        logger.error('Brevo HTTP API send failed:', brevoErr && brevoErr.message ? brevoErr.message : brevoErr);
+        throw brevoErr;
+      }
+    }
+
     if (sendgridKey) {
       try {
         logger.info(`Sending email to ${to} using SendGrid HTTP API`);
@@ -213,33 +245,20 @@ const sendEmail = async (to, subject, template, data) => {
       }
     }
 
-    // Attempt to send with retries and IPv4 fallbacks when network errors occur
+    // Retry the configured provider only. IP and port fallbacks can bypass TLS
+    // hostname verification and turn one delivery error into several timeouts.
     const maxAttempts = 3;
     const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
     let lastErr = null;
 
-    // Build list of candidate transports: current transporter first, then resolved IPv4 addresses
+    // Brevo SMTP uses smtp-relay.brevo.com:587 with STARTTLS.
     const candidates = [];
     const gmailTransport = createGmailServiceTransport();
     if (gmailTransport) {
       candidates.push({ name: 'gmail', transport: gmailTransport });
     }
-
     candidates.push({ name: 'default', transport: transporter });
-
-    if (SMTP_HOST) {
-      try {
-        const addrs = await dns.resolve4(SMTP_HOST).catch(() => []);
-        for (const addr of addrs) {
-          candidates.push({ name: `ipv4:${addr}`, transport: createTransportForHost(addr) });
-        }
-        if (SMTP_PORT !== 465 || !SMTP_SECURE) {
-          candidates.push({ name: `secure-465`, transport: createTransportForHost(SMTP_HOST, 465, true) })
-        }      } catch (e) {
-        logger.warn('SMTP DNS resolve failed, skipping IPv4 fallback:', e && e.message ? e.message : e);
-      }
-    }
 
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
       for (const cand of candidates) {
@@ -247,22 +266,13 @@ const sendEmail = async (to, subject, template, data) => {
           logger.info(`Attempt ${attempt}: sending email to ${to} via ${cand.name}`);
           const info = await cand.transport.sendMail(mailOptions);
           logger.info(`Email sent to ${to} via ${cand.name}: ${info.messageId}`);
-          // Close IPv4-created transports to avoid resource leakage
-          try {
-            if (cand.name.startsWith('ipv4:') && typeof cand.transport.close === 'function') {
-              cand.transport.close();
-            } 
-          } catch (e) { /* ignore */ }
           return info;
         } catch (error) {
           lastErr = error;
           logger.warn(`Email send attempt ${attempt} via ${cand.name} failed: ${error && error.message ? error.message : error}`);
-          // Close per-candidate transport if it was created for this attempt
-          try {
-            if (cand.name.startsWith('ipv4:') && typeof cand.transport.close === 'function') {
-              cand.transport.close();
-            } 
-          } catch (e) { /* ignore */ }
+          if (error && /EAUTH|Unauthorized IP|authentication|invalid login/i.test(String(error.code || error.message || ''))) {
+            throw error;
+          }
           // On network timeout or unreachable errors, continue to next candidate
           if (error && /ENETUNREACH|EHOSTUNREACH|EADDRNOTAVAIL|ETIMEDOUT|ECONNREFUSED/i.test(String(error.code || error.errno || error.message || ''))) {
             // try next candidate immediately
