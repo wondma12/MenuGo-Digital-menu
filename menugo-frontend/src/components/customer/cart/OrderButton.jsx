@@ -185,8 +185,23 @@ const OrderButton = ({ restaurantId, items, tableNumber, specialInstructions, to
 
   const mutation = useMutation(createOrder, {
     onSuccess: async (data) => {
+      try {
+        await downloadCustomerReceipt({
+          data,
+          items,
+          tableNumber,
+          orderType,
+          customerName,
+          specialInstructions,
+          totalAmount,
+          restaurant,
+        })
+        toast.success('Order placed successfully! Receipt downloaded.')
+      } catch (error) {
+        console.error('Automatic receipt download failed:', error)
+        toast.success('Order placed successfully! Receipt is ready below.')
+      }
       setReceiptOrder(data)
-      toast.success('Order placed successfully!')
     },
     onError: (error) => {
       const resp = error?.response?.data

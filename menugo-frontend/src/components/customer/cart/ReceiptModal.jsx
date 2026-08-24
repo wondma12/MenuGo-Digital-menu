@@ -120,19 +120,21 @@ const ReceiptModal = ({ isOpen, onClose, order, restaurant, items, totalAmount, 
 
           {/* Items */}
           <div className="mb-6 pb-6 border-b border-slate-200">
-            <div className="grid grid-cols-[2rem_minmax(0,1fr)_4rem_7rem_7rem] gap-2 bg-[#1f2a44] text-white text-sm font-bold px-3 py-3">
-              <span>#</span><span>Item</span><span className="text-right">Qty</span><span className="text-right">Unit Price</span><span className="text-right">Amount</span>
-            </div>
-            <div>
-              {items.map((item, index) => {
+            <div className="overflow-x-auto">
+              <div className="min-w-[560px]">
+                <div className="grid grid-cols-[2rem_minmax(0,1fr)_4rem_7rem_7rem] gap-2 bg-[#1f2a44] text-white text-sm font-bold px-3 py-3">
+                  <span>#</span><span>Item</span><span className="text-right">Qty</span><span className="text-right">Unit Price</span><span className="text-right">Amount</span>
+                </div>
+                <div>
+                  {items.map((item, index) => {
                 const qty = Number(item?.quantity || 0)
                 const basePrice = Number(item?.price || 0)
                 const optionsPrice = Object.values(item?.selectedOptions || {}).reduce((sum, price) => sum + (Number(price) || 0), 0)
                 const unitPrice = basePrice + optionsPrice
                 const lineTotal = unitPrice * qty
 
-                return (
-                  <div key={index} className="grid grid-cols-[2rem_minmax(0,1fr)_4rem_7rem_7rem] gap-2 items-start border-x border-b border-slate-200 px-3 py-3 text-sm">
+                    return (
+                      <div key={index} className="grid grid-cols-[2rem_minmax(0,1fr)_4rem_7rem_7rem] gap-2 items-start border-x border-b border-slate-200 px-3 py-3 text-sm">
                       <span className="text-slate-700">{index + 1}</span>
                       <div className="min-w-0">
                         <p className="font-semibold text-slate-900 break-words">{item?.name}</p>
@@ -147,9 +149,11 @@ const ReceiptModal = ({ isOpen, onClose, order, restaurant, items, totalAmount, 
                       <span className="text-right text-slate-900">{qty}</span>
                       <span className="text-right text-slate-900 whitespace-nowrap">Br {unitPrice.toFixed(2)}</span>
                       <span className="text-right font-bold text-slate-900 whitespace-nowrap">Br {lineTotal.toFixed(2)}</span>
-                  </div>
-                )
-              })}
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
             </div>
           </div>
 
