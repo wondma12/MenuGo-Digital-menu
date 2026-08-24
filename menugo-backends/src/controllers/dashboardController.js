@@ -438,6 +438,19 @@ const getRestaurantDashboard = catchAsync(async (req, res) => {
         restaurantId = staff.restaurant_id;
       }
     }
+
+    // Google OAuth users may be restaurant owners without a staff row or a
+    // restaurantId claim on the request user. Resolve the owned restaurant
+    // before returning an empty dashboard.
+    if (!restaurantId) {
+      const ownedRestaurant = await Restaurant.findOne({
+        where: { owner_id: req.user.id, deleted_at: null },
+        order: [['created_at', 'DESC']],
+      });
+      if (ownedRestaurant) {
+        restaurantId = ownedRestaurant.id;
+      }
+    }
     
     if (!restaurantId) {
       return res.json(ApiResponse.success({

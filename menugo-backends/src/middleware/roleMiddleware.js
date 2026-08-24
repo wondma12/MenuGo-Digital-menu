@@ -131,6 +131,14 @@ const isRestaurantStaff = async (req, res, next) => {
     if (assign) restaurantId = assign.restaurant_id;
   }
 
+  if (!restaurantId) {
+    const ownedRestaurant = await Restaurant.findOne({
+      where: { owner_id: req.user.id, deleted_at: null },
+      order: [['created_at', 'DESC']],
+    });
+    if (ownedRestaurant) restaurantId = ownedRestaurant.id;
+  }
+
   // Deny if we cannot determine a restaurant context for non-platform users
   if (!restaurantId) {
     throw new ApiError(403, 'Restaurant context required');
