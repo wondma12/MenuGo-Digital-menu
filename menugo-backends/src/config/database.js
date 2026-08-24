@@ -12,6 +12,8 @@ if (!SequelizePkg.Op) {
     and: '$and',
     like: '$like',
     iLike: '$like',
+    gt: '$gt',
+    lt: '$lt',
     gte: '$gte',
     lte: '$lte',
     ne: '$ne',
