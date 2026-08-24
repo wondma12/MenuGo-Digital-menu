@@ -8,10 +8,18 @@ const { sendWelcomeEmail, sendPasswordResetEmail } = require('../config/email');
 const { ApiResponse } = require('../utils/apiResponse');
 const { ApiError } = require('../utils/apiError');
 const { catchAsync } = require('../utils/catchAsync');
+const { logger } = require('../utils/logger');
 const { getPasswordResetExpiryMs, getEmailVerificationExpiryMs } = require('../utils/tokenExpiry');
 const { getClientIp, getUserAgent } = require('../utils/requestInfo');
 
 const normalizeEmailInput = (email) => String(email || '').trim().toLowerCase();
+const normalizeResetToken = (token) => {
+  try {
+    return decodeURIComponent(String(token || '').trim());
+  } catch (error) {
+    return String(token || '').trim();
+  }
+};
 const isAuthLoginDebugEnabled = String(process.env.AUTH_LOGIN_DEBUG || '').toLowerCase() === 'true';
 
 const getClientUrl = () => String(process.env.CLIENT_URL || 'http://localhost:5173').replace(/\/$/, '');
@@ -554,8 +562,12 @@ const resendVerification = catchAsync(async (req, res) => {
 
 // Reset password
 const resetPassword = catchAsync(async (req, res) => {
-  const { token } = req.body;
+  const token = normalizeResetToken(req.body.token || req.body.reset_token || req.query.token);
   const nextPassword = req.body.newPassword || req.body.password;
+
+  if (!token) {
+    throw new ApiError(400, 'Reset token is required');
+  }
 
   const user = await User.findOne({
     where: {
@@ -565,6 +577,9 @@ const resetPassword = catchAsync(async (req, res) => {
   });
 
   if (!user) {
+    logger.warn('Password reset rejected: token was not found or expired', {
+      tokenLength: token.length,
+    });
     throw new ApiError(400, 'Invalid or expired reset token');
   }
 
