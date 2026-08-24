@@ -1197,7 +1197,7 @@ const Services = () => {
                       {plan.period && <span className="pb-1 text-sm text-slate-500">/{plan.period}</span>}
                     </div>
                     <ul className="mt-5 space-y-2.5 text-left">
-                      {plan.features.slice(0, 6).map((feature) => (
+                      {(plan.features || []).map((feature) => (
                         <li key={feature} className="flex items-start gap-2.5 text-sm text-slate-600">
                           <CheckBadgeIcon className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
                           <span>{feature}</span>

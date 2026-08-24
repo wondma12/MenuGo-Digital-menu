@@ -1634,7 +1634,7 @@ export default function FullPage() {
                       {plan.period && <span className="pb-1 text-sm text-slate-500">/{plan.period}</span>}
                     </div>
                     <ul className="mt-5 space-y-2.5 text-left">
-                      {plan.features.slice(0, 6).map((feature) => <li key={feature} className="flex items-start gap-2.5 text-sm text-slate-600"><CheckBadgeIcon className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" /><span>{feature}</span></li>)}
+                      {(plan.features || []).map((feature) => <li key={feature} className="flex items-start gap-2.5 text-sm text-slate-600"><CheckBadgeIcon className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" /><span>{feature}</span></li>)}
                     </ul>
                     <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                       <a href="#contact" className={`mt-6 inline-flex w-full items-center justify-center rounded-xl px-5 py-3 text-sm font-semibold transition-all ${plan.recommended ? 'bg-gradient-to-r from-orange-600 to-orange-500 text-white shadow-lg shadow-orange-600/30 hover:shadow-orange-600/50' : 'border border-slate-300 text-slate-700 hover:border-orange-500 hover:text-orange-600'}`}>
