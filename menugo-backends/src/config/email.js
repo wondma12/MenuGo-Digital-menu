@@ -152,6 +152,15 @@ const loadTemplate = (templateName, data) => {
 
 const getSendGridKey = () => process.env.SENDGRID_API_KEY || process.env.SENDGRID_KEY || '';
 
+const getEmailErrorMessage = (error) => {
+  const brevoMessage = error?.response?.data?.message;
+  if (brevoMessage) {
+    return String(brevoMessage);
+  }
+
+  return String(error?.message || error || 'Unknown email delivery error');
+};
+
 const sendViaSendGrid = async (mailOptions) => {
   const sendgridKey = getSendGridKey();
   if (!sendgridKey) {
@@ -231,7 +240,7 @@ const sendEmail = async (to, subject, template, data) => {
         logger.info(`Sending email to ${to} using Brevo HTTP API`);
         return await sendViaBrevoApi(mailOptions);
       } catch (brevoErr) {
-        logger.error('Brevo HTTP API send failed:', brevoErr && brevoErr.message ? brevoErr.message : brevoErr);
+        logger.error(`Brevo HTTP API send failed: ${getEmailErrorMessage(brevoErr)}`);
         throw brevoErr;
       }
     }
@@ -269,7 +278,7 @@ const sendEmail = async (to, subject, template, data) => {
           return info;
         } catch (error) {
           lastErr = error;
-          logger.warn(`Email send attempt ${attempt} via ${cand.name} failed: ${error && error.message ? error.message : error}`);
+          logger.warn(`Email send attempt ${attempt} via ${cand.name} failed: ${getEmailErrorMessage(error)}`);
           if (error && /EAUTH|Unauthorized IP|authentication|invalid login/i.test(String(error.code || error.message || ''))) {
             throw error;
           }
@@ -289,7 +298,7 @@ const sendEmail = async (to, subject, template, data) => {
     }
 
     // All attempts failed; try SendGrid HTTP fallback if configured
-    logger.error('Email send failed after retries:', lastErr && (lastErr.message || lastErr));
+    logger.error(`Email send failed after retries: ${getEmailErrorMessage(lastErr)}`);
 
     if (sendgridKey) {
       try {
@@ -304,7 +313,7 @@ const sendEmail = async (to, subject, template, data) => {
     throw lastErr || new Error('Email send failed');
     
   } catch (error) {
-    logger.error('Email send error (outer):', error && error.message ? error.message : error);
+    logger.error(`Email send error (outer): ${getEmailErrorMessage(error)}`);
     throw error;
   }
 };
