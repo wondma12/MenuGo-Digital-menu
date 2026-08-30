@@ -45,15 +45,14 @@ const createCallRequest = catchAsync(async (req, res) => {
     throw new ApiError(400, 'table_number is required');
   }
 
-  const table = await Table.findOne({ where: { restaurant_id: restaurant.id, table_number: String(table_number) } });
-  let tableRecord = table
-  if (!tableRecord) {
-    // Create a lightweight table entry if not found. This allows customers
-    // to call from a table number even if the restaurant hasn't pre-created
-    // tables in the system (common for QR-based ordering).
-    // We create with minimal fields and default capacity/status.
-    tableRecord = await Table.create({ restaurant_id: restaurant.id, table_number: String(table_number) })
+  const normalizedTableNumber = String(table_number).trim();
+  const table = await Table.findOne({ where: { restaurant_id: restaurant.id, table_number: normalizedTableNumber } });
+
+  if (!table) {
+    throw new ApiError(400, 'Invalid table number. Please use a valid table number from this restaurant.');
   }
+
+  const tableRecord = table;
 
   const call = await WaiterCallRequest.create({
     restaurant_id: restaurant.id,
