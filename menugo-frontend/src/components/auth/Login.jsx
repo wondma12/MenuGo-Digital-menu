@@ -78,6 +78,7 @@ const Login = () => {
   const [loginAttempts, setLoginAttempts] = useState(0);
   const [platformLogo, setPlatformLogo] = useState('');
   const submitLockRef = useRef(false);
+  const loginRedirectPendingRef = useRef(false);
 
   const {
     register,
@@ -107,7 +108,7 @@ const Login = () => {
 
     const redirectIfAuthenticated = async () => {
       try {
-        if (forceLogin) return;
+        if (forceLogin || loginRedirectPendingRef.current) return;
 
         const sessionToken = typeof window !== 'undefined' ? window.sessionStorage.getItem('token') : null;
         if (!sessionToken && !isAuthenticated) return;
@@ -192,21 +193,15 @@ const Login = () => {
     try {
       const result = await login(data.email, data.password, data.rememberMe);
       if (result?.success) {
+        loginRedirectPendingRef.current = true;
         setShowSuccess(true);
-        toast.success('Logged in', {
-          autoClose: 2000,
+        toast.success('Login successful', {
+          autoClose: 3500,
           closeOnClick: true,
         });
 
-        const authResolved = await checkAuth().catch(() => false);
-
-        // Prefer the authoritative user returned by checkAuth(). If checkAuth
-        // failed (network or transient), fall back to the login response
-        // payload first, then to any persisted user snapshot. This avoids
-        // using a stale persisted user (e.g. previous waiter) when deciding
-        // the post-login redirect for staff users.
         const persistedUser = useAuthStore.getState().user;
-        const srcUser = authResolved ? persistedUser : (result.user || persistedUser);
+        const srcUser = result.user || persistedUser;
         const currentToken = useAuthStore.getState().token || sessionStorage.getItem('token');
         const userRole = getEffectiveRole(srcUser, currentToken);
         const redirectPath = getPostLoginRedirectPath(
@@ -217,7 +212,7 @@ const Login = () => {
 
         setTimeout(() => {
           navigate(redirectPath, { replace: true });
-        }, 500);
+        }, 1200);
       } else {
         setLoginAttempts(prev => prev + 1);
         setShowError(true);
