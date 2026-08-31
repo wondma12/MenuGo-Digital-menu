@@ -70,6 +70,17 @@ export const getRoleHomePath = (roleOrUser) => {
   }
 }
 
+export const getSafeReturnPath = (value) => {
+  if (typeof value !== 'string') return null
+
+  const trimmed = value.trim()
+  if (!trimmed) return null
+  if (/^(?:[a-z]+:)?\/\//i.test(trimmed)) return null
+  if (/^\s*(javascript:|data:|vbscript:)/i.test(trimmed)) return null
+
+  return trimmed.startsWith('/') ? trimmed : `/${trimmed}`
+}
+
 export const getPostLoginRedirectPath = (roleOrUser, fallbackPath = null, token = null) => {
   const role = normalizeRole(typeof roleOrUser === 'string' ? roleOrUser : getEffectiveRole(roleOrUser, token))
   const staffRoles = ['platform_admin', 'restaurant_admin', 'chef', 'manager', 'waiter']

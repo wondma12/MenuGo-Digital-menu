@@ -18,9 +18,10 @@ import {
 import Button from "../common/Button";
 import Input from "../common/Input";
 import FileUpload from "../common/FileUpload";
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { register as registerUser } from '../../services/authService';
 import { toast } from 'react-toastify';
+import { getSafeReturnPath } from '../../utils/authRouting';
 
 const MultiStepRegistration = () => {
   const [currentStep, setCurrentStep] = useState(1);
@@ -127,6 +128,9 @@ const MultiStepRegistration = () => {
   };
 
   const navigate = useNavigate();
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const returnToPath = getSafeReturnPath(searchParams.get('returnTo') || searchParams.get('redirect') || null);
 
   const handleSubmit = async () => {
     if (validateCurrentStep()) {
@@ -791,9 +795,9 @@ const MultiStepRegistration = () => {
 
       <div className="mx-auto w-full max-w-md relative z-10">
         <div className="mb-4">
-          <Link to="/" className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-orange-600 transition-all duration-300 group">
+          <Link to={returnToPath || '/'} className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-orange-600 transition-all duration-300 group">
             <ArrowLeft className="h-4 w-4" />
-            Back to home
+            {returnToPath && returnToPath.startsWith('/menu/') ? 'Back to menu' : 'Back to home'}
           </Link>
         </div>
 

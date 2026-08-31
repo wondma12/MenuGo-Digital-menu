@@ -22,7 +22,7 @@ import Button from '../common/Button';
 import Alert from '../common/Alert';
 import { toast } from 'react-toastify';
 import SocialLogin from './SocialLogin';
-import { getEffectiveRole, getPostLoginRedirectPath, getRoleHomePath } from '../../utils/authRouting';
+import { getEffectiveRole, getPostLoginRedirectPath, getRoleHomePath, getSafeReturnPath } from '../../utils/authRouting';
 import { getPublicPlatformBranding } from '../../services/systemService';
 
 // Animation variants
@@ -63,20 +63,13 @@ const schema = yup.object({
   rememberMe: yup.boolean(),
 });
 
-const getSafeReturnPath = (value) => {
-  if (typeof value !== 'string') return null;
-  const trimmed = value.trim();
-  if (!trimmed) return null;
-  if (/^(https?:)?\/\//i.test(trimmed)) return null;
-  return trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
-};
-
 const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
   const forceLogin = searchParams.get('forceLogin') === '1';
   const returnToPath = getSafeReturnPath(searchParams.get('returnTo') || searchParams.get('redirect') || location.state?.from || null);
+  const isStaffLoginFlow = forceLogin || !!(returnToPath && returnToPath.startsWith('/menu/'));
   const { login, isLoading, error, clearError, checkAuth, isAuthenticated } = useAuthStore();
   const [showError, setShowError] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -200,7 +193,10 @@ const Login = () => {
       const result = await login(data.email, data.password, data.rememberMe);
       if (result?.success) {
         setShowSuccess(true);
-        toast.success('Login successful! Redirecting...');
+        toast.success('Logged in', {
+          autoClose: 2000,
+          closeOnClick: true,
+        });
 
         const authResolved = await checkAuth().catch(() => false);
 
@@ -218,7 +214,10 @@ const Login = () => {
           returnToPath || getRoleHomePath(userRole),
           currentToken
         );
-        navigate(redirectPath, { replace: true });
+
+        setTimeout(() => {
+          navigate(redirectPath, { replace: true });
+        }, 500);
       } else {
         setLoginAttempts(prev => prev + 1);
         setShowError(true);
@@ -302,7 +301,7 @@ const Login = () => {
             <motion.span whileHover={{ x: -4 }} transition={{ type: 'spring', stiffness: 300 }}>
               <ArrowLeft className="h-4 w-4" />
             </motion.span>
-            Back to home
+            {returnToPath && returnToPath.startsWith('/menu/') ? 'Back to menu' : 'Back to home'}
           </Link>
         </motion.div>
 
@@ -560,24 +559,26 @@ const Login = () => {
             </div>
           </motion.div>
 
-          <motion.p 
-            variants={itemVariants}
-            className="mt-6 text-center text-sm text-slate-500"
-          >
-            Don't have an account?{' '}
-            <Link 
-              to="/register" 
-              className="font-medium text-orange-600 hover:text-orange-700 transition-colors hover:underline inline-flex items-center gap-1 group"
+          {!isStaffLoginFlow && (
+            <motion.p 
+              variants={itemVariants}
+              className="mt-6 text-center text-sm text-slate-500"
             >
-              Sign up
-              <motion.span
-                whileHover={{ x: 3 }}
-                transition={{ type: 'spring', stiffness: 300 }}
+              Don't have an account?{' '}
+              <Link 
+                to={`/register${returnToPath ? `?returnTo=${encodeURIComponent(returnToPath)}` : ''}`} 
+                className="font-medium text-orange-600 hover:text-orange-700 transition-colors hover:underline inline-flex items-center gap-1 group"
               >
-                <ChevronRight className="h-3.5 w-3.5" />
-              </motion.span>
-            </Link>
-          </motion.p>
+                Sign up
+                <motion.span
+                  whileHover={{ x: 3 }}
+                  transition={{ type: 'spring', stiffness: 300 }}
+                >
+                  <ChevronRight className="h-3.5 w-3.5" />
+                </motion.span>
+              </Link>
+            </motion.p>
+          )}
 
           {/* Trust badges */}
           <motion.div 
