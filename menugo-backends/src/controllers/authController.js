@@ -11,6 +11,7 @@ const { catchAsync } = require('../utils/catchAsync');
 const { logger } = require('../utils/logger');
 const { getPasswordResetExpiryMs, getEmailVerificationExpiryMs } = require('../utils/tokenExpiry');
 const { getClientIp, getUserAgent } = require('../utils/requestInfo');
+const { getLoginLockoutState, DEFAULT_MAX_LOGIN_ATTEMPTS } = require('../utils/loginLockout');
 
 const normalizeEmailInput = (email) => String(email || '').trim().toLowerCase();
 const normalizeResetToken = (token) => {
@@ -285,10 +286,25 @@ const login = catchAsync(async (req, res) => {
   const { email, password } = req.body;
   const normalizedEmail = normalizeEmailInput(email);
 
-  // Find user by email (we'll check active status after verifying password)
   const user = await User.findOne({ where: { email: normalizedEmail } });
   if (!user) {
     throw new ApiError(401, 'Invalid credentials');
+  }
+
+  if (user.login_blocked) {
+    throw new ApiError(423, 'This email has been blocked after multiple failed attempts.');
+  }
+
+  if ((user.login_attempts || 0) >= DEFAULT_MAX_LOGIN_ATTEMPTS) {
+    await user.update({ login_blocked: true, locked_until: null });
+    throw new ApiError(423, 'This email has been blocked after multiple failed attempts.');
+  }
+
+  const now = new Date();
+  const lockoutState = getLoginLockoutState(user.login_attempts || 0, now, user.locked_until);
+
+  if (lockoutState.locked) {
+    throw new ApiError(423, lockoutState.message);
   }
 
   // Development debug logging to help diagnose login failures (safe in non-production)
@@ -342,7 +358,30 @@ const login = catchAsync(async (req, res) => {
   }
 
   if (!isPasswordValid) {
-    await user.increment('login_attempts');
+    const newAttemptCount = (user.login_attempts || 0) + 1;
+    const lockoutState = getLoginLockoutState(newAttemptCount, new Date(), null);
+
+    if (lockoutState.shouldLock) {
+      await user.update({
+        login_attempts: DEFAULT_MAX_LOGIN_ATTEMPTS,
+        locked_until: null,
+        login_blocked: true,
+      });
+      throw new ApiError(423, 'This email has been blocked after multiple failed attempts.');
+    }
+
+    if (newAttemptCount >= 3) {
+      await user.update({
+        login_attempts: newAttemptCount,
+        locked_until: null,
+      });
+      throw new ApiError(401, lockoutState.message);
+    }
+
+    await user.update({
+      login_attempts: newAttemptCount,
+      locked_until: null,
+    });
     throw new ApiError(401, 'Invalid credentials');
   }
 
@@ -377,8 +416,13 @@ const login = catchAsync(async (req, res) => {
     }
   }
 
-  // Reset login attempts
-  await user.update({ login_attempts: 0, last_login: new Date() });
+  // Reset login attempts and unlock account on successful login.
+  await user.update({
+    login_attempts: 0,
+    locked_until: null,
+    login_blocked: false,
+    last_login: new Date(),
+  });
 
   // Generate tokens and save session (guard against unexpected errors)
   let token;

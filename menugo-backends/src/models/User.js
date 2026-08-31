@@ -83,6 +83,10 @@ const User = sequelize.define('User', {
     type: DataTypes.DATE,
     allowNull: true,
   },
+  login_blocked: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+  },
   preferences: {
     type: DataTypes.JSON,
     defaultValue: {

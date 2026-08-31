@@ -394,6 +394,16 @@ const startServer = async () => {
       logger.warn('Could not ensure restaurant columns on startup:', schemaEnsureErr && schemaEnsureErr.message ? schemaEnsureErr.message : schemaEnsureErr);
     }
 
+    try {
+      const { ensureUserSchema } = require('./utils/ensureUserSchema');
+      const userSchemaResult = await ensureUserSchema();
+      if (userSchemaResult && userSchemaResult.applied && userSchemaResult.applied.length) {
+        logger.info(`Ensured user columns on startup: ${userSchemaResult.applied.join(', ')}`);
+      }
+    } catch (userSchemaEnsureErr) {
+      logger.warn('Could not ensure user columns on startup:', userSchemaEnsureErr && userSchemaEnsureErr.message ? userSchemaEnsureErr.message : userSchemaEnsureErr);
+    }
+
     // Keep destructive schema alteration opt-in to avoid long dev boots and port collisions.
     if (shouldAlterSchema && dbConnected) {
       await sequelize.sync({ alter: true });
