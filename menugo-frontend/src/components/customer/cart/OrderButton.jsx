@@ -205,7 +205,7 @@ const downloadCustomerReceipt = async ({ data, items, tableNumber, orderType, cu
   doc.save(`MenuGo-Receipt-${orderNumber}.pdf`)
 }
 
-const OrderButton = ({ restaurantId, items, tableNumber, specialInstructions, totalAmount, orderType = 'dine_in', customerName = '', customerPhone = '', customerEmail = '', deliveryAddress = '', restaurant = {}, onSuccess }) => {
+const OrderButton = ({ restaurantId, items, tableNumber, specialInstructions, totalAmount, couponCode = '', orderType = 'dine_in', customerName = '', customerPhone = '', customerEmail = '', deliveryAddress = '', restaurant = {}, onSuccess }) => {
   const [isLoading, setIsLoading] = useState(false)
   const [receiptOrder, setReceiptOrder] = useState(null)
 
@@ -326,6 +326,7 @@ const OrderButton = ({ restaurantId, items, tableNumber, specialInstructions, to
         customer_email: customerEmail && customerEmail.trim() !== '' ? customerEmail.trim() : null,
         delivery_address: deliveryAddress || null,
       }
+      if (couponCode?.trim()) payload.coupon_code = couponCode.trim().toUpperCase()
 
       mutation.mutate(payload)
     }

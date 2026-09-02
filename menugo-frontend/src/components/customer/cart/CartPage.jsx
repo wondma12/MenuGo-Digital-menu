@@ -9,6 +9,8 @@ import SpecialInstructions from './SpecialInstructions'
 import OrderButton from './OrderButton'
 import Button from '../../common/Button'
 import { getRestaurantDetails } from '../../../services/restaurantService'
+import { getPublicCoupons, validateCoupon } from '../../../services/promotionService'
+import toast from 'react-hot-toast'
 
 const CartPage = () => {
   const { restaurantId } = useParams()
@@ -17,16 +19,45 @@ const CartPage = () => {
   const [instructions, setInstructions] = useState('')
   const [customerName, setCustomerName] = useState('')
   const [orderType, setOrderType] = useState('dine_in')
+  const [couponCode, setCouponCode] = useState('')
+  const [appliedCoupon, setAppliedCoupon] = useState(null)
+  const [isApplyingCoupon, setIsApplyingCoupon] = useState(false)
 
   const { data: restaurant } = useQuery(
     ['restaurantDetails', restaurantId],
     () => getRestaurantDetails(restaurantId),
     { enabled: !!restaurantId }
   )
+  const { data: activePromotions = [] } = useQuery(
+    ['publicCoupons', restaurantId],
+    () => getPublicCoupons(restaurant?.id || restaurantId),
+    { enabled: !!(restaurant?.id || restaurantId) }
+  )
 
   const taxRate = Number(restaurant?.tax_rate ?? restaurant?.taxRate ?? 0) || 0
   const taxAmount = totalPrice * (taxRate / 100)
-  const totalAmount = totalPrice + taxAmount
+  const discountAmount = Number(appliedCoupon?.discount_amount || 0)
+  const totalAmount = totalPrice + taxAmount - discountAmount
+
+  const handleApplyCoupon = async () => {
+    const code = couponCode.trim().toUpperCase()
+    if (!code) {
+      toast.error('Enter a promotion code')
+      return
+    }
+
+    setIsApplyingCoupon(true)
+    try {
+      const result = await validateCoupon(code, restaurant?.id || restaurantId, totalPrice)
+      setAppliedCoupon({ ...result, code })
+      toast.success(`Promotion ${code} applied`)
+    } catch (error) {
+      setAppliedCoupon(null)
+      toast.error(error?.response?.data?.message || 'Invalid or expired promotion code')
+    } finally {
+      setIsApplyingCoupon(false)
+    }
+  }
 
   if (items.length === 0) {
     return (
@@ -87,9 +118,29 @@ const CartPage = () => {
         <div className="bg-white rounded-xl p-4 space-y-4 mb-6">
           {orderType === 'dine_in' && <TableInput value={tableNumber} onChange={setTableNumber} />}
           <SpecialInstructions value={instructions} onChange={setInstructions} />
+          {activePromotions.length > 0 && (
+            <div>
+              <label htmlFor="coupon-code" className="block text-sm font-medium text-slate-700 mb-1">Promotion code</label>
+              <div className="flex gap-2">
+                <input
+                  id="coupon-code"
+                  type="text"
+                  value={couponCode}
+                  onChange={(event) => {
+                    setCouponCode(event.target.value.toUpperCase())
+                    setAppliedCoupon(null)
+                  }}
+                  placeholder="Enter code, e.g. W123"
+                  className="min-w-0 flex-1 px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-4 focus:ring-orange-100 focus:border-orange-400 text-slate-900 uppercase"
+                />
+                <Button type="button" onClick={handleApplyCoupon} isLoading={isApplyingCoupon} variant="secondary">Apply</Button>
+              </div>
+              {appliedCoupon && <p className="mt-2 text-sm text-emerald-700">{appliedCoupon.code} applied: Br {discountAmount.toFixed(2)} discount</p>}
+            </div>
+          )}
         </div>
 
-        <CartSummary subtotal={totalPrice} tax={taxAmount} total={totalAmount} taxRate={taxRate} />
+        <CartSummary subtotal={totalPrice} tax={taxAmount} discount={discountAmount} total={totalAmount} taxRate={taxRate} />
 
         <OrderButton
           restaurantId={restaurantId}
@@ -97,6 +148,7 @@ const CartPage = () => {
           tableNumber={tableNumber}
           specialInstructions={instructions}
           totalAmount={totalAmount}
+          couponCode={appliedCoupon?.code || ''}
           orderType={orderType}
           customerName={customerName}
           restaurant={restaurant}

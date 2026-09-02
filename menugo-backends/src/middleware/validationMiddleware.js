@@ -162,7 +162,7 @@ const orderValidations = {
     body('items.*.menu_item_id').notEmpty().withMessage('Invalid menu item ID'),
     body('items.*.quantity').isInt({ min: 1 }).withMessage('Quantity must be at least 1'),
     body('table_number').optional(),
-    body('coupon_code').optional().isString(),
+    body('coupon_code').optional({ checkFalsy: true }).isString().trim(),
     body('customer_name').optional().trim(),
     body('customer_phone').optional({ checkFalsy: true }),
     body('customer_email').optional({ checkFalsy: true }).isEmail(),

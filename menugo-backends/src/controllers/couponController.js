@@ -4,6 +4,8 @@ const { ApiError } = require('../utils/apiError');
 const { catchAsync } = require('../utils/catchAsync');
 const { Op, fn, col, where } = require('sequelize');
 
+const getCurrentDate = () => new Date().toISOString().slice(0, 10);
+
 // Get all coupons for restaurant
 const getCoupons = catchAsync(async (req, res) => {
   const { restaurantId } = req.params;
@@ -106,16 +108,17 @@ const deleteCoupon = catchAsync(async (req, res) => {
 
 // Validate coupon
 const validateCoupon = catchAsync(async (req, res) => {
-  const { restaurantId } = req.params;
+  const restaurantId = req.params.restaurantId || req.body.restaurantId || req.body.restaurant_id;
   const { code, order_amount } = req.body;
+  const currentDate = getCurrentDate();
 
   const coupon = await Coupon.findOne({
     where: {
       restaurant_id: restaurantId,
       code: code.toUpperCase(),
       is_active: true,
-      start_date: { [Op.lte]: new Date() },
-      end_date: { [Op.gte]: new Date() },
+      start_date: { [Op.lte]: currentDate },
+      end_date: { [Op.gte]: currentDate },
     },
   });
 
@@ -268,6 +271,7 @@ const resolvePublicRestaurant = async (restaurantId) => {
 // Public: Get active coupons for restaurant (for menu/promotions display)
 const getPublicCoupons = catchAsync(async (req, res) => {
   const { restaurantId } = req.params;
+  const currentDate = getCurrentDate();
 
   const restaurant = await resolvePublicRestaurant(restaurantId);
   if (!restaurant) {
@@ -278,8 +282,8 @@ const getPublicCoupons = catchAsync(async (req, res) => {
     where: {
       restaurant_id: restaurant.id,
       is_active: true,
-      start_date: { [Op.lte]: new Date() },
-      end_date: { [Op.gte]: new Date() },
+      start_date: { [Op.lte]: currentDate },
+      end_date: { [Op.gte]: currentDate },
     },
     order: [['created_at', 'DESC']],
   });

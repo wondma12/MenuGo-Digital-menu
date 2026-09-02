@@ -1,6 +1,27 @@
 import api from './api'
 import { useAuthStore } from '../store/authStore'
 
+const normalizeCoupon = (coupon) => {
+  if (!coupon) return coupon
+  return {
+    ...coupon,
+    isActive: coupon.isActive ?? coupon.is_active,
+    discountType: coupon.discountType ?? coupon.discount_type,
+    discountValue: coupon.discountValue ?? coupon.discount_value,
+    minimumOrderAmount: coupon.minimumOrderAmount ?? coupon.minimum_order_amount,
+    maxDiscountAmount: coupon.maxDiscountAmount ?? coupon.max_discount_amount,
+    usageLimit: coupon.usageLimit ?? coupon.usage_limit,
+    usedCount: coupon.usedCount ?? coupon.used_count ?? 0,
+    perUserLimit: coupon.perUserLimit ?? coupon.per_user_limit,
+    applicableItems: coupon.applicableItems ?? coupon.applicable_items ?? [],
+    applicableCategories: coupon.applicableCategories ?? coupon.applicable_categories ?? [],
+    startDate: coupon.startDate ?? coupon.start_date,
+    endDate: coupon.endDate ?? coupon.end_date,
+  }
+}
+
+const normalizeCoupons = (coupons) => (Array.isArray(coupons) ? coupons.map(normalizeCoupon) : [])
+
 const resolveRestaurantId = (restaurantId) => {
   if (!restaurantId) {
     const auth = useAuthStore.getState()
@@ -22,7 +43,7 @@ export const getCoupons = async (restaurantIdOrParams, params) => {
   const id = resolveRestaurantId(restaurantId)
   if (!id) return []
   const response = await api.get(`/coupons/restaurant/${id}`, { params })
-  return response.data.data?.coupons || response.data.data || response.data
+  return normalizeCoupons(response.data.data?.coupons || response.data.data || response.data)
 }
 
 export const getCoupon = async (id) => {
@@ -55,7 +76,7 @@ export const createCoupon = async (restaurantIdOrData, maybeData) => {
     is_active: data.isActive ?? data.is_active ?? true,
   }
   const response = await api.post(`/coupons/restaurant/${id}`, payload)
-  return response.data.data || response.data
+  return normalizeCoupon(response.data.data || response.data)
 }
 
 export const updateCoupon = async (idOrPayload, maybeData) => {
@@ -82,7 +103,7 @@ export const updateCoupon = async (idOrPayload, maybeData) => {
     is_active: data.isActive ?? data.is_active,
   }
   const response = await api.put(`/coupons/${id}`, payload)
-  return response.data.data || response.data
+  return normalizeCoupon(response.data.data || response.data)
 }
 
 export const deleteCoupon = async (id) => {
@@ -113,5 +134,5 @@ export const getPublicCoupons = async (restaurantId) => {
   const id = resolveRestaurantId(restaurantId)
   if (!id) return []
   const response = await api.get(`/coupons/public/restaurant/${id}`)
-  return response.data.data?.coupons || response.data.data || response.data
+  return normalizeCoupons(response.data.data?.coupons || response.data.data || response.data)
 }

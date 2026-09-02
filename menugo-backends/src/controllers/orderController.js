@@ -9,6 +9,8 @@ const { Op } = require('sequelize');
 const KitchenService = require('../services/kitchenService');
 const { logger } = require('../utils/logger');
 
+const getCurrentDate = () => new Date().toISOString().slice(0, 10);
+
 const normalizeTableNumber = (value) => String(value ?? '').trim();
 
 const stripTableNumber = (value) => normalizeTableNumber(value).replace(/[^0-9a-zA-Z]/g, '').toLowerCase();
@@ -137,13 +139,14 @@ const createOrder = catchAsync(async (req, res) => {
   const couponCode = (req.body.coupon_code || req.body.couponCode || '').toString().trim();
   let appliedCoupon = null;
   if (couponCode) {
+    const currentDate = getCurrentDate();
     const coupon = await Coupon.findOne({
       where: {
         restaurant_id: restaurant.id,
         code: couponCode.toUpperCase(),
         is_active: true,
-        start_date: { [Op.lte]: new Date() },
-        end_date: { [Op.gte]: new Date() },
+        start_date: { [Op.lte]: currentDate },
+        end_date: { [Op.gte]: currentDate },
       },
     });
 
@@ -301,12 +304,13 @@ const createOrder = catchAsync(async (req, res) => {
 
   // Record coupon usage if applied
   if (appliedCoupon && Number(discount_amount) > 0) {
-    await CouponUsage.create({
+    const couponUsage = {
       coupon_id: appliedCoupon.id,
       order_id: order.id,
-      user_id: req.user ? req.user.id : null,
       discount_amount: discount_amount,
-    });
+    };
+    if (req.user?.id) couponUsage.user_id = req.user.id;
+    await CouponUsage.create(couponUsage);
 
     await appliedCoupon.increment('used_count');
   }
@@ -391,8 +395,8 @@ const createOrderByWaiter = catchAsync(async (req, res) => {
         restaurant_id: restaurant.id,
         code: couponCode.toUpperCase(),
         is_active: true,
-        start_date: { [Op.lte]: new Date() },
-        end_date: { [Op.gte]: new Date() },
+        start_date: { [Op.lte]: getCurrentDate() },
+        end_date: { [Op.gte]: getCurrentDate() },
       },
     });
 

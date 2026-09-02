@@ -51,7 +51,7 @@ const RestaurantLayout = () => {
     { path: '/admin/restaurant/qr', label: 'QR Code', icon: <QrCode className="w-5 h-5" /> },
     { path: '/admin/staff', label: 'Staff', icon: <Users className="w-5 h-5" /> },
     // { path: '/admin/inventory', label: 'Inventory', icon: <Box className="w-5 h-5" /> },
-    // { path: '/admin/promotions', label: 'Promotions', icon: <Tag className="w-5 h-5" /> },
+    { path: '/admin/promotions', label: 'Promotions', icon: <Tag className="w-5 h-5" /> },
     { path: '/admin/analytics', label: 'Analytics', icon: <TrendingUp className="w-5 h-5" /> },
     { path: '/admin/reviews', label: 'Reviews', icon: <Star className="w-5 h-5" /> },
     // { path: '/admin/settings', label: 'Settings', icon: <Settings className="w-5 h-5" /> },

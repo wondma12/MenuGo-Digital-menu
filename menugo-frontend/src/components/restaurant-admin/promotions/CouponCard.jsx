@@ -38,7 +38,11 @@ const CouponCard = ({ coupon, onEdit, onRefresh }) => {
     return `${formatPrice(coupon.discountValue)} OFF`
   }
 
-  const isExpired = new Date(coupon.endDate) <= new Date()
+  const endDateValue = String(coupon.endDate || '')
+  const endDate = /^\d{4}-\d{2}-\d{2}$/.test(endDateValue)
+    ? new Date(`${endDateValue}T23:59:59.999`)
+    : new Date(coupon.endDate)
+  const isExpired = endDate < new Date()
   const isActive = coupon.isActive && !isExpired
 
   return (

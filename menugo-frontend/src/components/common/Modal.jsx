@@ -56,7 +56,7 @@ const Modal = ({
             leaveTo="opacity-0 scale-95"
           >
             <div className={`
-              inline-block w-full ${sizes[size]} my-8 overflow-hidden text-left
+              inline-block w-full ${sizes[size]} my-8 overflow-visible text-left
               align-middle transition-all transform bg-white shadow-[0_24px_70px_rgba(15,23,42,0.18)] rounded-none
             `}>
               <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">

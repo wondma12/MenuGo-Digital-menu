@@ -66,13 +66,13 @@ const DatePicker = ({ selected, onChange, label, error, className = '', placehol
       {isOpen && (
         <div className="absolute z-50 mt-2 bg-white rounded-lg shadow-lg border border-gray-200 p-4 w-80">
           <div className="flex items-center justify-between mb-4">
-            <button onClick={handlePrevMonth} className="p-1 hover:bg-gray-100 rounded">
+            <button type="button" onClick={handlePrevMonth} className="p-1 hover:bg-gray-100 rounded">
               ←
             </button>
             <span className="font-medium">
               {format(currentMonth, 'MMMM yyyy')}
             </span>
-            <button onClick={handleNextMonth} className="p-1 hover:bg-gray-100 rounded">
+            <button type="button" onClick={handleNextMonth} className="p-1 hover:bg-gray-100 rounded">
               →
             </button>
           </div>
@@ -92,6 +92,7 @@ const DatePicker = ({ selected, onChange, label, error, className = '', placehol
               return (
                 <button
                   key={index}
+                  type="button"
                   onClick={() => handleDateSelect(date)}
                   className={`
                     text-center py-2 rounded-lg text-sm transition-colors
