@@ -3,20 +3,17 @@
 This document expands the MenuGo use-case model into a complete actor-to-use-case view, showing which roles perform which actions and how the system responsibilities are divided.
 
 ## 1) Actors and responsibilities
-
 ### Guest / Public User
 - Visits the public website.
 - Views restaurant listings and menu items.
 - Registers as a customer or restaurant owner.
 - Accesses public information without authentication.
-
 ### Customer
 - Registers and signs in.
 - Browses restaurants and menu items.
 - Adds items to cart.
 - Places orders and completes checkout.
 - Tracks order status and receives receipts.
-
 ### Restaurant Admin
 - Owns or manages a restaurant account.
 - Creates restaurant profile and settings.
@@ -24,35 +21,27 @@ This document expands the MenuGo use-case model into a complete actor-to-use-cas
 - Configures menu, categories, item pricing, and availability.
 - Manages staff roles and permissions.
 - Oversees subscription plan and restaurant activation status.
-
 ### Waiter
 - Logs in to a restaurant staff dashboard.
 - Assists customers with ordering and service.
 - Manages table orders and order progress.
 - Communicates with the kitchen and customer about status updates.
-
 ### Chef
 - Receives kitchen orders.
 - Prepares meals and updates their cooking status.
 - Marks items as ready or completed.
 - Coordinates with waiting staff.
-
 ### Platform Admin
 - Monitors the platform and restaurant lifecycle.
 - Reviews registrations and verifies or rejects restaurants.
 - Manages global subscription plans and policy decisions.
 - Suspends or reactivates accounts when needed.
-
 ### System / Background Jobs
 - Runs scheduled system tasks.
 - Checks subscription expiry automatically.
 - Deactivates expired accounts or restaurants.
 - Performs cleanup and maintenance.
-
----
-
 ## 2) Use-case model
-
 ```mermaid
 flowchart LR
     Guest((Guest / Public User))
@@ -157,7 +146,6 @@ flowchart LR
     Waiter --> D4
     Waiter --> D7
     Waiter --> E5
-
     Chef --> A2
     Chef --> A5
     Chef --> E1
@@ -165,7 +153,6 @@ flowchart LR
     Chef --> E3
     Chef --> E4
     Chef --> E5
-
     PlatformAdmin --> A2
     PlatformAdmin --> A5
     PlatformAdmin --> F1
@@ -173,11 +160,9 @@ flowchart LR
     PlatformAdmin --> F3
     PlatformAdmin --> F4
     PlatformAdmin --> F5
-
     System --> G1
     System --> G2
     System --> G3
-
     D4 -. includes .-> D1
     D5 -. includes .-> D2
     D7 -. includes .-> E1
@@ -190,8 +175,6 @@ flowchart LR
     B1 -. includes .-> B3
 ```
 
----
-
 ## 3) Full actor-use-case matrix
 
 | Actor | Main actions | Primary modules involved |
@@ -203,17 +186,12 @@ flowchart LR
 | Chef | Receive orders, prepare food, update cooking status, mark ready | Kitchen module, order lifecycle |
 | Platform Admin | Verify restaurants, monitor platform, manage plans, suspend accounts | Platform admin, subscription, compliance |
 | System / Background Jobs | Expire subscriptions, deactivate accounts, run cleanup | Cron jobs, automation, maintenance |
-
----
-
 ## 4) Detailed use-case actions by role
-
 ### Guest / Public User
 1. Register an account.
 2. Log in to the application.
 3. View available restaurants.
 4. Browse restaurant menus without full account access.
-
 ### Customer
 1. Log in to the platform.
 2. Browse restaurant and menu listings.
@@ -222,7 +200,6 @@ flowchart LR
 5. Place the order.
 6. Complete checkout/payment.
 7. View receipt and order status.
-
 ### Restaurant Admin
 1. Create and configure restaurant profile.
 2. Provide business information and upload verification documents.
@@ -231,21 +208,18 @@ flowchart LR
 5. Set pricing, stock, and availability.
 6. Monitor restaurant activity and order flow.
 7. Manage subscription plans and expiration status.
-
 ### Waiter
 1. Sign in to the staff dashboard.
 2. View active orders and table status.
 3. Assist customers during ordering and checkout.
 4. Confirm and track order progress.
 5. Notify kitchen and communicate status updates.
-
 ### Chef
 1. Sign in to the kitchen dashboard.
 2. Receive incoming orders.
 3. Start preparation and update progress.
 4. Mark dishes as ready for pickup/delivery.
 5. Notify waiters or customers when complete.
-
 ### Platform Admin
 1. Access the platform admin dashboard.
 2. Review pending restaurant registrations.
@@ -253,17 +227,12 @@ flowchart LR
 4. Monitor account health and platform activity.
 5. Manage subscription policies and pricing.
 6. Suspend or deactivate restaurants/accounts.
-
 ### System / Background Jobs
 1. Check subscription dates on a schedule.
 2. Trigger deactivation when a restaurant or user is expired.
 3. Run data cleanup and maintenance updates.
 4. Keep the platform state consistent without manual intervention.
-
----
-
 ## 5) Functional grouping summary
-
 ### Core business functions
 - Registration and authentication
 - Restaurant lifecycle and verification
@@ -272,18 +241,13 @@ flowchart LR
 - Kitchen and service flow
 - Platform governance
 - Subscription automation
-
 ### Supporting functions
 - File upload management
 - Role-based access control
 - Activity tracking
 - Background maintenance tasks
 - Invoice and receipt generation
-
----
-
 ## 6) Short requirement-style summary
-
 The MenuGo system must support:
 - public browsing for guests,
 - customer ordering workflows,
@@ -291,5 +255,4 @@ The MenuGo system must support:
 - staff operations for waiters and chefs,
 - platform-level verification and oversight,
 - and automated subscription/account lifecycle processing.
-
 This creates a complete restaurant SaaS ecosystem with clearly separated roles and responsibilities.

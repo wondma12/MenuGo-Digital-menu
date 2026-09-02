@@ -118,7 +118,7 @@ const Contact = () => {
     {
       icon: EnvelopeIcon,
       title: 'Email Us',
-      details: 'support@menugo.com',
+      details: 'haymanotwondmagegn3@gmail.com',
       sub: 'sales@menugo.com',
       action: 'mailto:support@menugo.com',
       actionText: 'support@menugo.com',
@@ -127,9 +127,9 @@ const Contact = () => {
     {
       icon: PhoneIcon,
       title: 'Call Us',
-      details: '+1 (555) 123-4567',
+      details: '+251931486967',
       sub: 'Mon-Fri, 9am-6pm EST',
-      action: 'tel:+15551234567',
+      action: 'tel:+251931486967',
       actionText: 'Call Now',
       gradient: 'from-emerald-500 to-green-500',
     },
@@ -293,7 +293,7 @@ const Contact = () => {
               </motion.div>
 
               {/* Stats below hero */}
-              <motion.div 
+              {/* <motion.div 
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4 }}
@@ -306,7 +306,7 @@ const Contact = () => {
                     <span className="text-xs text-white/70">{stat.label}</span>
                   </div>
                 ))}
-              </motion.div>
+              </motion.div> */}
             </motion.div>
           </div>
         </motion.section>
