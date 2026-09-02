@@ -12,6 +12,12 @@ const ReceiptModal = ({ isOpen, onClose, order, restaurant, items, totalAmount, 
   const restaurantLogo = restaurant?.logo || restaurant?.logo_url || restaurant?.logoUrl || null
   const restaurantName = restaurant?.name || restaurant?.restaurant_name || 'MenuGo'
   const normalizedOrderType = String(orderType || 'dine_in').replace('_', ' ').toUpperCase()
+  const subtotal = Number(order?.subtotal ?? items.reduce((sum, item) => sum + (Number(item?.price || 0) * Number(item?.quantity || 0)), 0))
+  const taxAmount = Number(order?.tax_amount ?? order?.taxAmount ?? 0)
+  const serviceCharge = Number(order?.service_charge ?? order?.serviceCharge ?? 0)
+  const deliveryFee = Number(order?.delivery_fee ?? order?.deliveryFee ?? 0)
+  const discountAmount = Number(order?.discount_amount ?? order?.discountAmount ?? 0)
+  const finalTotal = Number(order?.total_amount ?? order?.totalAmount ?? totalAmount)
   
   const handlePrint = () => {
     if (!receiptRef.current) return
@@ -136,11 +142,21 @@ const ReceiptModal = ({ isOpen, onClose, order, restaurant, items, totalAmount, 
           <div className="space-y-3 p-1">
             <div className="flex justify-between text-sm">
               <span className="text-slate-600 font-medium">Subtotal</span>
-              <span className="text-slate-900">Br {(totalAmount).toFixed(2)}</span>
+              <span className="text-slate-900">Br {subtotal.toFixed(2)}</span>
             </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-slate-600 font-medium">Tax</span>
+              <span className="text-slate-900">Br {taxAmount.toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-slate-600 font-medium">Service Charge</span>
+              <span className="text-slate-900">Br {serviceCharge.toFixed(2)}</span>
+            </div>
+            {deliveryFee > 0 && <div className="flex justify-between text-sm"><span className="text-slate-600 font-medium">Delivery Fee</span><span className="text-slate-900">Br {deliveryFee.toFixed(2)}</span></div>}
+            {discountAmount > 0 && <div className="flex justify-between text-sm"><span className="text-slate-600 font-medium">Discount</span><span className="text-rose-600">-Br {discountAmount.toFixed(2)}</span></div>}
             <div className="flex justify-between text-lg font-bold border-t-2 border-[#d99000] pt-3">
               <span className="text-slate-900">Total</span>
-              <span className="text-[#1f2a44]">Br {(totalAmount).toFixed(2)}</span>
+              <span className="text-[#1f2a44]">Br {finalTotal.toFixed(2)}</span>
             </div>
           </div>
 

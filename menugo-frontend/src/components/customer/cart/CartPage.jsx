@@ -36,8 +36,10 @@ const CartPage = () => {
 
   const taxRate = Number(restaurant?.tax_rate ?? restaurant?.taxRate ?? 0) || 0
   const taxAmount = totalPrice * (taxRate / 100)
+  const serviceChargeRate = Number(restaurant?.service_charge ?? restaurant?.serviceCharge ?? 0) || 0
+  const serviceChargeAmount = totalPrice * (serviceChargeRate / 100)
   const discountAmount = Number(appliedCoupon?.discount_amount || 0)
-  const totalAmount = totalPrice + taxAmount - discountAmount
+  const totalAmount = totalPrice + taxAmount + serviceChargeAmount - discountAmount
 
   const handleApplyCoupon = async () => {
     const code = couponCode.trim().toUpperCase()
@@ -140,7 +142,7 @@ const CartPage = () => {
           )}
         </div>
 
-        <CartSummary subtotal={totalPrice} tax={taxAmount} discount={discountAmount} total={totalAmount} taxRate={taxRate} />
+        <CartSummary subtotal={totalPrice} tax={taxAmount} serviceCharge={serviceChargeAmount} serviceChargeRate={serviceChargeRate} discount={discountAmount} total={totalAmount} taxRate={taxRate} />
 
         <OrderButton
           restaurantId={restaurantId}

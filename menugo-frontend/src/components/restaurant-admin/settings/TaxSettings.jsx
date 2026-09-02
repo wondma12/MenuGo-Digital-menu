@@ -25,7 +25,7 @@ const TaxSettings = ({ settings }) => {
   })
 
   const handleSubmit = () => {
-    mutation.mutate(formData)
+    mutation.mutate({ ...formData, serviceChargeType: 'percentage' })
   }
 
   return (
@@ -53,7 +53,7 @@ const TaxSettings = ({ settings }) => {
 
         <div className="grid grid-cols-2 gap-4">
           <Input
-            label="Service Charge"
+            label="Service Charge (%)"
             type="number"
             step="0.1"
             value={Number.isNaN(formData.serviceCharge) ? '' : formData.serviceCharge}
@@ -62,14 +62,7 @@ const TaxSettings = ({ settings }) => {
               setFormData({ ...formData, serviceCharge: v === '' ? '' : parseFloat(v) })
             }}
           />
-          <select
-            value={formData.serviceChargeType}
-            onChange={(e) => setFormData({ ...formData, serviceChargeType: e.target.value })}
-            className="px-3 py-2 border border-gray-300 rounded-lg"
-          >
-            <option value="percentage">Percentage (%)</option>
-            <option value="fixed">Fixed Amount ($)</option>
-          </select>
+          <div className="flex items-end text-sm text-gray-500 pb-2">Applied as a percentage of the order subtotal.</div>
         </div>
 
         <Switch

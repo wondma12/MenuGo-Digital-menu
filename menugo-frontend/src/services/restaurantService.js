@@ -124,6 +124,8 @@ export const getRestaurantSettings = async () => {
   // Normalize keys to frontend-friendly camelCase where useful
   const payload = response?.data?.data || response?.data || {}
   const r = payload
+  const savedSettings = r.settings || {}
+  const taxSettings = savedSettings.taxes || savedSettings.tax || {}
 
   const normalized = {
     ...r,
@@ -133,6 +135,11 @@ export const getRestaurantSettings = async () => {
     logoUrl: r.logo_url || r.logo || null,
     operatingHours: r.operating_hours || r.operatingHours || {},
     postalCode: r.postal_code || r.postalCode || null,
+    taxRate: r.tax_rate ?? r.taxRate ?? taxSettings.taxRate ?? 0,
+    serviceCharge: r.service_charge ?? r.serviceCharge ?? taxSettings.serviceCharge ?? 0,
+    serviceChargeType: r.service_charge_type ?? r.serviceChargeType ?? taxSettings.serviceChargeType ?? 'percentage',
+    taxInclusive: r.tax_inclusive ?? r.taxInclusive ?? taxSettings.taxInclusive ?? false,
+    applyTaxToDelivery: r.apply_tax_to_delivery ?? r.applyTaxToDelivery ?? taxSettings.applyTaxToDelivery ?? true,
   }
 
   return normalized
@@ -254,6 +261,10 @@ export const getRestaurantDetails = async (id) => {
     is_verified: r.is_verified ?? false,
     isActive: r.is_active ?? r.isActive ?? true,
     is_active: r.is_active ?? true,
+    tax_rate: r.tax_rate ?? r.taxRate ?? 0,
+    taxRate: r.tax_rate ?? r.taxRate ?? 0,
+    service_charge: r.service_charge ?? r.serviceCharge ?? 0,
+    serviceCharge: r.service_charge ?? r.serviceCharge ?? 0,
     subscriptionTier: r.subscription_tier || r.subscriptionTier || 'monthly',
     subscription_tier: r.subscription_tier || 'monthly',
     subscriptionStatus: r.subscription_status || r.subscriptionStatus || null,

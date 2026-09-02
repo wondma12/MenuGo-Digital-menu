@@ -192,9 +192,19 @@ const downloadCustomerReceipt = async ({ data, items, tableNumber, orderType, cu
 
   // Totals
   doc.setTextColor(20, 20, 20)
-  writeLine(`Subtotal: Br ${calculatedSubtotal.toFixed(2)}`, { style: 'bold' })
+  const subtotal = Number(data?.subtotal ?? calculatedSubtotal)
+  const taxAmount = Number(data?.tax_amount ?? data?.taxAmount ?? 0)
+  const serviceCharge = Number(data?.service_charge ?? data?.serviceCharge ?? 0)
+  const deliveryFee = Number(data?.delivery_fee ?? data?.deliveryFee ?? 0)
+  const discountAmount = Number(data?.discount_amount ?? data?.discountAmount ?? 0)
+  const finalTotal = Number(data?.total_amount ?? data?.totalAmount ?? totalAmount)
+  writeLine(`Subtotal: Br ${subtotal.toFixed(2)}`, { style: 'bold' })
+  if (taxAmount > 0) writeLine(`Tax: Br ${taxAmount.toFixed(2)}`)
+  if (serviceCharge > 0) writeLine(`Service Charge: Br ${serviceCharge.toFixed(2)}`)
+  if (deliveryFee > 0) writeLine(`Delivery Fee: Br ${deliveryFee.toFixed(2)}`)
+  if (discountAmount > 0) writeLine(`Discount: -Br ${discountAmount.toFixed(2)}`)
   doc.setTextColor(230, 126, 34)
-  writeLine(`TOTAL: Br ${totalAmount.toFixed(2)}`, { fontSize: 14, style: 'bold' })
+  writeLine(`TOTAL: Br ${finalTotal.toFixed(2)}`, { fontSize: 14, style: 'bold' })
 
   // Footer
   cursorY += 8

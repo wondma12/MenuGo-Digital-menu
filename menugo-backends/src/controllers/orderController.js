@@ -319,6 +319,11 @@ const createOrder = catchAsync(async (req, res) => {
     order_id: order.id,
     order_number: order.order_number,
     verification_code: verificationCode,
+    subtotal,
+    tax_amount,
+    service_charge,
+    delivery_fee,
+    discount_amount: discount_amount || 0,
     total_amount,
   }, 'Order created successfully'));
 });
@@ -571,6 +576,11 @@ const createOrderByWaiter = catchAsync(async (req, res) => {
     order_id: order.id,
     order_number: order.order_number,
     verification_code: verificationCode,
+    subtotal,
+    tax_amount,
+    service_charge,
+    delivery_fee,
+    discount_amount: discount_amount || 0,
     total_amount,
   }, 'Order created successfully'));
 });

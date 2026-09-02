@@ -1,7 +1,8 @@
 
 
-const CartSummary = ({ subtotal, tax, total, discount = 0, taxRate = null }) => {
+const CartSummary = ({ subtotal, tax, serviceCharge = 0, serviceChargeRate = null, total, discount = 0, taxRate = null }) => {
   const taxLabel = Number.isFinite(Number(taxRate)) ? `Tax (${String(Number(taxRate).toFixed(2)).replace(/\.0+$/, '').replace(/\.?0+$/, '')}%)` : 'Tax'
+  const serviceChargeLabel = Number.isFinite(Number(serviceChargeRate)) ? `Service Charge (${String(Number(serviceChargeRate).toFixed(2)).replace(/\.0+$/, '').replace(/\.?0+$/, '')}%)` : 'Service Charge'
 
   return (
     <div className="bg-white rounded-xl p-4 space-y-2">
@@ -19,6 +20,12 @@ const CartSummary = ({ subtotal, tax, total, discount = 0, taxRate = null }) => 
         <span className="text-slate-500">{taxLabel}</span>
         <span className="text-slate-900">Br {tax.toFixed(2)}</span>
       </div>
+      {serviceCharge > 0 && (
+        <div className="flex flex-col sm:flex-row sm:justify-between text-sm">
+          <span className="text-slate-500">{serviceChargeLabel}</span>
+          <span className="text-slate-900">Br {serviceCharge.toFixed(2)}</span>
+        </div>
+      )}
       <div className="flex flex-col sm:flex-row sm:justify-between text-lg font-black pt-2 border-t border-slate-200">
         <span className="text-slate-900">Total</span>
         <span className="text-slate-900">Br {total.toFixed(2)}</span>

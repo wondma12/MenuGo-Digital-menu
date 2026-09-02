@@ -60,7 +60,7 @@ const OrderDetailsModal = ({ order, onClose, onRefresh }) => {
     return (statusFlow[currentOrder.status] || []).map(action => actions[action])
   }
 
-  const titleNum = currentOrder.displayNumber ?? currentOrder.orderNumber;
+  const titleNum = currentOrder.displayNumber ?? currentOrder.orderNumber ?? currentOrder.order_number ?? currentOrder.id ?? 'N/A';
   return (
     <Modal isOpen={true} onClose={onClose} title={`Order Details - #${titleNum}`} size="md">
       <div className="space-y-4">
